@@ -810,7 +810,7 @@ model AuditLog {
 | Admin — Users | `/admin/users` | Super Admin |
 | Admin — Roles | `/admin/roles` | Super Admin |
 | Admin — Areas | `/admin/areas` | Super Admin |
-| Admin — Packages | `/admin/packages` | Super Admin |
+| Admin — Packages / Pricing Plan | `/admin/packages` | Super Admin |
 | Admin — Settings | `/admin/settings` | Super Admin |
 
 **Key Features:**
@@ -820,6 +820,48 @@ model AuditLog {
 - Deactivate user (soft delete — no hard delete)
 - Session management (view active sessions, force logout)
 - Audit log viewer (who did what, when)
+
+#### Admin — Packages / Pricing Plan (iframe Implementation)
+
+> **Design Decision:** The Pricing Plan page is rendered via an **HTML `<iframe>`** embedded inside the admin shell layout (navbar + sidebar remain visible). This is intentional because:
+> - Pricing plan content is **internal tooling**, not public-facing — zero SEO benefit
+> - The pricing/packages UI may be managed externally (e.g., a separate admin tool, legacy system, or a Wix/Webflow-hosted pricing editor)
+> - Using an iframe avoids duplicating a complex pricing configuration UI inside the Next.js app
+> - The iframe is sandboxed and communicates via `postMessage` if cross-origin interaction is needed
+
+**Implementation:**
+
+```tsx
+// app/(dashboard)/admin/packages/page.tsx
+export default function PackagesPage() {
+  return (
+    <div className="flex flex-col h-full">
+      <div className="mb-4">
+        <h1 className="text-2xl font-semibold">Pricing Plans & Packages</h1>
+        <p className="text-muted-foreground text-sm">
+          Manage internet packages, pricing tiers, and service bundles.
+        </p>
+      </div>
+      <div className="flex-1 rounded-lg border overflow-hidden">
+        <iframe
+          src={process.env.NEXT_PUBLIC_PRICING_IFRAME_URL}
+          className="w-full h-full min-h-[calc(100vh-200px)]"
+          title="Pricing Plan Manager"
+          sandbox="allow-scripts allow-same-origin allow-forms"
+          loading="lazy"
+        />
+      </div>
+    </div>
+  );
+}
+```
+
+**Environment Variable:**
+```env
+NEXT_PUBLIC_PRICING_IFRAME_URL=https://your-pricing-tool.example.com/embed
+```
+
+> If the pricing tool is hosted on the **same origin**, `sandbox` can be relaxed. For internal use within the same Next.js app, the iframe `src` can point to a local `/admin/packages/editor` route.
 
 ---
 
@@ -853,12 +895,13 @@ Lead → Contacted → Feasibility Check → Proposal/Quotation Sent → Negotia
 
 | Page | URL | Description |
 |------|-----|-------------|
+| Create Sale | `/Sales/CreateSale` | 5-step wizard form (Account, Installation Address, Billing Address, Customer Support, Packages) |
+| Pending Sale | `/Sales/PendingList` | Pending sales grid with `Proceed to CPM` (tick icon) and `View` (document icon 5-step form viewer) |
 | Sales Dashboard | `/sales` | KPIs, Kanban pipeline, leaderboard |
 | Lead Management | `/sales/leads` | Create/manage all leads |
 | Lead Detail | `/sales/leads/[id]` | Full lead + activity log |
 | CRF Management | `/sales/crf` | Track CRFs from creation to activation |
 | Quotation Generator | `/sales/quotations` | Build, preview, send PDF quotes |
-| Pending List CPM | `/sales/pending-list` | Existing page — integrated here |
 | Sales Performance | `/sales/performance` | Officer-level stats and rankings |
 
 #### Sales — Lead Detail Features
@@ -921,6 +964,8 @@ New Ticket → Assigned → In Progress → Resolved → Customer Confirmed → 
 
 | Page | URL | Description |
 |------|-----|-------------|
+| Pending Complains | `/Complain/PendingComplains` | Advance search filter (14 fields) + grid with row Edit icon |
+| Edit Complain | `/Complain/EditComplain/[id]` | Ticket header, complaint summary, status update form, and complaint history table |
 | CS Dashboard | `/customer-service` | KPIs, live SLA ticker, agent workload |
 | All Tickets | `/customer-service/tickets` | Full ticket list (all statuses) |
 | Ticket Detail | `/customer-service/tickets/[id]` | Full ticket + timeline + linked job |
@@ -1008,6 +1053,18 @@ Created → Dispatched → Technician Accepts → In Progress → Completed (not
 
 ---
 
+### 6.5.1 SD Module (Services & Distribution)
+
+| Page | URL | Description |
+|------|-----|-------------|
+| Inventory Management | `/SD/Profiles` | Verified Profile Signup's grid with year selector, reason dropdown, Transfer button, and Allocate Inventory modal |
+
+#### Key Features:
+- **Verified Profile Signup's Data Grid**: Multi-row selection checkboxes, top search bar, year dropdown, reason/status dropdown (*Refuse By Customer, Refund, Cancelled, Hold by Customer, Hold by Sales Team, Out of Coverage, Inventory Allocation*), primary Transfer button.
+- **Allocate Inventory Modal**: Opened via row Edit icon. Contains Customer ID/Type/Status badges, package details line, service details table (`SERVICETYPE`, `PACKAGEDETAIL`, `USERNAME`, `PASSWORD`, `OTHER DETAIL`), and inventory allocation dropdown grid (`SERVICE`, `WAREHOUSE`, `PRODUCT`, `BRAND`, `MODEL`, `INVENTORY`) with Save/Close actions.
+
+---
+
 ### 6.6 Billing Module
 
 *(All 17 existing pages are retained — see `requirements.md` for full spec)*
@@ -1036,14 +1093,13 @@ Created → Dispatched → Technician Accepts → In Progress → Completed (not
 
 ### 6.7 Reports Module
 
-*(All 8 existing report pages retained — see `requirements.md` for full spec)*
-
-#### New Reports Added
-| Report | URL |
-|--------|-----|
-| Sales Report | `/reports/sales` |
-| Customer Service Report | `/reports/customer-service` |
-| O&M Performance Report | `/reports/om-performance` |
+| Report | URL | Description |
+|--------|-----|-------------|
+| ConnectivityWise Report | `/EReports/ConnectivityWiseReport` | Date range filter + grouping grid for customer connectivity |
+| Customer Status Report | `/EReports/CustomerStatusHistoryReport` | Multi-select status tag dropdown filter + Customers Register data grid |
+| Sales Report | `/reports/sales` | Departmental sales metrics and pipeline report |
+| Customer Service Report | `/reports/customer-service` | Complaint resolution & SLA report |
+| O&M Performance Report | `/reports/om-performance` | Job card efficiency & maintenance report |
 
 #### Enhancement: PDF Export
 All report pages now have both **Export to Excel** and **Export to PDF** buttons.

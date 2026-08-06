@@ -13,25 +13,37 @@ The goal is to build a modern, robust Customer Relationship Management (CRM) sys
   * Super Admin
   * Admin
   * Manager
+  * Sales Manager
 * **Post-Login Routing**: After successful login, users are redirected directly to the User Search Page.
 
+### 2.1 Sales Manager & Manager Roles
+* **Post-Login Routing**: After sign-in, the User/Search page opens automatically, displaying the search form and data table.
+* **Navigation Menu**: The top menu for these roles contains 4 basic tabs with specific sub-menus:
+  * **Reports**: ConnectivityWise Report, Customer Status Report
+  * **Sales**: Create Sale, Pending Sale
+  * **Complain Management**: Pending Complains
+  * **SD**: Inventory Management
+
 ## 3. Navigation & Modules
-The application features a top navigation bar with three primary tabs, each containing specific sub-menus.
+The application features a top navigation bar with tabs that vary based on the user's role (e.g., Sales Manager / Manager role has access to Reports, Sales, Complain Management, and SD). Each tab contains specific sub-menus:
 
 ### 3.1 Reports
 * ConnectivityWise Report
-* Customers Receivable
-* Adjustments Report
-* Billing Payments
-* Customers Register
 * Customer Status Report
-* Advance Tax Report
-* Invoice Breakup Report
+*(Note: Full admin view may also include additional financial and receivable reports)*
 
-### 3.2 Complain Management
+### 3.2 Sales
+* Create Sale
+* Pending Sale
+
+### 3.3 Complain Management
 * Pending Complains
 
-### 3.3 Billing
+### 3.4 SD
+* Inventory Management
+
+### 3.5 Billing
+*(Available for specific admin/billing roles)*
 * Credit Adjustment
 * ServiceWise Status Changed
 * Transaction Approval
@@ -86,41 +98,364 @@ Below the search form, a data table displays the results with the following colu
 * Mobile Number
 * Email Address
 * Status
+* **Action**: Contains a "View Customer" eye icon. Clicking this icon opens the detailed Customer Profile page for that user.
 
 **Export:**
 * An "Export to Excel" button is located at the top-left of the results table.
 
-### 4.3 ConnectivityWise Report (Reports Tab)
-A specialized reporting page focusing on customer connectivity metrics.
+### 4.2.1 Customer Profile Page
+When a user clicks the eye icon in the search results table, this comprehensive profile page opens. It is divided into several cards/sections:
 
-**Search Filter:**
-* Includes a **Date** filter allowing users to select a start date and an end date.
-* A primary "Search" button to apply the filter.
+**1. Customer Profile Card (Left Column):**
+* Displays User Avatar, Name, Status, Balance.
+* Fields: Activation Status, Health Complaint Status, Customer Code, CRF Number, Customer Type, Activation Date, Email, Phone, Identification Number, City, Location, Installation Address.
+
+**2. Package Details Card:**
+* Fields: Package, OLT, OLT Information, Internet Profile.
+
+**3. Log Complains Card:**
+* Features a "Create Ticket" button to log a new complaint.
+
+**4. Recent Complaints Table:**
+* Columns: DEPARTMENT, TICKET NUMBER, DATETIME, SERVICE/CATEGORY, COMPLAIN, ESCALATION, PRIORTY, STATUS, ACTION.
+
+**5. Billing Profile Card:**
+* Fields: Total Outstandings, Subscription, POC Name, POC Number, Address.
+
+**6. Services Table:**
+* Columns: SERVICETYPE, ACTIVATIONDATE, NEXT BILLING, SERVICENAME, MRC, USERNAME, PASSWORD, STATUS, ACTION.
+
+**7. Customer Ledger Table:**
+* Columns: PAYMENT DATE, REF #, NARRATION, DEBIT, CREDIT, BALANCE.
+* Also contains an export button.
+
+**8. Logs Section (Tabs):**
+* Features multiple tabs: Radius Session Log, Radius Command Log, Radius Auth Reply, Customer Rotation History, Customer Message History.
+* **Radius Session Log Table** includes: acctsessionid, username, bandwidth, framedipaddress, nasipaddress, acctstarttime, acctstoptime, acctsessiontime, acctauthentic, upload, download, etc., with an "Export to Excel" button and refresh icon.
+
+### 4.2.2 Inventory Management Page (SD Tab)
+Located at URL path `/SD/Profiles`, titled **Verified Profile Signup's**.
+
+**1. Top Search Header:**
+* Quick Search Bar (`Search CRM Management System`) with input field, `Customer Code` selector, `Search` button, and an `Advanced Search` link.
+
+**2. Table Control Bar:**
+* **Export to Excel** button on the top-left of the data grid.
+* **Filter Dropdowns & Action (Top-Right):**
+  * **Year Dropdown**: Dropdown to select year based on table data (e.g., `2026`).
+  * **Reason / Status Dropdown**: Options include `Please Select`, `Refuse By Customer`, `Refund`, `Cancelled`, `Hold by Customer`, `Hold by Sales Team`, `Out of Coverage`, `Inventory Allocation`.
+  * **Transfer Button**: Primary action button to transfer selected records.
+
+**3. Verified Profile Signup's Data Table:**
+* **Edit Action Column**: Edit icon on each row (far left) that opens the **Allocate Inventory** modal for that customer.
+* **Selection Column**: Row selection checkboxes.
+* **Data Columns:**
+  * `Customer Code`
+  * `CRF Number`
+  * `Full Name`
+  * `Mobile Number`
+  * `City Name`
+  * `Area Name`
+  * `Sub Area Name`
+  * `Address`
+  * `Remarks`
+  * `Dep. Time Elapsed` (e.g., `202 Days`, `44 Days`, `1 Hours`, `0 Hours`)
+  * `Status` (e.g., `PendingOnInventoryAllocation`, `HoldByCustomer`)
+
+**4. Allocate Inventory Modal (Opens via Row Edit Icon):**
+* **Header Section**:
+  * Customer Initials Avatar box.
+  * Customer Name.
+  * Badges: `Customer ID` (e.g., `00078309`), `Customer Type` (e.g., `INDIVIDUAL`), `Status` (e.g., `PendingOnInventoryAllocation`).
+* **Package Information**:
+  * Displays Package Type details (e.g., `Package Type: 50Mbps Blazing Speed X2 (Upto 100Mbps)-M1 | Single`).
+* **Service Details Table**:
+  * Columns: `SERVICETYPE`, `PACKAGEDETAIL`, `USERNAME`, `PASSWORD`, `OTHER DETAIL`.
+* **Inventory Allocation Grid**:
+  * Header/Columns: `SERVICE`, `WAREHOUSE`, `PRODUCT`, `BRAND`, `MODEL`, `INVENTORY`.
+  * Select Dropdowns for `WAREHOUSE` (options like `Optix HO Lahore`, `STATIC IP Global`), `PRODUCT`, `BRAND`, `MODEL`, `INVENTORY`.
+* **Modal Action Footer**:
+  * `close` button.
+  * `Save` button.
+
+### 4.2.3 Pending Complains Page (Complain Management Tab)
+Located at URL path `/Complain/PendingComplains`.
+
+**1. Advance Search Filter Form:**
+* Filter fields:
+  * `Ticket #` (text input)
+  * `Customer Code` (text input)
+  * `Country` (select dropdown)
+  * `Province` (select dropdown)
+  * `City` (select dropdown)
+  * `Area` (select dropdown)
+  * `Complain Type` (select dropdown)
+  * `Category` (select dropdown)
+  * `Sub category` (select dropdown)
+  * `Fault` (select dropdown)
+  * `Department` (select dropdown)
+  * `House #` (text input)
+  * `Statuses` (select dropdown)
+  * `Date` (date picker)
+* Action: Primary purple **Search** button.
+
+**2. Pending Complains Data Table:**
+* **Top Toolbar**: **Export to Excel** button.
+* **Columns**: `Ticket No`, `Created At`, `C.Code`, `CustomerName`, `MobileNumber`, `Department`, `CategoryName`, `SubCategoryName`, `Fcr`, `ClosedBy`, `TicketType`, `Complain`, `RFOsName`, `Remarks`, `Escalation`, `Priority`, `ComplainStatus`, `Address`, `CityName`, `AreaName`, `SubAreaName`, `SourceOfCom...`, `Resolved Elapse (Hours)`, `Time Elapse (Hours)`, `Action`.
+* **Action Column**: Contains an Edit icon button on every row that navigates to the dedicated **Edit Complain** page (`/Complain/EditComplain/{id}`).
+
+### 4.2.4 Edit Complain Page
+Located at URL path `/Complain/EditComplain/{id}`.
+
+**1. Header Card:**
+* Page Title: **Edit Complain - Ticket # [TicketNo]** with subtitle "Update existing complain".
+* Customer Initial Avatar box and Customer Name.
+* Badges: `Customer ID`, `Customer Type`, `Status`.
+
+**2. Complaint Summary Bar & Description:**
+* Displays key fields: `SOURCE`, `SERVICE`, `CATEGORY`, `SUB-CATEGORY`, `FAULT`, `ESCALATION` (badge), `PRIORITY` (badge).
+* `Complain Description`: Text box displaying the original complaint description text.
+
+**3. Update Complain Form:**
+* Fields:
+  * `Action` (select dropdown)
+  * `Department` (select dropdown)
+  * `Complain Status` (select dropdown)
+  * `RFOs` (select dropdown)
+  * `Remarks` (textarea for update comments)
+  * `FeedBack Grade` (select dropdown)
+* Actions: `Update Complain` button and `Back` button.
+
+**4. Complaint History Table:**
+* Data grid displaying progress history across departments.
+* Columns: `STATUS`, `DEPARTMENT`, `REMARKS`, `CREATEDBY`, `CREATEDAT`, `TIME IN DEPARTMENT`.
+
+### 4.2.5 Create Sale Page (Sales Tab)
+Located under `Sales -> Create Sale`. Features a 5-step wizard multi-step form:
+
+**Multi-Step Stepper Header:**
+1. **Account**: *Setup Account*
+2. **Installation Address**: *Setup Installation Address*
+3. **Billing Address**: *Add Payment Address*
+4. **Customer Support**: *Data for customer service*
+5. **Packages**: *Custmer Packages Detail*
+
+---
+
+#### Step 1: Account (Setup Account)
+Form Section Header: **Enter your Account Details**
+
+**Form Fields:**
+* `CRF Number *`: Text input (Required)
+* `Customer Type *`: Dropdown selector (`Please Select`, Required)
+* `Industry *`: Dropdown selector (`Please Select`, Required)
+* `Latitude *`: Input field (Default: `0`, Required)
+* `Longitude *`: Input field (Default: `0`, Required)
+* `Customer Name *` (Prefix): Dropdown selector (`Please Select`, Required)
+* `Customer Full Name *`: Text input (Required)
+* `CNIC Number *`: Text input (Required)
+* `Expiry of CNIC *`: Date input (`dd/mm/yyyy`, Required)
+* `Land Line Number *`: Text input (`XXXXXXXXXX`, Required)
+* `Mobile Number *`: Text input (`XXXXXXXXXX`, Required)
+* `Email Address *`: Text input (Required)
+* `Date of Birth *`: Date input (`dd/mm/yyyy`, Required)
+* `NTN Number *`: Text input (Required)
+* `Tax Status *`: Dropdown selector (`Please Select`, Required)
+* `Passport #`: Text input (Optional)
+
+**Navigation Controls:**
+* **NEXT** primary purple button to proceed to Step 2 (*Installation Address*).
+
+---
+
+#### Step 2: Installation Address (`Setup Installation Address`)
+Form Section Header: **Enter Customer Installation Address**
+
+**Form Fields:**
+* `Country *`: Dropdown selector (Required, e.g., `Pakistan`)
+* `Province *`: Dropdown selector (Required, e.g., `PUNJAB`)
+* `City *`: Dropdown selector (Required, e.g., `LAHORE`)
+* `Area *`: Dropdown selector (Required, e.g., `GULBERG 03`)
+* `Sub-Area *`: Dropdown selector (Required, e.g., `Main Boulevard`, note: "Sub-area is not available to every area.")
+* `SubArea2`: Dropdown selector (`Please Select`, note: "Only for DHA karachi")
+* `House Address`: Text input for house address
+* `Floor`: Text input
+* `Plaza`: Text input
+* `Building`: Text input
+* `Building No`: Text input
+* `Road`: Text input
+* `Street`: Text input
+* `Lane No`: Text input
+* `Block`: Text input
+* `Phase`: Text input
+
+**Navigation Controls:**
+* `PREVIOUS` button (returns to Step 1)
+* `NEXT` button (proceeds to Step 3)
+
+---
+
+#### Step 3: Billing Address (`Add Payment Address`)
+Form Section Header: **Enter Customer Billing Address**
+
+**Form Fields:**
+* `Country *`: Dropdown selector (Required, e.g., `Pakistan`)
+* `Province *`: Dropdown selector (Required, e.g., `PUNJAB`)
+* `City *`: Dropdown selector (Required, e.g., `LAHORE`)
+* `Area *`: Dropdown selector (Required, e.g., `GULBERG 03`)
+* `Sub-Area *`: Dropdown selector (Required, e.g., `Main Boulevard`)
+* `SubArea2`: Dropdown selector (`Please Select`)
+* `House Address`: Text input
+* `Floor`: Text input
+* `Plaza`: Text input
+* `Building`: Text input
+* `Building No`: Text input
+* `Road`: Text input
+* `Street`: Text input
+* `Lane No`: Text input
+* `Block`: Text input
+* `Phase`: Text input
+
+**Navigation Controls:**
+* `PREVIOUS` button (returns to Step 2)
+* `NEXT` button (proceeds to Step 4)
+
+---
+
+#### Step 4: Customer Support (`Data for customer service`)
+Form Section Header: **Enter data for sale support and services**
+
+**Form Fields:**
+* `POC Name *`: Prefix dropdown (e.g. `M/S`) + Text input for full name of POC (Required)
+* `POC Contact Number *`: Text input for contact number (Required)
+* `Customer Tag *`: Dropdown selector (`Normal`, Required)
+* `Attach CNIC Image *`: File upload input (`Choose file`, Required) + "Click here to view last uploaded CNIC" link
+* `Attach Back CNIC Image *`: File upload input (`Choose file`, Required) + "Click here to view last uploaded CNIC" link
+* `Attach Form PDF *`: File upload input (`Choose file`, Required) + "Click here to view last uploaded PDF" link
+
+**Navigation Controls:**
+* `PREVIOUS` button (returns to Step 3)
+* `NEXT` button (proceeds to Step 5)
+
+---
+
+#### Step 5: Packages (`Custmer Packages Detail`)
+Section Header: **Customer Selected Packages**
+
+**Toolbar Buttons:**
+* `Remove` button (purple action button)
+* `Add Packages` button (opens the **Add Packages Modal**)
+
+**Customer Selected Packages Data Table:**
+* Columns: `Package`, `MRC Amt`, `Dis. Amt`, `SaleTax Amt.`, `ADV.Tax`, `MRC Dis.%`, `Total Mrc`, `OTC`, `Dis. OTC`, `Installment`, `Per. Installment`, `OTC`.
+
+**Package Billing Configuration:**
+* `Total Receivable`: Read-only text field (e.g. `3,999`)
+* `Business Development Name *`: Dropdown selector (Required, e.g., `Shahid Hameed`)
+* `Subscription *`: Dropdown selector (`Monthly`, `Half Yearly`, `Yearly`, Required)
+
+**Add Packages Modal (Opens via `Add Packages` button):**
+* Modal Title: **Enter details for customer's selected packages**
+* Fields:
+  * `Packages`: Dropdown selector (`Please Select`, `Single`, `Bundles`, `AddOn`)
+  * `Package - Services`: Dropdown selector (`Please Select`)
+* Actions: `Close` button and `Save` button.
+
+**Navigation Controls:**
+* `PREVIOUS` button (returns to Step 4)
+
+### 4.2.6 Pending Sale Page (Sales Tab)
+Located at URL path `/Sales/PendingList`, titled **Pending Customers**.
+
+**1. Top Search & Controls:**
+* Quick Search Bar (`Search CRM Management System`) with input field, `Customer Code` selector, `Search` button, and `Advanced Search` link.
+* **Top-Left**: `Export to Excel` button.
+* **Top-Right**: Year selector dropdown (e.g., `2026`).
+* **Grid Toolbar**: Dedicated global `Search...` bar on the top-right of the data grid.
+
+**2. Pending Customers Data Table:**
+* **Columns**:
+  * `Proceed to CPM` Action Column (Checkmark icon button)
+  * `View` Action Column (Document icon button)
+  * `Customer Code`
+  * `CRF Number`
+  * `Full Name`
+  * `Mobile Number`
+  * `City Name`
+  * `Area Name`
+  * `Sub Area Name`
+  * `Address`
+  * `Remarks`
+  * `Source` (e.g., `ONLINE`)
+  * `Status` (e.g., `Cancelled`, `HoldBySalesTeam`, `Refund`)
+
+**3. Key Action Buttons:**
+* **Proceed to CPM (Tick Icon Button)**: Triggered to proceed the sale to the CPM (Customer Provisioning Management) stage.
+* **View (Document Icon Button)**: Opens the pre-populated **5-Step Form Wizard** (`/Sales/Sale?id={id}`) allowing the sales manager/user to review, update, or edit all recorded details across the 5 steps (*Account, Installation Address, Billing Address, Customer Support, Packages*).
+
+### 4.3 ConnectivityWise Report (Reports Tab)
+Located at URL path `/EReports/ConnectivityWiseReport`, titled **Connectivity Wise Report**.
+
+**Advance Search Filter Form:**
+* **Date Range Picker**: Select Start Date (e.g., `07/07/2026`) and End Date (e.g., `06/08/2026`).
+* Primary purple **Search** button.
 
 **Report Data Table:**
-Below the search filters, a robust data table displays the results:
+Below the search filter, a data table displays results:
 * **Top Toolbar:**
   * **Export to Excel** button.
-  * A **Refresh** button (circular arrow) next to the export button to fetch the latest results.
-  * A dedicated **Search bar** on the right side of the toolbar.
-* **Grouping:** Features a drag-and-drop grouping area above the column headers to group rows by specific columns.
-* **Columns (with filtering/sorting):**
-  * Customer ID
-  * Customer Code
-  * Full Name
-  * Package
-  * Customer Type
-  * Activation Date
-  * Created At
-  * Created By
-  * House Address
-  * City
-  * Area
-  * SubArea
-  * Status By Name
+  * **Refresh** button (circular arrow icon next to Export).
+  * **Drag-and-Drop Grouping Banner**: *"Drag a column header and drop it here to group by that column"*.
+  * Global **Search..** input box on the top-right toolbar.
+* **Columns (with individual header column filters):**
+  * `Cu...` (Customer ID)
+  * `Customer Code`
+  * `Full Name`
+  * `Package`
+  * `Customer Type`
+  * `ActivationDate`
+  * `CreatedAt`
+  * `Created By`
+  * `House Address`
+  * `City`
+  * `Area`
+  * `SubArea`
+  * `Status By Name`
 * **Footer:**
   * **Pagination** controls at the bottom-left.
-  * **Total records** count (e.g., "Total: 33") at the bottom-right.
+  * **Total count** display (e.g., `Total 22`) at the bottom-right.
+
+### 4.3.1 Customer Status Report / Customers Register (Reports Tab)
+Located at URL path `/EReports/CustomerStatusHistoryReport`, with data table titled **Customers Register**.
+
+**Advance Search Filter Form:**
+* **Filter (Multi-Select Status Dropdown)**: Allows selecting multiple status tag filters. Available tags include:
+  * `SignUpGenerated`, `PendingOnSales`, `PendingOnInventoryAllocation`, `PendingOnActivation`, `ConnectionActive`, `NonPaymentBlocked`, `Blocked`, `TemporaryBlocked`, `Foc`, `Refund`, `Terminated`, `InHouseConnection`, `MPPL`, `RefuseByCustomer`, `PendingOnCpm`, `Cancelled`, `HoldByCustomer`, `HoldBySalesTeam`, `OutOfCoverage`, `CablingNCoreDone`, `PackageChanged`, `TemporaryTerminated/IP`.
+* **Date Range Picker**: Select Start Date (e.g., `07/07/2026`) and End Date (e.g., `06/08/2026`).
+* Primary purple **Search** button.
+
+**Customers Register Data Table:**
+* **Top Toolbar:**
+  * **Export to Excel** button.
+  * **Refresh** button (circular arrow icon next to Export).
+  * **Drag-and-Drop Grouping Banner**: *"Drag a column header and drop it here to group by that column"*.
+  * Global **Search..** input box on top-right toolbar.
+* **Columns (with header column filters):**
+  * `Customer ID`
+  * `Customer Code`
+  * `Full Name`
+  * `Package`
+  * `Created At`
+  * `Current Status`
+  * `Last Status`
+  * `Remarks`
+  * `Created At`
+  * `Created By`
+  * `Sale Person`
+  * `House Address`
+  * `City`
+  * `Area`
+  * `SubArea`
 
 ### 4.4 Customers Receivable Report (Reports Tab)
 A specialized reporting page focusing on customer balances and receivables.

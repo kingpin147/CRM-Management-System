@@ -1,105 +1,35 @@
-﻿# CRM System — Questions Before We Begin Development
+# CRM System — Requirements Review & Feature Tracking
 
-Hi,
-
-I have reviewed the CRM portal (`crm.optix.pk`) in detail and documented all the pages and features. Before we start building, I have a few important questions. Your answers will directly shape how we design and develop the system.
-
-I have grouped them from most important to least important.
+> **Status Update (2026-08-06):**
+> We have completed a full, step-by-step review of the **Sales Manager** account role across all tabs and pages based on live screenshots. All specifications for the Sales Manager workflow are fully documented in `requirements.md`.
 
 ---
 
-## 🔴 Must Answer First — These affect everything
+## ✅ Sales Manager Account Role — Fully Reviewed & Clarified
 
-**1. Is this the complete system, or is there a separate Admin panel?**
-I noticed there is no option to add new customers, manage staff accounts, or assign user roles anywhere in the portal. Is there a separate Admin or Super Admin panel that handles these things, or do you want us to build that as part of this project?
+1. **Post-Login Default Page**:
+   - Redirects directly to `User/Search` (Advance Search Filter + Advance Search Result grid with View Customer eye icon leading to full Customer Profile).
 
-**2. What should a user see immediately after logging in?**
-Right now, after login, the system goes directly to a search page. Should there be a proper Home / Dashboard page first? If yes, what should it show — for example, summary numbers (active customers, pending complaints, revenue this month), charts, or quick shortcuts?
+2. **Top Navigation Tabs (4 Basic Tabs)**:
+   - **Reports**: ConnectivityWise Report (`/EReports/ConnectivityWiseReport`), Customer Status Report (`/EReports/CustomerStatusHistoryReport`).
+   - **Sales**: Create Sale (5-step wizard), Pending Sale (`/Sales/PendingList`).
+   - **Complain Management**: Pending Complains (`/Complain/PendingComplains`).
+   - **SD**: Inventory Management (`/SD/Profiles`).
 
-**3. Where and how are new customers added to the system?**
-I could not find an "Add Customer" button anywhere. Do customers come from another system (like a field app or a separate sales portal), and this CRM just shows their data? Or do you want us to add that feature here?
-
-**4. How many types of users (roles) will use this system?**
-For example: Billing Officer, Billing Manager, Customer Support, Finance Manager, Admin, etc. And should each role only see certain pages? (e.g., a billing officer cannot see Payments Approval, but a manager can)
-
----
-
-## 🟡 Important — Affects specific pages
-
-**5. Who approves transactions at Level 1, and who approves at Level 2?**
-I see the system has two approval steps (Authorization 1 and Authorization 2). Is this based on the user's role, or is it assigned individually to specific staff members?
-
-**6. How do payments come into the system?**
-I see a "Payment Adjustment" page, but no way to directly record a new payment from a customer. Do payments come automatically from KuickPay or other gateways, or do staff need to manually enter them?
-
-**7. Can a submitted invoice be edited before it is approved?**
-Once an Asset Invoice or Service Invoice is submitted for approval, can it be cancelled or changed, or is it locked?
-
-**8. What are the options in the "Payment Method" dropdown?**
-(For example: Cash, Cheque, Bank Transfer, KuickPay, JazzCash, Easypaisa?)
-
-**9. What are the options in the "Voucher Type" dropdown?**
-(Used in Credit Adjustment and Debit Adjustment forms)
+3. **Key Workflows Verified**:
+   - **Create Sale**: 5-step wizard form (Step 1: Account -> Step 2: Installation Address -> Step 3: Billing Address -> Step 4: Customer Support -> Step 5: Packages with Add Packages modal).
+   - **Pending Sale**: Grid with `Proceed to CPM` tick icon button and `View` document icon button (opens pre-populated 5-step form wizard for updates).
+   - **Pending Complains & Edit Complain**: Advance search filter form, table with row edit icon navigating to `/Complain/EditComplain/{id}` page with complaint history table.
+   - **Inventory Management (`/SD/Profiles`)**: Table with year selector, reason dropdown, Transfer button, and row edit icon opening the **Allocate Inventory** modal.
 
 ---
 
-## 🟡 Complaints — What else is needed?
+## 🟢 Remaining Clarifications & Next Steps
 
-**10. Can staff create a new complaint from the Complaints menu?**
-Currently I only see a "Pending Complaints" list. Is there a way to open a new ticket from here, or does it only happen from the Customer Detail page?
-
-**11. Are there more complaint pages we have not seen?**
-For example: All Complaints, Resolved Complaints, Escalated Complaints, SLA tracking?
-
-**12. Who can close or escalate a complaint — from this portal?**
+1. **Billing / Admin Role Deep-Dive**:
+   - Review and verify admin-specific billing workflows (Auth 1 / Auth 2 approval rules, asset/service invoice approval limits) when reviewing additional account roles.
+2. **Notification & Automation Rules**:
+   - Trigger conditions for SMS/Email notifications on ticket assignment, CPM transfer, or account block.
 
 ---
-
-## 🟢 Reports — Small details
-
-**13. Can users filter reports by a custom date range?**
-Some reports have filter forms, but I want to confirm — can all reports be filtered by a From / To date?
-
-**14. Do any reports need a PDF export option?**
-Currently all reports only have an "Export to Excel" button.
-
-**15. Are there any reports that are hidden or only visible to certain roles?**
-
----
-
-## 🟢 Customer Detail Page
-
-**16. Can staff edit customer information from the Customer Detail page?**
-From what I saw it looks read-only. Should it be editable?
-
-**17. Are there more sections in the Customer Detail page that we have not seen?**
-I documented: Profile, Package Details, Log Complaints, Recent Complaints.
-Are there more, such as: Payment History, Service History, Documents / Attachments?
-
----
-
-## 🟢 Notifications
-
-**18. Should there be in-app notifications?**
-For example, a notification bell that alerts a billing manager when a new transaction is submitted for their approval?
-
-**19. Does the system send any emails or SMS to customers?**
-For example: invoice generated, payment received, account blocked?
-
----
-
-## Summary — Quick Decisions Needed
-
-| # | Question | Why urgent |
-|---|----------|------------|
-| 1 | Is there a separate Admin panel? | Defines the full scope of the project |
-| 2 | What is on the home/dashboard page? | Home page is completely undefined |
-| 3 | Where are customers added? | No add-customer feature exists |
-| 4 | How many roles, and what can each access? | Changes the entire menu and page structure |
-
-Please feel free to answer as many as you can. Even partial answers will help us move forward quickly.
-
-Looking forward to your reply.
-
----
-*Prepared by: Development Team | Date: 2026-08-04*
+*Updated by: Development Team | Date: 2026-08-06*
