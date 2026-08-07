@@ -1,12 +1,31 @@
 # CRM System — Requirements Review & Feature Tracking
 
-> **Status Update (2026-08-06):**
-> We have completed a full, step-by-step review of the **Sales Manager** account role across all tabs and pages based on live screenshots. All specifications for the Sales Manager workflow are fully documented in `requirements.md`.
+> **Status Update (2026-08-07):**
+> We have reviewed two primary operational account roles:
+> 1. **Billing Account / Role**: Previously reviewed, covering extensive billing sub-navigation tabs (Credit/Debit Adjustments, Invoices, Auth 1 & Auth 2 Approvals, Payment Adjustments, Radius Sessions, etc., as documented in Section 3.5 of `requirements.md`).
+> 2. **Sales Manager Account / Role**: Step-by-step review completed (Reports, Sales, Complain Management, SD).
+> 
+> ⚠️ **Pending Review**: The **Admin / Super Admin Account** has **not yet been reviewed**. This is where master user management (adding/creating Billing Managers, Sales Managers, role assignments, and permission controls) takes place.
 
 ---
 
-## ✅ Sales Manager Account Role — Fully Reviewed & Clarified
+## ✅ Reviewed Account Roles
 
+### 1. Billing Account Role (Reviewed Previously)
+- **Scope**: Billing, accounting, and financial management.
+- **Key Modules Documented in `requirements.md`**:
+  - Credit & Debit Adjustments
+  - ServiceWise Status Changed
+  - Transaction Approval & Transaction Approval 2 (Auth 1 / Auth 2)
+  - Transaction Ledger
+  - Asset Invoice & Asset Invoice Approval
+  - Service Invoice & Services Invoice Approval
+  - Payment Adjustment & Payments Approval
+  - Non-Payment Block & Temporary Block Active
+  - Reset Radius Sessions
+  - Customer Package Details & PendingList CPM
+
+### 2. Sales Manager Account Role (Fully Reviewed & Clarified)
 1. **Post-Login Default Page**:
    - Redirects directly to `User/Search` (Advance Search Filter + Advance Search Result grid with View Customer eye icon leading to full Customer Profile).
 
@@ -24,12 +43,15 @@
 
 ---
 
-## 🟢 Remaining Clarifications & Next Steps
+## ⏳ Pending Account Review & Next Steps
 
-1. **Billing / Admin Role Deep-Dive**:
-   - Review and verify admin-specific billing workflows (Auth 1 / Auth 2 approval rules, asset/service invoice approval limits) when reviewing additional account roles.
+1. **Admin / Super Admin Account Review (Pending)**:
+   - **User & Role Management**: Interface and flows for adding, creating, and managing Billing Managers, Sales Managers, Managers, and NOC/Support staff.
+   - **Access Control & Permissions**: Role-based permission controls (RBAC) and administrative feature toggles.
+   - **System Configurations**: Master settings, financial approval limits (Auth 1 / Auth 2 thresholds), and system logs.
+
 2. **Notification & Automation Rules**:
    - Trigger conditions for SMS/Email notifications on ticket assignment, CPM transfer, or account block.
 
 ---
-*Updated by: Development Team | Date: 2026-08-06*
+*Updated by: Development Team | Date: 2026-08-07*
