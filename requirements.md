@@ -12,11 +12,11 @@ The EnergyGurus CRM is a comprehensive system designed specifically for a Solar 
 4. **Post-Login Routing**: After successful login, users are redirected directly to the **User Search Page**.
 
 ## 3. Navigation Menu
-The top menu contains 4 basic tabs with specific sub-menus:
+The top menu contains basic tabs with specific sub-menus:
 * **Sales**: Create Sale, Pending Sale. *(Note: After creating a sale by a sales person, it is sent to the Sales Manager for approval, then to Payment Verification, and finally to the SD Manager).*
 * **Complain Management**: Pending Complaints.
 * **Reports**: Customer Status Report, Sales Report, Customer Receivable, Adjustment Report, Payments Report, Customer Register.
-* **Service Delivery**: Inventory Management.
+* **Service Delivery**: (Note: Inventory Tracking is disabled/not required).
 
 ## 4. Key Pages & Workflows
 
@@ -26,17 +26,24 @@ Automatically displays a search form and data table upon login.
 
 ### 4.2 Customer Profile Page
 Accessed by clicking a customer from the search table. It contains a detailed profile with the following tabs:
-1. **Customer Profile**: Displays basic customer info (Name, Contact, Address, Type: Residential/Corporate/Industrial, Status, Activation Date).
-2. **Package Details**: Displays selected system size, package tier, billing type, and monitoring time.
+1. **Customer Profile**: Displays basic customer info (Customer ID, Customer Name, Installation Address, Contact #, Customer Type: Residential/Corporate/Industrial, Customer Status: Active/Temporary Blocked/Terminated, Email, CRF Number, Activation Date, CNIC #).
+2. **Solar System Details**: Displays the full hardware specifications of the customer's installation.
 3. **Customer Ledger**: Displays payment history with columns for Payment Date, Ref # (Receipt and Invoices), Narration, Debit, Credit, and Balance.
 4. **Create Ticket**: Form to log complaints.
 5. **Complaints Details**: History of generated tickets for the customer.
+6. **Customer History**: Historical events or interactions related to the customer.
+7. **Message History**: Automated SMS notifications sent to the customer's registered number.
+8. **Email History**: Emails sent to the customer.
+
+### 4.2.1 Automated Invoicing & Notifications
+* **Automated Invoicing**: The system generates recurring invoices on the 1st of the month according to the customer's billing cycle (Monthly, Quarterly, Half-Yearly, Yearly). The Billing Manager triggers this for all Active customers via a 'Generate Invoices' process button.
+* **Customer Notifications**: The Billing Manager can send emails directly to the customer using a 'Send Email' button. The system also sends automated SMS notifications to the registered contact number.
 
 ### 4.3 Create Sale (Solar Specifications Form)
 When creating a sale or viewing customer details, exhaustive solar system data is captured:
 
 **1. Customer Details Section:**
-* Customer ID (Auto-generated), Customer Name, Customer Status (Active/Temporary Blocked/Terminated), Contact #, House #, Street #, Area, Sub Area, City, Country, Email, CNIC #, CNIC Expiry, Upload CNIC Front/Back, CRP Number, Sign Up Date, Activation Date.
+* Customer ID (Auto-generated), Customer Name, Customer Status (Active/Temporary Blocked/Terminated), Contact #, House #, Street #, Block, Area, Sub Area, City, Country, Email, CNIC #, CNIC Expiry, Upload CNIC Front/Back, CRP Number, Sign Up Date, Activation Date.
 * Customer Type: Residential, Corporate, Industrial.
 
 **2. Package Details Section:**
@@ -44,48 +51,69 @@ When creating a sale or viewing customer details, exhaustive solar system data i
 * **Package**: Basic, Moderate, Comprehensive.
 * **Billing Type**: Monthly, Quarterly, Half Yearly, Yearly.
 * **Monitoring Time**: 12 Hours, 24 Hours.
+* **Next Billing Date**: Appears automatically based on the billing type.
+* **Custom Pricing Logic**: The system allows manual price entry for arbitrary or custom scenarios (like 30 kW & Above), and calculates the final totals automatically based on entered prices.
 
 **3. Solar System Details Section:**
+* **DISCO**: (e.g., LESCO, etc.)
 * **Meter Type**: Green Meter, Non Green.
+* **Meter Phase**: Single Phase, Three Phase.
 * **Zero Export Device**: Installed, Not Installed.
 * **Inverter**:
   * Brand: (e.g., Huawei, Growatt, Solis, Sungrow, Sofar, Knox, SAJ, Goodwe, Inverex, Fronius, SMA, Crown, Chint, Tesla, Homage, Other)
   * Type: Hybrid, OnGrid, Hybrid+OnGrid.
   * Phase Type: Single Phase, Three Phase.
   * Category: High Voltage, Low Voltage.
+  * Inverter Size: (e.g., 6kW)
   * No of Inverter, Inverter Serial #.
 * **Panels**:
   * Brand: (e.g., Jinko, Longi, Canadian Solar, Trina, JA Solar, Risen, Astronergy, SunPower, QCells, Panasonic, REC, Yingli, Talesun, First Solar, Other)
-  * Type: P-Type, N-Type.
-  * Technology: Mono Perc, Topcon, HJT.
+  * Type: Monofacial, Bifacial.
+  * Technology: Mono Perc, Topcon, HJT, ABC, HIBC, TBC, PERC, Other.
   * Wattage, No of Panels, Total Wattage.
 * **Battery**:
   * Category: High Voltage, Low Voltage.
-  * Type: Lithium, Tubular, Lead Acid.
+  * Type: Lithium, Tubular, Lead Acid, Dry.
   * Brand: (e.g., Pylontech, Huawei, Growatt, BYD, Narada, Shoto, Tesla, LG Chem, Sacred Sun, Exide, Osaka, Phoenix, AGS, Other)
   * No of Batteries, Battery Serial #.
-* **Other Hardware**:
-  * Earthing: AC, DC, Both AC DC.
+* **Other Hardware & Installation Details**:
+  * Earthing: AC, DC, Both AC DC. (Includes: Date of Last Check, OHMs value)
   * Lightning Protection (LA): Installed, Not Installed.
   * Breakers Name: (e.g., Tomzn, Schneider, Chint, ABB, Siemens, LS, Fuji, Terasaki, Himel, EATON, Hager, Mitsubishi, Other).
+  * Ingress Protection (IP): 20, 21, 34, 40, 54, 65, 66, 67.
+  * Structure Type: Elevated, Standard (Painted, Alumunium, Hot Dip Galvanized, Pre Galvanized) - L1, L2, L3, L4.
+* **Installer & Audit Details**:
+  * System Installation Date.
+  * Installer Details: Name, Company, Address, Contact No, Email Address.
+  * Last Audit of System: Date.
+  * Hardware Status Ratings (Excellent, Good, Fair, Service Required, Replacement Required) for: Inverter, Panel, Battery, Structure, Cable, AC/DC Earthing, Breakers.
 
 ### 4.4 Complain Management (Create Ticket)
 Used to log and track issues specifically tailored to solar hardware and billing.
 * **Ticket Type**: Technical Complaint, Billing Complaint, Service Request.
-* **Source of Complain**: UAN, Email, Whatsapp, Sales, Billing.
-* **Escalation**: Level-1, Level-2, Level-3.
+* **Source of Complain**: UAN, Email, Whatsapp, Escalation (Level-1, Level-2, Level-3).
 * **Assigned To**: Operation & Maintenance, Billing, Sales, Customer Service, Support.
 * **Complain Status**: Pending, Resolved, Canceled, OnHold, Closed.
+* **First Call Resolution**: Yes, No.
 
-**Technical Complaint Fault Categories:**
-* **Inverter**: Over Temp, Overload, Short Circ, Grid Over, Grid Under, Phase.
-* **Panel**: (No specific sub-faults listed, general category).
-* **Battery**: Bat Vol Low, Bat Over Cur/Short.
-* **Breaker**: (General category).
+**Technician Assignment Workflow:**
+* Technical Complaints are automatically assigned to the O&M Manager.
+* Billing and Service Requests are assigned to the Billing Manager.
+* When any department team person updates their remarks or complaint status, their name will be shown in the ticket closed setup history.
+
+**Technical Complaint Categories:**
+* **Inverter**: Sub-category: Inverter Brands. Faults: (01) BatVolLow, (02) BatOverCurrSw.
+* **Panel**: Sub-category: Panel Brands.
+* **Battery**: Sub-category: Battery Brands.
+* **Breaker**: Sub-category: Breaker Brands.
 
 **Billing & Service Categories:**
 * **Billing Complaint**: Wrong arrears, Invoice Not Received, Billing is not Updated, Billing Plan Change, Wrong Invoice Charges.
 * **Service Request**: Internal Shifting, Package Change, Temp. Blocked, Termination, Restoration, Profile Change Request.
+
+**Ticket Closed Setup & History Table:**
+* The ticket closure form includes: Customer Code, Customer Name, Customer Address, Contact #, Action (High, Medium, Low), Department, Complain Status, Remarks, and Submit.
+* A History Table displays the audit trail: Status, Department, Remarks, CreatedBy, CreatedAt, Time in Department.
 
 ## 5. Packages & Pricing Plans
 
