@@ -61,6 +61,7 @@ model User {
 
 enum Role {
   SUPER_ADMIN
+  ADMIN
   SALES_MANAGER
   BILLING_MANAGER
   TECHNICAL_MANAGER
@@ -78,7 +79,7 @@ model Customer {
   email            String?
   cnic             String       @unique
   cnicExpiry       DateTime?
-  crpNumber        String?
+  crfNumber        String?      @unique // Auto-generated at signup submission
   status           CustomerStatus
   activationDate   DateTime?
   signupDate       DateTime?
@@ -156,7 +157,7 @@ model PackagePlan {
   monitoringTime  String   // 12 Hours, 24 Hours
   nextBillingDate DateTime?
   monthlyBasePrice Decimal
-  appliedDiscount  Decimal // 0%, 20%, 40%, 60%
+  appliedDiscount  Decimal // 0%, 10%, 20%, 40%
   salesTaxAmount   Decimal
   totalAmount      Decimal
 }
@@ -171,7 +172,7 @@ model Ticket {
   customer            Customer     @relation(fields: [customerId], references: [id])
   ticketType          TicketType   // Technical, Billing, Service Request
   source              String       // UAN, Email, Whatsapp, Escalation
-  assignedTo          String       // O&M, Billing, Sales, Customer Service, Support
+  assignedTo          String       // O&M, Billing, Sales, Customer Support
   escalation          String       // Level-1, Level-2, Level-3
   status              TicketStatus // Pending, Resolved, Canceled, OnHold, Closed
   actionPriority      String?      // High, Medium, Low
@@ -211,18 +212,21 @@ enum TicketStatus { PENDING RESOLVED CANCELED ON_HOLD CLOSED }
 
 ### Phase 2: Core Application & Auth
 - Setup Next.js App Router with layout and navigation scaffolding.
-- Implement Supabase Auth (Sign-in page, session management).
-- Build Role-Based Access Control (RBAC) middleware to protect routes based on Manager type.
+- Implement Supabase Auth (Sign-in page, invite-only flow).
+- Implement Admin user management module where **Admin** can create usernames/passwords for users and assign department access/permissions to Managers (Super Admin maintains overall system access).
+- Build Role-Based Access Control (RBAC) middleware to protect routes based on User/Manager role.
 
 ### Phase 3: Customer Management & Sales Flow
-- Develop the **User Search Page** (data table with filtering).
-- Implement the complex **Create Sale** form that handles conditional logic (e.g., Battery details only required if Inverter is Hybrid).
-- Implement the **Pricing Engine** to auto-calculate Package pricing with discounts (20% for Quarterly, etc.) and support Custom manual pricing for 30kW+.
-- Build the **Customer Profile Page** with all its tabs (Profile, Solar System Details, Ledger, Create Ticket, Complaints Details, History tabs).
+- Develop the **User Search Page** (data table with search filters by Customer Code, CRF #, Full Name, Contact #, CNIC, Email).
+- Implement the complex **Create Sale** form that auto-generates the **CRF Number** upon submission and handles conditional logic (e.g., Battery details required only if Inverter is Hybrid).
+- Implement **CRF Form PDF Generator**: After sale submission, automatically generate a printable PDF version of the complete CRF Form.
+- Implement the **Pricing Engine** to auto-calculate Package pricing with revised discounts (Quarterly @ 10%, Half Yearly @ 20%, Yearly @ 40%) and support Custom manual pricing for 30kW+.
+- Build the **Customer Profile Page** with all tabs (Profile, Solar System Details, Ledger, Create Ticket, Complaints Details, History, Message History, Email History).
 
-### Phase 4: Complain Management & Ledgers
-- Develop the **Create Ticket** form with dependent dropdowns and auto-assignment logic (Technical -> O&M, Billing -> Billing Manager).
-- Develop the **Pending Complaints** dashboard and Ticket Closed Setup view with history timeline.
-- Develop the **Customer Ledger** for tracking invoice payments.
-- Implement the **Automated Invoicing** system to batch process invoices on the 1st of each month.
+### Phase 4: Complain Management & PDF Invoicing
+- Develop the **Create Ticket** form with dependent dropdowns and auto-assignment logic (Technical -> O&M, Billing/Service -> Billing Manager; Support options assigned to Customer Support).
+- Develop the **Pending Complaints** dashboard and Ticket Closed Setup view with history audit trail.
+- Develop the **Customer Ledger** for tracking payments.
+- Implement **Invoice PDF Viewer**: Enable interactive links on Invoice Numbers in Customer Ledger and Invoices list to render/open the invoice as a formatted PDF file.
+- Implement the **Automated Invoicing** system to batch process recurring invoices on the 1st of each month for Active customers.
 - Implement **Customer Notifications** (Email dispatch and automated SMS triggers for invoices/complaints).

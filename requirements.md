@@ -7,7 +7,8 @@ The EnergyGurus CRM is a comprehensive system designed specifically for a Solar 
 1. **Authentication**: The home page of the application always starts with the sign-in page.
 2. **Registration**: There will be no sign-up page, as the system is invite-only.
 3. **Roles**: The system supports the following initial roles:
-   * **Super Admin**: Creates usernames and passwords of users and assigns access and permissions to managers.
+   * **Super Admin**: Super Admin will have full access to all system features and settings.
+   * **Admin**: Creates usernames and passwords of users and assigns access and permissions to managers.
    * **Manager**: Manager of relevant departments (Sales, Billing, Technical) with specific feature access and permissions.
 4. **Post-Login Routing**: After successful login, users are redirected directly to the **User Search Page**.
 
@@ -28,7 +29,7 @@ Automatically displays a search form and data table upon login.
 Accessed by clicking a customer from the search table. It contains a detailed profile with the following tabs:
 1. **Customer Profile**: Displays basic customer info (Customer ID, Customer Name, Installation Address, Contact #, Customer Type: Residential/Corporate/Industrial, Customer Status: Active/Temporary Blocked/Terminated, Email, CRF Number, Activation Date, CNIC #).
 2. **Solar System Details**: Displays the full hardware specifications of the customer's installation.
-3. **Customer Ledger**: Displays payment history with columns for Payment Date, Ref # (Receipt and Invoices), Narration, Debit, Credit, and Balance.
+3. **Customer Ledger**: Displays payment history with columns for Payment Date, Ref # (Receipt and Invoices), Narration, Debit, Credit, and Balance. *(Note: Clicking on any Invoice Number opens the Invoice directly in a PDF file format).*
 4. **Create Ticket**: Form to log complaints.
 5. **Complaints Details**: History of generated tickets for the customer.
 6. **Customer History**: Historical events or interactions related to the customer.
@@ -37,13 +38,15 @@ Accessed by clicking a customer from the search table. It contains a detailed pr
 
 ### 4.2.1 Automated Invoicing & Notifications
 * **Automated Invoicing**: The system generates recurring invoices on the 1st of the month according to the customer's billing cycle (Monthly, Quarterly, Half-Yearly, Yearly). The Billing Manager triggers this for all Active customers via a 'Generate Invoices' process button.
+* **Invoice PDF Preview**: Clicking on any Invoice Number across the CRM (Customer Ledger, Invoice lists) opens the formatted invoice as a printable PDF file.
 * **Customer Notifications**: The Billing Manager can send emails directly to the customer using a 'Send Email' button. The system also sends automated SMS notifications to the registered contact number.
 
 ### 4.3 Create Sale (Solar Specifications Form)
 When creating a sale or viewing customer details, exhaustive solar system data is captured:
+* **CRF Form Printable PDF**: Upon submitting the signup/sale form, the CRF Number is auto-generated and the complete CRF Form is printable / downloadable as a PDF file.
 
 **1. Customer Details Section:**
-* Customer ID (Auto-generated), Customer Name, Customer Status (Active/Temporary Blocked/Terminated), Contact #, House #, Street #, Block, Area, Sub Area, City, Country, Email, CNIC #, CNIC Expiry, Upload CNIC Front/Back, CRP Number, Sign Up Date, Activation Date.
+* Customer ID (Auto-generated), Customer Name, Customer Status (Active/Temporary Blocked/Terminated), Contact #, House #, Street #, Block, Area, Sub Area, City, Country, Email, CNIC #, CNIC Expiry, Upload CNIC Front/Back, CRF Number (Auto-generated at signup submit), Sign Up Date, Activation Date.
 * Customer Type: Residential, Corporate, Industrial.
 
 **2. Package Details Section:**
@@ -92,7 +95,7 @@ When creating a sale or viewing customer details, exhaustive solar system data i
 Used to log and track issues specifically tailored to solar hardware and billing.
 * **Ticket Type**: Technical Complaint, Billing Complaint, Service Request.
 * **Source of Complain**: UAN, Email, Whatsapp, Escalation (Level-1, Level-2, Level-3).
-* **Assigned To**: Operation & Maintenance, Billing, Sales, Customer Service, Support.
+* **Assigned To**: Operation & Maintenance, Billing, Sales, Customer Support.
 * **Complain Status**: Pending, Resolved, Canceled, OnHold, Closed.
 * **First Call Resolution**: Yes, No.
 
@@ -137,8 +140,8 @@ The system features dynamic pricing based on monitoring hours, system size, tier
 
 ### 5.3 Discount Logic Rules
 The system must automatically apply the following discounts based on the selected billing frequency (which applies to the base Monthly price multiplied by the number of months):
-* **Quarterly Payment**: 20% Discount
-* **Half Yearly Payment**: 40% Discount
-* **Yearly Payment**: 60% Discount
+* **Quarterly Payment**: 10% Discount
+* **Half Yearly Payment**: 20% Discount
+* **Yearly Payment**: 40% Discount
 
-*(Example logic calculation for 12 Hours, Basic, 1-10 kW, Quarterly: Base Monthly is 1,000. 3 Months = 3,000. 20% Discount = 2,400 Price. Sales Tax 5% = 120. Total = 2,520).*
+*(Example logic calculation for 12 Hours, Basic, 1-10 kW, Quarterly: Base Monthly is 1,000. 3 Months = 3,000. 10% Discount = 2,700 Price. Sales Tax 5% = 135. Total = 2,835).*
