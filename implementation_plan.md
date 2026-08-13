@@ -110,17 +110,20 @@ model SolarSystem {
   inverterSize        String?  // 6kW
   noOfInverters       Int
   inverterSerial      String
+  inverterWarrantyEnd DateTime?
   panelBrand          String
   panelType           String   // Monofacial, Bifacial
   panelTechnology     String   // Mono Perc, Topcon, HJT, ABC, HIBC, etc.
   panelWattage        Int
   noOfPanels          Int
   totalWattage        Int
+  panelWarrantyEnd    DateTime?
   batteryCategory     String   // High Voltage, Low Voltage
   batteryType         String   // Lithium, Tubular, Lead Acid, Dry
   batteryBrand        String
   noOfBatteries       Int
   batterySerial       String
+  batteryWarrantyEnd  DateTime?
   earthing            String   // AC, DC, Both
   earthingLastCheck   DateTime?
   earthingOhms        Decimal?
@@ -151,13 +154,13 @@ model PackagePlan {
   id              String   @id @default(uuid())
   customerId      String   @unique
   customer        Customer @relation(fields: [customerId], references: [id])
-  systemSizeKw    String   // 1-10 kW, 10-20 kW, 20-30 kW, 30+ kW
-  packageTier     String   // Basic, Moderate, Comprehensive
-  billingType     String   // Monthly, Quarterly, Half Yearly, Yearly
-  monitoringTime  String   // 12 Hours, 24 Hours
+  systemSizeKw    String   // 1-10 kW, 10-20 kW, 20-30 kW, 30+ kW (Dropdown)
+  packageTier     String   // Basic, Moderate, Comprehensive (Dropdown)
+  billingType     String   // Monthly, Quarterly, Half Yearly, Yearly, FOC (Dropdown)
+  monitoringTime  String   // 12 Hours, 24 Hours (Dropdown)
   nextBillingDate DateTime?
   monthlyBasePrice Decimal
-  appliedDiscount  Decimal // 0%, 10%, 20%, 40%
+  appliedDiscount  Decimal // 0%, 10%, 20%, 40%, 100% (FOC)
   salesTaxAmount   Decimal
   totalAmount      Decimal
 }
@@ -218,10 +221,10 @@ enum TicketStatus { PENDING RESOLVED CANCELED ON_HOLD CLOSED }
 
 ### Phase 3: Customer Management & Sales Flow
 - Develop the **User Search Page** (data table with search filters by Customer Code, CRF #, Full Name, Contact #, CNIC, Email).
-- Implement the complex **Create Sale** form that auto-generates the **CRF Number** upon submission and handles conditional logic (e.g., Battery details required only if Inverter is Hybrid).
+- Implement the complex **Create Sale** form that auto-generates the **CRF Number** upon submission, includes dropdown selection fields for Package Details (System Type, Package, Billing Type [Monthly, Quarterly, Half Yearly, Yearly, FOC], Monitoring Time), calendar date pickers for Inverter/Panel/Battery Warranty End dates, and handles conditional logic.
 - Implement **CRF Form PDF Generator**: After sale submission, automatically generate a printable PDF version of the complete CRF Form.
-- Implement the **Pricing Engine** to auto-calculate Package pricing with revised discounts (Quarterly @ 10%, Half Yearly @ 20%, Yearly @ 40%) and support Custom manual pricing for 30kW+.
-- Build the **Customer Profile Page** with all tabs (Profile, Solar System Details, Ledger, Create Ticket, Complaints Details, History, Message History, Email History).
+- Implement the **Pricing Engine** to auto-calculate Package pricing with discounts (Quarterly @ 10%, Half Yearly @ 20%, Yearly @ 40%, FOC @ 100%/Free) and support Custom manual pricing for 30kW+.
+- Build the **Customer Profile Page** with all tabs, featuring a dedicated Package Details summary block in Customer Profile view and hardware Warranty End dates in Solar System Details.
 
 ### Phase 4: Complain Management & PDF Invoicing
 - Develop the **Create Ticket** form with dependent dropdowns and auto-assignment logic (Technical -> O&M, Billing/Service -> Billing Manager; Support options assigned to Customer Support).

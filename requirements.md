@@ -27,8 +27,8 @@ Automatically displays a search form and data table upon login.
 
 ### 4.2 Customer Profile Page
 Accessed by clicking a customer from the search table. It contains a detailed profile with the following tabs:
-1. **Customer Profile**: Displays basic customer info (Customer ID, Customer Name, Installation Address, Contact #, Customer Type: Residential/Corporate/Industrial, Customer Status: Active/Temporary Blocked/Terminated, Email, CRF Number, Activation Date, CNIC #).
-2. **Solar System Details**: Displays the full hardware specifications of the customer's installation.
+1. **Customer Profile**: Displays basic customer info (Customer ID, Customer Name, Installation Address, Contact #, Customer Type: Residential/Corporate/Industrial, Customer Status: Active/Temporary Blocked/Terminated, Email, CRF Number, Activation Date, CNIC #) and **Package Details** (System Type, Package, Billing Type, Monitoring Time, Next Billing Date).
+2. **Solar System Details**: Displays the full hardware specifications of the customer's installation, including hardware warranty end dates (Inverter Warranty End, Panels Warranty End, Battery Warranty End).
 3. **Customer Ledger**: Displays payment history with columns for Payment Date, Ref # (Receipt and Invoices), Narration, Debit, Credit, and Balance. *(Note: Clicking on any Invoice Number opens the Invoice directly in a PDF file format).*
 4. **Create Ticket**: Form to log complaints.
 5. **Complaints Details**: History of generated tickets for the customer.
@@ -49,12 +49,12 @@ When creating a sale or viewing customer details, exhaustive solar system data i
 * Customer ID (Auto-generated), Customer Name, Customer Status (Active/Temporary Blocked/Terminated), Contact #, House #, Street #, Block, Area, Sub Area, City, Country, Email, CNIC #, CNIC Expiry, Upload CNIC Front/Back, CRF Number (Auto-generated at signup submit), Sign Up Date, Activation Date.
 * Customer Type: Residential, Corporate, Industrial.
 
-**2. Package Details Section:**
-* **System Type (Size)**: 1-10 kW, 10-20 kW, 20-30 kW, 30 kW & Above.
-* **Package**: Basic, Moderate, Comprehensive.
-* **Billing Type**: Monthly, Quarterly, Half Yearly, Yearly.
-* **Monitoring Time**: 12 Hours, 24 Hours.
-* **Next Billing Date**: Appears automatically based on the billing type.
+**2. Package Details Section (Signup Form Dropdown Selections & Profile View):**
+* **System Type (Size)**: Dropdown selection (`1–10 kW`, `10–20 kW`, `20–30 kW`, `30 kW & Above`).
+* **Package**: Dropdown selection (`Basic`, `Moderate`, `Comprehensive`).
+* **Billing Type**: Dropdown selection (`Monthly`, `Quarterly`, `Half Yearly`, `Yearly`, `FOC` - Free of Cost for office/internal installations).
+* **Monitoring Time**: Dropdown selection (`12 Hours`, `24 Hours`).
+* **Next Billing Date**: Appears automatically based on the billing type (Not applicable for FOC).
 * **Custom Pricing Logic**: The system allows manual price entry for arbitrary or custom scenarios (like 30 kW & Above), and calculates the final totals automatically based on entered prices.
 
 **3. Solar System Details Section:**
@@ -69,16 +69,19 @@ When creating a sale or viewing customer details, exhaustive solar system data i
   * Category: High Voltage, Low Voltage.
   * Inverter Size: (e.g., 6kW)
   * No of Inverter, Inverter Serial #.
+  * **Inverter Warranty End**: Calendar Date Picker.
 * **Panels**:
   * Brand: (e.g., Jinko, Longi, Canadian Solar, Trina, JA Solar, Risen, Astronergy, SunPower, QCells, Panasonic, REC, Yingli, Talesun, First Solar, Other)
   * Type: Monofacial, Bifacial.
   * Technology: Mono Perc, Topcon, HJT, ABC, HIBC, TBC, PERC, Other.
   * Wattage, No of Panels, Total Wattage.
+  * **Panels Warranty End**: Calendar Date Picker.
 * **Battery**:
   * Category: High Voltage, Low Voltage.
   * Type: Lithium, Tubular, Lead Acid, Dry.
   * Brand: (e.g., Pylontech, Huawei, Growatt, BYD, Narada, Shoto, Tesla, LG Chem, Sacred Sun, Exide, Osaka, Phoenix, AGS, Other)
   * No of Batteries, Battery Serial #.
+  * **Battery Warranty End**: Calendar Date Picker.
 * **Other Hardware & Installation Details**:
   * Earthing: AC, DC, Both AC DC. (Includes: Date of Last Check, OHMs value)
   * Lightning Protection (LA): Installed, Not Installed.
@@ -143,5 +146,6 @@ The system must automatically apply the following discounts based on the selecte
 * **Quarterly Payment**: 10% Discount
 * **Half Yearly Payment**: 20% Discount
 * **Yearly Payment**: 40% Discount
+* **FOC (Free of Cost)**: 100% Discount / Free of Cost (Price = 0, Sales Tax = 0, Total Amount = 0; used for office solar systems or internal installations, bypassing recurring invoicing).
 
 *(Example logic calculation for 12 Hours, Basic, 1-10 kW, Quarterly: Base Monthly is 1,000. 3 Months = 3,000. 10% Discount = 2,700 Price. Sales Tax 5% = 135. Total = 2,835).*
