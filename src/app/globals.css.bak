@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  /* EnergyGurus Brand Colors */
+  --color-ink: #12213A;
+  --color-paper: #F5F6F3;
+  --color-amber: #E8A33D;
+  --color-teal: #2F6E62;
+  --color-slate-custom: #4A5A73;
+  --color-graphite: #1B1F24;
+  --color-line: rgba(18, 33, 58, 0.12);
+
+  /* Fonts */
+  --font-inter: var(--font-inter);
+  --font-outfit: var(--font-outfit);
+  --font-space-grotesk: var(--font-space-grotesk);
+  --font-ibm-plex-mono: var(--font-ibm-plex-mono);
+  
+  --font-sans: var(--font-inter, var(--font-geist-sans));
+  --font-display: var(--font-outfit);
+
+  /* Shadows */
+  --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+  --shadow-glass-dark: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --shadow-premium: 0 20px 50px rgba(8, 112, 184, 0.08);
+}
+
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-line, currentColor);
+  }
+}
+
+:root {
+  --background: #F5F6F3; /* Paper */
+  --foreground: #12213A; /* Ink */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display, inherit);
+  letter-spacing: -0.025em; /* tracking-tight */
+}
+
+@layer utilities {
+  .glass {
+    background-color: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(64px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: var(--shadow-glass);
+  }
+
+  .premium-gradient {
+    background-image: linear-gradient(to bottom right, rgba(18, 33, 58, 0.1), rgba(255, 255, 255, 0.5), rgba(232, 163, 61, 0.05));
+  }
+
+  .text-gradient {
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-image: linear-gradient(to right, var(--color-ink), var(--color-amber));
+  }
+
+  .animate-reveal {
+    animation: reveal 0.5s ease-out forwards;
+  }
+
+  .animate-soft-float {
+    animation: soft-float 3s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes soft-float {
+  from { transform: translateY(0); }
+  to { transform: translateY(-5px); }
+}

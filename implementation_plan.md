@@ -45,9 +45,38 @@
 
 ---
 
-## 3. Database Schema Overview (Solar Domain)
+## 3. UI/UX & Theming (EnergyGurus Brand)
 
-### 3.1 Users & Auth
+> [!IMPORTANT]
+> The CRM will strictly follow the established EnergyGurus design system used across the company's software ecosystem. 
+
+### 3.1 Core Color Palette & Variables
+The project will use Tailwind CSS with the following custom colors:
+- **Ink (Dark Navy/Blue):** `#12213A` (`--color-ink`) - Primary text and high-contrast elements.
+- **Paper (Off-White):** `#F5F6F3` (`--color-paper`) - Backgrounds and secondary elements.
+- **Amber (Orange/Yellow):** `#E8A33D` (`--color-amber`) - Primary accent, default buttons.
+- **Teal:** `#2F6E62` (`--color-teal`) - Secondary accent (e.g., file uploads).
+- **Slate Custom:** `#4A5A73` (`--color-slate-custom`) - Muted text.
+- **Graphite:** `#1B1F24` (`--color-graphite`) - Deep dark headers.
+- **Line:** `rgba(18, 33, 58, 0.12)` (`--color-line`) - Borders and dividers.
+
+### 3.2 Typography & Effects
+- **Fonts:** Inter (Sans), Outfit (Display for headings), Space Grotesk, IBM Plex Mono, and Noto Sans.
+- **Shadows:** Glass shadows (`rgba(31, 38, 135, 0.07)`), Dark Glass, and Premium shadows for cards/dialogs.
+- **Custom Utilities:** Frosted glass effect (`.glass`), gradients (`.premium-gradient`, `.text-gradient`), and micro-animations (`.animate-reveal`, `.animate-soft-float`).
+
+### 3.3 UI Component Integration (shadcn/ui)
+All shadcn/ui components will be customized to use brand colors instead of default primary/secondary. For example:
+- **Buttons/Badges:** Default uses `bg-amber text-ink`, Secondary uses `bg-paper text-slate-custom`.
+- **Inputs & Selection:** Highlight uses `selection:bg-amber`, borders use `border-line`.
+- **Cards & Dialogs:** Use `bg-white` or `bg-paper` with premium drop shadows.
+- **Tables:** Header rows use `bg-paper/50 text-graphite`.
+
+---
+
+## 4. Database Schema Overview (Solar Domain)
+
+### 4.1 Users & Auth
 ```prisma
 model User {
   id            String     @id @default(uuid())
@@ -68,7 +97,7 @@ enum Role {
 }
 ```
 
-### 3.2 Customers & Solar System
+### 4.2 Customers & Solar System
 ```prisma
 model Customer {
   id               String       @id @default(uuid())
@@ -148,7 +177,7 @@ model SolarSystem {
 }
 ```
 
-### 3.3 Packages & Pricing
+### 4.3 Packages & Pricing
 ```prisma
 model PackagePlan {
   id              String   @id @default(uuid())
@@ -166,7 +195,7 @@ model PackagePlan {
 }
 ```
 
-### 3.4 Tickets & Complaints
+### 4.4 Tickets & Complaints
 ```prisma
 model Ticket {
   id                  String       @id @default(uuid())
@@ -205,7 +234,7 @@ enum TicketStatus { PENDING RESOLVED CANCELED ON_HOLD CLOSED }
 
 ---
 
-## 4. Implementation Phases
+## 5. Implementation Phases
 
 ### Phase 1: Database & API Foundation
 - Initialize Supabase project and Prisma ORM.
@@ -215,6 +244,7 @@ enum TicketStatus { PENDING RESOLVED CANCELED ON_HOLD CLOSED }
 
 ### Phase 2: Core Application & Auth
 - Setup Next.js App Router with layout and navigation scaffolding.
+- **Integrate the EnergyGurus Theme:** Configure `globals.css` with the custom `@theme` palette, fonts (Inter, Outfit, etc.), and shadow utilities. Apply brand styling to all shadcn/ui components (buttons, inputs, cards).
 - Implement Supabase Auth (Sign-in page, invite-only flow).
 - Implement Admin user management module where **Admin** can create usernames/passwords for users and assign department access/permissions to Managers (Super Admin maintains overall system access).
 - Build Role-Based Access Control (RBAC) middleware to protect routes based on User/Manager role.
