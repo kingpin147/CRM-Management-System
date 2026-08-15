@@ -24,11 +24,29 @@ export async function createCustomer(formData: FormData) {
   const cnicFrontUrl = formData.get('cnicFrontUrl') as string | null
   const cnicBackUrl = formData.get('cnicBackUrl') as string | null
   
+  // Package fields
+  const systemSizeKw = formData.get('systemSizeKw') as string
+  const packageTier = formData.get('packageTier') as string
+  const billingType = formData.get('billingType') as string
+  const monitoringTime = formData.get('monitoringTime') as string
+  const monthlyBasePrice = Number(formData.get('monthlyBasePrice') || 0)
+  const appliedDiscount = Number(formData.get('appliedDiscount') || 0)
+  const salesTaxAmount = Number(formData.get('salesTaxAmount') || 0)
+  const totalAmount = Number(formData.get('totalAmount') || 0)
+
   let accountExecutiveId = formData.get('accountExecutiveId') as string | null
   if (accountExecutiveId === '') accountExecutiveId = null
 
   try {
     const customerCode = generateCustomerCode(customerType)
+
+    // Calculate next billing date based on billing type
+    let nextBillingDate = new Date();
+    if (billingType === 'Monthly') nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+    else if (billingType === 'Quarterly') nextBillingDate.setMonth(nextBillingDate.getMonth() + 3);
+    else if (billingType === 'Half Yearly') nextBillingDate.setMonth(nextBillingDate.getMonth() + 6);
+    else if (billingType === 'Yearly') nextBillingDate.setMonth(nextBillingDate.getMonth() + 12);
+    else nextBillingDate = new Date(); // FOC case
 
     const newCustomer = await prisma.customer.create({
       data: {
@@ -46,6 +64,19 @@ export async function createCustomer(formData: FormData) {
         status: CustomerStatus.SIGNUP_GENERATED,
         signupDate: new Date(),
         accountExecutiveId,
+        packagePlan: {
+          create: {
+            systemSizeKw,
+            packageTier,
+            billingType,
+            monitoringTime,
+            monthlyBasePrice,
+            appliedDiscount,
+            salesTaxAmount,
+            totalAmount,
+            nextBillingDate,
+          }
+        }
       }
     })
 
