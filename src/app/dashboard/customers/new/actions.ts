@@ -21,7 +21,8 @@ export async function createCustomer(formData: FormData) {
   const address = formData.get('address') as string
   const city = formData.get('city') as string
   const block = formData.get('block') as string | null
-  const cnicImageUrl = formData.get('cnicImageUrl') as string | null
+  const cnicFrontUrl = formData.get('cnicFrontUrl') as string | null
+  const cnicBackUrl = formData.get('cnicBackUrl') as string | null
   
   let accountExecutiveId = formData.get('accountExecutiveId') as string | null
   if (accountExecutiveId === '') accountExecutiveId = null
@@ -37,11 +38,12 @@ export async function createCustomer(formData: FormData) {
         contactNumber,
         email,
         cnic,
-        cnicImageUrl,
+        cnicFrontUrl,
+        cnicBackUrl,
         address,
         city,
         block,
-        status: CustomerStatus.ACTIVE,
+        status: CustomerStatus.SIGNUP_GENERATED,
         signupDate: new Date(),
         accountExecutiveId,
       }

@@ -17,6 +17,8 @@ export async function createTicket(formData: FormData) {
   const escalation = formData.get('escalation') as string
   const actionPriority = formData.get('actionPriority') as string
   const category = formData.get('category') as string
+  const subCategory = formData.get('subCategory') as string | null
+  const faultCode = formData.get('faultCode') as string | null
   const description = formData.get('description') as string
   const attachmentUrl = formData.get('attachmentUrl') as string | null
 
@@ -36,6 +38,8 @@ export async function createTicket(formData: FormData) {
         status: TicketStatus.PENDING,
         actionPriority,
         category,
+        subCategory,
+        faultCode,
         description,
         attachmentUrl,
       }

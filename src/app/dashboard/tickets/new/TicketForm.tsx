@@ -12,16 +12,35 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { createTicket } from './actions'
 import { uploadFile } from '@/utils/supabase/storage'
-import { TicketType } from '@prisma/client'
+
+const TicketType = {
+  TECHNICAL_COMPLAINT: 'TECHNICAL_COMPLAINT',
+  BILLING_COMPLAINT: 'BILLING_COMPLAINT',
+  SERVICE_REQUEST: 'SERVICE_REQUEST',
+} as const;
 
 const ticketSchema = z.object({
   customerId: z.string().min(1, 'Please select a customer'),
   ticketType: z.nativeEnum(TicketType),
   category: z.string().min(1, 'Category is required'),
+  subCategory: z.string().optional(),
+  faultCode: z.string().optional(),
   actionPriority: z.string().min(1, 'Priority is required'),
   assignedTo: z.string().min(1, 'Department is required'),
   description: z.string().min(10, 'Description must be at least 10 characters long'),
 })
+
+// Mock data for dependent dropdowns
+const BRANDS: Record<string, string[]> = {
+  Inverter: ['Huawei', 'Solis', 'Sungrow', 'Fronius', 'Growatt'],
+  Panel: ['Jinko', 'Longi', 'Canadian Solar', 'Trina'],
+  Battery: ['Pylontech', 'BYD', 'Narada'],
+  Breaker: ['Schneider', 'ABB', 'Tomzn'],
+}
+
+const FAULT_CODES: Record<string, string[]> = {
+  Inverter: ['(01) BatVolLow', '(02) BatOverCurrSw', '(03) GridVolHigh', '(04) GridFreqOut'],
+}
 
 export function TicketForm({ customers }: { customers: { id: string, fullName: string, customerCode: string }[] }) {
   const router = useRouter()
@@ -35,11 +54,21 @@ export function TicketForm({ customers }: { customers: { id: string, fullName: s
       customerId: '',
       ticketType: 'TECHNICAL_COMPLAINT',
       category: 'Inverter',
+      subCategory: '',
+      faultCode: '',
       actionPriority: 'Medium',
       assignedTo: 'O&M',
       description: '',
     },
   })
+
+  // Watch for changes to trigger dependent logic
+  const selectedTicketType = form.watch('ticketType')
+  const selectedCategory = form.watch('category')
+
+  const isTechnical = selectedTicketType === 'TECHNICAL_COMPLAINT'
+  const availableBrands = isTechnical && selectedCategory ? (BRANDS[selectedCategory] || []) : []
+  const availableFaults = isTechnical && selectedCategory ? (FAULT_CODES[selectedCategory] || []) : []
 
   async function onSubmit(values: z.infer<typeof ticketSchema>) {
     setError(null)
@@ -60,7 +89,7 @@ export function TicketForm({ customers }: { customers: { id: string, fullName: s
 
     const formData = new FormData()
     Object.entries(values).forEach(([key, value]) => {
-      formData.append(key, value)
+      if (value) formData.append(key, value)
     })
     
     formData.append('source', 'Portal')
@@ -117,13 +146,18 @@ export function TicketForm({ customers }: { customers: { id: string, fullName: s
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Ticket Type</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={(val) => {
+                  field.onChange(val)
+                  // Auto-assign department based on ticket type
+                  if (val === 'TECHNICAL_COMPLAINT') form.setValue('assignedTo', 'O&M')
+                  if (val === 'BILLING_COMPLAINT' || val === 'SERVICE_REQUEST') form.setValue('assignedTo', 'Billing')
+                }} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="TECHNICAL_COMPLAINT">Technical Issue</SelectItem>
-                    <SelectItem value="BILLING_COMPLAINT">Billing Query</SelectItem>
+                    <SelectItem value="TECHNICAL_COMPLAINT">Technical Complaint</SelectItem>
+                    <SelectItem value="BILLING_COMPLAINT">Billing Complaint</SelectItem>
                     <SelectItem value="SERVICE_REQUEST">Service Request</SelectItem>
                   </SelectContent>
                 </Select>
@@ -138,22 +172,81 @@ export function TicketForm({ customers }: { customers: { id: string, fullName: s
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Category</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={(val) => {
+                  field.onChange(val)
+                  // Reset dependent fields when category changes
+                  form.setValue('subCategory', '')
+                  form.setValue('faultCode', '')
+                }} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="Inverter">Inverter</SelectItem>
-                    <SelectItem value="Panel">Solar Panel</SelectItem>
-                    <SelectItem value="Battery">Battery</SelectItem>
-                    <SelectItem value="Billing">Billing</SelectItem>
-                    <SelectItem value="General">General Inquiry</SelectItem>
+                    {isTechnical ? (
+                      <>
+                        <SelectItem value="Inverter">Inverter</SelectItem>
+                        <SelectItem value="Panel">Solar Panel</SelectItem>
+                        <SelectItem value="Battery">Battery</SelectItem>
+                        <SelectItem value="Breaker">Breaker</SelectItem>
+                      </>
+                    ) : (
+                      <>
+                        <SelectItem value="Billing">Billing</SelectItem>
+                        <SelectItem value="General">General Inquiry</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
                 <FormMessage />
               </FormItem>
             )}
           />
+
+          {isTechnical && availableBrands.length > 0 && (
+            <FormField
+              control={form.control}
+              name="subCategory"
+              render={({ field }) => (
+                <FormItem className="animate-reveal">
+                  <FormLabel>Sub Category (Brand)</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger><SelectValue placeholder="Select brand" /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {availableBrands.map(brand => (
+                        <SelectItem key={brand} value={brand}>{brand}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {isTechnical && availableFaults.length > 0 && (
+            <FormField
+              control={form.control}
+              name="faultCode"
+              render={({ field }) => (
+                <FormItem className="animate-reveal">
+                  <FormLabel>Fault Code</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger><SelectValue placeholder="Select fault code" /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {availableFaults.map(fault => (
+                        <SelectItem key={fault} value={fault}>{fault}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
           <FormField
             control={form.control}
@@ -187,10 +280,11 @@ export function TicketForm({ customers }: { customers: { id: string, fullName: s
                     <SelectTrigger><SelectValue placeholder="Assign to" /></SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="O&M">O&M Team</SelectItem>
+                    <SelectItem value="O&M">Operation & Maintenance</SelectItem>
                     <SelectItem value="Billing">Billing Department</SelectItem>
                     <SelectItem value="Sales">Sales</SelectItem>
-                    <SelectItem value="Customer Support">Customer Support</SelectItem>
+                    <SelectItem value="Customer Service">Customer Service</SelectItem>
+                    <SelectItem value="Support">Support</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
