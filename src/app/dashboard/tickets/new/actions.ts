@@ -39,7 +39,7 @@ export async function createTicket(formData: FormData) {
         actionPriority,
         category,
         subCategory,
-        faultCode,
+        fault: faultCode,
         description,
         attachmentUrl,
       }
