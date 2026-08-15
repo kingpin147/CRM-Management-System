@@ -39,7 +39,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
   const [cnicFile, setCnicFile] = useState<File | null>(null)
 
   const form = useForm<z.infer<typeof customerSchema>>({
-    resolver: zodResolver(customerSchema),
+    resolver: zodResolver(customerSchema) as any,
     defaultValues: {
       fullName: '',
       customerType: 'RESIDENTIAL',
