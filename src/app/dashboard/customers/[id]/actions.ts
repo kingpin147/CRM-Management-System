@@ -1,10 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
-
+import prisma from '@/lib/prisma'
 export async function createPackagePlan(formData: FormData) {
   const customerId = formData.get('customerId') as string
   const systemSizeKw = formData.get('systemSizeKw') as string

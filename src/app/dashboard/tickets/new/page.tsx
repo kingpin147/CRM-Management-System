@@ -1,10 +1,8 @@
-import { PrismaClient } from '@prisma/client'
+import prisma from '@/lib/prisma'
 import { TicketForm } from './TicketForm'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-
-const prisma = new PrismaClient()
 
 export default async function NewTicketPage() {
   const customers = await prisma.customer.findMany({

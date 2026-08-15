@@ -22,9 +22,11 @@ const customerSchema = z.object({
   city: z.string().min(1, 'City is required'),
   address: z.string().min(5, 'Address must be complete'),
   block: z.string().optional(),
+  monitoringTime: z.string().min(1, 'Monitoring time is required'),
+  accountExecutiveId: z.string().optional(),
 })
 
-export function CustomerForm() {
+export function CustomerForm({ users }: { users?: { id: string, fullName: string, role: string }[] }) {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
@@ -41,6 +43,8 @@ export function CustomerForm() {
       city: 'Lahore',
       address: '',
       block: '',
+      monitoringTime: '12 Hours',
+      accountExecutiveId: '',
     },
   })
 
@@ -65,6 +69,8 @@ export function CustomerForm() {
     Object.entries(values).forEach(([key, value]) => {
       if (value) formData.append(key, value)
     })
+    formData.append('monitoringTime', values.monitoringTime)
+    if (values.accountExecutiveId) formData.append('accountExecutiveId', values.accountExecutiveId)
     if (cnicImageUrl) formData.append('cnicImageUrl', cnicImageUrl)
 
     const result = await createCustomer(formData)
@@ -206,6 +212,30 @@ export function CustomerForm() {
               <FormItem>
                 <FormLabel>Block / Phase (Optional)</FormLabel>
                 <FormControl><Input placeholder="Phase 6, DHA" {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="accountExecutiveId"
+            render={({ field }) => (
+              <FormItem className="md:col-span-2">
+                <FormLabel>Account Executive (Optional)</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger><SelectValue placeholder="Select Account Executive" /></SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="">None</SelectItem>
+                    {users?.map(user => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.fullName} ({user.role.replace('_', ' ')})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}

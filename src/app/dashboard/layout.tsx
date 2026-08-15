@@ -2,6 +2,16 @@ import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import { Menu } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { SidebarNav } from '@/components/layout/SidebarNav'
+import prisma from '@/lib/prisma'
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet"
+import { UserNav } from '@/components/layout/UserNav'
 
 export default async function DashboardLayout({
   children,
@@ -18,59 +28,51 @@ export default async function DashboardLayout({
     redirect('/login')
   }
 
-  // TODO: Fetch user role from Prisma DB to determine navigation options
+  // Fetch user role from Prisma DB to determine navigation options
+  const dbUser = await prisma.user.findUnique({
+    where: { supabaseId: user.id }
+  })
+  const userRole = dbUser?.role || 'SALES'
 
   return (
     <div className="flex min-h-screen w-full bg-background">
-      {/* Sidebar Navigation */}
-      <aside className="w-64 border-r border-line bg-paper flex-shrink-0 flex flex-col hidden md:flex">
+      {/* Sidebar Navigation (Desktop) */}
+      <aside className="w-64 border-r border-line bg-paper flex-shrink-0 flex-col hidden md:flex">
         <div className="h-16 flex items-center gap-2 px-6 border-b border-line shadow-sm">
           <Image src="/logo-icon.svg" alt="EnergyGurus Logo" width={28} height={28} />
           <span className="font-display font-bold text-xl text-[var(--color-graphite)]">EnergyGurus</span>
         </div>
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-          <Link href="/dashboard" className="flex items-center px-3 py-2 text-sm font-medium rounded-md bg-[var(--color-amber)]/10 text-[var(--color-ink)] hover:bg-[var(--color-amber)]/20 transition-colors">
-            Dashboard
-          </Link>
-          <Link href="/dashboard/customers" className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-[var(--color-slate-custom)] hover:bg-black/5 hover:text-[var(--color-ink)] transition-colors">
-            Customers
-          </Link>
-          <Link href="/dashboard/tickets" className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-[var(--color-slate-custom)] hover:bg-black/5 hover:text-[var(--color-ink)] transition-colors">
-            Complaints
-          </Link>
-          <Link href="/dashboard/ledger" className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-[var(--color-slate-custom)] hover:bg-black/5 hover:text-[var(--color-ink)] transition-colors">
-            Ledger & Invoices
-          </Link>
-          
-          <div className="pt-4 mt-4 border-t border-line">
-            <p className="px-3 text-xs font-semibold text-[var(--color-slate-custom)] uppercase tracking-wider mb-2">
-              Management
-            </p>
-            <Link href="/dashboard/admin" className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-[var(--color-slate-custom)] hover:bg-black/5 hover:text-[var(--color-ink)] transition-colors">
-              User Roles
-            </Link>
-          </div>
+          <SidebarNav role={userRole} />
         </nav>
-        <div className="p-4 border-t border-line">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 rounded-full bg-[var(--color-teal)] flex items-center justify-center text-white font-bold text-sm">
-              {user.email?.charAt(0).toUpperCase()}
-            </div>
-            <div className="flex-1 truncate">
-              <p className="text-sm font-medium text-[var(--color-ink)] truncate">{user.email}</p>
-            </div>
-          </div>
-        </div>
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 flex items-center justify-between px-6 border-b border-line bg-white shadow-sm">
-          <div className="md:hidden">
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <header className="h-16 flex items-center justify-between px-4 md:px-6 border-b border-line bg-white shadow-sm shrink-0">
+          <div className="flex items-center gap-3 md:hidden">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="shrink-0 md:hidden">
+                  <Menu className="h-5 w-5" />
+                  <span className="sr-only">Toggle navigation menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-64 p-0">
+                <div className="h-16 flex items-center gap-2 px-6 border-b border-line shadow-sm">
+                  <Image src="/logo-icon.svg" alt="EnergyGurus Logo" width={28} height={28} />
+                  <span className="font-display font-bold text-xl text-[var(--color-graphite)]">EnergyGurus</span>
+                </div>
+                <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+                  <SidebarNav role={userRole} />
+                </nav>
+              </SheetContent>
+            </Sheet>
             <span className="font-display font-bold text-lg text-[var(--color-graphite)]">EnergyGurus</span>
           </div>
           <div className="flex items-center justify-end w-full space-x-4">
             {/* Header controls like global search or notifications */}
+            <UserNav email={user.email} />
           </div>
         </header>
         <div className="flex-1 overflow-y-auto p-6 bg-background">

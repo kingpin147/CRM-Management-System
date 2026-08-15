@@ -2,9 +2,8 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { PrismaClient, CustomerType, CustomerStatus } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { CustomerType, CustomerStatus } from '@prisma/client'
+import prisma from '@/lib/prisma'
 
 // Simple helper to generate a unique customer code
 function generateCustomerCode(type: CustomerType) {
@@ -23,6 +22,9 @@ export async function createCustomer(formData: FormData) {
   const city = formData.get('city') as string
   const block = formData.get('block') as string | null
   const cnicImageUrl = formData.get('cnicImageUrl') as string | null
+  
+  let accountExecutiveId = formData.get('accountExecutiveId') as string | null
+  if (accountExecutiveId === '') accountExecutiveId = null
 
   try {
     const customerCode = generateCustomerCode(customerType)
@@ -41,6 +43,7 @@ export async function createCustomer(formData: FormData) {
         block,
         status: CustomerStatus.ACTIVE,
         signupDate: new Date(),
+        accountExecutiveId,
       }
     })
 

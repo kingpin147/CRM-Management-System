@@ -7,44 +7,57 @@ datasource db {
 }
 
 model User {
-  id            String     @id @default(uuid())
-  supabaseId    String     @unique
-  fullName      String
-  email         String     @unique
-  role          Role
-  isActive      Boolean    @default(true)
-  createdAt     DateTime   @default(now())
+  id         String     @id @default(uuid())
+  supabaseId String     @unique
+  fullName   String
+  email      String     @unique
+  role       Role
+  isActive   Boolean    @default(true)
+  createdAt  DateTime   @default(now())
+  customers  Customer[] @relation("CustomerAccountExecutive")
 }
 
 enum Role {
   SUPER_ADMIN
   ADMIN
-  SALES_MANAGER
-  BILLING_MANAGER
-  TECHNICAL_MANAGER
+  MANAGER
+  SALES
+  INSTALLATION
+  CUSTOMER_SUPPORT
 }
 
 model Customer {
-  id               String       @id @default(uuid())
-  customerCode     String       @unique
-  fullName         String
-  customerType     CustomerType
-  contactNumber    String
-  email            String?
-  cnic             String       @unique
-  cnicExpiry       DateTime?
-  crfNumber        String?      @unique // Auto-generated at signup submission
-  status           CustomerStatus
-  activationDate   DateTime?
-  signupDate       DateTime?
-  address          String
-  block            String?
-  city             String
-  cnicImageUrl     String?
-  solarSystem      SolarSystem?
-  packagePlan      PackagePlan?
-  tickets          Ticket[]
-  transactions     Transaction[]
+  id             String         @id @default(uuid())
+  customerCode   String         @unique
+  fullName       String
+  customerType   CustomerType
+  contactNumber  String
+  email          String?
+  cnic           String         @unique
+  cnicExpiry     DateTime?
+  crfNumber      String?        @unique // Auto-generated at signup submission
+  status         CustomerStatus
+  activationDate DateTime?
+  signupDate     DateTime?
+  address        String
+  houseNumber    String?
+  streetNumber   String?
+  block          String?
+  subArea        String?
+  area           String?
+  city           String
+  country        String         @default("Pakistan")
+  cnicFrontUrl   String?
+  cnicBackUrl    String?
+  solarSystem    SolarSystem?
+  packagePlan    PackagePlan?
+  tickets        Ticket[]
+  transactions   Transaction[]
+  invoices       Invoice[]
+  ledgerEntries  LedgerEntry[]
+
+  accountExecutiveId String?
+  accountExecutive   User?   @relation("CustomerAccountExecutive", fields: [accountExecutiveId], references: [id])
 }
 
 enum CustomerType {
@@ -56,71 +69,80 @@ enum CustomerType {
 }
 
 enum CustomerStatus {
-  ACTIVE
-  BLOCKED
+  SIGNUP_GENERATED
+  PENDING_PAYMENT_VERIFICATION
+  PENDING_ACTIVATION
+  CONNECTION_ACTIVE
+  NON_PAYMENT_BLOCKED
+  TEMPORARY_BLOCKED
+  PERMANENT_DISCONNECTION
+  FOC_CONNECTION
+  IN_HOUSE_CONNECTION
 }
 
 model SolarSystem {
-  id                  String   @id @default(uuid())
-  customerId          String   @unique
-  customer            Customer @relation(fields: [customerId], references: [id])
-  disco               String?  // LESCO, etc.
-  meterType           String   // Green Meter, Non Green
-  meterPhase          String?  // Single Phase, Three Phase
-  zeroExportDevice    Boolean
-  inverterBrand       String
-  inverterType        String   // Hybrid, OnGrid, Hybrid+OnGrid
-  inverterPhase       String   // Single, Three
-  inverterCategory    String   // High Voltage, Low Voltage
-  inverterSize        String?  // 6kW
-  noOfInverters       Int
-  inverterSerial      String
-  inverterWarrantyEnd DateTime?
-  panelBrand          String
-  panelType           String   // Monofacial, Bifacial
-  panelTechnology     String   // Mono Perc, Topcon, HJT, ABC, HIBC, etc.
-  panelWattage        Int
-  noOfPanels          Int
-  totalWattage        Int
-  panelWarrantyEnd    DateTime?
-  batteryCategory     String   // High Voltage, Low Voltage
-  batteryType         String   // Lithium, Tubular, Lead Acid, Dry
-  batteryBrand        String
-  noOfBatteries       Int
-  batterySerial       String
-  batteryWarrantyEnd  DateTime?
-  earthing            String   // AC, DC, Both
-  earthingLastCheck   DateTime?
-  earthingOhms        Decimal?
-  lightningProtection Boolean
-  breakerName         String
-  ingressProtection   String?  // 20, 65, 67, etc.
-  structureType       String?  // Elevated, Standard, etc.
+  id                     String    @id @default(uuid())
+  customerId             String    @unique
+  customer               Customer  @relation(fields: [customerId], references: [id])
+  disco                  String? // LESCO, etc.
+  meterType              String // Green Meter, Non Green
+  meterPhase             String? // Single Phase, Three Phase
+  zeroExportDevice       Boolean
+  inverterBrand          String
+  inverterType           String // Hybrid, OnGrid, Hybrid+OnGrid
+  inverterPhase          String // Single, Three
+  inverterCategory       String // High Voltage, Low Voltage
+  inverterSize           String? // 6kW
+  noOfInverters          Int
+  inverterSerial         String
+  inverterWarrantyEnd    DateTime?
+  panelBrand             String
+  panelType              String // Monofacial, Bifacial
+  panelTechnology        String // Mono Perc, Topcon, HJT, ABC, HIBC, etc.
+  panelWattage           Int
+  noOfPanels             Int
+  totalWattage           Int
+  panelWarrantyEnd       DateTime?
+  batteryCategory        String // High Voltage, Low Voltage
+  batteryType            String // Lithium, Tubular, Lead Acid, Dry
+  batteryBrand           String
+  noOfBatteries          Int
+  batterySerial          String
+  batteryWarrantyEnd     DateTime?
+  earthing               String // AC, DC, Both
+  earthingLastCheck      DateTime?
+  earthingAcOhms         Decimal?
+  earthingDcOhms         Decimal?
+  lightningProtection    Boolean
+  breakerName            String
+  ingressProtection      String? // 20, 65, 67, etc.
+  structureType          String? // Elevated, Standard, etc.
+  structureMaterial      String? // Painted, Aluminium, Hot Dip Galvanized, etc.
   systemInstallationDate DateTime?
-  installerName       String?
-  installerCompany    String?
-  installerAddress    String?
-  installerContact    String?
-  installerEmail      String?
-  lastAuditDate       DateTime?
-  inverterStatus      String?  // Excellent, Good, Fair, etc.
-  panelStatus         String?
-  batteryStatus       String?
-  structureStatus     String?
-  cableStatus         String?
-  earthingStatus      String?
-  breakerStatus       String?
+  installerName          String?
+  installerCompany       String?
+  installerAddress       String?
+  installerContact       String?
+  installerEmail         String?
+  lastAuditDate          DateTime?
+  inverterStatus         String? // Excellent, Good, Fair, etc.
+  panelStatus            String?
+  batteryStatus          String?
+  structureStatus        String?
+  cableStatus            String?
+  earthingStatus         String?
+  breakerStatus          String?
 }
 
 model PackagePlan {
-  id              String   @id @default(uuid())
-  customerId      String   @unique
-  customer        Customer @relation(fields: [customerId], references: [id])
-  systemSizeKw    String   // 1-10 kW, 10-20 kW, 20-30 kW, 30+ kW (Dropdown)
-  packageTier     String   // Basic, Moderate, Comprehensive (Dropdown)
-  billingType     String   // Monthly, Quarterly, Half Yearly, Yearly, FOC (Dropdown)
-  monitoringTime  String   // 12 Hours, 24 Hours (Dropdown)
-  nextBillingDate DateTime?
+  id               String    @id @default(uuid())
+  customerId       String    @unique
+  customer         Customer  @relation(fields: [customerId], references: [id])
+  systemSizeKw     String // 1-10 kW, 10-20 kW, 20-30 kW, 30+ kW (Dropdown)
+  packageTier      String // Basic, Moderate, Comprehensive (Dropdown)
+  billingType      String // Monthly, Quarterly, Half Yearly, Yearly, FOC (Dropdown)
+  monitoringTime   String // 12 Hours, 24 Hours (Dropdown)
+  nextBillingDate  DateTime?
   monthlyBasePrice Decimal
   appliedDiscount  Decimal // 0%, 10%, 20%, 40%, 100% (FOC)
   salesTaxAmount   Decimal
@@ -128,35 +150,36 @@ model PackagePlan {
 }
 
 model Ticket {
-  id                  String       @id @default(uuid())
-  ticketNumber        String       @unique
+  id                  String          @id @default(uuid())
+  ticketNumber        String          @unique
   customerId          String
-  customer            Customer     @relation(fields: [customerId], references: [id])
-  ticketType          TicketType   // Technical, Billing, Service Request
-  source              String       // UAN, Email, Whatsapp, Escalation
-  assignedTo          String       // O&M, Billing, Sales, Customer Support
-  escalation          String       // Level-1, Level-2, Level-3
+  customer            Customer        @relation(fields: [customerId], references: [id])
+  ticketType          TicketType // Technical, Billing, Service Request
+  source              String // UAN, Email, Whatsapp, Escalation
+  assignedTo          String // O&M, Billing, Sales, Customer Support
+  escalation          String // Level-1, Level-2, Level-3
   status              TicketStatus // Pending, Resolved, Canceled, OnHold, Closed
-  actionPriority      String?      // High, Medium, Low
-  firstCallResolution Boolean      @default(false)
-  category            String       // Inverter, Panel, Battery, Breaker (if Technical)
-  fault               String?      // (01) BatVolLow, (02) BatOverCurrSw, etc.
+  actionPriority      String? // High, Medium, Low
+  firstCallResolution Boolean         @default(false)
+  category            String // Inverter, Panel, Battery, Breaker (if Technical)
+  subCategory         String? // Brands or specific types
+  fault               String? // (01) BatVolLow, (02) BatOverCurrSw, etc.
   description         String
   attachmentUrl       String?
-  createdAt           DateTime     @default(now())
+  createdAt           DateTime        @default(now())
   histories           TicketHistory[]
 }
 
 model TicketHistory {
-  id            String       @id @default(uuid())
-  ticketId      String
-  ticket        Ticket       @relation(fields: [ticketId], references: [id])
-  status        TicketStatus
-  department    String
-  remarks       String?
-  createdBy     String       // User name or ID
-  createdAt     DateTime     @default(now())
-  timeInDept    String?      // Duration spent in department
+  id         String       @id @default(uuid())
+  ticketId   String
+  ticket     Ticket       @relation(fields: [ticketId], references: [id])
+  status     TicketStatus
+  department String
+  remarks    String?
+  createdBy  String // User name or ID
+  createdAt  DateTime     @default(now())
+  timeInDept String? // Duration spent in department
 }
 
 enum TicketType {
@@ -181,4 +204,34 @@ model Transaction {
   paymentMethod String
   status        String
   createdAt     DateTime @default(now())
+}
+
+model Invoice {
+  id            String        @id @default(uuid())
+  invoiceNumber String        @unique
+  customerId    String
+  customer      Customer      @relation(fields: [customerId], references: [id])
+  billingPeriod DateTime // The month/period this invoice is for
+  amount        Decimal
+  salesTax      Decimal
+  totalAmount   Decimal
+  status        String // Unpaid, Paid, Overdue
+  dueDate       DateTime
+  createdAt     DateTime      @default(now())
+  ledgerEntries LedgerEntry[]
+}
+
+model LedgerEntry {
+  id         String   @id @default(uuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+  invoiceId  String?
+  invoice    Invoice? @relation(fields: [invoiceId], references: [id])
+  date       DateTime @default(now())
+  refNumber  String? // Receipt or Invoice #
+  narration  String
+  debit      Decimal  @default(0)
+  credit     Decimal  @default(0)
+  balance    Decimal
+  createdAt  DateTime @default(now())
 }

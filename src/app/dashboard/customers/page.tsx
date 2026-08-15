@@ -1,15 +1,13 @@
-import { PrismaClient } from '@prisma/client'
+import prisma from '@/lib/prisma'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/ui/data-table'
 import { columns } from './columns'
 
-const prisma = new PrismaClient()
-
 export default async function CustomersPage() {
   const customers = await prisma.customer.findMany({
-    orderBy: { createdAt: 'desc' }
+    orderBy: { signupDate: 'desc' }
   })
 
   return (

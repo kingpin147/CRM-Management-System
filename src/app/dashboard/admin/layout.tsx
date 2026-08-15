@@ -1,9 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
-
+import prisma from '@/lib/prisma'
 export default async function AdminLayout({
   children,
 }: {
@@ -21,13 +18,13 @@ export default async function AdminLayout({
 
   // RBAC Check for Admin Access
   const dbUser = await prisma.user.findUnique({
-    where: { id: user.id },
+    where: { supabaseId: user.id },
     select: { role: true }
   })
 
-  if (!dbUser || dbUser.role !== 'SUPER_ADMIN') {
-    // Redirect unauthorized users back to the main dashboard
-    redirect('/dashboard')
+  if (!dbUser || !['SUPER_ADMIN', 'ADMIN'].includes(dbUser.role)) {
+    // Redirect unauthorized users back to the main search page
+    redirect('/dashboard/customers')
   }
 
   return (

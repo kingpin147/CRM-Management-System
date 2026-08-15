@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import prisma from '@/lib/prisma'
 import { renderToStream } from '@react-pdf/renderer'
 import { InvoiceDocument } from './InvoiceDocument'
 
-const prisma = new PrismaClient()
-
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params // Customer ID
 

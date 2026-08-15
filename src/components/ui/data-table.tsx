@@ -6,11 +6,14 @@ import {
   ColumnFiltersState,
   SortingState,
   flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
+  createFilteredRowModel,
+  createPaginatedRowModel,
+  createSortedRowModel,
+  useTable,
+  tableFeatures,
+  columnFilteringFeature,
+  rowSortingFeature,
+  rowPaginationFeature,
 } from '@tanstack/react-table'
 
 import {
@@ -24,31 +27,37 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
-interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[]
+interface DataTableProps<TData extends Record<string, any>> {
+  columns: ColumnDef<any, TData, any>[]
   data: TData[]
   searchKey: string
   searchPlaceholder?: string
 }
 
-export function DataTable<TData, TValue>({
+export function DataTable<TData extends Record<string, any>>({
   columns,
   data,
   searchKey,
   searchPlaceholder = 'Search...',
-}: DataTableProps<TData, TValue>) {
+}: DataTableProps<TData>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
 
-  const table = useReactTable({
+  const features = tableFeatures({
+    columnFilteringFeature,
+    rowSortingFeature,
+    rowPaginationFeature,
+    filteredRowModel: createFilteredRowModel(),
+    sortedRowModel: createSortedRowModel(),
+    paginatedRowModel: createPaginatedRowModel(),
+  })
+
+  const table = useTable({
     data,
     columns,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    features,
     onSortingChange: setSorting,
-    getSortedRowModel: getSortedRowModel(),
     onColumnFiltersChange: setColumnFilters,
-    getFilteredRowModel: getFilteredRowModel(),
     state: {
       sorting,
       columnFilters,
@@ -56,7 +65,7 @@ export function DataTable<TData, TValue>({
   })
 
   return (
-    <div>
+    <div className="min-w-0 w-full">
       <div className="flex items-center py-4">
         <Input
           placeholder={searchPlaceholder}

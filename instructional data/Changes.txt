@@ -1,0 +1,24 @@
+
+
+Super Admin will be having all accesses,
+
+Admin: Creates usernames and passwords of users and assigns access and permissions to managers.
+
+
+
+
+
+Its CRF Number and will be Auto-generated at the time of submit signup
+
+
+
+Please change it to “Customer Support”
+
+
+
+
+
+Discounts are revised, 
+
+Quarterly @10%, Half yearly @20% and yearly @ 40%. 
+

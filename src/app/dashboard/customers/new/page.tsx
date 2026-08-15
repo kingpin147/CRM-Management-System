@@ -2,8 +2,14 @@ import { CustomerForm } from './CustomerForm'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import prisma from '@/lib/prisma'
+export default async function NewCustomerPage() {
+  const users = await prisma.user.findMany({
+    where: { isActive: true },
+    select: { id: true, fullName: true, role: true },
+    orderBy: { fullName: 'asc' }
+  })
 
-export default function NewCustomerPage() {
   return (
     <div className="space-y-6 max-w-3xl animate-reveal">
       <div className="flex items-center gap-4 mb-4">
@@ -24,7 +30,7 @@ export default function NewCustomerPage() {
           <CardDescription>Enter the personal and location details for the new client.</CardDescription>
         </CardHeader>
         <CardContent>
-          <CustomerForm />
+          <CustomerForm users={users} />
         </CardContent>
       </Card>
     </div>

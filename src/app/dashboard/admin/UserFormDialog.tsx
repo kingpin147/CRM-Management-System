@@ -28,8 +28,8 @@ export function UserFormDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="shadow-md">Create User</Button>
+      <DialogTrigger render={<Button className="shadow-md" />}>
+        Create User
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] border-line">
         <DialogHeader>

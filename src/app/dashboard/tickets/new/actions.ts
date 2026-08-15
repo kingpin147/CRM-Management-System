@@ -2,9 +2,8 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { PrismaClient, TicketType, TicketStatus } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { TicketType, TicketStatus } from '@prisma/client'
+import prisma from '@/lib/prisma'
 
 function generateTicketNumber() {
   return `TKT-${Math.floor(100000 + Math.random() * 900000)}`

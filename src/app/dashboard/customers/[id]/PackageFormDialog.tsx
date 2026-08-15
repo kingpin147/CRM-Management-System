@@ -37,8 +37,8 @@ export function PackageFormDialog({ customerId }: { customerId: string }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="w-full shadow-md">Create Quotation</Button>
+      <DialogTrigger render={<Button className="w-full shadow-md" />}>
+        Create Quotation
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px] border-line max-h-[90vh] overflow-y-auto">
         <DialogHeader>
