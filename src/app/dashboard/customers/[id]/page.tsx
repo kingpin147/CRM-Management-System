@@ -13,6 +13,8 @@ import { CustomerTicketForm } from './CustomerTicketForm'
 import { TicketUpdateDialog } from '@/app/dashboard/tickets/TicketUpdateDialog'
 import { Sun, Battery, ShieldCheck, Zap, Receipt, MessageSquare, Mail, History as HistoryIcon } from 'lucide-react'
 
+import { createClient } from '@/utils/supabase/server'
+
 export default async function CustomerDetailPage({ 
   params,
   searchParams
@@ -22,8 +24,12 @@ export default async function CustomerDetailPage({
 }) {
   const { id } = await params
   const { tab } = await searchParams
-  const activeTab = tab || 'profile'
   
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const dbUser = user ? await prisma.user.findUnique({ where: { supabaseId: user.id }, select: { role: true } }) : null
+  const userRole = dbUser?.role || 'SUPER_ADMIN'
+
   const rawCustomer = await prisma.customer.findUnique({
     where: { id },
     include: {
@@ -51,15 +57,20 @@ export default async function CustomerDetailPage({
   // Sanitize Decimal and custom instances to plain JSON primitives
   const customer = JSON.parse(JSON.stringify(rawCustomer))
 
-  const tabs = [
-    { id: 'profile', label: 'Customer Profile' },
-    { id: 'solar', label: 'Solar System Details' },
-    { id: 'ledger', label: 'Customer Ledger & Invoices' },
-    { id: 'ticket', label: 'Create Ticket' },
-    { id: 'complaints', label: `Complaints (${customer.tickets?.length || 0})` },
-    { id: 'history', label: 'Customer History' },
-    { id: 'message', label: 'Message & Email Logs' },
+  const canViewLedger = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES'].includes(userRole)
+
+  const allTabs = [
+    { id: 'profile', label: 'Customer Profile', allowed: true },
+    { id: 'solar', label: 'Solar System Details', allowed: true },
+    { id: 'ledger', label: 'Customer Ledger & Invoices', allowed: canViewLedger },
+    { id: 'ticket', label: 'Create Ticket', allowed: true },
+    { id: 'complaints', label: `Complaints (${customer.tickets?.length || 0})`, allowed: true },
+    { id: 'history', label: 'Customer History', allowed: true },
+    { id: 'message', label: 'Message & Email Logs', allowed: true },
   ]
+
+  const tabs = allTabs.filter(t => t.allowed)
+  const activeTab = tabs.some(t => t.id === tab) ? (tab || 'profile') : 'profile'
 
   // Compute ledger financial summaries
   const totalInvoiced = (customer.invoices || []).reduce((acc: number, inv: any) => acc + (Number(inv.totalAmount) || 0), 0)

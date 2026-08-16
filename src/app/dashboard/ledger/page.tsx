@@ -4,9 +4,25 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { createClient } from '@/utils/supabase/server'
+import { redirect } from 'next/navigation'
 import { GlobalPaymentDialog } from './GlobalPaymentDialog'
 
 export default async function LedgerPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const dbUser = await prisma.user.findUnique({
+    where: { supabaseId: user.id },
+    select: { role: true }
+  })
+  const userRole = dbUser?.role || 'SALES'
+
+  if (!['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES'].includes(userRole)) {
+    redirect('/dashboard/customers')
+  }
+
   const [transactions, rawCustomers] = await Promise.all([
     prisma.transaction.findMany({
       include: { customer: true },

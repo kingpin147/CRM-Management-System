@@ -20,23 +20,33 @@ export function SidebarNav({ role = 'SALES' }: { role?: string }) {
     return "flex items-center px-3 py-2 text-sm font-medium rounded-md text-[var(--color-slate-custom)] hover:bg-black/5 hover:text-[var(--color-ink)] transition-colors"
   }
 
+  const canViewLedger = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES'].includes(role)
+  const canViewReports = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES'].includes(role)
+  const canViewAdmin = ['SUPER_ADMIN', 'ADMIN'].includes(role)
+
   return (
     <>
       <Link href="/dashboard/customers" className={linkClass('/dashboard/customers')}>
         Customers
       </Link>
+      
       <Link href="/dashboard/tickets" className={linkClass('/dashboard/tickets')}>
-        Complaints
+        Complaints & Tickets
       </Link>
-      <Link href="/dashboard/ledger" className={linkClass('/dashboard/ledger')}>
-        Ledger & Invoices
-      </Link>
-      <Link href="/dashboard/reports" className={linkClass('/dashboard/reports')}>
-        Reports
-      </Link>
-      
-      
-      {!['MANAGER', 'SALES', 'INSTALLATION', 'CUSTOMER_SUPPORT'].includes(role) && (
+
+      {canViewLedger && (
+        <Link href="/dashboard/ledger" className={linkClass('/dashboard/ledger')}>
+          Ledger & Invoices
+        </Link>
+      )}
+
+      {canViewReports && (
+        <Link href="/dashboard/reports" className={linkClass('/dashboard/reports')}>
+          Reports
+        </Link>
+      )}
+
+      {canViewAdmin && (
         <div className="pt-4 mt-4 border-t border-line">
           <p className="px-3 text-xs font-semibold text-[var(--color-slate-custom)] uppercase tracking-wider mb-2">
             Management
