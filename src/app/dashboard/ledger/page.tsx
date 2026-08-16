@@ -4,12 +4,21 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { GlobalPaymentDialog } from './GlobalPaymentDialog'
 
 export default async function LedgerPage() {
-  const transactions = await prisma.transaction.findMany({
-    include: { customer: true },
-    orderBy: { createdAt: 'desc' }
-  })
+  const [transactions, rawCustomers] = await Promise.all([
+    prisma.transaction.findMany({
+      include: { customer: true },
+      orderBy: { createdAt: 'desc' }
+    }),
+    prisma.customer.findMany({
+      select: { id: true, fullName: true, customerCode: true },
+      orderBy: { fullName: 'asc' }
+    })
+  ])
+
+  const customers = JSON.parse(JSON.stringify(rawCustomers))
 
   // Calculate totals
   const totalRevenue = transactions.reduce((sum, tx) => 
@@ -21,9 +30,12 @@ export default async function LedgerPage() {
 
   return (
     <div className="space-y-6 animate-reveal">
-      <div>
-        <h1 className="text-3xl font-display font-bold text-[var(--color-graphite)] tracking-tight">Ledger & Invoices</h1>
-        <p className="text-[var(--color-slate-custom)] mt-1">Global view of all transactions and O&M billing.</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-display font-bold text-[var(--color-graphite)] tracking-tight">Ledger & Invoices</h1>
+          <p className="text-[var(--color-slate-custom)] mt-1">Global view of all transactions and O&M billing.</p>
+        </div>
+        <GlobalPaymentDialog customers={customers} />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
