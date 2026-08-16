@@ -71,24 +71,12 @@ export default async function LoginPage({
               />
             </div>
           </CardContent>
-          <CardFooter className="pt-2 pb-3">
+          <CardFooter className="pt-2 pb-6">
             <Button type="submit" className="w-full h-11 text-base font-semibold shadow-md transition-all">
               Sign In
             </Button>
           </CardFooter>
         </form>
-
-        {/* Quick Seed Action */}
-        <div className="px-6 pb-6 pt-2 border-t border-line/40 text-center">
-          <form action={seedDatabaseAction}>
-            <button 
-              type="submit" 
-              className="text-xs text-muted-foreground hover:text-foreground font-medium py-1.5 px-3 rounded-lg border border-dashed border-line hover:border-foreground/40 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-            >
-              🌱 One-Click Seed Database (Production)
-            </button>
-          </form>
-        </div>
       </Card>
     </div>
   )
