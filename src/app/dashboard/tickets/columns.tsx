@@ -2,8 +2,8 @@
 
 import { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { Ticket, Customer } from '@prisma/client'
+import { TicketUpdateDialog } from './TicketUpdateDialog'
 
 export type TicketWithCustomer = Ticket & { customer: Customer }
 
@@ -11,7 +11,7 @@ export const columns: ColumnDef<any, TicketWithCustomer, any>[] = [
   {
     accessorKey: 'ticketNumber',
     header: 'Ticket ID',
-    cell: ({ row }) => <span className="font-mono text-xs">{row.getValue('ticketNumber')}</span>,
+    cell: ({ row }) => <span className="font-mono text-xs font-semibold">{row.getValue('ticketNumber')}</span>,
   },
   {
     accessorKey: 'customer.fullName',
@@ -45,6 +45,8 @@ export const columns: ColumnDef<any, TicketWithCustomer, any>[] = [
               ? 'bg-amber-100 text-amber-800 border-amber-200'
               : status === 'RESOLVED'
               ? 'bg-green-100 text-green-800 border-green-200'
+              : status === 'ON_HOLD'
+              ? 'bg-blue-100 text-blue-800 border-blue-200'
               : 'bg-gray-100 text-gray-800 border-gray-200'
           }
         >
@@ -55,10 +57,11 @@ export const columns: ColumnDef<any, TicketWithCustomer, any>[] = [
   },
   {
     id: 'actions',
+    header: () => <div className="text-right">Action</div>,
     cell: ({ row }) => {
       return (
         <div className="text-right">
-          <Button variant="ghost" size="sm">Update</Button>
+          <TicketUpdateDialog ticket={row.original} />
         </div>
       )
     },
