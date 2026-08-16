@@ -22,3 +22,14 @@ export async function login(formData: FormData) {
   revalidatePath('/', 'layout')
   redirect('/dashboard/customers')
 }
+
+export async function seedDatabaseAction() {
+  try {
+    const { runSeed } = await import('@/lib/seed-db')
+    await runSeed()
+    redirect('/login?success=Database successfully seeded with demo customers, packages, solar configurations, and tickets!')
+  } catch (err: any) {
+    if (err?.message?.includes('NEXT_REDIRECT')) throw err
+    redirect(`/login?error=${encodeURIComponent(err.message || 'Seeding failed')}`)
+  }
+}

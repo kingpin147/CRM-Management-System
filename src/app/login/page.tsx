@@ -1,15 +1,14 @@
-import { login } from './actions'
+import { login, seedDatabaseAction } from './actions'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-
 import Image from 'next/image'
 
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>
+  searchParams: Promise<{ error?: string; success?: string }>
 }) {
   const resolvedParams = await searchParams
 
@@ -40,6 +39,11 @@ export default async function LoginPage({
         
         <form action={login}>
           <CardContent className="space-y-4">
+            {resolvedParams?.success && (
+              <div className="p-3 text-sm bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 rounded-lg text-center font-medium">
+                {resolvedParams.success}
+              </div>
+            )}
             {resolvedParams?.error && (
               <div className="p-3 text-sm bg-destructive/10 border border-destructive/20 text-destructive rounded-lg text-center font-medium">
                 {resolvedParams.error}
@@ -67,12 +71,24 @@ export default async function LoginPage({
               />
             </div>
           </CardContent>
-          <CardFooter className="pt-2 pb-6">
+          <CardFooter className="pt-2 pb-3">
             <Button type="submit" className="w-full h-11 text-base font-semibold shadow-md transition-all">
               Sign In
             </Button>
           </CardFooter>
         </form>
+
+        {/* Quick Seed Action */}
+        <div className="px-6 pb-6 pt-2 border-t border-line/40 text-center">
+          <form action={seedDatabaseAction}>
+            <button 
+              type="submit" 
+              className="text-xs text-muted-foreground hover:text-foreground font-medium py-1.5 px-3 rounded-lg border border-dashed border-line hover:border-foreground/40 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+            >
+              🌱 One-Click Seed Database (Production)
+            </button>
+          </form>
+        </div>
       </Card>
     </div>
   )
