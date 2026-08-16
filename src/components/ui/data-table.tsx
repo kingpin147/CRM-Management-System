@@ -12,6 +12,8 @@ import {
   useTable,
   tableFeatures,
   stockFeatures,
+  filterFn_includesString,
+  filterFns,
 } from '@tanstack/react-table'
 
 import {
@@ -40,16 +42,40 @@ export function DataTable<TData extends Record<string, any>>({
 }: DataTableProps<TData>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
+  const [searchValue, setSearchValue] = React.useState<string>('')
+
+  // Filter data across all properties and nested objects
+  const filteredData = React.useMemo(() => {
+    if (!searchValue.trim()) return data
+    const query = searchValue.toLowerCase().trim()
+
+    return data.filter((item) => {
+      // Check searchKey first
+      if (searchKey && item[searchKey] && String(item[searchKey]).toLowerCase().includes(query)) {
+        return true
+      }
+      // Check entire object JSON values for universal matching (Name, City, Code, Ticket ID, Description, Phone, etc.)
+      const flatValues = Object.values(item)
+        .map((v) => (typeof v === 'object' && v !== null ? JSON.stringify(v) : String(v ?? '')))
+        .join(' ')
+        .toLowerCase()
+      return flatValues.includes(query)
+    })
+  }, [data, searchValue, searchKey])
 
   const features = tableFeatures({
     ...stockFeatures,
+    filterFns: {
+      ...filterFns,
+      includesString: filterFn_includesString,
+    },
     filteredRowModel: createFilteredRowModel(),
     sortedRowModel: createSortedRowModel(),
     paginatedRowModel: createPaginatedRowModel(),
   })
 
   const table = useTable({
-    data,
+    data: filteredData,
     columns,
     features,
     onSortingChange: setSorting,
@@ -65,10 +91,8 @@ export function DataTable<TData extends Record<string, any>>({
       <div className="flex items-center py-4">
         <Input
           placeholder={searchPlaceholder}
-          value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ''}
-          onChange={(event) =>
-            table.getColumn(searchKey)?.setFilterValue(event.target.value)
-          }
+          value={searchValue}
+          onChange={(event) => setSearchValue(event.target.value)}
           className="max-w-sm border-[var(--color-line)] focus-visible:ring-[var(--color-amber)]"
         />
       </div>
