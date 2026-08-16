@@ -3,7 +3,7 @@ import { DataTable } from '@/components/ui/data-table'
 import { columns } from './columns'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Download } from 'lucide-react'
+import { ExportCsvButton } from './ExportCsvButton'
 
 export default async function ReportsPage({
   searchParams,
@@ -44,9 +44,7 @@ export default async function ReportsPage({
           <h1 className="text-3xl font-display font-bold text-[var(--color-graphite)] tracking-tight">Reports</h1>
           <p className="text-[var(--color-slate-custom)] mt-1">Customer Status Report</p>
         </div>
-        <Button variant="outline" className="shadow-sm">
-          <Download className="mr-2 h-4 w-4" /> Export to Excel
-        </Button>
+        <ExportCsvButton data={formattedData} />
       </div>
 
       <Card className="shadow-sm border-line">
