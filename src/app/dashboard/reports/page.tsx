@@ -20,7 +20,7 @@ export default async function ReportsPage({
     }
   })
 
-  // Format the data for the data table
+  // Format the data for the data table (plain JSON serializable for Client Components)
   const formattedData = customers.map(c => ({
     id: c.id,
     customerCode: c.customerCode,
@@ -33,7 +33,7 @@ export default async function ReportsPage({
     subArea: c.subArea,
     area: c.area,
     city: c.city,
-    packagePlan: c.packagePlan,
+    packagePlan: c.packagePlan ? { packageTier: c.packagePlan.packageTier } : null,
     status: c.status
   }))
 
