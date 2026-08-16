@@ -1,0 +1,837 @@
+import { NextRequest, NextResponse } from 'next/server'
+import prisma from '@/lib/prisma'
+import { CustomerType, CustomerStatus, TicketType, TicketStatus, Role } from '@prisma/client'
+
+export const dynamic = 'force-dynamic'
+
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url)
+  const secret = searchParams.get('secret')
+
+  const expectedSecret = process.env.ADMIN_SEED_SECRET || 'seed-crm-2026'
+
+  if (secret !== expectedSecret) {
+    return NextResponse.json(
+      {
+        error: 'Unauthorized. Please provide valid ?secret= query parameter.',
+        hint: 'Use ?secret=' + expectedSecret,
+      },
+      { status: 401 }
+    )
+  }
+
+  try {
+    // 1. Create Staff Users
+    const adminUser = await prisma.user.upsert({
+      where: { email: 'admin@energygurus.pk' },
+      update: {},
+      create: {
+        supabaseId: 'supa-admin-001',
+        fullName: 'Muhammad Nouman (Admin)',
+        email: 'admin@energygurus.pk',
+        role: Role.SUPER_ADMIN,
+        isActive: true,
+      },
+    })
+
+    const salesUser = await prisma.user.upsert({
+      where: { email: 'sales@energygurus.pk' },
+      update: {},
+      create: {
+        supabaseId: 'supa-sales-001',
+        fullName: 'Hamza Tariq (Sales Lead)',
+        email: 'sales@energygurus.pk',
+        role: Role.SALES,
+        isActive: true,
+      },
+    })
+
+    const omUser = await prisma.user.upsert({
+      where: { email: 'om@energygurus.pk' },
+      update: {},
+      create: {
+        supabaseId: 'supa-om-001',
+        fullName: 'Engr. Bilal Ahmed (O&M Manager)',
+        email: 'om@energygurus.pk',
+        role: Role.INSTALLATION,
+        isActive: true,
+      },
+    })
+
+    // 2. Dummy Customers List
+    const dummyCustomers = [
+      {
+        code: 'EG-2026-001',
+        name: 'Dr. Zafar Iqbal',
+        type: CustomerType.RESIDENTIAL,
+        phone: '+92 300 8451234',
+        email: 'zafar.iqbal@gmail.com',
+        cnic: '35201-1234567-1',
+        crf: 'CRF-2026-0101',
+        status: CustomerStatus.CONNECTION_ACTIVE,
+        house: '142-A',
+        street: 'Street 7',
+        block: 'Block J',
+        subArea: 'Phase 5',
+        area: 'DHA',
+        city: 'Lahore',
+        address: 'House 142-A, Street 7, Sector J, DHA Phase 5, Lahore',
+        solar: {
+          disco: 'LESCO',
+          meterType: 'Green Meter',
+          meterPhase: 'Three Phase',
+          zeroExportDevice: true,
+          inverterBrand: 'Huawei SUN2000',
+          inverterType: 'Hybrid',
+          inverterPhase: 'Three',
+          inverterCategory: 'High Voltage',
+          inverterSize: '15kW',
+          noOfInverters: 1,
+          inverterSerial: 'HW-SUN15K-2026019',
+          panelBrand: 'Longi Hi-MO 6',
+          panelType: 'Monofacial',
+          panelTechnology: 'Mono Perc',
+          panelWattage: 585,
+          noOfPanels: 26,
+          totalWattage: 15210,
+          batteryCategory: 'High Voltage',
+          batteryType: 'Lithium',
+          batteryBrand: 'Huawei LUNA2000',
+          noOfBatteries: 2,
+          batterySerial: 'HW-BAT10K-9921',
+          earthing: 'Both',
+          earthingAcOhms: 1.2,
+          earthingDcOhms: 1.4,
+          lightningProtection: true,
+          breakerName: 'Schneider EasyPact',
+          ingressProtection: 'IP65',
+          structureType: 'Elevated',
+          structureMaterial: 'Hot Dip Galvanized',
+          systemInstallationDate: new Date('2025-11-10'),
+          installerName: 'Engr. Bilal Ahmed',
+          installerCompany: 'EnergyGurus Operations',
+          lastAuditDate: new Date('2026-07-01'),
+          inverterStatus: 'Excellent',
+          panelStatus: 'Excellent',
+          batteryStatus: 'Good',
+        },
+        package: {
+          systemSizeKw: '10-20 kW',
+          packageTier: 'Comprehensive',
+          billingType: 'Monthly',
+          monitoringTime: '24 Hours',
+          monthlyBasePrice: 15000,
+          appliedDiscount: 10,
+          salesTaxAmount: 2160,
+          totalAmount: 15660,
+        },
+        invoices: [
+          {
+            num: 'INV-2026-001',
+            amount: 13500,
+            tax: 2160,
+            total: 15660,
+            status: 'Paid',
+            paid: true,
+            date: new Date('2026-07-01'),
+            dueDate: new Date('2026-07-15'),
+          },
+          {
+            num: 'INV-2026-002',
+            amount: 13500,
+            tax: 2160,
+            total: 15660,
+            status: 'Paid',
+            paid: true,
+            date: new Date('2026-08-01'),
+            dueDate: new Date('2026-08-15'),
+          }
+        ],
+        tickets: [
+          {
+            num: 'TCK-2026-101',
+            type: TicketType.SERVICE_REQUEST,
+            source: 'Whatsapp',
+            assignedTo: 'O&M',
+            escalation: 'Level-1',
+            status: TicketStatus.CLOSED,
+            actionPriority: 'Low',
+            category: 'Panel',
+            subCategory: 'Cleaning',
+            fault: 'Routine solar panel dust wash and maintenance',
+            description: 'Quarterly panel cleaning service completed on DHA site.',
+          }
+        ]
+      },
+      {
+        code: 'EG-2026-002',
+        name: 'Kohinoor Textile Mills (HQ)',
+        type: CustomerType.CORPORATE,
+        phone: '+92 42 35789000',
+        email: 'facilities@kohinoor.com.pk',
+        cnic: '35202-9988776-5',
+        crf: 'CRF-2026-0102',
+        status: CustomerStatus.CONNECTION_ACTIVE,
+        house: 'Plot 45',
+        street: 'Main Boulevard',
+        block: 'Industrial Zone',
+        subArea: 'Gulberg III',
+        area: 'Gulberg',
+        city: 'Lahore',
+        address: 'Plot 45, Main Industrial Zone, Gulberg III, Lahore',
+        solar: {
+          disco: 'LESCO',
+          meterType: 'Green Meter',
+          meterPhase: 'Three Phase',
+          zeroExportDevice: false,
+          inverterBrand: 'Sungrow SG110CX',
+          inverterType: 'OnGrid',
+          inverterPhase: 'Three',
+          inverterCategory: 'High Voltage',
+          inverterSize: '100kW',
+          noOfInverters: 2,
+          inverterSerial: 'SG-110CX-884120',
+          panelBrand: 'Jinko Solar Tiger Neo',
+          panelType: 'Bifacial',
+          panelTechnology: 'Topcon',
+          panelWattage: 620,
+          noOfPanels: 320,
+          totalWattage: 198400,
+          batteryCategory: 'None',
+          batteryType: 'None',
+          batteryBrand: 'N/A',
+          noOfBatteries: 0,
+          batterySerial: 'N/A',
+          earthing: 'Both',
+          earthingAcOhms: 0.8,
+          earthingDcOhms: 0.9,
+          lightningProtection: true,
+          breakerName: 'ABB SACE Emax 2',
+          ingressProtection: 'IP66',
+          structureType: 'Elevated',
+          structureMaterial: 'Hot Dip Galvanized',
+          systemInstallationDate: new Date('2025-08-15'),
+          installerName: 'Engr. Bilal Ahmed',
+          installerCompany: 'EnergyGurus Industrial',
+          lastAuditDate: new Date('2026-08-01'),
+          inverterStatus: 'Excellent',
+          panelStatus: 'Good',
+          batteryStatus: 'N/A',
+        },
+        package: {
+          systemSizeKw: '30+ kW',
+          packageTier: 'Comprehensive',
+          billingType: 'Quarterly',
+          monitoringTime: '24 Hours',
+          monthlyBasePrice: 85000,
+          appliedDiscount: 20,
+          salesTaxAmount: 10880,
+          totalAmount: 78880,
+        },
+        invoices: [
+          {
+            num: 'INV-2026-003',
+            amount: 204000,
+            tax: 32640,
+            total: 236640,
+            status: 'Paid',
+            paid: true,
+            date: new Date('2026-05-01'),
+            dueDate: new Date('2026-05-20'),
+          },
+          {
+            num: 'INV-2026-004',
+            amount: 204000,
+            tax: 32640,
+            total: 236640,
+            status: 'Unpaid',
+            paid: false,
+            date: new Date('2026-08-01'),
+            dueDate: new Date('2026-08-25'),
+          }
+        ],
+        tickets: [
+          {
+            num: 'TCK-2026-102',
+            type: TicketType.TECHNICAL_COMPLAINT,
+            source: 'Email',
+            assignedTo: 'O&M',
+            escalation: 'Level-2',
+            status: TicketStatus.PENDING,
+            actionPriority: 'High',
+            category: 'Inverter',
+            subCategory: 'Sungrow SG110CX',
+            fault: '(04) GridOverVoltage',
+            description: 'Inverter 2 tripped due to sudden DISCO grid voltage surge over 260V.',
+          }
+        ]
+      },
+      {
+        code: 'EG-2026-003',
+        name: 'Syed Usman Ali',
+        type: CustomerType.RESIDENTIAL,
+        phone: '+92 321 4455667',
+        email: 'usman.ali@outlook.com',
+        cnic: '35202-3344556-9',
+        crf: 'CRF-2026-0103',
+        status: CustomerStatus.PENDING_ACTIVATION,
+        house: '88',
+        street: 'Street 12',
+        block: 'Block C',
+        subArea: 'Sector F-7/2',
+        area: 'F-7',
+        city: 'Islamabad',
+        address: 'House 88, Street 12, Sector F-7/2, Islamabad',
+        solar: {
+          disco: 'IESCO',
+          meterType: 'Green Meter Pending',
+          meterPhase: 'Three Phase',
+          zeroExportDevice: true,
+          inverterBrand: 'Growatt SPH 10000TL3',
+          inverterType: 'Hybrid',
+          inverterPhase: 'Three',
+          inverterCategory: 'Low Voltage',
+          inverterSize: '10kW',
+          noOfInverters: 1,
+          inverterSerial: 'GW-SPH10K-5521',
+          panelBrand: 'Canadian Solar HiKu7',
+          panelType: 'Monofacial',
+          panelTechnology: 'Mono Perc',
+          panelWattage: 590,
+          noOfPanels: 18,
+          totalWattage: 10620,
+          batteryCategory: 'Low Voltage',
+          batteryType: 'Lithium',
+          batteryBrand: 'Pylontech US5000',
+          noOfBatteries: 2,
+          batterySerial: 'PY-US5K-30219',
+          earthing: 'Both',
+          earthingAcOhms: 1.5,
+          earthingDcOhms: 1.6,
+          lightningProtection: true,
+          breakerName: 'Terasaki MCCB',
+          ingressProtection: 'IP65',
+          structureType: 'Standard',
+          structureMaterial: 'Aluminium',
+          systemInstallationDate: new Date('2026-08-01'),
+          installerName: 'Engr. Bilal Ahmed',
+          installerCompany: 'EnergyGurus Operations',
+          lastAuditDate: new Date('2026-08-05'),
+          inverterStatus: 'New',
+          panelStatus: 'New',
+          batteryStatus: 'New',
+        },
+        package: {
+          systemSizeKw: '1-10 kW',
+          packageTier: 'Moderate',
+          billingType: 'Monthly',
+          monitoringTime: '12 Hours',
+          monthlyBasePrice: 9500,
+          appliedDiscount: 0,
+          salesTaxAmount: 1520,
+          totalAmount: 11020,
+        },
+        invoices: [
+          {
+            num: 'INV-2026-005',
+            amount: 9500,
+            tax: 1520,
+            total: 11020,
+            status: 'Paid',
+            paid: true,
+            date: new Date('2026-08-05'),
+            dueDate: new Date('2026-08-20'),
+          }
+        ],
+        tickets: [
+          {
+            num: 'TCK-2026-103',
+            type: TicketType.BILLING_COMPLAINT,
+            source: 'UAN',
+            assignedTo: 'Billing',
+            escalation: 'Level-1',
+            status: TicketStatus.RESOLVED,
+            actionPriority: 'Medium',
+            category: 'Billing',
+            subCategory: 'Activation Invoice',
+            fault: 'Advance security deposit verification',
+            description: 'Payment verified via Bank Alfalah receipt.',
+          }
+        ]
+      },
+      {
+        code: 'EG-2026-004',
+        name: 'Al-Madina Agro Industries',
+        type: CustomerType.INDUSTRIAL,
+        phone: '+92 301 7788990',
+        email: 'contact@almadina-agro.pk',
+        cnic: '36302-5566778-1',
+        crf: 'CRF-2026-0104',
+        status: CustomerStatus.CONNECTION_ACTIVE,
+        house: 'Industrial Area',
+        street: 'Vehari Road',
+        block: 'Sector 4',
+        subArea: 'Industrial Estate',
+        area: 'Multan Road',
+        city: 'Multan',
+        address: 'Plot 12-B, Small Industrial Estate, Multan',
+        solar: {
+          disco: 'MEPCO',
+          meterType: 'Green Meter',
+          meterPhase: 'Three Phase',
+          zeroExportDevice: false,
+          inverterBrand: 'Sungrow SG50CX',
+          inverterType: 'OnGrid',
+          inverterPhase: 'Three',
+          inverterCategory: 'High Voltage',
+          inverterSize: '50kW',
+          noOfInverters: 1,
+          inverterSerial: 'SG-50CX-4912',
+          panelBrand: 'JA Solar DeepBlue 4.0',
+          panelType: 'Bifacial',
+          panelTechnology: 'Topcon',
+          panelWattage: 580,
+          noOfPanels: 88,
+          totalWattage: 51040,
+          batteryCategory: 'None',
+          batteryType: 'None',
+          batteryBrand: 'N/A',
+          noOfBatteries: 0,
+          batterySerial: 'N/A',
+          earthing: 'Both',
+          earthingAcOhms: 0.9,
+          earthingDcOhms: 1.1,
+          lightningProtection: true,
+          breakerName: 'Schneider Electric NSX',
+          ingressProtection: 'IP66',
+          structureType: 'Elevated',
+          structureMaterial: 'Hot Dip Galvanized',
+          systemInstallationDate: new Date('2025-06-20'),
+          installerName: 'Engr. Bilal Ahmed',
+          installerCompany: 'EnergyGurus Industrial',
+          lastAuditDate: new Date('2026-07-15'),
+          inverterStatus: 'Good',
+          panelStatus: 'Good',
+          batteryStatus: 'N/A',
+        },
+        package: {
+          systemSizeKw: '30+ kW',
+          packageTier: 'Basic',
+          billingType: 'Monthly',
+          monitoringTime: '12 Hours',
+          monthlyBasePrice: 35000,
+          appliedDiscount: 0,
+          salesTaxAmount: 5600,
+          totalAmount: 40600,
+        },
+        invoices: [
+          {
+            num: 'INV-2026-006',
+            amount: 35000,
+            tax: 5600,
+            total: 40600,
+            status: 'Paid',
+            paid: true,
+            date: new Date('2026-07-01'),
+            dueDate: new Date('2026-07-15'),
+          },
+          {
+            num: 'INV-2026-007',
+            amount: 35000,
+            tax: 5600,
+            total: 40600,
+            status: 'Paid',
+            paid: true,
+            date: new Date('2026-08-01'),
+            dueDate: new Date('2026-08-15'),
+          }
+        ],
+        tickets: []
+      },
+      {
+        code: 'EG-2026-005',
+        name: 'Chaudhry Nadeem Akhtar',
+        type: CustomerType.RESIDENTIAL,
+        phone: '+92 333 5566778',
+        email: 'nadeem.akhtar@yahoo.com',
+        cnic: '35201-9988112-3',
+        crf: 'CRF-2026-0105',
+        status: CustomerStatus.NON_PAYMENT_BLOCKED,
+        house: '52',
+        street: 'Canal Road',
+        block: 'Block B',
+        subArea: 'Model Town',
+        area: 'Model Town',
+        city: 'Lahore',
+        address: '52-B Canal Road, Model Town, Lahore',
+        solar: {
+          disco: 'LESCO',
+          meterType: 'Green Meter',
+          meterPhase: 'Three Phase',
+          zeroExportDevice: true,
+          inverterBrand: 'Knox Krypton 10kW',
+          inverterType: 'Hybrid',
+          inverterPhase: 'Three',
+          inverterCategory: 'Low Voltage',
+          inverterSize: '10kW',
+          noOfInverters: 1,
+          inverterSerial: 'KX-KRP10-1192',
+          panelBrand: 'Longi Hi-MO X6',
+          panelType: 'Monofacial',
+          panelTechnology: 'Mono Perc',
+          panelWattage: 575,
+          noOfPanels: 18,
+          totalWattage: 10350,
+          batteryCategory: 'Low Voltage',
+          batteryType: 'Tubular',
+          batteryBrand: 'Phoenix TX-2500',
+          noOfBatteries: 4,
+          batterySerial: 'PH-TX25-8841',
+          earthing: 'Both',
+          earthingAcOhms: 2.1,
+          earthingDcOhms: 2.4,
+          lightningProtection: false,
+          breakerName: 'Chint Electric',
+          ingressProtection: 'IP54',
+          structureType: 'Standard',
+          structureMaterial: 'Painted Mild Steel',
+          systemInstallationDate: new Date('2025-01-10'),
+          installerName: 'Engr. Bilal Ahmed',
+          installerCompany: 'EnergyGurus Operations',
+          lastAuditDate: new Date('2026-05-10'),
+          inverterStatus: 'Fair',
+          panelStatus: 'Good',
+          batteryStatus: 'Fair',
+        },
+        package: {
+          systemSizeKw: '1-10 kW',
+          packageTier: 'Basic',
+          billingType: 'Monthly',
+          monitoringTime: '12 Hours',
+          monthlyBasePrice: 8000,
+          appliedDiscount: 0,
+          salesTaxAmount: 1280,
+          totalAmount: 9280,
+        },
+        invoices: [
+          {
+            num: 'INV-2026-008',
+            amount: 8000,
+            tax: 1280,
+            total: 9280,
+            status: 'Overdue',
+            paid: false,
+            date: new Date('2026-06-01'),
+            dueDate: new Date('2026-06-15'),
+          },
+          {
+            num: 'INV-2026-009',
+            amount: 8000,
+            tax: 1280,
+            total: 9280,
+            status: 'Overdue',
+            paid: false,
+            date: new Date('2026-07-01'),
+            dueDate: new Date('2026-07-15'),
+          }
+        ],
+        tickets: [
+          {
+            num: 'TCK-2026-104',
+            type: TicketType.BILLING_COMPLAINT,
+            source: 'UAN',
+            assignedTo: 'Billing',
+            escalation: 'Level-3',
+            status: TicketStatus.ON_HOLD,
+            actionPriority: 'High',
+            category: 'Billing',
+            subCategory: 'Non-payment Overdue',
+            fault: 'Service connection suspended due to 60+ days unpaid invoices',
+            description: 'Customer notified via SMS & Email. Awaiting payment receipt.',
+          }
+        ]
+      },
+      {
+        code: 'EG-2026-006',
+        name: 'Fatima Memorial Hospital (Solar Wing)',
+        type: CustomerType.CORPORATE,
+        phone: '+92 42 111 555 600',
+        email: 'admin.solar@fms.edu.pk',
+        cnic: '35201-7788990-2',
+        crf: 'CRF-2026-0106',
+        status: CustomerStatus.FOC_CONNECTION,
+        house: 'Block G',
+        street: 'Shadman Road',
+        block: 'Block G',
+        subArea: 'Shadman',
+        area: 'Shadman',
+        city: 'Lahore',
+        address: 'Shadman Road, Block G, Shadman, Lahore',
+        solar: {
+          disco: 'LESCO',
+          meterType: 'Green Meter',
+          meterPhase: 'Three Phase',
+          zeroExportDevice: true,
+          inverterBrand: 'Fronius Eco 27.0-3-S',
+          inverterType: 'OnGrid',
+          inverterPhase: 'Three',
+          inverterCategory: 'High Voltage',
+          inverterSize: '27kW',
+          noOfInverters: 1,
+          inverterSerial: 'FR-ECO27-9021',
+          panelBrand: 'Trina Solar Vertex',
+          panelType: 'Bifacial',
+          panelTechnology: 'Topcon',
+          panelWattage: 600,
+          noOfPanels: 45,
+          totalWattage: 27000,
+          batteryCategory: 'None',
+          batteryType: 'None',
+          batteryBrand: 'N/A',
+          noOfBatteries: 0,
+          batterySerial: 'N/A',
+          earthing: 'Both',
+          earthingAcOhms: 0.7,
+          earthingDcOhms: 0.8,
+          lightningProtection: true,
+          breakerName: 'Siemens 3VA',
+          ingressProtection: 'IP66',
+          structureType: 'Elevated',
+          structureMaterial: 'Hot Dip Galvanized',
+          systemInstallationDate: new Date('2024-12-01'),
+          installerName: 'Engr. Bilal Ahmed',
+          installerCompany: 'EnergyGurus Operations',
+          lastAuditDate: new Date('2026-08-10'),
+          inverterStatus: 'Excellent',
+          panelStatus: 'Excellent',
+          batteryStatus: 'N/A',
+        },
+        package: {
+          systemSizeKw: '20-30 kW',
+          packageTier: 'Comprehensive',
+          billingType: 'FOC',
+          monitoringTime: '24 Hours',
+          monthlyBasePrice: 28000,
+          appliedDiscount: 100,
+          salesTaxAmount: 0,
+          totalAmount: 0,
+        },
+        invoices: [],
+        tickets: []
+      }
+    ]
+
+    let totalInvoices = 0
+    let totalLedgerEntries = 0
+    let totalTransactions = 0
+    let totalTickets = 0
+
+    for (const cust of dummyCustomers) {
+      const customer = await prisma.customer.upsert({
+        where: { customerCode: cust.code },
+        update: {
+          fullName: cust.name,
+          customerType: cust.type,
+          contactNumber: cust.phone,
+          email: cust.email,
+          cnic: cust.cnic,
+          crfNumber: cust.crf,
+          status: cust.status,
+          houseNumber: cust.house,
+          streetNumber: cust.street,
+          block: cust.block,
+          subArea: cust.subArea,
+          area: cust.area,
+          city: cust.city,
+          address: cust.address,
+          signupDate: new Date('2026-01-15'),
+          activationDate: new Date('2026-01-20'),
+          accountExecutiveId: salesUser.id,
+        },
+        create: {
+          customerCode: cust.code,
+          fullName: cust.name,
+          customerType: cust.type,
+          contactNumber: cust.phone,
+          email: cust.email,
+          cnic: cust.cnic,
+          crfNumber: cust.crf,
+          status: cust.status,
+          houseNumber: cust.house,
+          streetNumber: cust.street,
+          block: cust.block,
+          subArea: cust.subArea,
+          area: cust.area,
+          city: cust.city,
+          address: cust.address,
+          signupDate: new Date('2026-01-15'),
+          activationDate: new Date('2026-01-20'),
+          accountExecutiveId: salesUser.id,
+        },
+      })
+
+      // Upsert Solar System
+      await prisma.solarSystem.upsert({
+        where: { customerId: customer.id },
+        update: cust.solar,
+        create: {
+          customerId: customer.id,
+          ...cust.solar,
+        },
+      })
+
+      // Upsert Package Plan
+      await prisma.packagePlan.upsert({
+        where: { customerId: customer.id },
+        update: cust.package,
+        create: {
+          customerId: customer.id,
+          ...cust.package,
+        },
+      })
+
+      // Invoices, Transactions & Ledger Entries
+      let currentBalance = 0
+      for (const inv of cust.invoices) {
+        totalInvoices++
+        const createdInvoice = await prisma.invoice.upsert({
+          where: { invoiceNumber: inv.num },
+          update: {
+            amount: inv.amount,
+            salesTax: inv.tax,
+            totalAmount: inv.total,
+            status: inv.status,
+            dueDate: inv.dueDate,
+          },
+          create: {
+            invoiceNumber: inv.num,
+            customerId: customer.id,
+            billingPeriod: inv.date,
+            amount: inv.amount,
+            salesTax: inv.tax,
+            totalAmount: inv.total,
+            status: inv.status,
+            dueDate: inv.dueDate,
+            createdAt: inv.date,
+          },
+        })
+
+        // Debit ledger entry (invoice billed)
+        currentBalance += Number(inv.total)
+        totalLedgerEntries++
+        await prisma.ledgerEntry.create({
+          data: {
+            customerId: customer.id,
+            invoiceId: createdInvoice.id,
+            date: inv.date,
+            refNumber: inv.num,
+            narration: `Monthly Solar O&M Billing (${inv.num})`,
+            debit: inv.total,
+            credit: 0,
+            balance: currentBalance,
+            createdAt: inv.date,
+          },
+        })
+
+        // If paid, create Transaction + Credit Ledger Entry
+        if (inv.paid) {
+          totalTransactions++
+          const txDate = new Date(inv.date.getTime() + 5 * 24 * 60 * 60 * 1000)
+          await prisma.transaction.create({
+            data: {
+              customerId: customer.id,
+              amount: inv.total,
+              paymentMethod: 'Online Bank Transfer (1Link)',
+              status: 'PAID',
+              createdAt: txDate,
+            },
+          })
+
+          currentBalance -= Number(inv.total)
+          totalLedgerEntries++
+          await prisma.ledgerEntry.create({
+            data: {
+              customerId: customer.id,
+              invoiceId: createdInvoice.id,
+              date: txDate,
+              refNumber: `REC-${inv.num}`,
+              narration: `Payment received for ${inv.num} via Bank Alfalah / 1Link`,
+              debit: 0,
+              credit: inv.total,
+              balance: currentBalance,
+              createdAt: txDate,
+            },
+          })
+        }
+      }
+
+      // Tickets
+      for (const tck of cust.tickets) {
+        totalTickets++
+        const createdTicket = await prisma.ticket.upsert({
+          where: { ticketNumber: tck.num },
+          update: {
+            ticketType: tck.type,
+            source: tck.source,
+            assignedTo: tck.assignedTo,
+            escalation: tck.escalation,
+            status: tck.status,
+            actionPriority: tck.actionPriority,
+            category: tck.category,
+            subCategory: tck.subCategory,
+            fault: tck.fault,
+            description: tck.description,
+          },
+          create: {
+            ticketNumber: tck.num,
+            customerId: customer.id,
+            ticketType: tck.type,
+            source: tck.source,
+            assignedTo: tck.assignedTo,
+            escalation: tck.escalation,
+            status: tck.status,
+            actionPriority: tck.actionPriority,
+            category: tck.category,
+            subCategory: tck.subCategory,
+            fault: tck.fault,
+            description: tck.description,
+          },
+        })
+
+        await prisma.ticketHistory.create({
+          data: {
+            ticketId: createdTicket.id,
+            status: tck.status,
+            department: tck.assignedTo,
+            remarks: `Ticket logged and routed to ${tck.assignedTo} department.`,
+            createdBy: 'System Dispatcher',
+            timeInDept: '2 hours',
+          },
+        })
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: '✅ Database successfully seeded on production!',
+      summary: {
+        staffUsers: [adminUser.email, salesUser.email, omUser.email],
+        customersCount: dummyCustomers.length,
+        invoicesCount: totalInvoices,
+        ledgerEntriesCount: totalLedgerEntries,
+        transactionsCount: totalTransactions,
+        ticketsCount: totalTickets,
+      },
+    })
+  } catch (error: any) {
+    console.error('Seed error:', error)
+    return NextResponse.json(
+      {
+        success: false,
+        error: error.message || 'Failed to seed database.',
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      },
+      { status: 500 }
+    )
+  }
+}
