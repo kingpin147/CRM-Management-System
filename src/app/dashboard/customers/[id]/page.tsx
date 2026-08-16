@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { PackageFormDialog } from './PackageFormDialog'
+import { EditCustomerDialog } from './EditCustomerDialog'
 
 export default async function CustomerDetailPage({ 
   params,
@@ -74,7 +75,7 @@ export default async function CustomerDetailPage({
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" className="border-[var(--color-line)] bg-white">Edit Profile</Button>
+            <EditCustomerDialog customer={customer} />
           </div>
         </div>
       </div>
