@@ -14,6 +14,7 @@ import {
   columnFilteringFeature,
   rowSortingFeature,
   rowPaginationFeature,
+  rowSelectionFeature,
 } from '@tanstack/react-table'
 
 import {
@@ -47,6 +48,7 @@ export function DataTable<TData extends Record<string, any>>({
     columnFilteringFeature,
     rowSortingFeature,
     rowPaginationFeature,
+    rowSelectionFeature,
     filteredRowModel: createFilteredRowModel(),
     sortedRowModel: createSortedRowModel(),
     paginatedRowModel: createPaginatedRowModel(),
@@ -101,7 +103,7 @@ export function DataTable<TData extends Record<string, any>>({
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
+                  data-state={row.getIsSelected?.() && "selected"}
                   className="hover:bg-[var(--color-paper)]/50"
                 >
                   {row.getVisibleCells().map((cell) => (
