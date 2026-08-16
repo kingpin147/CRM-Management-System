@@ -58,6 +58,9 @@ export default async function CustomerDetailPage({
   const customer = JSON.parse(JSON.stringify(rawCustomer))
 
   const canViewLedger = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES'].includes(userRole)
+  const canEditProfile = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES'].includes(userRole)
+  const canEditSolarSpecs = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'INSTALLATION'].includes(userRole)
+  const canRecordPayment = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES'].includes(userRole)
 
   const allTabs = [
     { id: 'profile', label: 'Customer Profile', allowed: true },
@@ -111,9 +114,11 @@ export default async function CustomerDetailPage({
               </Badge>
             </div>
           </div>
-          <div className="flex gap-2">
-            <EditCustomerDialog customer={customer} />
-          </div>
+          {canEditProfile && (
+            <div className="flex gap-2">
+              <EditCustomerDialog customer={customer} />
+            </div>
+          )}
         </div>
       </div>
 
@@ -220,7 +225,9 @@ export default async function CustomerDetailPage({
                 <h3 className="text-lg font-bold text-[var(--color-graphite)]">Solar Equipment & Infrastructure</h3>
                 <p className="text-xs text-[var(--color-slate-custom)]">Detailed technical asset inventory for this installation.</p>
               </div>
-              <SolarSystemDialog customerId={customer.id} solarSystem={customer.solarSystem} />
+              {canEditSolarSpecs && (
+                <SolarSystemDialog customerId={customer.id} solarSystem={customer.solarSystem} />
+              )}
             </div>
 
             {customer.solarSystem ? (
@@ -320,7 +327,7 @@ export default async function CustomerDetailPage({
                     </div>
                     <div>
                       <p className="text-[var(--color-slate-custom)] font-medium">Lightning Protection</p>
-                      <p className="text-[var(--color-ink)] font-semibold mt-0.5">{customer.solarSystem.lightningProtection || 'Class II SPD'}</p>
+                      <p className="text-[var(--color-ink)] font-semibold mt-0.5">{customer.solarSystem.lightningProtection ? 'Protected (Class II SPD)' : 'Not Installed'}</p>
                     </div>
                     <div>
                       <p className="text-[var(--color-slate-custom)] font-medium">Structure Type</p>
@@ -332,9 +339,11 @@ export default async function CustomerDetailPage({
             ) : (
               <Card className="shadow-sm border-line p-8 text-center">
                 <p className="text-sm text-[var(--color-slate-custom)] mb-4">No equipment specs configured for this client yet.</p>
-                <div className="flex justify-center">
-                  <SolarSystemDialog customerId={customer.id} />
-                </div>
+                {canEditSolarSpecs && (
+                  <div className="flex justify-center">
+                    <SolarSystemDialog customerId={customer.id} />
+                  </div>
+                )}
               </Card>
             )}
           </div>
@@ -372,7 +381,9 @@ export default async function CustomerDetailPage({
                   <CardTitle className="text-lg font-bold">Invoices & Billing History</CardTitle>
                   <CardDescription>O&M service invoices and payment statuses.</CardDescription>
                 </div>
-                <RecordPaymentDialog customerId={customer.id} />
+                {canRecordPayment && (
+                  <RecordPaymentDialog customerId={customer.id} />
+                )}
               </CardHeader>
               <CardContent>
                 <Table>

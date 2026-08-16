@@ -69,7 +69,7 @@ export function UserFormDialog() {
                     <SelectItem value="MANAGER">Manager</SelectItem>
                     <SelectItem value="SALES">Sales</SelectItem>
                     <SelectItem value="INSTALLATION">Installation</SelectItem>
-                    <SelectItem value="SUPPORT">Support</SelectItem>
+                    <SelectItem value="CUSTOMER_SUPPORT">Customer Support</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

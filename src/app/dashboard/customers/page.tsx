@@ -4,8 +4,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/ui/data-table'
 import { columns } from './columns'
+import { createClient } from '@/utils/supabase/server'
 
 export default async function CustomersPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const dbUser = user ? await prisma.user.findUnique({ where: { supabaseId: user.id }, select: { role: true } }) : null
+  const userRole = dbUser?.role || 'SALES'
+
+  const canRegisterCustomer = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES'].includes(userRole)
+
   const customers = await prisma.customer.findMany({
     orderBy: { signupDate: 'desc' }
   })
@@ -17,9 +25,11 @@ export default async function CustomersPage() {
           <h1 className="text-3xl font-display font-bold text-[var(--color-graphite)] tracking-tight">Customers Directory</h1>
           <p className="text-[var(--color-slate-custom)] mt-1">Manage all residential, corporate, and industrial clients.</p>
         </div>
-        <Link href="/dashboard/customers/new">
-          <Button className="shadow-md">Register Customer</Button>
-        </Link>
+        {canRegisterCustomer && (
+          <Link href="/dashboard/customers/new">
+            <Button className="shadow-md">Register Customer</Button>
+          </Link>
+        )}
       </div>
 
       <Card className="shadow-sm border-line">

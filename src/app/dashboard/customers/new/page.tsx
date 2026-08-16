@@ -3,7 +3,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import prisma from '@/lib/prisma'
+import { createClient } from '@/utils/supabase/server'
+import { redirect } from 'next/navigation'
+
 export default async function NewCustomerPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const dbUser = await prisma.user.findUnique({
+    where: { supabaseId: user.id },
+    select: { role: true }
+  })
+  const userRole = dbUser?.role || 'SALES'
+
+  if (!['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES'].includes(userRole)) {
+    redirect('/dashboard/customers')
+  }
+
   const users = await prisma.user.findMany({
     where: { isActive: true },
     select: { id: true, fullName: true, role: true },
