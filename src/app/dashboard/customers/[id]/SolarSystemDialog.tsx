@@ -86,8 +86,8 @@ export function SolarSystemDialog({
       <DialogTrigger render={<Button size="sm" className="bg-[#F58220] hover:bg-[#d96e14] text-white font-bold text-xs shadow-xs" />}>
         {solarSystem ? 'Edit System Specs' : '+ Add Solar System Specs'}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[620px] bg-white border border-[var(--color-line)] shadow-premium rounded-2xl p-6 max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="space-y-1 text-left">
+      <DialogContent className="sm:max-w-3xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl bg-white border border-[var(--color-line)] shadow-premium rounded-2xl p-6 max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="space-y-1 text-left pb-2 border-b border-[var(--color-line)]">
           <DialogTitle className="text-xl font-display font-bold text-[var(--color-graphite)]">
             {solarSystem ? 'Edit Solar System Specifications' : 'Configure Solar System Specs'}
           </DialogTitle>
@@ -96,181 +96,189 @@ export function SolarSystemDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSave} className="space-y-4 pt-2">
+        <form onSubmit={handleSave} className="space-y-5 pt-3">
           {error && (
             <div className="p-3 text-xs bg-destructive/10 border border-destructive/20 text-destructive rounded-lg font-medium">
               {error}
             </div>
           )}
 
-          {/* Inverter Section */}
-          <div className="space-y-2.5">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-amber)]">Inverter Specifications</h4>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <div className="space-y-1">
-                <Label className="text-xs font-semibold text-[var(--color-ink)]">Inverter Brand</Label>
-                <select
-                  value={inverterBrand}
-                  onChange={(e) => setInverterBrand(e.target.value)}
-                  className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white focus:ring-2 focus:ring-[var(--color-amber)]"
-                >
-                  <option value="Huawei">Huawei</option>
-                  <option value="Solis">Solis</option>
-                  <option value="Sungrow">Sungrow</option>
-                  <option value="Fronius">Fronius</option>
-                  <option value="Growatt">Growatt</option>
-                  <option value="GoodWe">GoodWe</option>
-                  <option value="Inverex">Inverex</option>
-                  <option value="Knox">Knox</option>
-                </select>
+          {/* 2-Column Horizontal Desktop Layout */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Left Column: Inverters & Solar Panels */}
+            <div className="space-y-5">
+              {/* Inverter Section */}
+              <div className="space-y-3 bg-slate-50/60 p-4 rounded-xl border border-slate-200/80">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-amber)]">1. Inverter Specifications</h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-[var(--color-ink)]">Brand</Label>
+                    <select
+                      value={inverterBrand}
+                      onChange={(e) => setInverterBrand(e.target.value)}
+                      className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white focus:ring-2 focus:ring-[var(--color-amber)]"
+                    >
+                      <option value="Huawei">Huawei</option>
+                      <option value="Solis">Solis</option>
+                      <option value="Sungrow">Sungrow</option>
+                      <option value="Fronius">Fronius</option>
+                      <option value="Growatt">Growatt</option>
+                      <option value="GoodWe">GoodWe</option>
+                      <option value="Inverex">Inverex</option>
+                      <option value="Knox">Knox</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-[var(--color-ink)]">Type</Label>
+                    <select
+                      value={inverterType}
+                      onChange={(e) => setInverterType(e.target.value)}
+                      className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white focus:ring-2 focus:ring-[var(--color-amber)]"
+                    >
+                      <option value="Hybrid">Hybrid</option>
+                      <option value="OnGrid">On-Grid</option>
+                      <option value="OffGrid">Off-Grid</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-[var(--color-ink)]">Size</Label>
+                    <Input
+                      value={inverterSize}
+                      onChange={(e) => setInverterSize(e.target.value)}
+                      placeholder="e.g. 10 kW"
+                      className="h-9 text-xs border-[var(--color-line)] bg-white"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-[var(--color-ink)]">Phase</Label>
+                    <select
+                      value={inverterPhase}
+                      onChange={(e) => setInverterPhase(e.target.value)}
+                      className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white"
+                    >
+                      <option value="Single Phase">Single Phase</option>
+                      <option value="Three Phase">Three Phase</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-[var(--color-ink)]">Serial Number</Label>
+                    <Input
+                      value={inverterSerial}
+                      onChange={(e) => setInverterSerial(e.target.value)}
+                      placeholder="e.g. SN-INV-992384"
+                      className="h-9 text-xs border-[var(--color-line)] bg-white"
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="space-y-1">
-                <Label className="text-xs font-semibold text-[var(--color-ink)]">Inverter Type</Label>
-                <select
-                  value={inverterType}
-                  onChange={(e) => setInverterType(e.target.value)}
-                  className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white focus:ring-2 focus:ring-[var(--color-amber)]"
-                >
-                  <option value="Hybrid">Hybrid</option>
-                  <option value="OnGrid">On-Grid</option>
-                  <option value="OffGrid">Off-Grid</option>
-                </select>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs font-semibold text-[var(--color-ink)]">Capacity / Size</Label>
-                <Input
-                  value={inverterSize}
-                  onChange={(e) => setInverterSize(e.target.value)}
-                  placeholder="e.g. 10 kW"
-                  className="h-9 text-xs border-[var(--color-line)]"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-xs font-semibold text-[var(--color-ink)]">Phase</Label>
-                <select
-                  value={inverterPhase}
-                  onChange={(e) => setInverterPhase(e.target.value)}
-                  className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white"
-                >
-                  <option value="Single Phase">Single Phase</option>
-                  <option value="Three Phase">Three Phase</option>
-                </select>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs font-semibold text-[var(--color-ink)]">Serial Number</Label>
-                <Input
-                  value={inverterSerial}
-                  onChange={(e) => setInverterSerial(e.target.value)}
-                  placeholder="e.g. SN-INV-992384"
-                  className="h-9 text-xs border-[var(--color-line)]"
-                />
-              </div>
-            </div>
-          </div>
 
-          {/* PV Panels Section */}
-          <div className="space-y-2.5 pt-2 border-t border-[var(--color-line)]">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-teal)]">PV Panels Array</h4>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="space-y-1">
-                <Label className="text-xs font-semibold text-[var(--color-ink)]">Panel Brand</Label>
-                <select
-                  value={panelBrand}
-                  onChange={(e) => setPanelBrand(e.target.value)}
-                  className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white"
-                >
-                  <option value="Longi">Longi</option>
-                  <option value="Jinko">Jinko</option>
-                  <option value="Canadian Solar">Canadian Solar</option>
-                  <option value="Trina">Trina Solar</option>
-                  <option value="JA Solar">JA Solar</option>
-                </select>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs font-semibold text-[var(--color-ink)]">Technology</Label>
-                <select
-                  value={panelType}
-                  onChange={(e) => setPanelType(e.target.value)}
-                  className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white"
-                >
-                  <option value="Bifacial">Bifacial</option>
-                  <option value="Monofacial">Monofacial</option>
-                  <option value="Topcon">Topcon</option>
-                </select>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs font-semibold text-[var(--color-ink)]">Wattage (W)</Label>
-                <Input
-                  type="number"
-                  value={panelWattage}
-                  onChange={(e) => setPanelWattage(Number(e.target.value))}
-                  className="h-9 text-xs border-[var(--color-line)]"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs font-semibold text-[var(--color-ink)]">Qty Panels</Label>
-                <Input
-                  type="number"
-                  value={noOfPanels}
-                  onChange={(e) => setNoOfPanels(Number(e.target.value))}
-                  className="h-9 text-xs border-[var(--color-line)]"
-                />
+              {/* PV Panels Section */}
+              <div className="space-y-3 bg-slate-50/60 p-4 rounded-xl border border-slate-200/80">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-teal)]">2. PV Panels Array</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-[var(--color-ink)]">Panel Brand</Label>
+                    <select
+                      value={panelBrand}
+                      onChange={(e) => setPanelBrand(e.target.value)}
+                      className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white"
+                    >
+                      <option value="Longi">Longi</option>
+                      <option value="Jinko">Jinko</option>
+                      <option value="Canadian Solar">Canadian Solar</option>
+                      <option value="Trina">Trina Solar</option>
+                      <option value="JA Solar">JA Solar</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-[var(--color-ink)]">Technology</Label>
+                    <select
+                      value={panelType}
+                      onChange={(e) => setPanelType(e.target.value)}
+                      className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white"
+                    >
+                      <option value="Bifacial">Bifacial</option>
+                      <option value="Monofacial">Monofacial</option>
+                      <option value="Topcon">Topcon</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-[var(--color-ink)]">Wattage (W)</Label>
+                    <Input
+                      type="number"
+                      value={panelWattage}
+                      onChange={(e) => setPanelWattage(Number(e.target.value))}
+                      className="h-9 text-xs border-[var(--color-line)] bg-white"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-[var(--color-ink)]">Qty Panels</Label>
+                    <Input
+                      type="number"
+                      value={noOfPanels}
+                      onChange={(e) => setNoOfPanels(Number(e.target.value))}
+                      className="h-9 text-xs border-[var(--color-line)] bg-white"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Battery & Grid Section */}
-          <div className="space-y-2.5 pt-2 border-t border-[var(--color-line)]">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-graphite)]">Battery Storage & DISCO Net Metering</h4>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="space-y-1">
-                <Label className="text-xs font-semibold text-[var(--color-ink)]">Battery Brand</Label>
-                <select
-                  value={batteryBrand}
-                  onChange={(e) => setBatteryBrand(e.target.value)}
-                  className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white"
-                >
-                  <option value="Narada">Narada</option>
-                  <option value="Pylontech">Pylontech</option>
-                  <option value="BYD">BYD</option>
-                  <option value="Dyness">Dyness</option>
-                  <option value="None">None</option>
-                </select>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs font-semibold text-[var(--color-ink)]">Battery Chemistry</Label>
-                <select
-                  value={batteryType}
-                  onChange={(e) => setBatteryType(e.target.value)}
-                  className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white"
-                >
-                  <option value="Lithium">Lithium LiFePO4</option>
-                  <option value="Tubular">Tubular</option>
-                  <option value="Lead Acid">Lead Acid</option>
-                  <option value="None">None</option>
-                </select>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs font-semibold text-[var(--color-ink)]">DISCO</Label>
-                <Input
-                  value={disco}
-                  onChange={(e) => setDisco(e.target.value)}
-                  placeholder="LESCO / IESCO / K-Electric"
-                  className="h-9 text-xs border-[var(--color-line)]"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs font-semibold text-[var(--color-ink)]">Meter Type</Label>
-                <select
-                  value={meterType}
-                  onChange={(e) => setMeterType(e.target.value)}
-                  className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white"
-                >
-                  <option value="Green Meter">Green Meter (Bi-Directional)</option>
-                  <option value="Non Green">Standard Meter</option>
-                </select>
+            {/* Right Column: Battery & Grid Section */}
+            <div className="space-y-5">
+              <div className="space-y-3 bg-slate-50/60 p-4 rounded-xl border border-slate-200/80">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-graphite)]">3. Battery Storage & Net Metering</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-[var(--color-ink)]">Battery Brand</Label>
+                    <select
+                      value={batteryBrand}
+                      onChange={(e) => setBatteryBrand(e.target.value)}
+                      className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white"
+                    >
+                      <option value="Narada">Narada</option>
+                      <option value="Pylontech">Pylontech</option>
+                      <option value="BYD">BYD</option>
+                      <option value="Dyness">Dyness</option>
+                      <option value="None">None</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-[var(--color-ink)]">Battery Chemistry</Label>
+                    <select
+                      value={batteryType}
+                      onChange={(e) => setBatteryType(e.target.value)}
+                      className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white"
+                    >
+                      <option value="Lithium">Lithium LiFePO4</option>
+                      <option value="Tubular">Tubular</option>
+                      <option value="Lead Acid">Lead Acid</option>
+                      <option value="None">None</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-[var(--color-ink)]">DISCO</Label>
+                    <Input
+                      value={disco}
+                      onChange={(e) => setDisco(e.target.value)}
+                      placeholder="LESCO / IESCO / K-Electric"
+                      className="h-9 text-xs border-[var(--color-line)] bg-white"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-[var(--color-ink)]">Meter Type</Label>
+                    <select
+                      value={meterType}
+                      onChange={(e) => setMeterType(e.target.value)}
+                      className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white"
+                    >
+                      <option value="Green Meter">Green Meter (Bi-Directional)</option>
+                      <option value="Non Green">Standard Meter</option>
+                    </select>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

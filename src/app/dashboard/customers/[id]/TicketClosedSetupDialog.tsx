@@ -51,7 +51,7 @@ export function TicketClosedSetupDialog({ ticket }: { ticket: any }) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={<Button size="sm" className="h-8 text-xs font-bold text-white bg-[#002868] hover:bg-[#001d4a] shadow-xs">Update / Close Ticket</Button>} />
 
-      <DialogContent className="sm:max-w-[700px] p-0 border-line max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-3xl md:max-w-4xl lg:max-w-5xl p-0 border-line max-h-[90vh] overflow-y-auto bg-white">
         {/* Navy Top Banner matching Invoice theme */}
         <DialogHeader className="bg-[#002868] px-6 py-3 border-b border-[#001d4a]">
           <DialogTitle className="text-white font-bold text-base text-center tracking-wide">

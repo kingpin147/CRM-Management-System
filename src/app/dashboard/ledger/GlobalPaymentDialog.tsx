@@ -67,8 +67,8 @@ export function GlobalPaymentDialog({
       <DialogTrigger render={<Button className="shadow-md" />}>
         + Record Payment
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[480px] bg-white border border-[var(--color-line)] shadow-premium rounded-2xl p-6">
-        <DialogHeader className="space-y-1 text-left">
+      <DialogContent className="sm:max-w-2xl md:max-w-3xl lg:max-w-4xl bg-white border border-[var(--color-line)] shadow-premium rounded-2xl p-6">
+        <DialogHeader className="space-y-1 text-left pb-2 border-b border-[var(--color-line)]">
           <DialogTitle className="text-xl font-display font-bold text-[var(--color-graphite)]">
             Record Customer Transaction
           </DialogTitle>
@@ -77,42 +77,44 @@ export function GlobalPaymentDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+        <form onSubmit={handleSubmit} className="space-y-4 pt-3">
           {error && (
             <div className="p-3 text-xs bg-destructive/10 border border-destructive/20 text-destructive rounded-lg font-medium">
               {error}
             </div>
           )}
 
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-[var(--color-ink)]">Select Customer *</Label>
-            <select
-              value={customerId}
-              onChange={(e) => setCustomerId(e.target.value)}
-              className="w-full h-10 px-3 rounded-lg border border-[var(--color-line)] bg-white text-sm font-medium text-[var(--color-ink)]"
-            >
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.fullName} ({c.customerCode})
-                </option>
-              ))}
-            </select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-[var(--color-ink)]">Select Customer *</Label>
+              <select
+                value={customerId}
+                onChange={(e) => setCustomerId(e.target.value)}
+                className="w-full h-10 px-3 rounded-lg border border-[var(--color-line)] bg-white text-sm font-medium text-[var(--color-ink)]"
+              >
+                {customers.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.fullName} ({c.customerCode})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-[var(--color-ink)]">Amount (PKR) *</Label>
+              <Input
+                type="number"
+                required
+                min={1}
+                value={amount}
+                onChange={(e) => setAmount(Number(e.target.value))}
+                placeholder="e.g. 25000"
+                className="border-[var(--color-line)] text-base font-semibold focus-visible:ring-[var(--color-amber)] bg-white"
+              />
+            </div>
           </div>
 
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-[var(--color-ink)]">Amount (PKR) *</Label>
-            <Input
-              type="number"
-              required
-              min={1}
-              value={amount}
-              onChange={(e) => setAmount(Number(e.target.value))}
-              placeholder="e.g. 25000"
-              className="border-[var(--color-line)] text-base font-semibold focus-visible:ring-[var(--color-amber)]"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-[var(--color-ink)]">Payment Method</Label>
               <select
@@ -134,7 +136,7 @@ export function GlobalPaymentDialog({
                 value={reference}
                 onChange={(e) => setReference(e.target.value)}
                 placeholder="e.g. FT260816991"
-                className="border-[var(--color-line)] text-xs"
+                className="border-[var(--color-line)] text-xs bg-white"
               />
             </div>
           </div>
@@ -145,11 +147,11 @@ export function GlobalPaymentDialog({
               value={narration}
               onChange={(e) => setNarration(e.target.value)}
               placeholder="e.g. Settlement for O&M invoice"
-              className="border-[var(--color-line)] text-xs"
+              className="border-[var(--color-line)] text-xs bg-white"
             />
           </div>
 
-          <DialogFooter className="pt-2 flex justify-end gap-2">
+          <DialogFooter className="pt-3 flex justify-end gap-2 border-t border-[var(--color-line)]">
             <Button
               type="button"
               variant="outline"
@@ -159,7 +161,7 @@ export function GlobalPaymentDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading} className="bg-[#002868] hover:bg-[#001d4a] text-white font-bold text-xs shadow-xs">
+            <Button type="submit" disabled={loading} className="bg-[#002868] hover:bg-[#001d4a] text-white font-bold text-xs shadow-xs cursor-pointer">
               {loading ? 'Recording...' : 'Credit Payment'}
             </Button>
           </DialogFooter>

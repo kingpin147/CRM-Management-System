@@ -60,7 +60,7 @@ export function TicketUpdateDialog({ ticket }: { ticket: TicketWithCustomer }) {
       <DialogTrigger render={<Button variant="outline" size="sm" className="hover:bg-[var(--color-paper)]" />}>
         Update
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[540px] bg-white border border-[var(--color-line)] shadow-premium rounded-2xl p-6">
+      <DialogContent className="sm:max-w-2xl md:max-w-3xl lg:max-w-4xl bg-white border border-[var(--color-line)] shadow-premium rounded-2xl p-6">
         <DialogHeader className="space-y-1 text-left">
           <div className="flex items-center justify-between gap-2">
             <DialogTitle className="text-xl font-display font-bold text-[var(--color-graphite)]">

@@ -90,8 +90,8 @@ export function EditCustomerDialog({ customer }: { customer: Customer }) {
       <DialogTrigger render={<Button className="bg-[#002868] hover:bg-[#001d4a] text-white font-bold text-xs shadow-xs" size="sm" />}>
         Edit Profile
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[620px] bg-white border border-[var(--color-line)] shadow-premium rounded-2xl p-6 max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="space-y-1 text-left">
+      <DialogContent className="sm:max-w-3xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl bg-white border border-[var(--color-line)] shadow-premium rounded-2xl p-6 max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="space-y-1 text-left pb-2 border-b border-[var(--color-line)]">
           <DialogTitle className="text-xl font-display font-bold text-[var(--color-graphite)]">
             Edit Customer Profile
           </DialogTitle>
@@ -100,138 +100,149 @@ export function EditCustomerDialog({ customer }: { customer: Customer }) {
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSave} className="space-y-4 pt-2">
+        <form onSubmit={handleSave} className="space-y-5 pt-3">
           {error && (
             <div className="p-3 text-xs bg-destructive/10 border border-destructive/20 text-destructive rounded-lg font-medium">
               {error}
             </div>
           )}
 
-          {/* Personal & Contact Details */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-[var(--color-ink)]">Full Name *</Label>
-              <Input
-                required
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="border-[var(--color-line)] focus-visible:ring-[var(--color-amber)]"
-              />
+          {/* 2-Column Horizontal Desktop Layout */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Left Column: Personal Details & Status */}
+            <div className="space-y-4 bg-slate-50/60 p-4 rounded-xl border border-slate-200/80">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[#002868] pb-1 border-b border-slate-200">
+                1. Personal & Account Information
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-[var(--color-ink)]">Full Name *</Label>
+                  <Input
+                    required
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="border-[var(--color-line)] focus-visible:ring-[var(--color-amber)] bg-white"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-[var(--color-ink)]">Contact Number *</Label>
+                  <Input
+                    required
+                    value={contactNumber}
+                    onChange={(e) => setContactNumber(e.target.value)}
+                    className="border-[var(--color-line)] focus-visible:ring-[var(--color-amber)] bg-white"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-[var(--color-ink)]">Email Address</Label>
+                  <Input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="border-[var(--color-line)] focus-visible:ring-[var(--color-amber)] bg-white"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-[var(--color-ink)]">CNIC *</Label>
+                  <Input
+                    required
+                    value={cnic}
+                    onChange={(e) => setCnic(e.target.value)}
+                    className="border-[var(--color-line)] focus-visible:ring-[var(--color-amber)] bg-white"
+                  />
+                </div>
+              </div>
+
+              {/* Type & Status */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-[var(--color-ink)]">Customer Type</Label>
+                  <select
+                    value={customerType}
+                    onChange={(e) => setCustomerType(e.target.value)}
+                    className="w-full h-10 px-3 rounded-lg border border-[var(--color-line)] bg-white text-sm font-medium text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-amber)]"
+                  >
+                    <option value={CustomerType.RESIDENTIAL}>Residential</option>
+                    <option value={CustomerType.CORPORATE}>Corporate</option>
+                    <option value={CustomerType.INDUSTRIAL}>Industrial</option>
+                    <option value={CustomerType.TEMPORARY_BLOCKED}>Temporary Blocked</option>
+                    <option value={CustomerType.TERMINATED}>Terminated</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-[var(--color-ink)]">Customer Status</Label>
+                  <select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    className="w-full h-10 px-3 rounded-lg border border-[var(--color-line)] bg-white text-sm font-medium text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-amber)]"
+                  >
+                    <option value={CustomerStatus.SIGNUP_GENERATED}>Signup Generated</option>
+                    <option value={CustomerStatus.PENDING_PAYMENT_VERIFICATION}>Pending Payment Verification</option>
+                    <option value={CustomerStatus.PENDING_ACTIVATION}>Pending Activation</option>
+                    <option value={CustomerStatus.CONNECTION_ACTIVE}>Connection Active</option>
+                    <option value={CustomerStatus.NON_PAYMENT_BLOCKED}>Non-Payment Blocked</option>
+                    <option value={CustomerStatus.TEMPORARY_BLOCKED}>Temporary Blocked</option>
+                    <option value={CustomerStatus.PERMANENT_DISCONNECTION}>Permanent Disconnection</option>
+                    <option value={CustomerStatus.FOC_CONNECTION}>FOC Connection</option>
+                    <option value={CustomerStatus.IN_HOUSE_CONNECTION}>In-House Connection</option>
+                  </select>
+                </div>
+              </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-[var(--color-ink)]">Contact Number *</Label>
-              <Input
-                required
-                value={contactNumber}
-                onChange={(e) => setContactNumber(e.target.value)}
-                className="border-[var(--color-line)] focus-visible:ring-[var(--color-amber)]"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-[var(--color-ink)]">Email Address</Label>
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="border-[var(--color-line)] focus-visible:ring-[var(--color-amber)]"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-[var(--color-ink)]">CNIC *</Label>
-              <Input
-                required
-                value={cnic}
-                onChange={(e) => setCnic(e.target.value)}
-                className="border-[var(--color-line)] focus-visible:ring-[var(--color-amber)]"
-              />
-            </div>
-          </div>
-
-          {/* Type & Status */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-[var(--color-ink)]">Customer Type</Label>
-              <select
-                value={customerType}
-                onChange={(e) => setCustomerType(e.target.value)}
-                className="w-full h-10 px-3 rounded-lg border border-[var(--color-line)] bg-white text-sm font-medium text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-amber)]"
-              >
-                <option value={CustomerType.RESIDENTIAL}>Residential</option>
-                <option value={CustomerType.CORPORATE}>Corporate</option>
-                <option value={CustomerType.INDUSTRIAL}>Industrial</option>
-                <option value={CustomerType.TEMPORARY_BLOCKED}>Temporary Blocked</option>
-                <option value={CustomerType.TERMINATED}>Terminated</option>
-              </select>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-[var(--color-ink)]">Customer Status</Label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                className="w-full h-10 px-3 rounded-lg border border-[var(--color-line)] bg-white text-sm font-medium text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-amber)]"
-              >
-                <option value={CustomerStatus.SIGNUP_GENERATED}>Signup Generated</option>
-                <option value={CustomerStatus.PENDING_PAYMENT_VERIFICATION}>Pending Payment Verification</option>
-                <option value={CustomerStatus.PENDING_ACTIVATION}>Pending Activation</option>
-                <option value={CustomerStatus.CONNECTION_ACTIVE}>Connection Active</option>
-                <option value={CustomerStatus.NON_PAYMENT_BLOCKED}>Non-Payment Blocked</option>
-                <option value={CustomerStatus.TEMPORARY_BLOCKED}>Temporary Blocked</option>
-                <option value={CustomerStatus.PERMANENT_DISCONNECTION}>Permanent Disconnection</option>
-                <option value={CustomerStatus.FOC_CONNECTION}>FOC Connection</option>
-                <option value={CustomerStatus.IN_HOUSE_CONNECTION}>In-House Connection</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Address Details */}
-          <div className="space-y-3 pt-1 border-t border-[var(--color-line)]">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-slate-custom)] pt-2">Address Details</h4>
-            
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-[var(--color-ink)]">Full Address</Label>
-              <Input
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                className="border-[var(--color-line)] focus-visible:ring-[var(--color-amber)]"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              <div className="space-y-1">
-                <Label className="text-[11px] font-semibold text-[var(--color-ink)]">House #</Label>
+            {/* Right Column: Address Details */}
+            <div className="space-y-4 bg-slate-50/60 p-4 rounded-xl border border-slate-200/80">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[#002868] pb-1 border-b border-slate-200">
+                2. Address & Location
+              </h4>
+              
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-[var(--color-ink)]">Full Address</Label>
                 <Input
-                  value={houseNumber}
-                  onChange={(e) => setHouseNumber(e.target.value)}
-                  className="h-9 text-xs border-[var(--color-line)]"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  className="border-[var(--color-line)] focus-visible:ring-[var(--color-amber)] bg-white"
                 />
               </div>
-              <div className="space-y-1">
-                <Label className="text-[11px] font-semibold text-[var(--color-ink)]">Street #</Label>
-                <Input
-                  value={streetNumber}
-                  onChange={(e) => setStreetNumber(e.target.value)}
-                  className="h-9 text-xs border-[var(--color-line)]"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-[11px] font-semibold text-[var(--color-ink)]">Block/Sector</Label>
-                <Input
-                  value={block}
-                  onChange={(e) => setBlock(e.target.value)}
-                  className="h-9 text-xs border-[var(--color-line)]"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-[11px] font-semibold text-[var(--color-ink)]">City</Label>
-                <Input
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  className="h-9 text-xs border-[var(--color-line)]"
-                />
+
+              <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 pt-1">
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-semibold text-[var(--color-ink)]">House #</Label>
+                  <Input
+                    value={houseNumber}
+                    onChange={(e) => setHouseNumber(e.target.value)}
+                    className="h-9 text-xs border-[var(--color-line)] bg-white"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-semibold text-[var(--color-ink)]">Street #</Label>
+                  <Input
+                    value={streetNumber}
+                    onChange={(e) => setStreetNumber(e.target.value)}
+                    className="h-9 text-xs border-[var(--color-line)] bg-white"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-semibold text-[var(--color-ink)]">Block/Sector</Label>
+                  <Input
+                    value={block}
+                    onChange={(e) => setBlock(e.target.value)}
+                    className="h-9 text-xs border-[var(--color-line)] bg-white"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-semibold text-[var(--color-ink)]">City</Label>
+                  <Input
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="h-9 text-xs border-[var(--color-line)] bg-white"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -242,7 +253,7 @@ export function EditCustomerDialog({ customer }: { customer: Customer }) {
               variant="destructive"
               onClick={handleDelete}
               disabled={loading}
-              className="text-xs font-bold"
+              className="text-xs font-bold cursor-pointer"
             >
               Delete Customer
             </Button>
@@ -256,7 +267,7 @@ export function EditCustomerDialog({ customer }: { customer: Customer }) {
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading} className="bg-[#002868] hover:bg-[#001d4a] text-white shadow-md text-xs font-bold">
+              <Button type="submit" disabled={loading} className="bg-[#002868] hover:bg-[#001d4a] text-white shadow-md text-xs font-bold cursor-pointer">
                 {loading ? 'Saving...' : 'Save Changes'}
               </Button>
             </div>

@@ -58,8 +58,8 @@ export function GenerateInvoiceDialog({ customerId }: { customerId: string }) {
       <DialogTrigger render={<Button size="sm" className="bg-[#F58220] hover:bg-[#d96e14] text-white font-bold text-xs shadow-xs" />}>
         + Generate Invoice
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[480px] bg-white border border-[var(--color-line)] shadow-premium rounded-2xl p-6">
-        <DialogHeader className="space-y-1 text-left">
+      <DialogContent className="sm:max-w-2xl md:max-w-3xl bg-white border border-[var(--color-line)] shadow-premium rounded-2xl p-6">
+        <DialogHeader className="space-y-1 text-left pb-2 border-b border-[var(--color-line)]">
           <DialogTitle className="text-xl font-display font-bold text-[var(--color-graphite)]">
             Generate Manual Invoice
           </DialogTitle>
@@ -68,24 +68,36 @@ export function GenerateInvoiceDialog({ customerId }: { customerId: string }) {
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+        <form onSubmit={handleSubmit} className="space-y-4 pt-3">
           {error && (
             <div className="p-3 text-xs bg-destructive/10 border border-destructive/20 text-destructive rounded-lg font-medium">
               {error}
             </div>
           )}
 
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-[var(--color-ink)]">Invoice Amount (PKR) *</Label>
-            <Input
-              type="number"
-              required
-              min={1}
-              value={amount}
-              onChange={(e) => setAmount(Number(e.target.value))}
-              placeholder="e.g. 5000"
-              className="border-[var(--color-line)] text-base font-semibold focus-visible:ring-[var(--color-amber)]"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-[var(--color-ink)]">Invoice Amount (PKR) *</Label>
+              <Input
+                type="number"
+                required
+                min={1}
+                value={amount}
+                onChange={(e) => setAmount(Number(e.target.value))}
+                placeholder="e.g. 5000"
+                className="border-[var(--color-line)] text-base font-semibold focus-visible:ring-[var(--color-amber)] bg-white"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-[var(--color-ink)]">Due Date (Optional)</Label>
+              <Input
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                className="border-[var(--color-line)] text-xs focus-visible:ring-[var(--color-amber)] bg-white"
+              />
+            </div>
           </div>
 
           <div className="space-y-1.5">
@@ -94,32 +106,22 @@ export function GenerateInvoiceDialog({ customerId }: { customerId: string }) {
               required
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="e.g. Equipment Repair Fee"
-              className="border-[var(--color-line)] text-xs focus-visible:ring-[var(--color-amber)]"
+              placeholder="e.g. Equipment Repair Fee / Additional Solar Panel Service"
+              className="border-[var(--color-line)] text-xs focus-visible:ring-[var(--color-amber)] bg-white"
             />
           </div>
 
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-[var(--color-ink)]">Due Date (Optional)</Label>
-            <Input
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              className="border-[var(--color-line)] text-xs focus-visible:ring-[var(--color-amber)]"
-            />
-          </div>
-
-          <DialogFooter className="pt-2 flex justify-end gap-2">
+          <DialogFooter className="pt-3 flex justify-end gap-2 border-t border-[var(--color-line)]">
             <Button
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
               disabled={loading}
-              className="border-[var(--color-line)] text-[var(--color-ink)]"
+              className="border-slate-300 text-slate-600 hover:bg-slate-100 text-xs"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading} className="shadow-md bg-[var(--color-amber)] hover:bg-[var(--color-graphite)] text-white">
+            <Button type="submit" disabled={loading} className="bg-[#F58220] hover:bg-[#d96e14] text-white font-bold text-xs shadow-xs cursor-pointer">
               {loading ? 'Generating...' : 'Generate Invoice'}
             </Button>
           </DialogFooter>
