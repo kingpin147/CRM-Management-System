@@ -123,7 +123,7 @@ export function TicketForm({ customers }: { customers: { id: string, fullName: s
             render={({ field }) => (
               <FormItem className="md:col-span-2">
                 <FormLabel>Select Customer</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder="Search and select a customer..." /></SelectTrigger>
                   </FormControl>
@@ -151,7 +151,7 @@ export function TicketForm({ customers }: { customers: { id: string, fullName: s
                   // Auto-assign department based on ticket type
                   if (val === 'TECHNICAL_COMPLAINT') form.setValue('assignedTo', 'O&M')
                   if (val === 'BILLING_COMPLAINT' || val === 'SERVICE_REQUEST') form.setValue('assignedTo', 'Billing')
-                }} defaultValue={field.value}>
+                }} value={field.value}>
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
                   </FormControl>
@@ -177,7 +177,7 @@ export function TicketForm({ customers }: { customers: { id: string, fullName: s
                   // Reset dependent fields when category changes
                   form.setValue('subCategory', '')
                   form.setValue('faultCode', '')
-                }} defaultValue={field.value}>
+                }} value={field.value}>
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
                   </FormControl>
@@ -254,7 +254,7 @@ export function TicketForm({ customers }: { customers: { id: string, fullName: s
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Priority</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder="Select priority" /></SelectTrigger>
                   </FormControl>
@@ -275,7 +275,7 @@ export function TicketForm({ customers }: { customers: { id: string, fullName: s
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Assign Department</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder="Assign to" /></SelectTrigger>
                   </FormControl>

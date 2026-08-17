@@ -49,7 +49,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
       city: 'Lahore',
       address: '',
       block: '',
-      accountExecutiveId: '',
+      accountExecutiveId: 'none',
       
       systemSizeKw: '1-10 kW',
       packageTier: 'Basic',
@@ -99,7 +99,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
 
     const formData = new FormData()
     Object.entries(values).forEach(([key, value]) => {
-      if (value !== undefined && value !== '') formData.append(key, value.toString())
+      if (value !== undefined && value !== '' && value !== 'none') formData.append(key, value.toString())
     })
     
     // Append auto-calculated fields
@@ -149,7 +149,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Customer Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
                     </FormControl>
@@ -216,7 +216,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>City</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger><SelectValue placeholder="Select city" /></SelectTrigger>
                     </FormControl>
@@ -261,12 +261,12 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Account Executive (Optional)</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger><SelectValue placeholder="Select Account Executive" /></SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       {users?.map(user => (
                         <SelectItem key={user.id} value={user.id}>
                           {user.fullName} ({user.role.replace('_', ' ')})
@@ -290,7 +290,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>System Size</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger><SelectValue placeholder="Select size" /></SelectTrigger>
                     </FormControl>
@@ -312,7 +312,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Package Tier</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger><SelectValue placeholder="Select tier" /></SelectTrigger>
                     </FormControl>
@@ -333,7 +333,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Monitoring Time</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger><SelectValue placeholder="Select monitoring time" /></SelectTrigger>
                     </FormControl>
@@ -353,7 +353,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Billing Cycle</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger><SelectValue placeholder="Select cycle" /></SelectTrigger>
                     </FormControl>

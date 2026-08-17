@@ -9,9 +9,11 @@ import { PackageFormDialog } from './PackageFormDialog'
 import { EditCustomerDialog } from './EditCustomerDialog'
 import { SolarSystemDialog } from './SolarSystemDialog'
 import { RecordPaymentDialog } from './RecordPaymentDialog'
+import { GenerateInvoiceDialog } from './GenerateInvoiceDialog'
+import { toggleInvoiceStatus } from './actions'
 import { CustomerTicketForm } from './CustomerTicketForm'
 import { TicketUpdateDialog } from '@/app/dashboard/tickets/TicketUpdateDialog'
-import { Sun, Battery, ShieldCheck, Zap, Receipt, MessageSquare, Mail, History as HistoryIcon } from 'lucide-react'
+import { Sun, Battery, ShieldCheck, Zap, Receipt, MessageSquare, Mail, History as HistoryIcon, Download } from 'lucide-react'
 
 import { createClient } from '@/utils/supabase/server'
 
@@ -83,7 +85,7 @@ export default async function CustomerDetailPage({
     : (totalInvoiced - totalPaid)
 
   return (
-    <div className="space-y-6 max-w-6xl animate-reveal">
+    <div className="space-y-6 animate-reveal">
       <div className="flex items-center gap-4 mb-4">
         <Link href="/dashboard/customers">
           <Button variant="ghost" size="sm" className="text-[var(--color-slate-custom)] hover:text-[var(--color-ink)]">
@@ -382,7 +384,10 @@ export default async function CustomerDetailPage({
                   <CardDescription>O&M service invoices and payment statuses.</CardDescription>
                 </div>
                 {canRecordPayment && (
-                  <RecordPaymentDialog customerId={customer.id} />
+                  <div className="flex gap-2 items-center">
+                    <GenerateInvoiceDialog customerId={customer.id} />
+                    <RecordPaymentDialog customerId={customer.id} />
+                  </div>
                 )}
               </CardHeader>
               <CardContent>
@@ -396,6 +401,7 @@ export default async function CustomerDetailPage({
                       <TableHead>Total</TableHead>
                       <TableHead>Due Date</TableHead>
                       <TableHead className="text-right">Status</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -415,16 +421,30 @@ export default async function CustomerDetailPage({
                           <TableCell className="text-xs font-bold text-[var(--color-ink)]">PKR {Number(inv.totalAmount).toLocaleString()}</TableCell>
                           <TableCell className="text-xs">{inv.dueDate ? new Date(inv.dueDate).toLocaleDateString() : 'N/A'}</TableCell>
                           <TableCell className="text-right">
-                            <Badge 
-                              variant="outline"
-                              className={
-                                inv.status === 'PAID'
-                                  ? 'bg-green-100 text-green-800 border-green-200 text-xs'
-                                  : 'bg-amber-100 text-amber-800 border-amber-200 text-xs'
-                              }
-                            >
-                              {inv.status}
-                            </Badge>
+                            <form action={async () => {
+                              "use server"
+                              await toggleInvoiceStatus(inv.id, inv.status)
+                            }}>
+                              <button type="submit" className="focus:outline-none" title="Click to toggle status">
+                                <Badge 
+                                  variant="outline"
+                                  className={
+                                    inv.status === 'PAID'
+                                      ? 'bg-green-100 text-green-800 border-green-200 text-xs cursor-pointer hover:bg-green-200'
+                                      : 'bg-amber-100 text-amber-800 border-amber-200 text-xs cursor-pointer hover:bg-amber-200'
+                                  }
+                                >
+                                  {inv.status}
+                                </Badge>
+                              </button>
+                            </form>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <a href={`/api/invoice/${inv.id}`} target="_blank" rel="noopener noreferrer" title="Download PDF">
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--color-slate-custom)] hover:text-[var(--color-amber)]">
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            </a>
                           </TableCell>
                         </TableRow>
                       ))

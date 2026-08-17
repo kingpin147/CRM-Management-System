@@ -2,24 +2,37 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { renderToStream } from '@react-pdf/renderer'
 import { InvoiceDocument } from './InvoiceDocument'
+import fs from 'fs'
+import path from 'path'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params // Customer ID
+  const { id } = await params // Invoice ID
 
-  const customer = await prisma.customer.findUnique({
+  const invoice = await prisma.invoice.findUnique({
     where: { id },
-    include: { packagePlan: true }
+    include: { customer: { include: { packagePlan: true } } }
   })
 
-  if (!customer || !customer.packagePlan) {
-    return new NextResponse('Customer or Package not found', { status: 404 })
+  if (!invoice || !invoice.customer) {
+    return new NextResponse('Invoice or Customer not found', { status: 404 })
   }
+  
+  const customer = invoice.customer
 
   try {
-    const stream = await renderToStream(<InvoiceDocument customer={customer} />)
+    const logoPath = path.join(process.cwd(), 'public', 'LogoNew-pdf.png')
+    let logoSrc = ''
+    try {
+      const logoBuffer = fs.readFileSync(logoPath)
+      logoSrc = `data:image/png;base64,${logoBuffer.toString('base64')}`
+    } catch (e) {
+      console.error('Failed to read logo', e)
+    }
+
+    const stream = await renderToStream(<InvoiceDocument customer={customer} invoice={invoice} logoSrc={logoSrc} />)
     
     // We need to convert the Node stream to a Web ReadableStream for Next.js Edge/Node response
     const webStream = new ReadableStream({

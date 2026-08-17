@@ -371,30 +371,30 @@ export function ReportsView({ customers }: { customers: CustomerRecord[] }) {
               {activeCategory === 'EQUIPMENT' ? (
                 <TableRow>
                   <TableHead>Customer</TableHead>
-                  <TableHead>City</TableHead>
+                  <TableHead className="hidden md:table-cell">City</TableHead>
                   <TableHead>Inverter Specs</TableHead>
-                  <TableHead>PV Panels Array</TableHead>
-                  <TableHead>Battery Storage</TableHead>
-                  <TableHead>DISCO & Grid</TableHead>
+                  <TableHead className="hidden lg:table-cell">PV Panels Array</TableHead>
+                  <TableHead className="hidden lg:table-cell">Battery Storage</TableHead>
+                  <TableHead className="hidden sm:table-cell">DISCO & Grid</TableHead>
                   <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               ) : activeCategory === 'BILLING' ? (
                 <TableRow>
                   <TableHead>Customer</TableHead>
-                  <TableHead>Contact</TableHead>
+                  <TableHead className="hidden md:table-cell">Contact</TableHead>
                   <TableHead>Package Tier</TableHead>
-                  <TableHead>System Size</TableHead>
-                  <TableHead>Billing Cycle</TableHead>
+                  <TableHead className="hidden lg:table-cell">System Size</TableHead>
+                  <TableHead className="hidden sm:table-cell">Billing Cycle</TableHead>
                   <TableHead>Fee Amount (PKR)</TableHead>
                   <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               ) : (
                 <TableRow>
-                  <TableHead>Customer ID / CRF</TableHead>
+                  <TableHead className="hidden md:table-cell">Customer ID / CRF</TableHead>
                   <TableHead>Customer Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Contact #</TableHead>
-                  <TableHead>Address / City</TableHead>
+                  <TableHead className="hidden lg:table-cell">Type</TableHead>
+                  <TableHead className="hidden sm:table-cell">Contact #</TableHead>
+                  <TableHead className="hidden md:table-cell">Address / City</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Action</TableHead>
                 </TableRow>
@@ -424,25 +424,25 @@ export function ReportsView({ customers }: { customers: CustomerRecord[] }) {
                           {c.fullName}
                           <span className="block font-mono text-[11px] text-[var(--color-slate-custom)]">{c.customerCode}</span>
                         </TableCell>
-                        <TableCell className="text-xs">{c.city}</TableCell>
+                        <TableCell className="text-xs hidden md:table-cell">{c.city}</TableCell>
                         <TableCell className="text-xs">
                           <span className="font-semibold text-[var(--color-ink)]">{c.solarSystem?.inverterBrand} {c.solarSystem?.inverterSize}</span>
                           <span className="block text-[11px] text-[var(--color-slate-custom)]">{c.solarSystem?.inverterType} • {c.solarSystem?.inverterPhase}</span>
                         </TableCell>
-                        <TableCell className="text-xs">
+                        <TableCell className="text-xs hidden lg:table-cell">
                           <span className="font-semibold text-[var(--color-ink)]">{c.solarSystem?.noOfPanels}x {c.solarSystem?.panelBrand}</span>
                           <span className="block text-[11px] text-[var(--color-teal)] font-medium">
                             {c.solarSystem?.totalWattage ? (c.solarSystem.totalWattage / 1000).toFixed(2) : 0} kW Array
                           </span>
                         </TableCell>
-                        <TableCell className="text-xs">
+                        <TableCell className="text-xs hidden lg:table-cell">
                           {c.solarSystem?.batteryBrand ? (
                             <span>{c.solarSystem.noOfBatteries}x {c.solarSystem.batteryBrand} ({c.solarSystem.batteryType})</span>
                           ) : (
                             <span className="text-[var(--color-slate-custom)] italic">No Battery</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-xs">
+                        <TableCell className="text-xs hidden sm:table-cell">
                           <span>{c.solarSystem?.disco || 'LESCO'} ({c.solarSystem?.meterType || 'Green Meter'})</span>
                         </TableCell>
                         <TableCell className="text-right">
@@ -463,12 +463,12 @@ export function ReportsView({ customers }: { customers: CustomerRecord[] }) {
                           {c.fullName}
                           <span className="block font-mono text-[11px] text-[var(--color-slate-custom)]">{c.customerCode}</span>
                         </TableCell>
-                        <TableCell className="text-xs">{c.contactNumber}</TableCell>
+                        <TableCell className="text-xs hidden md:table-cell">{c.contactNumber}</TableCell>
                         <TableCell className="text-xs">
                           <Badge variant="outline" className="font-semibold">{c.packagePlan?.packageTier || 'N/A'}</Badge>
                         </TableCell>
-                        <TableCell className="text-xs">{c.packagePlan?.systemSizeKw || 'N/A'}</TableCell>
-                        <TableCell className="text-xs">{c.packagePlan?.billingType || 'N/A'}</TableCell>
+                        <TableCell className="text-xs hidden lg:table-cell">{c.packagePlan?.systemSizeKw || 'N/A'}</TableCell>
+                        <TableCell className="text-xs hidden sm:table-cell">{c.packagePlan?.billingType || 'N/A'}</TableCell>
                         <TableCell className="text-xs font-bold text-[var(--color-graphite)]">
                           PKR {Number(c.packagePlan?.totalAmount || 0).toLocaleString()}
                         </TableCell>
@@ -485,20 +485,20 @@ export function ReportsView({ customers }: { customers: CustomerRecord[] }) {
 
                   return (
                     <TableRow key={c.id} className="hover:bg-[var(--color-paper)]/50">
-                      <TableCell className="font-mono text-xs font-semibold text-[var(--color-ink)]">
+                      <TableCell className="font-mono text-xs font-semibold text-[var(--color-ink)] hidden md:table-cell">
                         {c.crfNumber || c.customerCode}
                       </TableCell>
                       <TableCell className="font-medium text-xs text-[var(--color-ink)]">
                         {c.fullName}
                         <span className="block text-[11px] text-[var(--color-slate-custom)]">{c.email || c.cnic}</span>
                       </TableCell>
-                      <TableCell className="text-xs">
+                      <TableCell className="text-xs hidden lg:table-cell">
                         <Badge variant="outline" className="bg-[var(--color-paper)] text-[var(--color-ink)] text-[11px]">
                           {c.customerType}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-xs">{c.contactNumber}</TableCell>
-                      <TableCell className="text-xs">
+                      <TableCell className="text-xs hidden sm:table-cell">{c.contactNumber}</TableCell>
+                      <TableCell className="text-xs hidden md:table-cell">
                         {c.address}, <strong className="text-[var(--color-ink)]">{c.city}</strong>
                       </TableCell>
                       <TableCell>

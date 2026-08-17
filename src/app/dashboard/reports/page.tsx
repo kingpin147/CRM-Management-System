@@ -40,7 +40,7 @@ export default async function ReportsPage({
   const customers = JSON.parse(JSON.stringify(rawCustomers))
 
   return (
-    <div className="space-y-6 animate-reveal max-w-7xl">
+    <div className="space-y-6 animate-reveal">
       <ReportsView customers={customers} />
     </div>
   )

@@ -2,7 +2,7 @@ import { login, seedDatabaseAction } from './actions'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Button } from '@/components/ui/button'
+import { SubmitButton } from './SubmitButton'
 import Image from 'next/image'
 
 export default async function LoginPage({
@@ -72,9 +72,7 @@ export default async function LoginPage({
             </div>
           </CardContent>
           <CardFooter className="pt-2 pb-6">
-            <Button type="submit" className="w-full h-11 text-base font-semibold shadow-md transition-all">
-              Sign In
-            </Button>
+            <SubmitButton />
           </CardFooter>
         </form>
       </Card>

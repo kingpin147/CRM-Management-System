@@ -323,3 +323,87 @@ export async function createCustomerTicket(formData: FormData) {
     return { error: error.message || 'Failed to log customer ticket.' }
   }
 }
+
+export async function generateManualInvoice(formData: FormData) {
+  const customerId = formData.get('customerId') as string
+  const amount = Number(formData.get('amount')) || 0
+  const description = formData.get('description') as string || 'Manual Charge'
+  const dueDateStr = formData.get('dueDate') as string
+
+  if (!customerId || amount <= 0) {
+    return { error: 'Please enter a valid invoice amount.' }
+  }
+
+  try {
+    const dueDate = dueDateStr ? new Date(dueDateStr) : new Date(new Date().setDate(new Date().getDate() + 7))
+    const invoiceNumber = 'INV-' + Math.floor(100000 + Math.random() * 900000)
+
+    // 1. Create Invoice
+    const invoice = await prisma.invoice.create({
+      data: {
+        invoiceNumber,
+        customerId,
+        billingPeriod: new Date(),
+        amount,
+        salesTax: 0,
+        totalAmount: amount,
+        status: 'UNPAID',
+        dueDate,
+      }
+    })
+
+    // 2. Compute current balance from latest ledger entry
+    const lastEntry = await prisma.ledgerEntry.findFirst({
+      where: { customerId },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    const previousBalance = lastEntry ? Number(lastEntry.balance) : 0
+    const newBalance = previousBalance + amount // Debit increases balance
+
+    // 3. Create Ledger Debit Entry
+    await prisma.ledgerEntry.create({
+      data: {
+        customerId,
+        invoiceId: invoice.id,
+        refNumber: invoiceNumber,
+        narration: description,
+        debit: amount,
+        credit: 0,
+        balance: newBalance,
+      },
+    })
+
+    revalidatePath(`/dashboard/customers/${customerId}`)
+    revalidatePath('/dashboard/ledger')
+    return { success: true }
+  } catch (error: any) {
+    console.error('Failed to generate manual invoice:', error)
+    return { error: error.message || 'Failed to generate manual invoice.' }
+  }
+}
+
+export async function toggleInvoiceStatus(invoiceId: string, currentStatus: string) {
+  try {
+    const newStatus = currentStatus === 'PAID' ? 'UNPAID' : 'PAID'
+    
+    const invoice = await prisma.invoice.findUnique({
+      where: { id: invoiceId }
+    })
+    
+    if (!invoice) throw new Error("Invoice not found")
+
+    await prisma.invoice.update({
+      where: { id: invoiceId },
+      data: { status: newStatus }
+    })
+
+    revalidatePath(`/dashboard/customers/${invoice.customerId}`)
+    revalidatePath('/dashboard/ledger')
+    return { success: true }
+  } catch (error: any) {
+    console.error('Failed to toggle invoice status:', error)
+    return { error: error.message || 'Failed to update invoice status.' }
+  }
+}
+
