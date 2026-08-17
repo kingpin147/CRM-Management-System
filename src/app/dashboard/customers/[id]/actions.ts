@@ -417,3 +417,39 @@ export async function toggleInvoiceStatus(invoiceId: string, currentStatus: stri
   }
 }
 
+export async function deleteCustomer(customerId: string) {
+  if (!customerId) return { error: 'Customer ID is required.' }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      // Delete tickets history and tickets
+      const tickets = await tx.ticket.findMany({ where: { customerId }, select: { id: true } })
+      const ticketIds = tickets.map(t => t.id)
+      if (ticketIds.length > 0) {
+        await tx.ticketHistory.deleteMany({ where: { ticketId: { in: ticketIds } } })
+        await tx.ticket.deleteMany({ where: { customerId } })
+      }
+
+      // Delete ledger entries, invoices, transactions
+      await tx.ledgerEntry.deleteMany({ where: { customerId } })
+      await tx.invoice.deleteMany({ where: { customerId } })
+      await tx.transaction.deleteMany({ where: { customerId } })
+
+      // Delete solar system & package plan
+      await tx.solarSystem.deleteMany({ where: { customerId } })
+      await tx.packagePlan.deleteMany({ where: { customerId } })
+
+      // Delete customer
+      await tx.customer.delete({ where: { id: customerId } })
+    })
+
+    revalidatePath('/dashboard/customers')
+    revalidatePath('/dashboard/reports')
+    return { success: true }
+  } catch (error: any) {
+    console.error('Failed to delete customer:', error)
+    return { error: error.message || 'Failed to delete customer.' }
+  }
+}
+
+

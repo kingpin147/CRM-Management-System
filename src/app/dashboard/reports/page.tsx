@@ -39,9 +39,13 @@ export default async function ReportsPage({
   // Sanitize Decimal and Date instances to plain JSON primitives
   const customers = JSON.parse(JSON.stringify(rawCustomers))
 
+  const { view } = await searchParams
+  const initialView = (typeof view === 'string' ? view : 'status')
+
   return (
     <div className="space-y-6 animate-reveal">
-      <ReportsView customers={customers} />
+      <ReportsView customers={customers} initialView={initialView} />
     </div>
   )
 }
+

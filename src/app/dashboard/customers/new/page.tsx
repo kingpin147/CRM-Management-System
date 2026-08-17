@@ -28,17 +28,19 @@ export default async function NewCustomerPage() {
   })
 
   return (
-    <div className="space-y-6 max-w-3xl animate-reveal">
-      <div className="flex items-center gap-4 mb-4">
+    <div className="space-y-6 max-w-6xl mx-auto animate-reveal">
+      <div className="flex items-center gap-4 mb-2">
+
         <Link href="/dashboard/customers">
           <Button variant="ghost" size="sm" className="text-[var(--color-slate-custom)]">
             ← Back
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-display font-bold text-[var(--color-graphite)] tracking-tight">Onboard Customer</h1>
-          <p className="text-[var(--color-slate-custom)] mt-1">Register a new client in the EnergyGurus CRM.</p>
+          <h1 className="text-3xl font-display font-bold text-[var(--color-graphite)] tracking-tight">Create Sale</h1>
+          <p className="text-[var(--color-slate-custom)] mt-1">Create a new customer sale.</p>
         </div>
+
       </div>
 
       <Card className="shadow-sm border-line">

@@ -67,6 +67,24 @@ export function EditCustomerDialog({ customer }: { customer: Customer }) {
     }
   }
 
+  async function handleDelete() {
+    if (!confirm(`Are you sure you want to permanently delete customer ${customer.fullName}? This cannot be undone.`)) {
+      return
+    }
+
+    setLoading(true)
+    const { deleteCustomer } = await import('./actions')
+    const res = await deleteCustomer(customer.id)
+    setLoading(false)
+
+    if (res?.error) {
+      setError(res.error)
+    } else {
+      setOpen(false)
+      router.push('/dashboard/customers')
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={<Button variant="outline" className="border-[var(--color-line)] bg-white shadow-sm hover:bg-[var(--color-paper)]" />}>
@@ -218,19 +236,30 @@ export function EditCustomerDialog({ customer }: { customer: Customer }) {
             </div>
           </div>
 
-          <DialogFooter className="pt-3 flex justify-end gap-2 border-t border-[var(--color-line)]">
+          <DialogFooter className="pt-3 flex justify-between items-center border-t border-[var(--color-line)]">
             <Button
               type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
+              variant="destructive"
+              onClick={handleDelete}
               disabled={loading}
-              className="border-[var(--color-line)] text-[var(--color-ink)]"
+              className="text-xs font-bold"
             >
-              Cancel
+              Delete Customer
             </Button>
-            <Button type="submit" disabled={loading} className="shadow-md">
-              {loading ? 'Saving...' : 'Save Changes'}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+                disabled={loading}
+                className="border-[var(--color-line)] text-[var(--color-ink)] text-xs"
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading} className="shadow-md text-xs font-bold">
+                {loading ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>
