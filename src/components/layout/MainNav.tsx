@@ -20,18 +20,18 @@ export function MainNav({
   }
 
   const linkClass = (path: string) => {
-    const baseClass = "flex items-center text-sm font-medium rounded-md transition-colors"
+    const baseClass = "flex items-center text-sm font-medium rounded-lg transition-all duration-200"
     
     // Layout-specific classes
     const layoutClass = orientation === 'horizontal' 
-      ? "px-4 py-2" // horizontal spacing
+      ? "px-3.5 py-1.5" // horizontal spacing
       : "px-3 py-2" // vertical spacing
 
     // State-specific classes
     if (isActive(path)) {
-      return `${baseClass} ${layoutClass} bg-[var(--color-amber)]/10 text-[var(--color-ink)] hover:bg-[var(--color-amber)]/20`
+      return `${baseClass} ${layoutClass} bg-[var(--color-amber)]/15 text-[var(--color-ink)] font-semibold shadow-xs`
     }
-    return `${baseClass} ${layoutClass} text-[var(--color-slate-custom)] hover:bg-black/5 hover:text-[var(--color-ink)]`
+    return `${baseClass} ${layoutClass} text-[var(--color-slate-custom)] hover:bg-[var(--color-paper)] hover:text-[var(--color-ink)]`
   }
 
   const canViewLedger = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES'].includes(role)

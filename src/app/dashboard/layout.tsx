@@ -38,7 +38,7 @@ export default async function DashboardLayout({
     <div className="flex min-h-screen w-full bg-background">
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="h-16 flex items-center justify-between px-4 md:px-6 border-b border-line bg-white shadow-sm shrink-0">
+        <header className="h-16 flex items-center justify-between px-4 md:px-6 border-b border-[var(--color-line)] bg-white/90 backdrop-blur-md sticky top-0 z-30 shadow-2xs shrink-0">
           
           {/* Mobile Navigation */}
           <div className="flex items-center gap-3 md:hidden">
@@ -50,24 +50,24 @@ export default async function DashboardLayout({
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-64 p-0">
-                <div className="h-16 flex items-center gap-2 px-6 border-b border-line shadow-sm">
+                <Link href="/dashboard/customers" className="h-16 flex items-center gap-2 px-6 border-b border-line shadow-sm hover:opacity-80 transition-opacity">
                   <Image src="/logo-icon.svg" alt="EnergyGurus Logo" width={28} height={28} />
                   <span className="font-display font-bold text-xl text-[var(--color-graphite)]">EnergyGurus</span>
-                </div>
+                </Link>
                 <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
                   <MainNav role={userRole} orientation="vertical" />
                 </nav>
               </SheetContent>
             </Sheet>
-            <span className="font-display font-bold text-lg text-[var(--color-graphite)]">EnergyGurus</span>
+            <Link href="/dashboard/customers" className="font-display font-bold text-lg text-[var(--color-graphite)] hover:opacity-80 transition-opacity">EnergyGurus</Link>
           </div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center flex-1 gap-8">
-            <div className="flex items-center gap-2">
+            <Link href="/dashboard/customers" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               <Image src="/logo-icon.svg" alt="EnergyGurus Logo" width={28} height={28} />
               <span className="font-display font-bold text-xl text-[var(--color-graphite)]">EnergyGurus</span>
-            </div>
+            </Link>
             <MainNav role={userRole} orientation="horizontal" />
           </div>
 

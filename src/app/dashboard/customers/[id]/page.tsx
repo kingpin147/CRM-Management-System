@@ -356,21 +356,21 @@ export default async function CustomerDetailPage({
           <div className="space-y-6">
             {/* Financial Summary Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <Card className="shadow-sm border-line bg-white">
+              <Card className="glass-card hover-lift">
                 <CardContent className="p-4">
-                  <p className="text-xs font-semibold text-[var(--color-slate-custom)] uppercase">Total Invoiced</p>
+                  <p className="text-xs font-semibold text-[var(--color-slate-custom)] uppercase tracking-wider">Total Invoiced</p>
                   <p className="text-2xl font-bold text-[var(--color-graphite)] mt-1">PKR {totalInvoiced.toLocaleString()}</p>
                 </CardContent>
               </Card>
-              <Card className="shadow-sm border-line bg-emerald-50/50 border-emerald-200">
+              <Card className="glass-card hover-lift border-emerald-200/60 bg-emerald-50/40">
                 <CardContent className="p-4">
-                  <p className="text-xs font-semibold text-emerald-800 uppercase">Total Paid / Received</p>
+                  <p className="text-xs font-semibold text-emerald-800 uppercase tracking-wider">Total Paid / Received</p>
                   <p className="text-2xl font-bold text-emerald-700 mt-1">PKR {totalPaid.toLocaleString()}</p>
                 </CardContent>
               </Card>
-              <Card className="shadow-sm border-line bg-amber-50/50 border-amber-200">
+              <Card className="glass-card hover-lift border-amber-200/60 bg-amber-50/40">
                 <CardContent className="p-4">
-                  <p className="text-xs font-semibold text-amber-800 uppercase">Current Balance</p>
+                  <p className="text-xs font-semibold text-amber-800 uppercase tracking-wider">Current Balance</p>
                   <p className="text-2xl font-bold text-amber-900 mt-1">PKR {currentBalance.toLocaleString()}</p>
                 </CardContent>
               </Card>
