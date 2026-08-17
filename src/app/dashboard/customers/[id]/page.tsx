@@ -10,6 +10,7 @@ import { EditCustomerDialog } from './EditCustomerDialog'
 import { SolarSystemDialog } from './SolarSystemDialog'
 import { RecordPaymentDialog } from './RecordPaymentDialog'
 import { GenerateInvoiceDialog } from './GenerateInvoiceDialog'
+import { ExportLedgerCsvButton } from './ExportLedgerCsvButton'
 import { toggleInvoiceStatus } from './actions'
 import { CustomerTicketForm } from './CustomerTicketForm'
 import { TicketUpdateDialog } from '@/app/dashboard/tickets/TicketUpdateDialog'
@@ -383,12 +384,19 @@ export default async function CustomerDetailPage({
                   <CardTitle className="text-lg font-bold">Invoices & Billing History</CardTitle>
                   <CardDescription>O&M service invoices and payment statuses.</CardDescription>
                 </div>
-                {canRecordPayment && (
-                  <div className="flex gap-2 items-center">
-                    <GenerateInvoiceDialog customerId={customer.id} />
-                    <RecordPaymentDialog customerId={customer.id} />
-                  </div>
-                )}
+                <div className="flex gap-2 items-center flex-wrap">
+                  <ExportLedgerCsvButton 
+                    customerName={customer.fullName}
+                    customerCode={customer.customerCode}
+                    ledgerEntries={customer.ledgerEntries}
+                  />
+                  {canRecordPayment && (
+                    <>
+                      <GenerateInvoiceDialog customerId={customer.id} />
+                      <RecordPaymentDialog customerId={customer.id} />
+                    </>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -421,23 +429,28 @@ export default async function CustomerDetailPage({
                           <TableCell className="text-xs font-bold text-[var(--color-ink)]">PKR {Number(inv.totalAmount).toLocaleString()}</TableCell>
                           <TableCell className="text-xs">{inv.dueDate ? new Date(inv.dueDate).toLocaleDateString() : 'N/A'}</TableCell>
                           <TableCell className="text-right">
-                            <form action={async () => {
-                              "use server"
-                              await toggleInvoiceStatus(inv.id, inv.status)
-                            }}>
-                              <button type="submit" className="focus:outline-none" title="Click to toggle status">
-                                <Badge 
-                                  variant="outline"
-                                  className={
-                                    inv.status === 'PAID'
-                                      ? 'bg-green-100 text-green-800 border-green-200 text-xs cursor-pointer hover:bg-green-200'
-                                      : 'bg-amber-100 text-amber-800 border-amber-200 text-xs cursor-pointer hover:bg-amber-200'
-                                  }
-                                >
-                                  {inv.status}
-                                </Badge>
-                              </button>
-                            </form>
+                            {inv.status === 'PAID' ? (
+                              <Badge 
+                                variant="outline"
+                                className="bg-emerald-50 text-emerald-800 border-emerald-200 text-xs font-semibold select-none cursor-default"
+                              >
+                                ✓ PAID
+                              </Badge>
+                            ) : (
+                              <form action={async () => {
+                                "use server"
+                                await toggleInvoiceStatus(inv.id, inv.status)
+                              }}>
+                                <button type="submit" className="focus:outline-none" title="Click to mark as PAID">
+                                  <Badge 
+                                    variant="outline"
+                                    className="bg-amber-100 text-amber-800 border-amber-200 text-xs cursor-pointer hover:bg-amber-200"
+                                  >
+                                    UNPAID
+                                  </Badge>
+                                </button>
+                              </form>
+                            )}
                           </TableCell>
                           <TableCell className="text-right">
                             <a href={`/api/invoice/${inv.id}`} target="_blank" rel="noopener noreferrer" title="Download PDF">

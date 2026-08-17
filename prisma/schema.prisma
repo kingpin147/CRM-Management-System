@@ -168,6 +168,10 @@ model Ticket {
   attachmentUrl       String?
   createdAt           DateTime        @default(now())
   histories           TicketHistory[]
+
+  @@index([customerId])
+  @@index([status])
+  @@index([assignedTo])
 }
 
 model TicketHistory {
@@ -180,6 +184,8 @@ model TicketHistory {
   createdBy  String // User name or ID
   createdAt  DateTime     @default(now())
   timeInDept String? // Duration spent in department
+
+  @@index([ticketId])
 }
 
 enum TicketType {
@@ -204,6 +210,9 @@ model Transaction {
   paymentMethod String
   status        String
   createdAt     DateTime @default(now())
+
+  @@index([customerId])
+  @@index([createdAt])
 }
 
 model Invoice {
@@ -219,6 +228,10 @@ model Invoice {
   dueDate       DateTime
   createdAt     DateTime      @default(now())
   ledgerEntries LedgerEntry[]
+
+  @@index([customerId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model LedgerEntry {
@@ -234,4 +247,7 @@ model LedgerEntry {
   credit     Decimal  @default(0)
   balance    Decimal
   createdAt  DateTime @default(now())
+
+  @@index([customerId])
+  @@index([createdAt])
 }

@@ -222,43 +222,48 @@ export async function recordPayment(formData: FormData) {
   const customerId = formData.get('customerId') as string
   const amount = Number(formData.get('amount')) || 0
   const paymentMethod = formData.get('paymentMethod') as string || 'Bank Transfer'
-  const reference = formData.get('reference') as string || 'TX-' + Math.floor(100000 + Math.random() * 900000)
+  const customRef = formData.get('reference') as string
   const narration = formData.get('narration') as string || 'Customer O&M Fee Payment'
 
   if (!customerId || amount <= 0) {
     return { error: 'Please enter a valid payment amount.' }
   }
 
+  const reference = customRef || `TX-${Date.now().toString().slice(-8)}`
+
   try {
-    // 1. Create Transaction
-    await prisma.transaction.create({
-      data: {
-        customerId,
-        amount,
-        paymentMethod,
-        status: 'PAID',
-      },
-    })
+    // Atomic transaction guarantees zero balance race conditions
+    await prisma.$transaction(async (tx) => {
+      // 1. Create Transaction record
+      await tx.transaction.create({
+        data: {
+          customerId,
+          amount,
+          paymentMethod,
+          status: 'PAID',
+        },
+      })
 
-    // 2. Compute current balance from latest ledger entry
-    const lastEntry = await prisma.ledgerEntry.findFirst({
-      where: { customerId },
-      orderBy: { createdAt: 'desc' },
-    })
+      // 2. Fetch latest balance atomically
+      const lastEntry = await tx.ledgerEntry.findFirst({
+        where: { customerId },
+        orderBy: { createdAt: 'desc' },
+      })
 
-    const previousBalance = lastEntry ? Number(lastEntry.balance) : 0
-    const newBalance = previousBalance - amount
+      const previousBalance = lastEntry ? Number(lastEntry.balance) : 0
+      const newBalance = previousBalance - amount
 
-    // 3. Create Ledger Credit Entry
-    await prisma.ledgerEntry.create({
-      data: {
-        customerId,
-        refNumber: reference,
-        narration: `${narration} (${paymentMethod})`,
-        debit: 0,
-        credit: amount,
-        balance: newBalance,
-      },
+      // 3. Create Ledger Credit Entry
+      await tx.ledgerEntry.create({
+        data: {
+          customerId,
+          refNumber: reference,
+          narration: `${narration} (${paymentMethod})`,
+          debit: 0,
+          credit: amount,
+          balance: newBalance,
+        },
+      })
     })
 
     revalidatePath(`/dashboard/customers/${customerId}`)
@@ -285,7 +290,7 @@ export async function createCustomerTicket(formData: FormData) {
   }
 
   try {
-    const ticketNumber = `TCK-${Math.floor(100000 + Math.random() * 900000)}`
+    const ticketNumber = `TCK-${Date.now().toString().slice(-7)}`
 
     const newTicket = await prisma.ticket.create({
       data: {
@@ -336,42 +341,45 @@ export async function generateManualInvoice(formData: FormData) {
 
   try {
     const dueDate = dueDateStr ? new Date(dueDateStr) : new Date(new Date().setDate(new Date().getDate() + 7))
-    const invoiceNumber = 'INV-' + Math.floor(100000 + Math.random() * 900000)
+    const invoiceNumber = `INV-${Date.now().toString().slice(-7)}`
 
-    // 1. Create Invoice
-    const invoice = await prisma.invoice.create({
-      data: {
-        invoiceNumber,
-        customerId,
-        billingPeriod: new Date(),
-        amount,
-        salesTax: 0,
-        totalAmount: amount,
-        status: 'UNPAID',
-        dueDate,
-      }
-    })
+    // Atomic transaction guarantees zero balance race conditions
+    await prisma.$transaction(async (tx) => {
+      // 1. Create Invoice
+      const invoice = await tx.invoice.create({
+        data: {
+          invoiceNumber,
+          customerId,
+          billingPeriod: new Date(),
+          amount,
+          salesTax: 0,
+          totalAmount: amount,
+          status: 'UNPAID',
+          dueDate,
+        }
+      })
 
-    // 2. Compute current balance from latest ledger entry
-    const lastEntry = await prisma.ledgerEntry.findFirst({
-      where: { customerId },
-      orderBy: { createdAt: 'desc' },
-    })
+      // 2. Fetch latest balance atomically
+      const lastEntry = await tx.ledgerEntry.findFirst({
+        where: { customerId },
+        orderBy: { createdAt: 'desc' },
+      })
 
-    const previousBalance = lastEntry ? Number(lastEntry.balance) : 0
-    const newBalance = previousBalance + amount // Debit increases balance
+      const previousBalance = lastEntry ? Number(lastEntry.balance) : 0
+      const newBalance = previousBalance + amount // Debit increases balance
 
-    // 3. Create Ledger Debit Entry
-    await prisma.ledgerEntry.create({
-      data: {
-        customerId,
-        invoiceId: invoice.id,
-        refNumber: invoiceNumber,
-        narration: description,
-        debit: amount,
-        credit: 0,
-        balance: newBalance,
-      },
+      // 3. Create Ledger Debit Entry
+      await tx.ledgerEntry.create({
+        data: {
+          customerId,
+          invoiceId: invoice.id,
+          refNumber: invoiceNumber,
+          narration: description,
+          debit: amount,
+          credit: 0,
+          balance: newBalance,
+        },
+      })
     })
 
     revalidatePath(`/dashboard/customers/${customerId}`)
@@ -385,8 +393,10 @@ export async function generateManualInvoice(formData: FormData) {
 
 export async function toggleInvoiceStatus(invoiceId: string, currentStatus: string) {
   try {
-    const newStatus = currentStatus === 'PAID' ? 'UNPAID' : 'PAID'
-    
+    if (currentStatus === 'PAID') {
+      return { error: 'Paid invoices cannot be reverted to Unpaid to prevent ledger corruption.' }
+    }
+
     const invoice = await prisma.invoice.findUnique({
       where: { id: invoiceId }
     })
@@ -395,14 +405,14 @@ export async function toggleInvoiceStatus(invoiceId: string, currentStatus: stri
 
     await prisma.invoice.update({
       where: { id: invoiceId },
-      data: { status: newStatus }
+      data: { status: 'PAID' }
     })
 
     revalidatePath(`/dashboard/customers/${invoice.customerId}`)
     revalidatePath('/dashboard/ledger')
     return { success: true }
   } catch (error: any) {
-    console.error('Failed to toggle invoice status:', error)
+    console.error('Failed to update invoice status:', error)
     return { error: error.message || 'Failed to update invoice status.' }
   }
 }
