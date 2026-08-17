@@ -433,7 +433,7 @@ export function ReportsView({
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="bg-emerald-50 text-emerald-900 border-emerald-200 font-semibold">
+                      <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-semibold">
                         {c.status.replace(/_/g, ' ')}
                       </Badge>
                     </TableCell>

@@ -59,7 +59,7 @@ export default async function AdminPage() {
                         <Badge 
                           variant="outline" 
                           className={user.isActive 
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
+                            ? "bg-[#002868] text-white border-[#002868]" 
                             : "bg-red-50 text-red-700 border-red-200"
                           }
                         >

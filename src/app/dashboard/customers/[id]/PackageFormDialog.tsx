@@ -37,9 +37,7 @@ export function PackageFormDialog({ customerId }: { customerId: string }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button className="w-full shadow-md" />}>
-        Create Quotation
-      </DialogTrigger>
+      <DialogTrigger render={<Button className="w-full shadow-md bg-[#002868] hover:bg-[#001d4a] text-white font-bold">Create Quotation</Button>} />
       <DialogContent className="sm:max-w-[500px] border-line max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-[var(--color-graphite)] font-display text-xl">Assign Service Package</DialogTitle>
@@ -158,9 +156,9 @@ export function PackageFormDialog({ customerId }: { customerId: string }) {
               </span>
             </div>
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button type="submit" disabled={loading}>{loading ? 'Saving...' : 'Save Package'}</Button>
+          <DialogFooter className="gap-2">
+            <Button type="button" variant="outline" className="border-slate-300 text-slate-600 hover:bg-slate-100" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button type="submit" disabled={loading} className="bg-[#002868] hover:bg-[#001d4a] text-white font-bold">{loading ? 'Saving...' : 'Save Package'}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

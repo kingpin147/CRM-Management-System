@@ -109,8 +109,8 @@ export default async function LedgerPage() {
                         variant="outline" 
                         className={
                           tx.status === 'PAID' 
-                            ? 'bg-green-100 text-green-800 border-green-200'
-                            : 'bg-amber-100 text-amber-800 border-amber-200'
+                            ? 'bg-[#002868] text-white border-[#002868]'
+                            : 'bg-amber-100 text-amber-900 border-amber-300'
                         }
                       >
                         {tx.status}

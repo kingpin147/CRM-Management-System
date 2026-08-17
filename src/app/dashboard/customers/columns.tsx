@@ -29,7 +29,7 @@ export const columns: ColumnDef<any, Customer, any>[] = [
       let badgeStyle = "bg-slate-100 text-slate-800 border-slate-200"
       if (type === 'RESIDENTIAL') badgeStyle = "bg-blue-50 text-blue-800 border-blue-200/80 font-medium"
       if (type === 'CORPORATE') badgeStyle = "bg-amber-50 text-amber-800 border-amber-200/80 font-medium"
-      if (type === 'INDUSTRIAL') badgeStyle = "bg-emerald-50 text-emerald-800 border-emerald-200/80 font-medium"
+      if (type === 'INDUSTRIAL') badgeStyle = "bg-[#002868] text-white border-[#002868] font-medium"
       
       return (
         <Badge variant="outline" className={badgeStyle}>

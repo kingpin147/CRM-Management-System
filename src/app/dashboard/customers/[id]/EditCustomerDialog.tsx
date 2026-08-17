@@ -87,7 +87,7 @@ export function EditCustomerDialog({ customer }: { customer: Customer }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button variant="outline" className="border-[var(--color-line)] bg-white shadow-sm hover:bg-[var(--color-paper)]" />}>
+      <DialogTrigger render={<Button className="bg-[#002868] hover:bg-[#001d4a] text-white font-bold text-xs shadow-xs" size="sm" />}>
         Edit Profile
       </DialogTrigger>
       <DialogContent className="sm:max-w-[620px] bg-white border border-[var(--color-line)] shadow-premium rounded-2xl p-6 max-h-[90vh] overflow-y-auto">
@@ -252,11 +252,11 @@ export function EditCustomerDialog({ customer }: { customer: Customer }) {
                 variant="outline"
                 onClick={() => setOpen(false)}
                 disabled={loading}
-                className="border-[var(--color-line)] text-[var(--color-ink)] text-xs"
+                className="border-slate-300 text-slate-600 hover:bg-slate-100 text-xs"
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading} className="shadow-md text-xs font-bold">
+              <Button type="submit" disabled={loading} className="bg-[#002868] hover:bg-[#001d4a] text-white shadow-md text-xs font-bold">
                 {loading ? 'Saving...' : 'Save Changes'}
               </Button>
             </div>

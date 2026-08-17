@@ -253,12 +253,12 @@ export function CustomerSearchForm({
                         variant="outline"
                         className={
                           c.status === 'CONNECTION_ACTIVE'
-                            ? 'bg-green-100 text-green-800 border-green-200 text-xs font-medium'
+                            ? 'bg-[#002868] text-white border-[#002868] text-xs font-medium'
                             : c.status === 'TEMPORARY_BLOCKED'
-                            ? 'bg-orange-100 text-orange-800 border-orange-200 text-xs font-medium'
+                            ? 'bg-amber-100 text-amber-900 border-amber-300 text-xs font-medium'
                             : c.status === 'PERMANENT_DISCONNECTION'
                             ? 'bg-rose-100 text-rose-800 border-rose-200 text-xs font-medium'
-                            : 'bg-amber-100 text-amber-800 border-amber-200 text-xs font-medium'
+                            : 'bg-slate-100 text-slate-800 border-slate-200 text-xs font-medium'
                         }
                       >
                         {c.status?.replace(/_/g, ' ')}

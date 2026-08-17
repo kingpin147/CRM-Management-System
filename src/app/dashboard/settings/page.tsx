@@ -47,7 +47,7 @@ export default function SettingsPage() {
               <div className={
                 "p-3 text-sm rounded-lg text-center font-medium " + (message.type === 'error'
                   ? 'bg-destructive/10 border border-destructive/20 text-destructive'
-                  : 'bg-emerald-50 border border-emerald-200 text-emerald-700')
+                  : 'bg-sky-50 border border-sky-200 text-sky-800')
               }>
                 {message.text}
               </div>

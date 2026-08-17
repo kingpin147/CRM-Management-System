@@ -55,7 +55,7 @@ export function GenerateInvoiceDialog({ customerId }: { customerId: string }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button variant="outline" className="shadow-sm border-[var(--color-line)] bg-white text-[var(--color-amber)] hover:text-white hover:bg-[var(--color-amber)]" size="sm" />}>
+      <DialogTrigger render={<Button size="sm" className="bg-[#F58220] hover:bg-[#d96e14] text-white font-bold text-xs shadow-xs" />}>
         + Generate Invoice
       </DialogTrigger>
       <DialogContent className="sm:max-w-[480px] bg-white border border-[var(--color-line)] shadow-premium rounded-2xl p-6">

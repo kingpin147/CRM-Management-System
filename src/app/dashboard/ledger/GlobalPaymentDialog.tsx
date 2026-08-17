@@ -155,11 +155,11 @@ export function GlobalPaymentDialog({
               variant="outline"
               onClick={() => setOpen(false)}
               disabled={loading}
-              className="border-[var(--color-line)] text-[var(--color-ink)]"
+              className="border-slate-300 text-slate-600 hover:bg-slate-100 text-xs"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading} className="shadow-md">
+            <Button type="submit" disabled={loading} className="bg-[#002868] hover:bg-[#001d4a] text-white font-bold text-xs shadow-xs">
               {loading ? 'Recording...' : 'Credit Payment'}
             </Button>
           </DialogFooter>

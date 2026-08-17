@@ -84,8 +84,8 @@ export default async function TicketsPage({
           href="/dashboard/tickets?status=RESOLVED"
           className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
             statusFilter?.toUpperCase() === 'RESOLVED'
-              ? 'bg-emerald-600 text-white'
-              : 'bg-emerald-50 text-emerald-900 border border-emerald-200 hover:bg-emerald-100'
+              ? 'bg-[#002868] text-white'
+              : 'bg-sky-50 text-sky-900 border border-sky-200 hover:bg-sky-100'
           }`}
         >
           Resolved

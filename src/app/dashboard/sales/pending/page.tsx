@@ -105,15 +105,15 @@ export default async function PendingSalesPage() {
         </Card>
 
         {/* Stage 3: SD Manager Approval */}
-        <Card className="border-line bg-emerald-50/40">
+        <Card className="border-line bg-sky-50/40">
           <CardContent className="p-4 flex items-center justify-between">
             <div className="space-y-1">
-              <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm">
-                <Wrench className="h-4 w-4 text-emerald-600" />
+              <div className="flex items-center gap-2 text-[#002868] font-bold text-sm">
+                <Wrench className="h-4 w-4 text-[#002868]" />
                 Stage 3: SD Manager Approval
               </div>
-              <p className="text-xs text-emerald-900/70">Payment Verified → Sent to SD Manager / Inventory</p>
-              <p className="text-2xl font-bold text-emerald-950 mt-1">{stage3Count} Pending</p>
+              <p className="text-xs text-sky-900/70">Payment Verified → Sent to SD Manager / Inventory</p>
+              <p className="text-2xl font-bold text-[#002868] mt-1">{stage3Count} Pending</p>
             </div>
           </CardContent>
         </Card>
@@ -181,7 +181,7 @@ export default async function PendingSalesPage() {
                           className={
                             isStage1 ? 'bg-amber-100 text-amber-900 border-amber-300 font-semibold' :
                             isStage2 ? 'bg-blue-100 text-blue-900 border-blue-300 font-semibold' :
-                            'bg-emerald-100 text-emerald-900 border-emerald-300 font-semibold'
+                            'bg-[#002868] text-white border-[#002868] font-semibold'
                           }
                         >
                           {isStage1 ? 'Sales Manager Review' : isStage2 ? 'Payment Verification' : 'SD Manager Commissioning'}
@@ -200,7 +200,7 @@ export default async function PendingSalesPage() {
                             className={
                               isStage1 ? 'bg-amber-600 hover:bg-amber-700 text-white text-xs gap-1 shadow-xs' :
                               isStage2 ? 'bg-blue-600 hover:bg-blue-700 text-white text-xs gap-1 shadow-xs' :
-                              'bg-emerald-600 hover:bg-emerald-700 text-white text-xs gap-1 shadow-xs'
+                              'bg-[#002868] hover:bg-[#001d4a] text-white text-xs gap-1 shadow-xs'
                             }
                           >
                             <CheckCircle2 className="h-3.5 w-3.5" />

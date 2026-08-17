@@ -83,7 +83,7 @@ export function SolarSystemDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button variant="outline" size="sm" className="border-[var(--color-line)] bg-white shadow-sm" />}>
+      <DialogTrigger render={<Button size="sm" className="bg-[#F58220] hover:bg-[#d96e14] text-white font-bold text-xs shadow-xs" />}>
         {solarSystem ? 'Edit System Specs' : '+ Add Solar System Specs'}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[620px] bg-white border border-[var(--color-line)] shadow-premium rounded-2xl p-6 max-h-[90vh] overflow-y-auto">
@@ -281,11 +281,11 @@ export function SolarSystemDialog({
               variant="outline"
               onClick={() => setOpen(false)}
               disabled={loading}
-              className="border-[var(--color-line)] text-[var(--color-ink)]"
+              className="border-slate-300 text-slate-600 hover:bg-slate-100 text-xs"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading} className="shadow-md">
+            <Button type="submit" disabled={loading} className="bg-[#002868] hover:bg-[#001d4a] text-white font-bold text-xs shadow-xs">
               {loading ? 'Saving...' : 'Save Solar Specs'}
             </Button>
           </DialogFooter>

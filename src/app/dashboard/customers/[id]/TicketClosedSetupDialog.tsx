@@ -49,12 +49,12 @@ export function TicketClosedSetupDialog({ ticket }: { ticket: any }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button variant="ghost" size="sm" className="h-8 text-xs font-semibold text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50 border border-emerald-200">Update / Close Ticket</Button>} />
+      <DialogTrigger render={<Button size="sm" className="h-8 text-xs font-bold text-white bg-[#002868] hover:bg-[#001d4a] shadow-xs">Update / Close Ticket</Button>} />
 
       <DialogContent className="sm:max-w-[700px] p-0 border-line max-h-[90vh] overflow-y-auto">
-        {/* Green Top Banner matching Image 1 */}
-        <DialogHeader className="bg-[#C6E0B4] px-6 py-3 border-b border-emerald-300">
-          <DialogTitle className="text-emerald-950 font-bold text-base text-center">
+        {/* Navy Top Banner matching Invoice theme */}
+        <DialogHeader className="bg-[#002868] px-6 py-3 border-b border-[#001d4a]">
+          <DialogTitle className="text-white font-bold text-base text-center tracking-wide">
             Ticket Closed Set up ({ticket.ticketNumber})
           </DialogTitle>
         </DialogHeader>
@@ -87,23 +87,23 @@ export function TicketClosedSetupDialog({ ticket }: { ticket: any }) {
           </div>
 
           {/* Form Action, Department, Complain Status & Remarks */}
-          <Table className="border border-emerald-200 rounded-lg overflow-hidden">
+          <Table className="border border-slate-200 rounded-lg overflow-hidden">
             <TableBody>
-              <TableRow className="hover:bg-transparent border-b border-emerald-100">
-                <TableCell className="font-bold text-xs bg-emerald-50/60 w-32 border-r border-emerald-200">Action</TableCell>
-                <TableCell className="border-r border-emerald-100">
+              <TableRow className="hover:bg-transparent border-b border-slate-200">
+                <TableCell className="font-bold text-xs bg-slate-50 w-32 border-r border-slate-200 text-[#002868]">Action</TableCell>
+                <TableCell className="border-r border-slate-200">
                   <select
                     value={actionPriority}
                     onChange={(e) => setActionPriority(e.target.value)}
                     className="w-full h-9 px-2 rounded border border-gray-300 text-xs font-medium bg-white"
                   >
-                    {['High', 'Mediam', 'Low'].map(act => (
+                    {['High', 'Medium', 'Low'].map(act => (
                       <option key={act} value={act}>{act}</option>
                     ))}
                   </select>
                 </TableCell>
 
-                <TableCell className="font-bold text-xs bg-emerald-50/60 w-28 border-r border-emerald-200">Department</TableCell>
+                <TableCell className="font-bold text-xs bg-slate-50 w-28 border-r border-slate-200 text-[#002868]">Department</TableCell>
                 <TableCell>
                   <select
                     value={department}
@@ -117,30 +117,32 @@ export function TicketClosedSetupDialog({ ticket }: { ticket: any }) {
                 </TableCell>
               </TableRow>
 
-              <TableRow className="hover:bg-transparent border-b border-emerald-100">
-                <TableCell className="font-bold text-xs bg-emerald-50/60 border-r border-emerald-200">Complain Status</TableCell>
+              <TableRow className="hover:bg-transparent border-b border-slate-200">
+                <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Complain Status</TableCell>
                 <TableCell colSpan={3}>
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value)}
                     className="w-full h-9 px-2 rounded border border-gray-300 text-xs font-medium bg-white"
                   >
-                    {['Pending', 'Resolved', 'Canceled', 'Onhold', 'Closed'].map(st => (
-                      <option key={st} value={st}>{st}</option>
-                    ))}
+                    <option value="CLOSED">Closed</option>
+                    <option value="RESOLVED">Resolved</option>
+                    <option value="PENDING">Pending</option>
+                    <option value="ON_HOLD">On Hold</option>
+                    <option value="CANCELED">Canceled</option>
                   </select>
                 </TableCell>
               </TableRow>
 
               <TableRow className="hover:bg-transparent">
-                <TableCell className="font-bold text-xs bg-emerald-50/60 border-r border-emerald-200">Remarks</TableCell>
+                <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Remarks</TableCell>
                 <TableCell colSpan={3}>
                   <Textarea
                     rows={3}
                     placeholder="Enter closing remarks or status update notes..."
                     value={remarks}
                     onChange={(e) => setRemarks(e.target.value)}
-                    className="border-gray-300 text-xs focus-visible:ring-emerald-500 bg-white"
+                    className="border-gray-300 text-xs focus-visible:ring-[#002868] bg-white"
                   />
                 </TableCell>
               </TableRow>
@@ -148,7 +150,7 @@ export function TicketClosedSetupDialog({ ticket }: { ticket: any }) {
           </Table>
 
           <div className="flex justify-end">
-            <Button type="submit" disabled={loading} className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-6 shadow-xs">
+            <Button type="submit" disabled={loading} className="bg-[#002868] hover:bg-[#001d4a] text-white font-bold text-xs px-6 shadow-xs">
               {loading ? 'Submitting...' : 'Submit Resolution'}
             </Button>
           </div>
@@ -180,7 +182,7 @@ export function TicketClosedSetupDialog({ ticket }: { ticket: any }) {
                       <TableCell>
                         <Badge variant="outline" className={
                           h.status === 'CLOSED' ? 'bg-gray-100 text-gray-800' :
-                          h.status === 'RESOLVED' ? 'bg-emerald-100 text-emerald-900' :
+                          h.status === 'RESOLVED' ? 'bg-[#002868] text-white' :
                           'bg-amber-100 text-amber-900'
                         }>
                           {h.status}

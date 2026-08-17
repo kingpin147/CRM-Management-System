@@ -101,8 +101,8 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
 
   return (
     <Card className="shadow-sm border-line overflow-hidden bg-white">
-      {/* Green Top Banner matching Excel Mockup */}
-      <div className="bg-[#C6E0B4] text-emerald-950 px-4 py-2.5 font-bold text-sm text-center border-b border-emerald-300">
+      {/* Navy Top Banner matching Invoice theme */}
+      <div className="bg-[#002868] text-white px-4 py-2.5 font-bold text-sm text-center border-b border-[#001d4a] tracking-wide">
         Create Ticket
       </div>
       <CardContent className="p-4">
@@ -113,17 +113,17 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
             </div>
           )}
           {success && (
-            <div className="p-3 text-xs bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg font-medium">
+            <div className="p-3 text-xs bg-sky-50 border border-sky-200 text-sky-900 rounded-lg font-medium">
               {success}
             </div>
           )}
 
-          <Table className="border border-emerald-200 rounded-lg overflow-hidden">
+          <Table className="border border-slate-200 rounded-lg overflow-hidden">
             <TableBody>
               {/* Row 1: Ticket Type, Category, Sub Category, Fault */}
-              <TableRow className="hover:bg-transparent border-b border-emerald-100">
-                <TableCell className="font-bold text-xs bg-emerald-50/60 w-36 border-r border-emerald-200">Ticket Type:</TableCell>
-                <TableCell className="border-r border-emerald-100">
+              <TableRow className="hover:bg-transparent border-b border-slate-200">
+                <TableCell className="font-bold text-xs bg-slate-50 w-36 border-r border-slate-200 text-[#002868]">Ticket Type:</TableCell>
+                <TableCell className="border-r border-slate-200">
                   <select
                     value={ticketType}
                     onChange={(e) => handleTicketTypeChange(e.target.value)}
@@ -135,8 +135,8 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
                   </select>
                 </TableCell>
 
-                <TableCell className="font-bold text-xs bg-emerald-50/60 w-28 border-r border-emerald-200">Category</TableCell>
-                <TableCell className="border-r border-emerald-100">
+                <TableCell className="font-bold text-xs bg-slate-50 w-28 border-r border-slate-200 text-[#002868]">Category</TableCell>
+                <TableCell className="border-r border-slate-200">
                   <select
                     value={category}
                     onChange={(e) => handleCategoryChange(e.target.value)}
@@ -148,8 +148,8 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
                   </select>
                 </TableCell>
 
-                <TableCell className="font-bold text-xs bg-emerald-50/60 w-32 border-r border-emerald-200">Sub Category</TableCell>
-                <TableCell className="border-r border-emerald-100">
+                <TableCell className="font-bold text-xs bg-slate-50 w-32 border-r border-slate-200 text-[#002868]">Sub Category</TableCell>
+                <TableCell className="border-r border-slate-200">
                   <select
                     value={subCategory}
                     onChange={(e) => setSubCategory(e.target.value)}
@@ -165,7 +165,7 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
                   </select>
                 </TableCell>
 
-                <TableCell className="font-bold text-xs bg-emerald-50/60 w-24 border-r border-emerald-200">Fault</TableCell>
+                <TableCell className="font-bold text-xs bg-slate-50 w-24 border-r border-slate-200 text-[#002868]">Fault</TableCell>
                 <TableCell>
                   <select
                     value={faultCode}
@@ -184,9 +184,9 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
               </TableRow>
 
               {/* Row 2: Source Of Complain, Escalation */}
-              <TableRow className="hover:bg-transparent border-b border-emerald-100">
-                <TableCell className="font-bold text-xs bg-emerald-50/60 border-r border-emerald-200">Source Of Complain</TableCell>
-                <TableCell className="border-r border-emerald-100">
+              <TableRow className="hover:bg-transparent border-b border-slate-200">
+                <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Source Of Complain</TableCell>
+                <TableCell className="border-r border-slate-200">
                   <select
                     value={sourceOfComplain}
                     onChange={(e) => setSourceOfComplain(e.target.value)}
@@ -198,7 +198,7 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
                   </select>
                 </TableCell>
 
-                <TableCell className="font-bold text-xs bg-emerald-50/60 border-r border-emerald-200">Escalation</TableCell>
+                <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Escalation</TableCell>
                 <TableCell colSpan={5}>
                   <select
                     value={escalation}
@@ -213,9 +213,9 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
               </TableRow>
 
               {/* Row 3: Assigned To, Complain Status, First Call Resolution */}
-              <TableRow className="hover:bg-transparent border-b border-emerald-100">
-                <TableCell className="font-bold text-xs bg-emerald-50/60 border-r border-emerald-200">Assigned To</TableCell>
-                <TableCell className="border-r border-emerald-100">
+              <TableRow className="hover:bg-transparent border-b border-slate-200">
+                <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Assigned To</TableCell>
+                <TableCell className="border-r border-slate-200">
                   <select
                     value={assignedTo}
                     onChange={(e) => setAssignedTo(e.target.value)}
@@ -227,14 +227,14 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
                   </select>
                 </TableCell>
 
-                <TableCell className="font-bold text-xs bg-emerald-50/60 border-r border-emerald-200">Complain Status</TableCell>
-                <TableCell className="border-r border-emerald-100">
+                <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Complain Status</TableCell>
+                <TableCell className="border-r border-slate-200">
                   <Badge variant="outline" className="bg-amber-100 text-amber-900 border-amber-300 font-bold text-xs">
                     Pending
                   </Badge>
                 </TableCell>
 
-                <TableCell className="font-bold text-xs bg-emerald-50/60 border-r border-emerald-200">First Call Resolution</TableCell>
+                <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">First Call Resolution</TableCell>
                 <TableCell colSpan={3}>
                   <select
                     value={firstCallResolution}
@@ -249,7 +249,7 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
 
               {/* Row 4: Complain Description */}
               <TableRow className="hover:bg-transparent">
-                <TableCell className="font-bold text-xs bg-emerald-50/60 border-r border-emerald-200">Complain Description</TableCell>
+                <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Complain Description</TableCell>
                 <TableCell colSpan={7}>
                   <Textarea
                     required
@@ -257,7 +257,7 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
                     placeholder="Enter detailed complain description..."
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="border-gray-300 text-xs focus-visible:ring-emerald-500 bg-white"
+                    className="border-gray-300 text-xs focus-visible:ring-[#002868] bg-white"
                   />
                 </TableCell>
               </TableRow>
@@ -265,7 +265,7 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
           </Table>
 
           <div className="flex justify-end pt-2">
-            <Button type="submit" disabled={loading} className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-sm px-6">
+            <Button type="submit" disabled={loading} className="bg-[#002868] hover:bg-[#001d4a] text-white font-bold text-xs shadow-sm px-6">
               {loading ? 'Submitting...' : 'Submit Ticket'}
             </Button>
           </div>

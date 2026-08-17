@@ -40,7 +40,7 @@ export default async function LoginPage({
         <form action={login}>
           <CardContent className="space-y-4">
             {resolvedParams?.success && (
-              <div className="p-3 text-sm bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 rounded-lg text-center font-medium">
+              <div className="p-3 text-sm bg-sky-500/10 border border-sky-500/20 text-sky-700 dark:text-sky-300 rounded-lg text-center font-medium">
                 {resolvedParams.success}
               </div>
             )}

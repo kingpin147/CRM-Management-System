@@ -65,7 +65,7 @@ export default async function InventoryManagementPage() {
               <p className="text-xs font-bold text-[var(--color-slate-custom)] uppercase">Energy Storage Units</p>
               <p className="text-2xl font-bold text-[var(--color-graphite)] mt-1">48 Units</p>
             </div>
-            <Battery className="h-8 w-8 text-emerald-600 opacity-80" />
+            <Battery className="h-8 w-8 text-[#002868] opacity-80" />
           </CardContent>
         </Card>
 
@@ -91,7 +91,7 @@ export default async function InventoryManagementPage() {
               Live warehouse stock records for Inverters, PV Panels, Batteries, Green Meters, and Zero Export Devices.
             </CardDescription>
           </div>
-          <Badge variant="outline" className="bg-emerald-50 text-emerald-800 border-emerald-200 text-xs font-semibold">
+          <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] text-xs font-semibold">
             Warehouse Status: Operational
           </Badge>
         </CardHeader>
@@ -118,7 +118,7 @@ export default async function InventoryManagementPage() {
                   </TableCell>
                   <TableCell className="font-medium text-xs text-[var(--color-ink)]">{item.item}</TableCell>
                   <TableCell className="text-xs text-gray-600">{item.brand} • {item.type}</TableCell>
-                  <TableCell className="text-xs font-bold text-emerald-700">{item.inStock} Units</TableCell>
+                  <TableCell className="text-xs font-bold text-[#002868]">{item.inStock} Units</TableCell>
                   <TableCell className="text-xs font-semibold text-gray-500">{item.allocated} Units</TableCell>
                   <TableCell className="text-xs font-medium">{item.unitPrice}</TableCell>
                   <TableCell className="text-right">
@@ -126,7 +126,7 @@ export default async function InventoryManagementPage() {
                       variant="outline"
                       className={
                         item.inStock > 20
-                          ? 'bg-emerald-100 text-emerald-900 border-emerald-300 text-xs font-semibold'
+                          ? 'bg-[#002868] text-white border-[#002868] text-xs font-semibold'
                           : item.inStock > 10
                           ? 'bg-amber-100 text-amber-900 border-amber-300 text-xs font-semibold'
                           : 'bg-rose-100 text-rose-900 border-rose-300 text-xs font-semibold'

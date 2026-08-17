@@ -44,9 +44,9 @@ export const columns: ColumnDef<any, TicketWithCustomer, any>[] = [
             status === 'PENDING' 
               ? 'bg-amber-100 text-amber-800 border-amber-200'
               : status === 'RESOLVED'
-              ? 'bg-green-100 text-green-800 border-green-200'
+              ? 'bg-[#002868] text-white border-[#002868]'
               : status === 'ON_HOLD'
-              ? 'bg-blue-100 text-blue-800 border-blue-200'
+              ? 'bg-sky-100 text-sky-900 border-sky-300'
               : 'bg-gray-100 text-gray-800 border-gray-200'
           }
         >

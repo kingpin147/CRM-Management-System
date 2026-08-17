@@ -98,7 +98,7 @@ export function UserRowActions({ user }: { user: UserProps }) {
                 {user.isActive ? (
                   <><Ban className="mr-2 h-4 w-4 text-amber-500" /> Disable User</>
                 ) : (
-                  <><CheckCircle2 className="mr-2 h-4 w-4 text-emerald-500" /> Enable User</>
+                  <><CheckCircle2 className="mr-2 h-4 w-4 text-sky-600" /> Enable User</>
                 )}
               </DropdownMenuItem>
               
