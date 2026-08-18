@@ -180,3 +180,36 @@ export async function resetUserPassword(targetUserId: string) {
     return { error: err.message || 'An error occurred while resetting password' }
   }
 }
+
+export async function updateUserRole(targetUserId: string, newRole: Role) {
+  try {
+    const { allowed, error, target, requester } = await checkPermissions(targetUserId)
+    if (!allowed || !target || !requester) return { error }
+
+    // Standard ADMIN cannot promote users to SUPER_ADMIN
+    if (newRole === 'SUPER_ADMIN' && requester.role !== 'SUPER_ADMIN') {
+      return { error: 'Only a Super Admin can promote a user to Super Admin' }
+    }
+
+    const adminAuthClient = createAdminClient()
+
+    // 1. Update Prisma
+    await prisma.user.update({
+      where: { id: targetUserId },
+      data: { role: newRole }
+    })
+
+    // 2. Update Supabase user metadata
+    await adminAuthClient.auth.admin.updateUserById(target.supabaseId, {
+      user_metadata: { role: newRole }
+    })
+
+    revalidatePath('/dashboard/admin')
+    return { success: true }
+  } catch (err: any) {
+    console.error('Update user role error:', err)
+    return { error: err.message || 'An error occurred while updating user role' }
+  }
+}
+
+

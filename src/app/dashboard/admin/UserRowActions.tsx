@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { MoreHorizontal, Lock, Trash2, Ban, CheckCircle2 } from 'lucide-react'
+import { MoreHorizontal, Lock, Trash2, Ban, CheckCircle2, ShieldCheck } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,7 +19,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { deleteUser, resetUserPassword, toggleUserStatus } from './actions'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { deleteUser, resetUserPassword, toggleUserStatus, updateUserRole } from './actions'
+import { Role } from '@prisma/client'
 
 type UserProps = {
   id: string;
@@ -34,7 +46,9 @@ export function UserRowActions({ user }: { user: UserProps }) {
   
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [resetOpen, setResetOpen] = useState(false)
+  const [roleOpen, setRoleOpen] = useState(false)
   
+  const [selectedRole, setSelectedRole] = useState<Role>(user.role as Role)
   const [newPassword, setNewPassword] = useState<string | null>(null)
   
   const handleToggleStatus = async () => {
@@ -73,6 +87,17 @@ export function UserRowActions({ user }: { user: UserProps }) {
     }
   }
 
+  const handleUpdateRole = async () => {
+    setLoading(true)
+    try {
+      const res = await updateUserRole(user.id, selectedRole)
+      if (res.error) alert(res.error)
+      else setRoleOpen(false)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <>
       <DropdownMenu>
@@ -87,6 +112,11 @@ export function UserRowActions({ user }: { user: UserProps }) {
           <div className="px-2 py-1.5 text-sm font-semibold">Actions</div>
           <DropdownMenuSeparator />
           
+          <DropdownMenuItem onClick={() => setRoleOpen(true)}>
+            <ShieldCheck className="mr-2 h-4 w-4 text-[var(--color-amber)]" />
+            Change Role
+          </DropdownMenuItem>
+
           <DropdownMenuItem onClick={() => setResetOpen(true)}>
             <Lock className="mr-2 h-4 w-4" />
             Reset Password
@@ -114,6 +144,42 @@ export function UserRowActions({ user }: { user: UserProps }) {
           )}
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {/* Change Role Dialog */}
+      <Dialog open={roleOpen} onOpenChange={setRoleOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Change Role for {user.fullName}</DialogTitle>
+            <DialogDescription>
+              Assign a new role and permission set to this user.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="role">Select Role</Label>
+              <Select value={selectedRole} onValueChange={(val) => setSelectedRole(val as Role)}>
+                <SelectTrigger id="role" className="w-full">
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
+                  <SelectItem value="ADMIN">Admin</SelectItem>
+                  <SelectItem value="MANAGER">Manager</SelectItem>
+                  <SelectItem value="SALES">Sales</SelectItem>
+                  <SelectItem value="INSTALLATION">Installation</SelectItem>
+                  <SelectItem value="CUSTOMER_SUPPORT">Customer Support</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRoleOpen(false)}>Cancel</Button>
+            <Button onClick={handleUpdateRole} disabled={loading}>
+              {loading ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
