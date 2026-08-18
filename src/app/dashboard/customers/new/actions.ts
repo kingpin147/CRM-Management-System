@@ -78,6 +78,7 @@ export async function createCustomer(formData: FormData) {
   const batteryWarrantyEnd = parseDate(formData.get('batteryWarrantyExpiry'))
   const earthing = (formData.get('earthingType') as string) || 'AC'
   const earthingOhms = (formData.get('earthingOhms') as string) || '0.5'
+  const earthingLastCheck = parseDate(formData.get('lastCheckDate'))
   const ingressProtection = (formData.get('ingressProtection') as string) || 'IP54'
   const structureType = (formData.get('structureType') as string) || 'Standard'
   const structureMaterial = (formData.get('structureMaterial') as string) || 'Pre Galvanized'
@@ -173,6 +174,7 @@ export async function createCustomer(formData: FormData) {
             batterySerial: 'BAT-SERIAL',
             batteryWarrantyEnd,
             earthing,
+            earthingLastCheck,
             earthingAcOhms: Number(earthingOhms) || 0.5,
             ingressProtection,
             structureType,

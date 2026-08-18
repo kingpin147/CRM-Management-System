@@ -271,6 +271,45 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
 
   const grandTotal = billingType === 'FOC' ? 0 : (priceAfterDiscount + salesTax + onboardingFee)
 
+  const noOfInvertersValue = form.watch('noOfInverters') || 1
+  const [inverterList, setInverterList] = useState<Array<{ brand: string; serial: string; warrantyExpiry: string }>>([
+    { brand: 'Solis', serial: '', warrantyExpiry: '' }
+  ])
+
+  // Sync inverter list with noOfInverters count
+  useEffect(() => {
+    const count = Math.max(1, Number(noOfInvertersValue) || 1)
+    setInverterList(prev => {
+      if (prev.length === count) return prev
+      if (prev.length < count) {
+        const primaryBrand = prev[0]?.brand || form.getValues('inverterBrand') || 'Solis'
+        const added = Array.from({ length: count - prev.length }, () => ({
+          brand: primaryBrand,
+          serial: '',
+          warrantyExpiry: ''
+        }))
+        return [...prev, ...added]
+      }
+      return prev.slice(0, count)
+    })
+  }, [noOfInvertersValue, form])
+
+  // Multi-battery dynamic warranty state
+  const noOfBatteriesValue = form.watch('noOfBatteries') || 1
+  const [batteryWarrantyList, setBatteryWarrantyList] = useState<string[]>([''])
+
+  // Sync battery warranty list with noOfBatteries count
+  useEffect(() => {
+    const count = Math.max(1, Number(noOfBatteriesValue) || 1)
+    setBatteryWarrantyList(prev => {
+      if (prev.length === count) return prev
+      if (prev.length < count) {
+        return [...prev, ...Array(count - prev.length).fill('')]
+      }
+      return prev.slice(0, count)
+    })
+  }, [noOfBatteriesValue])
+
   useEffect(() => {
     form.setValue('monthlyBasePrice', Math.round(priceAfterDiscount))
     form.setValue('salesTaxAmount',   Math.round(salesTax))
@@ -292,6 +331,18 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
     Object.entries(values).forEach(([key, value]) => {
       if (value !== undefined && value !== '' && value !== 'none') formData.append(key, value.toString())
     })
+
+    // Multi-inverter joined data
+    const allInverterBrands = inverterList.map(i => i.brand).filter(Boolean).join(', ')
+    const allInverterSerials = inverterList.map(i => i.serial).filter(Boolean).join(', ')
+    const primaryInverterWarranty = inverterList[0]?.warrantyExpiry || values.inverterWarrantyExpiry
+    if (allInverterBrands) formData.set('inverterBrand', allInverterBrands)
+    if (allInverterSerials) formData.set('inverterSerial', allInverterSerials)
+    if (primaryInverterWarranty) formData.set('inverterWarrantyExpiry', primaryInverterWarranty)
+
+    // Multi-battery warranty data
+    const primaryBatteryWarranty = batteryWarrantyList[0] || values.batteryWarrantyExpiry
+    if (primaryBatteryWarranty) formData.set('batteryWarrantyExpiry', primaryBatteryWarranty)
 
     formData.append('appliedDiscount', Math.round(discountAmount).toString())
     formData.append('salesTaxAmount',  Math.round(salesTax).toString())
@@ -317,22 +368,29 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
   ]
 
   const INVERTER_BRANDS = [
-    'Solis', 'Growatt', 'Huawei', 'Knox', 'Deye', 'Fronius', 'Inverex', 'Ziewnic', 'Sungrow',
-    'Voltronic', 'Kodak', 'Nitram', 'PEARL', 'Canadian Solar', 'Crown', 'Onya', 'Kehua',
-    'SMA', 'Sunward', 'Voltz', 'MaxPower', 'Onyx', 'Powering Systems', 'GoodWe', 'Other'
+    'Knox', 'Fronius', 'Livoltek', 'GoodWe', 'Galaxy', 'Solis', 'CoreTech', 'Inverex',
+    'Ziewnic', 'Itel', 'Sunviour', 'Yinergy', 'Huawei', 'SAJ', 'Fox ESS', 'Solplanet',
+    'Solax Power', 'Tesla', 'Crown', 'Growatt', 'Deye', 'Sungrow', 'Sofar', 'SMA',
+    'SolarEdge', 'KSTAR', 'SolarMax', 'SRNE', 'Voltronic / Axpert', 'Kodak', 'Sineng',
+    'FIMER', 'Canadian Solar', 'Apex', 'Gripsun', 'Anicsun', 'Maxpower', 'Auxsol',
+    'Onyx', 'Powerage', 'Sunlife', 'Other'
   ]
 
   const PANEL_BRANDS = [
-    'LONGi', 'AIKO', 'Risen', 'Trina Solar', 'Jinko', 'Astronergy', 'GCL', 'Huawei',
-    'DMSGC', 'JA Solar', 'Jolywood', 'Qcells', 'Canadian Solar', 'Seraphim', 'Other'
+    'AIKO', 'LONGi', 'Risen', 'Trina Solar', 'Jinko', 'Astronergy', 'GCL', 'Huasun',
+    'DMEGC', 'JA Solar', 'Jolywood', 'DASolar', 'DAH Solar', 'TW Solar', 'Jetion Solar',
+    'Grand Sunergy', 'SPIC', 'Solargiga', 'Canadian Solar', 'REC Group', 'Eging PV',
+    'RUNERGY', 'URECO', 'Yingli', 'Suntech', 'Kalyon PV', 'Qcells', 'CECEP',
+    'Jinergy', 'Meyer Burger', 'Qn-SOLAR', 'Seraphim', 'ZNSHINE', 'OSDA', 'Other'
   ]
 
   const BATTERY_BRANDS = [
-    'Pylontech', 'Dyness', 'Narada', 'Sunwoda', 'Dongjin', 'BYD', 'Knox', 'GoodWe',
-    'Sacred Sun', 'Genix', 'Gree', 'Inverex', 'Growatt', 'Deye', 'Huawei', 'Fox ESS',
-    'Sangrow', 'SolarX', 'Osaka', 'Phoenix', 'Apex Solar', 'MaxPower', 'Other'
+    'Dyness', 'Narada', 'Pylontech', 'Sunwoda', 'Dongjin', 'BYD', 'Knox', 'GoodWe',
+    'Sacred Sun', 'Genix Green', 'Inverex', 'Growatt', 'Deye', 'Huawei', 'Fox ESS',
+    'Sungrow', 'Sofar', 'SolaX', 'SRNE', 'Osaka', 'Phoenix', 'Apex Solar', 'MaxPower', 'Other'
   ]
 
+  const IP_LIST        = ['IP20', 'IP21', 'IP34', 'IP40', 'IP54', 'IP65', 'IP66', 'IP67']
   const DISCO_LIST     = ['LESCO', 'IESCO', 'FESCO', 'MEPCO', 'PESCO', 'GEPCO', 'QESCO', 'K-Electric']
   const AUDIT_STATUSES = ['Excellent', 'Good', 'Fair', 'Service Required', 'Replacement Required']
 
@@ -542,6 +600,18 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                       )}
                     />
 
+                    {/* Sign Up Date */}
+                    <FormField
+                      control={form.control}
+                      name="signUpDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs font-semibold">Sign Up Date</FormLabel>
+                          <FormControl><Input type="date" {...field} className="h-10 text-xs" /></FormControl>
+                        </FormItem>
+                      )}
+                    />
+
                     {/* CNIC # */}
                     <FormField
                       control={form.control}
@@ -560,75 +630,37 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                       control={form.control}
                       name="cnicExpiry"
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="md:col-span-2">
                           <FormLabel className="text-xs font-semibold">CNIC Expiry Date</FormLabel>
                           <FormControl><Input type="date" {...field} className="h-10 text-xs" /></FormControl>
                         </FormItem>
                       )}
                     />
 
-                    {/* Upload CNIC Front */}
-                    <div className="space-y-1.5">
-                      <FormLabel className="text-xs font-semibold">Upload CNIC Front</FormLabel>
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        className="h-10 text-xs file:bg-transparent file:text-xs file:font-semibold border-[var(--color-line)]"
-                        onChange={(e) => setCnicFrontFile(e.target.files?.[0] || null)}
-                      />
+                    {/* CNIC Snapshots (One Line) */}
+                    <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-5">
+                      {/* Upload CNIC Front */}
+                      <div className="space-y-1.5">
+                        <FormLabel className="text-xs font-semibold">Upload CNIC Front</FormLabel>
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          className="h-10 text-xs file:bg-transparent file:text-xs file:font-semibold border-[var(--color-line)]"
+                          onChange={(e) => setCnicFrontFile(e.target.files?.[0] || null)}
+                        />
+                      </div>
+
+                      {/* Upload CNIC Back */}
+                      <div className="space-y-1.5">
+                        <FormLabel className="text-xs font-semibold">Upload CNIC Back</FormLabel>
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          className="h-10 text-xs file:bg-transparent file:text-xs file:font-semibold border-[var(--color-line)]"
+                          onChange={(e) => setCnicBackFile(e.target.files?.[0] || null)}
+                        />
+                      </div>
                     </div>
-
-                    {/* Upload CNIC Back */}
-                    <div className="space-y-1.5">
-                      <FormLabel className="text-xs font-semibold">Upload CNIC Back</FormLabel>
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        className="h-10 text-xs file:bg-transparent file:text-xs file:font-semibold border-[var(--color-line)]"
-                        onChange={(e) => setCnicBackFile(e.target.files?.[0] || null)}
-                      />
-                    </div>
-
-                    {/* Sign Up Date */}
-                    <FormField
-                      control={form.control}
-                      name="signUpDate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs font-semibold">Sign Up Date</FormLabel>
-                          <FormControl><Input type="date" {...field} className="h-10 text-xs" /></FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Account Executive */}
-                    <FormField
-                      control={form.control}
-                      name="accountExecutiveId"
-                      render={({ field }) => (
-                        <FormItem className="md:col-span-2">
-                          <FormLabel className="text-xs font-semibold">Account Executive Name</FormLabel>
-                          <Select onValueChange={(val) => {
-                            field.onChange(val)
-                            const sel = users?.find(u => u.id === val)
-                            if (sel) form.setValue('accountExecutiveName', sel.fullName)
-                          }} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger className="h-10 text-xs"><SelectValue placeholder="Select Account Executive" /></SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="none">Unassigned / Direct</SelectItem>
-                              {users?.map(user => (
-                                <SelectItem key={user.id} value={user.id}>
-                                  {user.fullName} ({user.role.replace('_', ' ')})
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
                   </div>
                 </CardContent>
               </Card>
@@ -788,12 +820,41 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                       )}
                     />
 
-                    {/* Activation note */}
-                    <div className="flex items-end">
-                      <p className="text-[11px] text-gray-400 pb-1">
-                        Activation Date will be set automatically when the O&amp;M Manager activates the customer.
-                      </p>
-                    </div>
+                    {/* Account Executive */}
+                    <FormField
+                      control={form.control}
+                      name="accountExecutiveId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs font-semibold">Account Executive Name</FormLabel>
+                          <Select onValueChange={(val) => {
+                            field.onChange(val)
+                            const sel = users?.find(u => u.id === val)
+                            if (sel) form.setValue('accountExecutiveName', sel.fullName)
+                          }} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger className="h-10 text-xs"><SelectValue placeholder="Select Account Executive" /></SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="none">Unassigned / Direct</SelectItem>
+                              {users?.map(user => (
+                                <SelectItem key={user.id} value={user.id}>
+                                  {user.fullName} ({user.role.replace('_', ' ')})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Activation note */}
+                  <div className="pt-1">
+                    <p className="text-[11px] text-gray-400">
+                      Activation Date will be set automatically when the O&amp;M Manager activates the customer.
+                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -860,69 +921,11 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                     </FormItem>
                   )} />
 
-                  {/* Inverter Brand */}
-                  <FormField control={form.control} name="inverterBrand" render={({ field }) => (
+                  {/* DISCO Customer ID # */}
+                  <FormField control={form.control} name="discoRefNo" render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-semibold">Inverter Brand</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl><SelectTrigger className="h-10 text-xs"><SelectValue /></SelectTrigger></FormControl>
-                        <SelectContent>
-                          {INVERTER_BRANDS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </FormItem>
-                  )} />
-
-                  {/* Inverter Type */}
-                  <FormField control={form.control} name="inverterType" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-semibold">Inverter Type</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl><SelectTrigger className="h-10 text-xs"><SelectValue /></SelectTrigger></FormControl>
-                        <SelectContent>
-                          <SelectItem value="Hybrid">Hybrid</SelectItem>
-                          <SelectItem value="On-grid">On-grid</SelectItem>
-                          <SelectItem value="Hybrid + On-grid">Hybrid + On-grid</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormItem>
-                  )} />
-
-                  {/* Inverter Phase */}
-                  <FormField control={form.control} name="inverterPhase" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-semibold">Inverter Phase Type</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl><SelectTrigger className="h-10 text-xs"><SelectValue /></SelectTrigger></FormControl>
-                        <SelectContent>
-                          <SelectItem value="Single Phase">Single Phase</SelectItem>
-                          <SelectItem value="Three Phase">Three Phase</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormItem>
-                  )} />
-
-                  {/* No. of Inverters */}
-                  <FormField control={form.control} name="noOfInverters" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-semibold">No. of Inverters</FormLabel>
-                      <FormControl><Input type="number" {...field} className="h-10 text-xs" /></FormControl>
-                    </FormItem>
-                  )} />
-
-                  {/* Inverter Serial */}
-                  <FormField control={form.control} name="inverterSerial" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-semibold">Inverter Serial #</FormLabel>
-                      <FormControl><Input placeholder="Serial number..." {...field} className="h-10 text-xs" /></FormControl>
-                    </FormItem>
-                  )} />
-
-                  {/* Inverter Warranty */}
-                  <FormField control={form.control} name="inverterWarrantyExpiry" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-semibold text-amber-900">Inverter Warranty End Date</FormLabel>
-                      <FormControl><Input type="date" {...field} className="h-10 text-xs border-amber-300" /></FormControl>
+                      <FormLabel className="text-xs font-semibold">{form.watch('disco') || 'LESCO'} Customer ID #</FormLabel>
+                      <FormControl><Input placeholder="e.g. 04-11524-1234567" {...field} className="h-10 text-xs font-mono" /></FormControl>
                     </FormItem>
                   )} />
 
@@ -968,6 +971,133 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                       </Select>
                     </FormItem>
                   )} />
+
+                  {/* Inverter Type */}
+                  <FormField control={form.control} name="inverterType" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-semibold">Inverter Type</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl><SelectTrigger className="h-10 text-xs"><SelectValue /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          <SelectItem value="Hybrid">Hybrid</SelectItem>
+                          <SelectItem value="On-grid">On-grid</SelectItem>
+                          <SelectItem value="Hybrid + On-grid">Hybrid + On-grid</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )} />
+
+                  {/* Inverter Phase Type */}
+                  <FormField control={form.control} name="inverterPhase" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-semibold">Inverter Phase Type</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl><SelectTrigger className="h-10 text-xs"><SelectValue /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          <SelectItem value="Single Phase">Single Phase</SelectItem>
+                          <SelectItem value="Three Phase">Three Phase</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )} />
+
+                  {/* No. of Inverters */}
+                  <FormField control={form.control} name="noOfInverters" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-semibold">No. of Inverters</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={1}
+                          max={20}
+                          {...field}
+                          onChange={(e) => {
+                            const val = Math.max(1, parseInt(e.target.value) || 1)
+                            field.onChange(val)
+                          }}
+                          className="h-10 text-xs"
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )} />
+
+                  {/* Dynamic Inverter Units (Brand, Serial #, Warranty End Date per Inverter) */}
+                  <div className="md:col-span-3 space-y-3 bg-amber-50/40 p-4 rounded-xl border border-amber-200/70">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-bold text-amber-950 uppercase tracking-wider">
+                        Inverter Units Configuration ({inverterList.length})
+                      </h4>
+                      <span className="text-[11px] text-amber-800">
+                        Brand, Serial #, and Warranty End Date for each inverter unit
+                      </span>
+                    </div>
+
+                    <div className="space-y-3">
+                      {inverterList.map((inv, idx) => (
+                        <div key={idx} className="p-3.5 bg-white rounded-lg border border-amber-200/80 shadow-2xs space-y-3">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="bg-amber-100 text-amber-900 border-amber-300 text-[10px] font-bold">
+                              Inverter #{idx + 1}
+                            </Badge>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            {/* Brand */}
+                            <div className="space-y-1">
+                              <FormLabel className="text-xs font-semibold">Inverter Brand</FormLabel>
+                              <Select
+                                value={inv.brand}
+                                onValueChange={(val) => {
+                                  if (!val) return
+                                  const updated = [...inverterList]
+                                  updated[idx].brand = val
+                                  setInverterList(updated)
+                                  if (idx === 0) form.setValue('inverterBrand', val)
+                                }}
+                              >
+                                <FormControl><SelectTrigger className="h-10 text-xs bg-white"><SelectValue /></SelectTrigger></FormControl>
+                                <SelectContent>
+                                  {INVERTER_BRANDS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            {/* Serial */}
+                            <div className="space-y-1">
+                              <FormLabel className="text-xs font-semibold">Inverter Serial #</FormLabel>
+                              <Input
+                                value={inv.serial}
+                                onChange={(e) => {
+                                  const updated = [...inverterList]
+                                  updated[idx].serial = e.target.value
+                                  setInverterList(updated)
+                                  if (idx === 0) form.setValue('inverterSerial', e.target.value)
+                                }}
+                                placeholder={`Serial number for Inverter #${idx + 1}...`}
+                                className="h-10 text-xs bg-white font-mono"
+                              />
+                            </div>
+
+                            {/* Warranty Expiry */}
+                            <div className="space-y-1">
+                              <FormLabel className="text-xs font-semibold text-amber-900">Inverter Warranty End Date</FormLabel>
+                              <Input
+                                type="date"
+                                value={inv.warrantyExpiry}
+                                onChange={(e) => {
+                                  const updated = [...inverterList]
+                                  updated[idx].warrantyExpiry = e.target.value
+                                  setInverterList(updated)
+                                  if (idx === 0) form.setValue('inverterWarrantyExpiry', e.target.value)
+                                }}
+                                className="h-10 text-xs bg-white border-amber-300"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
 
                   {/* Panel Technology */}
                   <FormField control={form.control} name="panelTechnology" render={({ field }) => (
@@ -1087,17 +1217,54 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                   <FormField control={form.control} name="noOfBatteries" render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs font-semibold">No. of Batteries</FormLabel>
-                      <FormControl><Input type="number" {...field} className="h-10 text-xs" /></FormControl>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={1}
+                          max={20}
+                          {...field}
+                          onChange={(e) => {
+                            const val = Math.max(1, parseInt(e.target.value) || 1)
+                            field.onChange(val)
+                          }}
+                          className="h-10 text-xs"
+                        />
+                      </FormControl>
                     </FormItem>
                   )} />
 
-                  {/* Battery Warranty */}
-                  <FormField control={form.control} name="batteryWarrantyExpiry" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-semibold text-amber-900">Battery Warranty End Date</FormLabel>
-                      <FormControl><Input type="date" {...field} className="h-10 text-xs border-amber-300" /></FormControl>
-                    </FormItem>
-                  )} />
+                  {/* Dynamic Battery Warranty End Date Boxes */}
+                  <div className="md:col-span-3 space-y-3 bg-amber-50/30 p-4 rounded-xl border border-amber-200/60">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-bold text-amber-950 uppercase tracking-wider">
+                        Battery Warranty End Dates ({batteryWarrantyList.length})
+                      </h4>
+                      <span className="text-[11px] text-amber-800">
+                        Set warranty end date per battery unit
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                      {batteryWarrantyList.map((bwDate, idx) => (
+                        <div key={idx} className="space-y-1 bg-white p-3 rounded-lg border border-amber-200/70 shadow-2xs">
+                          <FormLabel className="text-xs font-semibold text-amber-900">
+                            Battery #{idx + 1} Warranty End Date
+                          </FormLabel>
+                          <Input
+                            type="date"
+                            value={bwDate}
+                            onChange={(e) => {
+                              const updated = [...batteryWarrantyList]
+                              updated[idx] = e.target.value
+                              setBatteryWarrantyList(updated)
+                              if (idx === 0) form.setValue('batteryWarrantyExpiry', e.target.value)
+                            }}
+                            className="h-10 text-xs bg-white border-amber-300"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
 
                   {/* Earthing */}
                   <FormField control={form.control} name="earthingType" render={({ field }) => (
@@ -1108,6 +1275,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                         <SelectContent>
                           <SelectItem value="AC">AC</SelectItem>
                           <SelectItem value="DC">DC</SelectItem>
+                          <SelectItem value="Both">Both (AC &amp; DC)</SelectItem>
                         </SelectContent>
                       </Select>
                     </FormItem>
@@ -1121,6 +1289,14 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                     </FormItem>
                   )} />
 
+                  {/* Last Check Date */}
+                  <FormField control={form.control} name="lastCheckDate" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-semibold">Earthing Last Check Date</FormLabel>
+                      <FormControl><Input type="date" {...field} className="h-10 text-xs" /></FormControl>
+                    </FormItem>
+                  )} />
+
                   {/* Ingress Protection */}
                   <FormField control={form.control} name="ingressProtection" render={({ field }) => (
                     <FormItem>
@@ -1128,7 +1304,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl><SelectTrigger className="h-10 text-xs"><SelectValue /></SelectTrigger></FormControl>
                         <SelectContent>
-                          {['IP20', 'IP21', 'IP34', 'IP40', 'IP54', 'IP65'].map(ip => (
+                          {IP_LIST.map(ip => (
                             <SelectItem key={ip} value={ip}>{ip}</SelectItem>
                           ))}
                         </SelectContent>
