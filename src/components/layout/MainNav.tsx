@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ChevronDown, ShoppingBag, AlertCircle, BarChart3, Truck, Users, Settings } from 'lucide-react'
+import { ChevronDown, ShoppingBag, AlertCircle, BarChart3, Truck, Users, Settings, Search } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,8 +21,11 @@ export function MainNav({
   const pathname = usePathname()
 
   const isActive = (path: string) => {
+    if (path === '/dashboard/customers') {
+      return pathname === '/dashboard/customers' || pathname === '/dashboard'
+    }
     if (path === '/dashboard') {
-      return pathname === '/dashboard'
+      return pathname === '/dashboard' || pathname === '/dashboard/customers'
     }
     return pathname.startsWith(path)
   }
@@ -52,6 +55,17 @@ export function MainNav({
   if (orientation === 'horizontal') {
     return (
       <nav className="flex items-center space-x-2">
+        {/* Customer Search Tab */}
+        <Link 
+          href="/dashboard/customers" 
+          className={linkClass('/dashboard/customers')}
+        >
+          <span className="flex items-center gap-1.5 font-semibold">
+            <Search className="h-4 w-4 text-[var(--color-amber)]" />
+            Customer Search
+          </span>
+        </Link>
+
         {/* 1. Sales Tab with Sub-menu */}
         <DropdownMenu>
           <DropdownMenuTrigger className={triggerClass(pathname.startsWith('/dashboard/sales') || pathname === '/dashboard/customers/new')}>
@@ -175,6 +189,18 @@ export function MainNav({
   // Mobile / Vertical Orientation
   return (
     <div className="space-y-4">
+      <div>
+        <p className="px-3 text-xs font-bold text-[var(--color-slate-custom)] uppercase tracking-wider mb-1">Customers</p>
+        <div className="space-y-0.5">
+          <Link href="/dashboard/customers" className={linkClass('/dashboard/customers')}>
+            <span className="flex items-center gap-1.5 font-semibold">
+              <Search className="h-4 w-4 text-[var(--color-amber)]" />
+              Customer Search
+            </span>
+          </Link>
+        </div>
+      </div>
+
       <div>
         <p className="px-3 text-xs font-bold text-[var(--color-slate-custom)] uppercase tracking-wider mb-1">Sales</p>
         <div className="space-y-0.5">
