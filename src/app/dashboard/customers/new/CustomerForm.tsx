@@ -310,6 +310,28 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
     })
   }, [noOfBatteriesValue])
 
+  // Auto-sync DISCO based on selected City
+  const selectedCity = form.watch('city')
+  useEffect(() => {
+    if (selectedCity === 'Karachi') {
+      form.setValue('disco', 'K-Electric')
+    } else if (selectedCity === 'Lahore') {
+      form.setValue('disco', 'LESCO')
+    } else if (selectedCity === 'Islamabad' || selectedCity === 'Rawalpindi') {
+      form.setValue('disco', 'IESCO')
+    } else if (selectedCity === 'Faisalabad') {
+      form.setValue('disco', 'FESCO')
+    } else if (selectedCity === 'Multan') {
+      form.setValue('disco', 'MEPCO')
+    } else if (selectedCity === 'Peshawar') {
+      form.setValue('disco', 'PESCO')
+    } else if (selectedCity === 'Gujranwala' || selectedCity === 'Sialkot') {
+      form.setValue('disco', 'GEPCO')
+    } else if (selectedCity === 'Quetta') {
+      form.setValue('disco', 'QESCO')
+    }
+  }, [selectedCity, form])
+
   useEffect(() => {
     form.setValue('monthlyBasePrice', Math.round(priceAfterDiscount))
     form.setValue('salesTaxAmount',   Math.round(salesTax))
@@ -390,8 +412,23 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
     'Sungrow', 'Sofar', 'SolaX', 'SRNE', 'Osaka', 'Phoenix', 'Apex Solar', 'MaxPower', 'Other'
   ]
 
-  const IP_LIST        = ['IP20', 'IP21', 'IP34', 'IP40', 'IP54', 'IP65', 'IP66', 'IP67']
-  const DISCO_LIST     = ['LESCO', 'IESCO', 'FESCO', 'MEPCO', 'PESCO', 'GEPCO', 'QESCO', 'K-Electric']
+  const IP_LIST = ['IP20', 'IP21', 'IP34', 'IP40', 'IP54', 'IP65', 'IP66', 'IP67']
+  const DISCO_LIST = ['LESCO', 'IESCO', 'K-Electric', 'FESCO', 'MEPCO', 'PESCO', 'GEPCO', 'QESCO', 'HESCO', 'SEPCO', 'TESCO', 'Other']
+
+  const DISCO_PLACEHOLDERS: Record<string, string> = {
+    'LESCO': 'e.g. 04-11524-1234567',
+    'IESCO': 'e.g. 01-14321-1234567',
+    'K-Electric': 'e.g. 0400012345678 (13 Digits)',
+    'FESCO': 'e.g. 03-12345-1234567',
+    'MEPCO': 'e.g. 05-15432-1234567',
+    'PESCO': 'e.g. 06-16543-1234567',
+    'GEPCO': 'e.g. 02-13210-1234567',
+    'QESCO': 'e.g. 07-17654-1234567',
+    'HESCO': 'e.g. 08-18765-1234567',
+    'SEPCO': 'e.g. 09-19876-1234567',
+    'TESCO': 'e.g. 10-10987-1234567',
+  }
+
   const AUDIT_STATUSES = ['Excellent', 'Good', 'Fair', 'Service Required', 'Replacement Required']
 
   return (
@@ -564,7 +601,20 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-xs font-semibold">City *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select
+                            onValueChange={(val) => {
+                              field.onChange(val)
+                              if (val === 'Karachi') form.setValue('disco', 'K-Electric')
+                              else if (val === 'Lahore') form.setValue('disco', 'LESCO')
+                              else if (val === 'Islamabad' || val === 'Rawalpindi') form.setValue('disco', 'IESCO')
+                              else if (val === 'Faisalabad') form.setValue('disco', 'FESCO')
+                              else if (val === 'Multan') form.setValue('disco', 'MEPCO')
+                              else if (val === 'Peshawar') form.setValue('disco', 'PESCO')
+                              else if (val === 'Gujranwala' || val === 'Sialkot') form.setValue('disco', 'GEPCO')
+                              else if (val === 'Quetta') form.setValue('disco', 'QESCO')
+                            }}
+                            value={field.value}
+                          >
                             <FormControl><SelectTrigger className="h-10 text-xs"><SelectValue /></SelectTrigger></FormControl>
                             <SelectContent>
                               {['Lahore', 'Islamabad', 'Karachi', 'Rawalpindi', 'Faisalabad', 'Multan', 'Gujranwala', 'Sialkot', 'Peshawar', 'Quetta', 'Other'].map(c => (
@@ -922,12 +972,18 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                   )} />
 
                   {/* DISCO Customer ID # */}
-                  <FormField control={form.control} name="discoRefNo" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-semibold">{form.watch('disco') || 'LESCO'} Customer ID #</FormLabel>
-                      <FormControl><Input placeholder="e.g. 04-11524-1234567" {...field} className="h-10 text-xs font-mono" /></FormControl>
-                    </FormItem>
-                  )} />
+                  <FormField control={form.control} name="discoRefNo" render={({ field }) => {
+                    const currentDisco = form.watch('disco') || 'LESCO'
+                    const placeholder = DISCO_PLACEHOLDERS[currentDisco] || `e.g. ${currentDisco} Consumer / ID #`
+                    return (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold">{currentDisco} Customer ID #</FormLabel>
+                        <FormControl>
+                          <Input placeholder={placeholder} {...field} className="h-10 text-xs font-mono" />
+                        </FormControl>
+                      </FormItem>
+                    )
+                  }} />
 
                   {/* Inverter Category */}
                   <FormField control={form.control} name="inverterCategory" render={({ field }) => (
