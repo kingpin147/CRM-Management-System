@@ -1,5 +1,4 @@
 import { CustomerForm } from './CustomerForm'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import prisma from '@/lib/prisma'
@@ -30,7 +29,6 @@ export default async function NewCustomerPage() {
   return (
     <div className="space-y-6 max-w-6xl mx-auto animate-reveal">
       <div className="flex items-center gap-4 mb-2">
-
         <Link href="/dashboard/customers">
           <Button variant="ghost" size="sm" className="text-[var(--color-slate-custom)]">
             ← Back
@@ -38,20 +36,11 @@ export default async function NewCustomerPage() {
         </Link>
         <div>
           <h1 className="text-3xl font-display font-bold text-[var(--color-graphite)] tracking-tight">Create Sale</h1>
-          <p className="text-[var(--color-slate-custom)] mt-1">Create a new customer sale.</p>
+          <p className="text-[var(--color-slate-custom)] mt-1">Enter the personal and location details for the new client.</p>
         </div>
-
       </div>
 
-      <Card className="shadow-sm border-line">
-        <CardHeader>
-          <CardTitle>Customer Details</CardTitle>
-          <CardDescription>Enter the personal and location details for the new client.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <CustomerForm users={users} />
-        </CardContent>
-      </Card>
+      <CustomerForm users={users} />
     </div>
   )
 }

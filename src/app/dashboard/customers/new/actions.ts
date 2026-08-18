@@ -47,6 +47,7 @@ export async function createCustomer(formData: FormData) {
   const monthlyBasePrice = Number(formData.get('monthlyBasePrice') || 0)
   const appliedDiscount = Number(formData.get('appliedDiscount') || 0)
   const salesTaxAmount = Number(formData.get('salesTaxAmount') || 0)
+  const onboardingFee = Number(formData.get('onboardingFee') || 0)
   const totalAmount = Number(formData.get('totalAmount') || 0)
   const paidAmount = Number(formData.get('paidAmount') || 0)
 
@@ -197,7 +198,7 @@ export async function createCustomer(formData: FormData) {
         ledgerEntries: totalAmount > 0 ? {
           create: [
             {
-              narration: `Initial Package Subscription (${packageTier} ${systemSizeKw})`,
+              narration: `Initial Package Subscription (${packageTier} ${systemSizeKw})${onboardingFee > 0 ? ' + On-Boarding Fee (PKR 3,000)' : ''}`,
               refNumber: customerCode,
               debit: totalAmount,
               credit: 0,

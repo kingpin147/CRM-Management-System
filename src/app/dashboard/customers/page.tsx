@@ -10,19 +10,11 @@ export default async function CustomersPage() {
 
   const canRegisterCustomer = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES'].includes(userRole)
 
-  const rawCustomers = await prisma.customer.findMany({
-    orderBy: { signupDate: 'desc' }
-  })
-
-  const customers = JSON.parse(JSON.stringify(rawCustomers))
-
+  // No customer data is pre-fetched here.
+  // The CustomerSearchForm will query the API only when the user performs a search.
   return (
     <div className="space-y-6 animate-reveal">
-      <CustomerSearchForm 
-        customers={customers} 
-        canRegisterCustomer={canRegisterCustomer} 
-      />
+      <CustomerSearchForm canRegisterCustomer={canRegisterCustomer} />
     </div>
   )
 }
-
