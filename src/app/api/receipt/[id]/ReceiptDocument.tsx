@@ -149,29 +149,22 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     overflow: 'hidden',
     marginBottom: 14,
+    marginTop: 4,
   },
   tableHeader: {
     flexDirection: 'row',
     backgroundColor: '#002868',
-    paddingVertical: 5,
+    color: '#FFFFFF',
+    paddingVertical: 4.5,
     paddingHorizontal: 8,
   },
   tableHeaderCol1: {
-    width: '50%',
-    color: '#FFFFFF',
+    width: '70%',
     fontWeight: 'bold',
     fontSize: 8.5,
-  },
-  tableHeaderCol2: {
-    width: '25%',
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-    fontSize: 8.5,
-    textAlign: 'center',
   },
   tableHeaderCol3: {
-    width: '25%',
-    color: '#FFFFFF',
+    width: '30%',
     fontWeight: 'bold',
     fontSize: 8.5,
     textAlign: 'right',
@@ -184,18 +177,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#FAFAFA',
   },
   tableCol1: {
-    width: '50%',
+    width: '70%',
     fontSize: 8.5,
     color: '#000',
-  },
-  tableCol2: {
-    width: '25%',
-    fontSize: 8.5,
-    color: '#000',
-    textAlign: 'center',
   },
   tableCol3: {
-    width: '25%',
+    width: '30%',
     fontSize: 8.5,
     color: '#000',
     fontWeight: 'bold',
@@ -277,11 +264,9 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingVertical: 3.5,
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+    paddingVertical: 4.5,
+    borderRadius: 3,
+    marginTop: 6,
     fontSize: 7.5,
     alignItems: 'center',
   },
@@ -305,19 +290,18 @@ export function ReceiptDocument({
   const paymentDate = receipt?.createdAt ? new Date(receipt.createdAt) : new Date()
   const paymentDateStr = `${paymentDate.getDate()}-${monthShorts[paymentDate.getMonth()]}-${paymentDate.getFullYear()}`
   
-  const rawRef = receipt?.refNumber || receipt?.id || '303798'
-  const voucherNumber = rawRef.startsWith('PRV-') || rawRef.startsWith('RCP-') || rawRef.startsWith('PAY-') 
-    ? rawRef 
-    : `PRV-${rawRef.replace(/^(INV|TX|REV)-/, '')}`
+  // Format clean random / dynamic voucher number without mentioning KuickPay
+  const rawRef = receipt?.refNumber || receipt?.id || '847291'
+  const cleanDigits = rawRef.replace(/^(PAY|RCP|PRV|INV|TX|REV|KuickPay|KUICKPAY)-+/gi, '') || '847291'
+  const voucherNumber = `PRV-${cleanDigits}`
   
   const customerIdDigits = customer?.customerCode ? customer.customerCode.replace(/^[A-Za-z]+-/, '') : (customer?.id || '9742')
   const amount = Number(receipt?.credit || receipt?.amount || 50000)
-  const narration = receipt?.narration || 'Payment received against solar O&M subscription billing'
-  const paymentMethod = receipt?.paymentMethod || 'Online Bank Transfer / KuickPay'
+  const narration = receipt?.narration || 'Payment received for INV-2026-007 via Bank Alfalah / 1Link'
 
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
+      <Page size="LETTER" style={styles.page}>
         <View style={styles.topSection}>
           {/* Top Header */}
           <View style={styles.topHeader}>
@@ -373,7 +357,11 @@ export function ReceiptDocument({
                   </View>
                   <View style={styles.row}>
                     <Text style={styles.label}>Address:</Text>
-                    <Text style={styles.value}>{customer?.address || 'Lahore, Pakistan'}</Text>
+                    <Text style={styles.value}>
+                      {customer?.address || '—'}
+                      {customer?.block ? `, ${customer.block}` : ''}
+                      {customer?.city ? `, ${customer.city}` : ''}
+                    </Text>
                   </View>
                 </View>
               </View>
@@ -393,12 +381,8 @@ export function ReceiptDocument({
                     <Text style={styles.value}>{paymentDateStr}</Text>
                   </View>
                   <View style={styles.row}>
-                    <Text style={styles.label}>Payment Mode:</Text>
-                    <Text style={styles.value}>{paymentMethod}</Text>
-                  </View>
-                  <View style={styles.row}>
                     <Text style={styles.label}>Transaction Ref:</Text>
-                    <Text style={styles.value}>{rawRef}</Text>
+                    <Text style={styles.value}>{voucherNumber}</Text>
                   </View>
                   <View style={styles.row}>
                     <Text style={styles.label}>Account Exec:</Text>
@@ -413,12 +397,10 @@ export function ReceiptDocument({
           <View style={styles.table}>
             <View style={styles.tableHeader}>
               <Text style={styles.tableHeaderCol1}>Payment Narration / Description</Text>
-              <Text style={styles.tableHeaderCol2}>Payment Method</Text>
               <Text style={styles.tableHeaderCol3}>Amount (PKR)</Text>
             </View>
             <View style={styles.tableRow}>
               <Text style={styles.tableCol1}>{narration}</Text>
-              <Text style={styles.tableCol2}>{paymentMethod}</Text>
               <Text style={styles.tableCol3}>{amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</Text>
             </View>
           </View>
@@ -435,6 +417,7 @@ export function ReceiptDocument({
               <Text>• This is a computer-generated Payment Receipt Voucher confirming acknowledgment of received funds.</Text>
               <Text>• All payments are subject to real-time clearance and bank reconciliation.</Text>
               <Text>• Thank you for choosing EnergyGurus for your Solar Operations & Maintenance services.</Text>
+              <Text style={{ fontWeight: 'bold', marginTop: 2 }}>• This is computer generated Receipt no need for signature and stamp</Text>
             </View>
           </View>
 
@@ -459,16 +442,17 @@ export function ReceiptDocument({
               <Text>80 C, Ground Floor 13th Commercial Street Road, DHA Phase II - Karachi</Text>
             </View>
           </View>
+
+          {/* Bottom Blue Bar */}
+          <View style={styles.footerBlueBar}>
+            <Text style={styles.footerBarText}>www.energygurus.online</Text>
+            <Text style={{ color: '#FFF' }}>|</Text>
+            <Text style={styles.footerBarText}>facebook.com/energygurus.online</Text>
+            <Text style={{ color: '#FFF' }}>|</Text>
+            <Text style={styles.footerBarText}>youtube.com/energygurus.online</Text>
+          </View>
         </View>
 
-        {/* Bottom Blue Bar */}
-        <View style={styles.footerBlueBar}>
-          <Text style={styles.footerBarText}>www.energygurus.online</Text>
-          <Text style={{ color: '#FFF' }}>|</Text>
-          <Text style={styles.footerBarText}>facebook.com/energygurus.online</Text>
-          <Text style={{ color: '#FFF' }}>|</Text>
-          <Text style={styles.footerBarText}>youtube.com/energygurus.online</Text>
-        </View>
       </Page>
     </Document>
   )

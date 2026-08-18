@@ -12,29 +12,60 @@ export async function GET(
   const { id } = await params
   const { searchParams } = new URL(request.url)
   const isDownload = searchParams.get('download') === 'true'
+  const customerIdParam = searchParams.get('customerId')
 
-  // 1. Try finding a ledger entry directly by ID or refNumber
-  let ledgerEntry: any = await prisma.ledgerEntry.findFirst({
-    where: {
-      OR: [
-        { id },
-        { refNumber: id },
-      ]
-    },
-    include: {
-      customer: true
+  let customer: any = null
+  let ledgerEntry: any = null
+
+  // 1. If explicit customerId provided, load that customer first
+  if (customerIdParam) {
+    customer = await prisma.customer.findFirst({
+      where: {
+        OR: [
+          { id: customerIdParam },
+          { customerCode: customerIdParam },
+          { crfNumber: customerIdParam }
+        ]
+      },
+      include: {
+        ledgerEntries: {
+          orderBy: { createdAt: 'desc' }
+        }
+      }
+    })
+
+    if (customer && customer.ledgerEntries?.length > 0) {
+      ledgerEntry = customer.ledgerEntries.find((le: any) => le.id === id || le.refNumber === id) || customer.ledgerEntries.find((le: any) => Number(le.credit) > 0) || customer.ledgerEntries[0]
     }
-  })
+  }
 
-  let customer: any = ledgerEntry?.customer
-
-  // 2. If not found, check if it's a customerId or customerCode
+  // 2. Try finding a ledger entry directly by ID or refNumber
   if (!ledgerEntry) {
+    ledgerEntry = await prisma.ledgerEntry.findFirst({
+      where: {
+        OR: [
+          { id },
+          { refNumber: id },
+        ]
+      },
+      include: {
+        customer: true
+      }
+    })
+
+    if (ledgerEntry?.customer) {
+      customer = ledgerEntry.customer
+    }
+  }
+
+  // 3. If not found, check if id is a customerId or customerCode
+  if (!customer) {
     customer = await prisma.customer.findFirst({
       where: {
         OR: [
           { id },
-          { customerCode: id }
+          { customerCode: id },
+          { crfNumber: id }
         ]
       },
       include: {
@@ -53,27 +84,18 @@ export async function GET(
     }
   }
 
-  // 3. Fallback mock receipt if fresh/demo
   if (!customer) {
-    customer = {
-      customerCode: '9742',
-      id: '9742',
-      fullName: 'Muhammad Nouman Attique',
-      contactNumber: '03314111483',
-      cnic: '35201-5682141-6',
-      address: '32-g Block Model Town Lahore, Karachi',
-      accountExecutive: 'EnergyGurus Finance'
-    }
+    return new NextResponse('Customer or Receipt not found', { status: 404 })
   }
 
+  const cleanRef = id.replace(/^(PAY|RCP|PRV|INV|TX|REV|KuickPay|KUICKPAY)-+/gi, '') || '2026-007'
   const receiptData = ledgerEntry || {
-    id: id || '303798',
-    refNumber: id && id.startsWith('PRV-') ? id : `PRV-${id.replace(/^(INV|TX|REV)-/, '')}`,
+    id: id || '2026-007',
+    refNumber: `PRV-${cleanRef}`,
     createdAt: new Date(),
-    credit: 50000,
-    amount: 50000,
-    narration: 'Payment received against solar O&M subscription billing',
-    paymentMethod: 'Online Bank Transfer / KuickPay'
+    credit: 40600,
+    amount: 40600,
+    narration: 'Payment received for INV-2026-007 via Bank Alfalah / 1Link',
   }
 
   // Load logo

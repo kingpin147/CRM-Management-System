@@ -9,37 +9,107 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params // Invoice ID, Invoice Number or Customer ID
+  const { id } = await params // Invoice ID, Invoice Number, Ref Number or Customer ID
   const { searchParams } = new URL(request.url)
   const isDownload = searchParams.get('download') === 'true'
+  const customerIdParam = searchParams.get('customerId')
 
-  // Try finding invoice directly by ID or invoiceNumber
-  let invoice: any = await prisma.invoice.findFirst({
-    where: {
-      OR: [
-        { id },
-        { invoiceNumber: id }
-      ]
-    },
-    include: {
-      customer: {
-        include: {
-          packagePlan: true,
-          solarSystem: true,
-          invoices: {
-            orderBy: { createdAt: 'desc' },
-            take: 6
+  let customer: any = null
+  let invoice: any = null
+
+  // 1. If explicit customerId is provided in query params, load that customer first
+  if (customerIdParam) {
+    customer = await prisma.customer.findFirst({
+      where: {
+        OR: [
+          { id: customerIdParam },
+          { customerCode: customerIdParam },
+          { crfNumber: customerIdParam }
+        ]
+      },
+      include: {
+        packagePlan: true,
+        solarSystem: true,
+        invoices: {
+          orderBy: { createdAt: 'desc' },
+          take: 6
+        }
+      }
+    })
+  }
+
+  // 2. Try finding invoice directly by ID or invoiceNumber
+  if (!customer) {
+    invoice = await prisma.invoice.findFirst({
+      where: {
+        OR: [
+          { id },
+          { invoiceNumber: id }
+        ]
+      },
+      include: {
+        customer: {
+          include: {
+            packagePlan: true,
+            solarSystem: true,
+            invoices: {
+              orderBy: { createdAt: 'desc' },
+              take: 6
+            }
           }
         }
       }
+    })
+
+    if (invoice?.customer) {
+      customer = invoice.customer
     }
-  })
+  }
 
-  let customer: any = invoice?.customer
-
-  // If not found as invoice, check if id is a customerId or customerCode
+  // 3. Try finding by Ledger Entry refNumber
   if (!customer) {
-    const cust = await prisma.customer.findFirst({
+    const le = await prisma.ledgerEntry.findFirst({
+      where: {
+        OR: [
+          { id },
+          { refNumber: id },
+          { invoiceId: id }
+        ]
+      },
+      include: {
+        customer: {
+          include: {
+            packagePlan: true,
+            solarSystem: true,
+            invoices: {
+              orderBy: { createdAt: 'desc' },
+              take: 6
+            }
+          }
+        }
+      }
+    })
+
+    if (le?.customer) {
+      customer = le.customer
+      invoice = customer.invoices?.find((inv: any) => inv.id === le.invoiceId || inv.invoiceNumber === le.refNumber) || {
+        id: le.id,
+        invoiceNumber: le.refNumber || `INV-${customer.customerCode || '001'}`,
+        customerId: customer.id,
+        amount: Number(le.debit) || customer.packagePlan?.monthlyBasePrice || 1000,
+        salesTax: customer.packagePlan?.salesTaxAmount || 0,
+        totalAmount: Number(le.debit) || customer.packagePlan?.totalAmount || 1000,
+        status: 'PAID',
+        dueDate: le.createdAt || new Date(),
+        billingPeriod: le.createdAt || new Date(),
+        createdAt: le.createdAt || new Date(),
+      }
+    }
+  }
+
+  // 4. Check if id is directly a customerId, customerCode or crfNumber
+  if (!customer) {
+    customer = await prisma.customer.findFirst({
       where: {
         OR: [
           { id },
@@ -56,56 +126,37 @@ export async function GET(
         }
       }
     })
-
-    if (cust) {
-      customer = cust
-      invoice = cust.invoices?.[0] || {
-        id: 'inv-generated',
-        invoiceNumber: id.startsWith('LHR-') || id.startsWith('INV-') ? id : `INV-${cust.customerCode || '146062'}`,
-        customerId: cust.id,
-        amount: cust.packagePlan?.monthlyBasePrice || 1000,
-        salesTax: cust.packagePlan?.salesTaxAmount || 0,
-        totalAmount: cust.packagePlan?.totalAmount || 1000,
-        status: 'Paid',
-        dueDate: new Date(),
-        billingPeriod: new Date(),
-        createdAt: new Date(),
-      } as any
-    }
   }
 
-  // If still not found, check if it's one of the seed/mock reference numbers like LHR-146062 or LHR-175946
-  if (!customer) {
-    const defaultCust = await prisma.customer.findFirst({
-      include: {
-        packagePlan: true,
-        solarSystem: true,
-        invoices: {
-          orderBy: { createdAt: 'desc' },
-          take: 6
-        }
+  // If customer is found, prepare invoice object
+  if (customer) {
+    if (!invoice) {
+      const matchInv = customer.invoices?.find((inv: any) => inv.id === id || inv.invoiceNumber === id)
+      if (matchInv) {
+        invoice = matchInv
+      } else {
+        const invNum = (id && (id.startsWith('LHR-') || id.startsWith('INV-'))) 
+          ? id 
+          : `INV-${customer.customerCode?.replace(/^[A-Za-z]+-/, '') || customer.id || '001'}`
+        
+        invoice = customer.invoices?.[0] || {
+          id: 'inv-generated',
+          invoiceNumber: invNum,
+          customerId: customer.id,
+          amount: customer.packagePlan?.monthlyBasePrice || 50000,
+          salesTax: customer.packagePlan?.salesTaxAmount || 0,
+          totalAmount: customer.packagePlan?.totalAmount || 50000,
+          status: 'PAID',
+          dueDate: new Date(),
+          billingPeriod: new Date(),
+          createdAt: new Date(),
+        } as any
       }
-    })
-
-    if (defaultCust) {
-      customer = defaultCust
-      invoice = {
-        id: 'inv-ref',
-        invoiceNumber: id,
-        customerId: defaultCust.id,
-        amount: defaultCust.packagePlan?.monthlyBasePrice || 1000,
-        salesTax: defaultCust.packagePlan?.salesTaxAmount || 0,
-        totalAmount: defaultCust.packagePlan?.totalAmount || 1000,
-        status: 'Paid',
-        dueDate: new Date(),
-        billingPeriod: new Date(),
-        createdAt: new Date(),
-      } as any
     }
   }
 
   if (!customer) {
-    return new NextResponse('Invoice or Customer not found', { status: 404 })
+    return new NextResponse('Customer or Invoice not found', { status: 404 })
   }
 
   try {

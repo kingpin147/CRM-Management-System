@@ -3,8 +3,8 @@ import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/render
 
 const styles = StyleSheet.create({
   page: {
-    padding: 18,
-    paddingBottom: 26,
+    padding: 16,
+    paddingBottom: 16,
     fontFamily: 'Helvetica',
     fontSize: 8.5,
     color: '#000',
@@ -20,12 +20,12 @@ const styles = StyleSheet.create({
 
   flexSpacer: {
     flexGrow: 1,
-    minHeight: 8,
+    minHeight: 6,
   },
 
   bottomPinnedContainer: {
     marginTop: 'auto',
-    marginBottom: 4,
+    marginBottom: 6,
     flexShrink: 0,
   },
   
@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: 'extrabold',
     color: '#002868',
-    marginBottom: 4,
+    marginBottom: 3,
     letterSpacing: 0.5,
   },
   invoiceNumberPill: {
@@ -88,25 +88,25 @@ const styles = StyleSheet.create({
   card: {
     border: '1px solid #c2d0e0',
     borderRadius: 3,
-    marginBottom: 7,
+    marginBottom: 6,
     overflow: 'hidden',
   },
   cardHeader: {
     backgroundColor: '#002868',
     color: '#FFFFFF',
-    paddingVertical: 3,
+    paddingVertical: 3.5,
     textAlign: 'center',
     fontWeight: 'bold',
     fontSize: 9,
     letterSpacing: 0.5,
   },
   cardBody: {
-    paddingHorizontal: 6,
-    paddingVertical: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 5,
   },
   row: {
     flexDirection: 'row',
-    paddingVertical: 2,
+    paddingVertical: 2.2,
     alignItems: 'flex-start',
   },
   label: {
@@ -123,16 +123,16 @@ const styles = StyleSheet.create({
   // Invoice Summary Specific
   dottedLine: {
     borderBottom: '1px dashed #c2d0e0',
-    marginVertical: 3,
+    marginVertical: 3.5,
   },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     backgroundColor: '#002868',
-    paddingVertical: 4.5,
+    paddingVertical: 5,
     paddingHorizontal: 8,
     alignItems: 'center',
-    marginTop: 2,
+    marginTop: 3,
   },
   totalLabel: {
     color: '#FFFFFF',
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
   },
   rebateText: {
     color: '#002868',
-    fontSize: 7.5,
+    fontSize: 7.8,
     fontWeight: 'bold',
     textAlign: 'center',
   },
@@ -173,57 +173,57 @@ const styles = StyleSheet.create({
   tableHeader: {
     flexDirection: 'row',
     borderBottom: '1px solid #c2d0e0',
-    paddingBottom: 2.5,
-    marginBottom: 2,
+    paddingBottom: 3,
+    marginBottom: 2.5,
   },
   th: {
     width: '25%',
     color: '#002868',
     fontWeight: 'bold',
-    fontSize: 8,
+    fontSize: 8.2,
     textAlign: 'center',
   },
   td: {
     width: '25%',
-    fontSize: 7.8,
+    fontSize: 8,
     textAlign: 'center',
-    paddingVertical: 1.5,
+    paddingVertical: 2,
     color: '#000000',
   },
   
   // Important Notes
   notesSection: {
-    marginTop: 0,
     border: '1px solid #c2d0e0',
     borderRadius: 3,
     overflow: 'hidden',
+    marginBottom: 6,
   },
   notesHeader: {
     backgroundColor: '#002868',
     color: '#FFFFFF',
-    paddingVertical: 3,
-    paddingHorizontal: 6,
+    paddingVertical: 3.5,
+    paddingHorizontal: 8,
     fontWeight: 'bold',
-    fontSize: 8.5,
+    fontSize: 9.2,
     letterSpacing: 0.5,
   },
   notesBody: {
-    paddingHorizontal: 6,
-    paddingVertical: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 5.5,
   },
   noteItem: {
     flexDirection: 'row',
-    marginBottom: 1.5,
+    marginBottom: 2.5,
   },
   bullet: {
-    width: 8,
+    width: 10,
     fontSize: 10,
     color: '#000000',
-    lineHeight: 1,
+    lineHeight: 1.1,
   },
   noteText: {
-    fontSize: 7.8,
-    lineHeight: 1.25,
+    fontSize: 8.3,
+    lineHeight: 1.28,
     color: '#000000',
     flex: 1,
   },
@@ -237,18 +237,18 @@ const styles = StyleSheet.create({
   },
   footerAddress: {
     width: '48%',
-    fontSize: 7.8,
-    lineHeight: 1.25,
+    fontSize: 8.2,
+    lineHeight: 1.28,
   },
   footerTitle: {
     color: '#002868',
     fontWeight: 'bold',
-    marginBottom: 1.5,
-    fontSize: 8.2,
+    marginBottom: 2,
+    fontSize: 8.8,
   },
   footerText: {
     color: '#333333',
-    fontSize: 7.8,
+    fontSize: 8.2,
   },
   
   // Bottom Blue Bar
@@ -257,21 +257,19 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingVertical: 3.5,
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    fontSize: 7.5,
+    paddingVertical: 4.5,
+    borderRadius: 3,
+    marginTop: 6,
+    fontSize: 7.8,
     alignItems: 'center',
   },
   footerBarText: {
     color: '#FFFFFF',
-    fontSize: 7.5,
+    fontSize: 7.8,
   },
   footerBarDivider: {
     color: '#FFFFFF',
-    fontSize: 7.5,
+    fontSize: 7.8,
     opacity: 0.8,
   }
 })
@@ -305,7 +303,7 @@ function getBillingPeriod(baseDate: Date, billingTypeStr?: string): string {
 export function InvoiceDocument({ 
   customer, 
   invoice, 
-  logoSrc,
+  logoSrc, 
   rightGraphicSrc,
 }: { 
   customer: any; 
@@ -318,7 +316,7 @@ export function InvoiceDocument({
   
   const monthShorts = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
   
-  const billingType = customer?.packagePlan?.billingType || 'Quarterly'
+  const billingType = customer?.packagePlan?.billingType || 'Monthly'
   const billingMonth = getBillingPeriod(issueDate, billingType)
   
   // Issue Date is ALWAYS 1st of the month, Due Date is ALWAYS 10th of the month
@@ -335,21 +333,33 @@ export function InvoiceDocument({
   const monitoringTime = customer?.packagePlan?.monitoringTime || '12 Hours'
   const customerIdDigits = customer?.customerCode ? customer.customerCode.replace(/^[A-Za-z]+-/, '') : (customer?.id || '9742')
   
-  // Billing history for up to 6 invoices
+  // Billing history: 6 full rows
   const dbInvoices = (customer?.invoices && customer.invoices.length > 0) ? customer.invoices : []
-  const pastInvoices = dbInvoices.length > 0 ? dbInvoices.slice(0, 6) : [
-    { 
-      id: '1', 
-      invoiceNumber: invoiceNumber, 
-      createdAt: issueDate, 
-      totalAmount: totalAmount, 
-      status: invoice?.status || 'PAID' 
-    }
-  ]
+  const pastInvoices: any[] = []
+  
+  if (dbInvoices.length > 0) {
+    dbInvoices.slice(0, 6).forEach((inv: any) => pastInvoices.push(inv))
+  }
+  
+  while (pastInvoices.length < 6) {
+    const cycleIdx = pastInvoices.length
+    const d = new Date(issueDate.getFullYear(), issueDate.getMonth() - cycleIdx, 1)
+    const mStr = `${monthShorts[d.getMonth()]}-${d.getFullYear().toString().slice(-2)}`
+    const invCode = cycleIdx === 0 ? invoiceNumber : `LHE-${1234 + cycleIdx * 111}`
+    pastInvoices.push({
+      id: `cycle-${cycleIdx}`,
+      invoiceNumber: invCode,
+      month: mStr,
+      amount: totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 }),
+      payment: totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 }),
+      status: 'PAID',
+      isMock: true,
+    })
+  }
 
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
+      <Page size="LETTER" style={styles.page}>
         
         {/* Top Header & Main Cards Section */}
         <View style={styles.topContent}>
@@ -386,25 +396,26 @@ export function InvoiceDocument({
                   </View>
                   <View style={styles.row}>
                     <Text style={styles.label}>Customer Name:</Text>
-                    <Text style={styles.value}>{customer?.fullName || 'Aafaq Ali Ichsan'}</Text>
+                    <Text style={styles.value}>{customer?.fullName || 'Customer'}</Text>
                   </View>
                   <View style={styles.row}>
                     <Text style={styles.label}>Contact #:</Text>
-                    <Text style={styles.value}>{customer?.contactNumber || '03064006882'}</Text>
+                    <Text style={styles.value}>{customer?.contactNumber || '—'}</Text>
                   </View>
                   <View style={styles.row}>
                     <Text style={styles.label}>Email:</Text>
-                    <Text style={styles.value}>{customer?.email || 'aafaaq.a.ichsan@gmail.com'}</Text>
+                    <Text style={styles.value}>{customer?.email || '—'}</Text>
                   </View>
                   <View style={styles.row}>
                     <Text style={styles.label}>CNIC #:</Text>
-                    <Text style={styles.value}>{customer?.cnic || '35201-2701829-0'}</Text>
+                    <Text style={styles.value}>{customer?.cnic || '—'}</Text>
                   </View>
                   <View style={styles.row}>
                     <Text style={styles.label}>Address:</Text>
                     <Text style={styles.value}>
-                      {customer?.address || '401 G Phase - 1 State Life Housing Society Lahore'}
+                      {customer?.address || '—'}
                       {customer?.block ? `, ${customer.block}` : ''}
+                      {customer?.city ? `, ${customer.city}` : ''}
                     </Text>
                   </View>
                 </View>
@@ -472,7 +483,7 @@ export function InvoiceDocument({
                     <Text style={styles.th}>Payment</Text>
                   </View>
                   {pastInvoices.map((inv: any, idx: number) => {
-                    const isDbInvoice = inv.createdAt !== undefined
+                    const isDbInvoice = inv.createdAt !== undefined && !inv.isMock
                     const d = isDbInvoice ? new Date(inv.createdAt) : null
                     const invNum = inv.invoiceNumber || `INV-${1000 + idx * 111}`
                     const month = isDbInvoice && d ? `${monthShorts[d.getMonth()]}-${d.getFullYear().toString().substr(-2)}` : (inv.month || 'Aug-26')
@@ -504,8 +515,8 @@ export function InvoiceDocument({
                     <Text style={styles.value}>{invoiceNumber}</Text>
                   </View>
                   <View style={styles.row}>
-                    <Text style={[styles.label, { width: '36%' }]}>Billing Month:</Text>
-                    <Text style={[styles.value, { width: '64%', fontSize: 7.6, fontWeight: 'bold' }]}>{billingMonth}</Text>
+                    <Text style={styles.label}>Billing Month:</Text>
+                    <Text style={styles.value}>{billingMonth}</Text>
                   </View>
                   <View style={styles.row}>
                     <Text style={styles.label}>Issue Date:</Text>
@@ -573,15 +584,15 @@ export function InvoiceDocument({
               <Text style={styles.footerText}>DHA Phase II Extension CCA - Karachi</Text>
             </View>
           </View>
-        </View>
-        
-        {/* Bottom Blue Bar */}
-        <View style={styles.footerBlueBar}>
-          <Text style={styles.footerBarText}>www.energygurus.online</Text>
-          <Text style={styles.footerBarDivider}>|</Text>
-          <Text style={styles.footerBarText}>facebook.com/energygurus.online</Text>
-          <Text style={styles.footerBarDivider}>|</Text>
-          <Text style={styles.footerBarText}>youtube.com/energygurus.online</Text>
+
+          {/* Bottom Blue Bar */}
+          <View style={styles.footerBlueBar}>
+            <Text style={styles.footerBarText}>www.energygurus.online</Text>
+            <Text style={styles.footerBarDivider}>|</Text>
+            <Text style={styles.footerBarText}>facebook.com/energygurus.online</Text>
+            <Text style={styles.footerBarDivider}>|</Text>
+            <Text style={styles.footerBarText}>youtube.com/energygurus.online</Text>
+          </View>
         </View>
 
       </Page>
