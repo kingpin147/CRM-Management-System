@@ -34,17 +34,28 @@ export function SolarSystemDialog({
   const [inverterPhase, setInverterPhase] = React.useState(solarSystem?.inverterPhase || 'Three Phase')
   const [inverterSize, setInverterSize] = React.useState(solarSystem?.inverterSize || '10 kW')
   const [inverterSerial, setInverterSerial] = React.useState(solarSystem?.inverterSerial || '')
+  const [noOfInverters, setNoOfInverters] = React.useState(solarSystem?.noOfInverters || 1)
+  const [inverterWarrantyEnd, setInverterWarrantyEnd] = React.useState(
+    solarSystem?.inverterWarrantyEnd ? new Date(solarSystem.inverterWarrantyEnd).toISOString().split('T')[0] : ''
+  )
 
   // Panels
   const [panelBrand, setPanelBrand] = React.useState(solarSystem?.panelBrand || 'Longi')
   const [panelType, setPanelType] = React.useState(solarSystem?.panelType || 'Bifacial')
   const [panelWattage, setPanelWattage] = React.useState(solarSystem?.panelWattage || 585)
   const [noOfPanels, setNoOfPanels] = React.useState(solarSystem?.noOfPanels || 18)
+  const [panelWarrantyEnd, setPanelWarrantyEnd] = React.useState(
+    solarSystem?.panelWarrantyEnd ? new Date(solarSystem.panelWarrantyEnd).toISOString().split('T')[0] : ''
+  )
 
   // Battery & Grid
   const [batteryBrand, setBatteryBrand] = React.useState(solarSystem?.batteryBrand || 'Narada')
   const [batteryType, setBatteryType] = React.useState(solarSystem?.batteryType || 'Lithium')
   const [noOfBatteries, setNoOfBatteries] = React.useState(solarSystem?.noOfBatteries || 1)
+  const [batterySerial, setBatterySerial] = React.useState(solarSystem?.batterySerial || '')
+  const [batteryWarrantyEnd, setBatteryWarrantyEnd] = React.useState(
+    solarSystem?.batteryWarrantyEnd ? new Date(solarSystem.batteryWarrantyEnd).toISOString().split('T')[0] : ''
+  )
   const [disco, setDisco] = React.useState(solarSystem?.disco || 'LESCO')
   const [meterType, setMeterType] = React.useState(solarSystem?.meterType || 'Green Meter')
 
@@ -60,13 +71,21 @@ export function SolarSystemDialog({
     formData.append('inverterPhase', inverterPhase)
     formData.append('inverterSize', inverterSize)
     formData.append('inverterSerial', inverterSerial)
+    formData.append('noOfInverters', String(noOfInverters))
+    if (inverterWarrantyEnd) formData.append('inverterWarrantyEnd', inverterWarrantyEnd)
+
     formData.append('panelBrand', panelBrand)
     formData.append('panelType', panelType)
     formData.append('panelWattage', String(panelWattage))
     formData.append('noOfPanels', String(noOfPanels))
+    if (panelWarrantyEnd) formData.append('panelWarrantyEnd', panelWarrantyEnd)
+
     formData.append('batteryBrand', batteryBrand)
     formData.append('batteryType', batteryType)
     formData.append('noOfBatteries', String(noOfBatteries))
+    formData.append('batterySerial', batterySerial)
+    if (batteryWarrantyEnd) formData.append('batteryWarrantyEnd', batteryWarrantyEnd)
+
     formData.append('disco', disco)
     formData.append('meterType', meterType)
 
@@ -150,7 +169,7 @@ export function SolarSystemDialog({
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold text-[var(--color-ink)]">Phase</Label>
                     <select
@@ -163,14 +182,34 @@ export function SolarSystemDialog({
                     </select>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-[var(--color-ink)]">Serial Number</Label>
+                    <Label className="text-xs font-semibold text-[var(--color-ink)]">No. of Inverters</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={10}
+                      value={noOfInverters}
+                      onChange={(e) => setNoOfInverters(Number(e.target.value) || 1)}
+                      className="h-9 text-xs border-[var(--color-line)] bg-white font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-[var(--color-ink)]">Serial Number(s)</Label>
                     <Input
                       value={inverterSerial}
                       onChange={(e) => setInverterSerial(e.target.value)}
-                      placeholder="e.g. SN-INV-992384"
-                      className="h-9 text-xs border-[var(--color-line)] bg-white"
+                      placeholder="e.g. INV-01, INV-02"
+                      className="h-9 text-xs border-[var(--color-line)] bg-white font-mono"
                     />
                   </div>
+                </div>
+                <div className="space-y-1 pt-1">
+                  <Label className="text-xs font-semibold text-amber-900">Inverter Warranty End Date</Label>
+                  <Input
+                    type="date"
+                    value={inverterWarrantyEnd}
+                    onChange={(e) => setInverterWarrantyEnd(e.target.value)}
+                    className="h-9 text-xs border-amber-300 bg-white"
+                  />
                 </div>
               </div>
 
@@ -223,6 +262,15 @@ export function SolarSystemDialog({
                     />
                   </div>
                 </div>
+                <div className="space-y-1 pt-1">
+                  <Label className="text-xs font-semibold text-amber-900">Panel Warranty End Date</Label>
+                  <Input
+                    type="date"
+                    value={panelWarrantyEnd}
+                    onChange={(e) => setPanelWarrantyEnd(e.target.value)}
+                    className="h-9 text-xs border-amber-300 bg-white"
+                  />
+                </div>
               </div>
             </div>
 
@@ -259,6 +307,26 @@ export function SolarSystemDialog({
                     </select>
                   </div>
                   <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-[var(--color-ink)]">No. of Batteries</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={20}
+                      value={noOfBatteries}
+                      onChange={(e) => setNoOfBatteries(Number(e.target.value) || 1)}
+                      className="h-9 text-xs border-[var(--color-line)] bg-white font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-[var(--color-ink)]">Battery Serial(s)</Label>
+                    <Input
+                      value={batterySerial}
+                      onChange={(e) => setBatterySerial(e.target.value)}
+                      placeholder="e.g. BAT-01, BAT-02"
+                      className="h-9 text-xs border-[var(--color-line)] bg-white font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1">
                     <Label className="text-xs font-semibold text-[var(--color-ink)]">DISCO</Label>
                     <Input
                       value={disco}
@@ -278,6 +346,15 @@ export function SolarSystemDialog({
                       <option value="Non Green">Standard Meter</option>
                     </select>
                   </div>
+                </div>
+                <div className="space-y-1 pt-1">
+                  <Label className="text-xs font-semibold text-amber-900">Battery Warranty End Date</Label>
+                  <Input
+                    type="date"
+                    value={batteryWarrantyEnd}
+                    onChange={(e) => setBatteryWarrantyEnd(e.target.value)}
+                    className="h-9 text-xs border-amber-300 bg-white"
+                  />
                 </div>
               </div>
             </div>

@@ -4,10 +4,17 @@ import { revalidatePath } from 'next/cache'
 import { CustomerType, CustomerStatus } from '@prisma/client'
 import prisma from '@/lib/prisma'
 
-function generateCustomerCode(type: CustomerType) {
-  const prefix = type === 'RESIDENTIAL' ? 'RES' : type === 'CORPORATE' ? 'COR' : 'IND'
-  const randomPart = Math.floor(1000 + Math.random() * 9000)
-  return `${prefix}-${randomPart}`
+async function generateCustomerCode(): Promise<string> {
+  // Generate digits-only Customer ID (e.g. 9742)
+  for (let i = 0; i < 20; i++) {
+    const digits = Math.floor(1000 + Math.random() * 9000).toString()
+    const existing = await prisma.customer.findUnique({
+      where: { customerCode: digits }
+    })
+    if (!existing) return digits
+  }
+  // Fallback to 5-digit number
+  return Math.floor(10000 + Math.random() * 90000).toString()
 }
 
 function parseDate(value: any): Date | null {
@@ -100,7 +107,7 @@ export async function createCustomer(formData: FormData) {
   const breakerStatus = (formData.get('breakersAuditStatus') as string) || 'Excellent'
 
   try {
-    const customerCode = generateCustomerCode(customerType)
+    const customerCode = await generateCustomerCode()
     const crfNumber = `CRF-${Math.floor(100000 + Math.random() * 900000)}`
 
     let nextBillingDate = new Date()

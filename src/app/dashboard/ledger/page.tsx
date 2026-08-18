@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import { GlobalPaymentDialog } from './GlobalPaymentDialog'
+import { formatDate } from '@/lib/utils'
 
 export default async function LedgerPage() {
   const supabase = await createClient()
@@ -100,7 +101,7 @@ export default async function LedgerPage() {
               ) : (
                 transactions.map((tx) => (
                   <TableRow key={tx.id}>
-                    <TableCell className="font-mono text-sm">{new Date(tx.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell className="font-mono text-sm">{formatDate(tx.createdAt)}</TableCell>
                     <TableCell className="font-medium">{tx.customer.fullName}</TableCell>
                     <TableCell>PKR {Number(tx.amount).toLocaleString()}</TableCell>
                     <TableCell>{tx.paymentMethod}</TableCell>

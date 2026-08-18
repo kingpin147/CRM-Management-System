@@ -16,7 +16,7 @@ import { CustomerTicketForm } from './CustomerTicketForm'
 import { TicketUpdateDialog } from '@/app/dashboard/tickets/TicketUpdateDialog'
 import { TicketClosedSetupDialog } from './TicketClosedSetupDialog'
 import { Sun, Battery, ShieldCheck, Zap, Receipt, MessageSquare, Mail, History as HistoryIcon, Download } from 'lucide-react'
-
+import { formatDate, formatDateTime } from '@/lib/utils'
 import { createClient } from '@/utils/supabase/server'
 
 
@@ -214,8 +214,8 @@ export default async function CustomerDetailPage({
                     </TableRow>
                     <TableRow className="hover:bg-transparent">
                       <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Activation Date:</TableCell>
-                      <TableCell className="text-xs text-[var(--color-ink)]">
-                        {customer.activationDate ? new Date(customer.activationDate).toLocaleDateString() : (customer.signupDate ? new Date(customer.signupDate).toLocaleDateString() : 'Pending Activation')}
+                      <TableCell className="text-xs text-[var(--color-ink)] font-medium">
+                        {customer.activationDate ? formatDate(customer.activationDate) : (customer.signupDate ? formatDate(customer.signupDate) : 'Pending Activation')}
                       </TableCell>
                     </TableRow>
                   </TableBody>
@@ -285,8 +285,8 @@ export default async function CustomerDetailPage({
 
                     <TableRow className="hover:bg-transparent">
                       <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Next Billing date</TableCell>
-                      <TableCell className="text-xs text-slate-600 font-medium">
-                        Next billing date will appear as per billing type ({customer.packagePlan?.nextBillingDate ? new Date(customer.packagePlan.nextBillingDate).toLocaleDateString() : 'Calculated automatically'})
+                      <TableCell className="text-xs text-[var(--color-ink)] font-semibold font-mono">
+                        {formatDate(customer.packagePlan?.nextBillingDate)}
                       </TableCell>
                     </TableRow>
                   </TableBody>
@@ -297,431 +297,567 @@ export default async function CustomerDetailPage({
         )}
 
         {/* 2. System Details Tab (Solar System Details matching Excel Mockup) */}
-        {activeTab === 'system' && (
-          <Card className="shadow-sm border-slate-200 overflow-hidden bg-white">
-            <div className="bg-[#002868] text-white px-4 py-2.5 font-bold text-sm text-center border-b border-[#001d4a] flex justify-between items-center tracking-wide">
-              <span className="flex-1 text-center font-bold">Solar System Details</span>
-              {canEditSolarSpecs && (
-                <div className="shrink-0">
-                  <SolarSystemDialog customerId={customer.id} solarSystem={customer.solarSystem} />
+        {/* 2. Solar System Details Tab (2-Column Balanced Layout) */}
+        {activeTab === 'system' && (() => {
+          const invBrands = customer.solarSystem?.inverterBrand 
+            ? customer.solarSystem.inverterBrand.split(',').map((s: string) => s.trim()).filter(Boolean)
+            : ['Huawei']
+          const invSerials = customer.solarSystem?.inverterSerial 
+            ? customer.solarSystem.inverterSerial.split(',').map((s: string) => s.trim()).filter(Boolean)
+            : []
+          const noOfInverters = Math.max(1, Number(customer.solarSystem?.noOfInverters) || 1, invBrands.length, invSerials.length)
+
+          const batSerials = customer.solarSystem?.batterySerial 
+            ? customer.solarSystem.batterySerial.split(',').map((s: string) => s.trim()).filter(Boolean)
+            : []
+          const noOfBatteries = Math.max(1, Number(customer.solarSystem?.noOfBatteries) || 1, batSerials.length)
+
+          return (
+            <Card className="shadow-sm border-slate-200 overflow-hidden bg-white">
+              <div className="bg-[#002868] text-white px-4 py-2.5 font-bold text-sm text-center border-b border-[#001d4a] flex justify-between items-center tracking-wide">
+                <span className="flex-1 text-center font-bold">Solar System Details</span>
+                {canEditSolarSpecs && (
+                  <div className="shrink-0">
+                    <SolarSystemDialog customerId={customer.id} solarSystem={customer.solarSystem} />
+                  </div>
+                )}
+              </div>
+              <CardContent className="p-0">
+                <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-slate-200">
+                  {/* Left Column: Grid Connection & Inverter Hardware */}
+                  <div className="w-full">
+                    <div className="bg-slate-100/80 px-4 py-2 text-xs font-bold text-[#002868] border-b border-slate-200 uppercase tracking-wider">
+                      Grid Connection & Inverter System
+                    </div>
+                    <Table>
+                      <TableBody>
+                        {/* Meter Type */}
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs w-44 bg-slate-50 border-r border-slate-200 text-[#002868]">Meter Type</TableCell>
+                          <TableCell className="text-xs">
+                            <div className="flex gap-2">
+                              {['Green Meter', 'Non Green'].map(m => {
+                                const isSelected = (customer.solarSystem?.meterType?.toLowerCase() === m.toLowerCase()) || (!customer.solarSystem?.meterType && m === 'Green Meter')
+                                return (
+                                  <Badge 
+                                    key={m} 
+                                    variant="outline" 
+                                    className={isSelected ? "bg-amber-100 text-amber-950 border-amber-400 font-bold shadow-xs" : "bg-slate-50 text-slate-500"}
+                                  >
+                                    {isSelected ? '☑ ' : '☐ '} {m}
+                                  </Badge>
+                                )
+                              })}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Zero Export Device */}
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Zero Export Device</TableCell>
+                          <TableCell className="text-xs">
+                            <div className="flex gap-2">
+                              {['Installed', 'Not Installed'].map(z => {
+                                const isSelected = (customer.solarSystem?.zeroExportDevice && z === 'Installed') || (!customer.solarSystem?.zeroExportDevice && z === 'Not Installed')
+                                return (
+                                  <Badge 
+                                    key={z} 
+                                    variant="outline" 
+                                    className={isSelected ? "bg-amber-100 text-amber-950 border-amber-400 font-bold shadow-xs" : "bg-slate-50 text-slate-500"}
+                                  >
+                                    {isSelected ? '☑ ' : '☐ '} {z}
+                                  </Badge>
+                                )
+                              })}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+
+                        {/* DISCO */}
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">DISCO</TableCell>
+                          <TableCell className="text-xs font-semibold text-[var(--color-ink)] bg-sky-50/60 w-fit">
+                            <span className="px-2 py-0.5 rounded bg-sky-100 text-sky-900 border border-sky-200 font-bold">
+                              {customer.solarSystem?.disco || 'LESCO'}
+                            </span>
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Customer ID */}
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Customer ID</TableCell>
+                          <TableCell className="font-mono text-xs font-semibold text-[var(--color-ink)]">
+                            {customer.customerCode || customer.id}
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Inverter Brand */}
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Brand</TableCell>
+                          <TableCell className="text-xs">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {['Huawei', 'Solis', 'Growatt', 'Knox', 'Deye', 'Fronius', 'Inverex', 'Sungrow', 'GoodWe', 'Other'].map(b => {
+                                const isSelected = invBrands.some((ib: string) => ib.toLowerCase() === b.toLowerCase()) || (!customer.solarSystem?.inverterBrand && b === 'Huawei')
+                                return (
+                                  <Badge 
+                                    key={b} 
+                                    variant="outline" 
+                                    className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-600 hover:bg-slate-100"}
+                                  >
+                                    {b}
+                                  </Badge>
+                                )
+                              })}
+                              {invBrands.filter((ib: string) => !['huawei', 'solis', 'growatt', 'knox', 'deye', 'fronius', 'inverex', 'sungrow', 'goodwe', 'other'].includes(ib.toLowerCase())).map((ib: string, i: number) => (
+                                <Badge key={i} variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold">
+                                  {ib}
+                                </Badge>
+                              ))}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Inverter Type */}
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Type</TableCell>
+                          <TableCell className="text-xs">
+                            <div className="flex gap-2">
+                              {['Hybrid', 'On-grid', 'Hybrid + On-grid'].map(it => {
+                                const isSelected = (customer.solarSystem?.inverterType?.toLowerCase().replace(/[\s\-_]/g, '') === it.toLowerCase().replace(/[\s\-_+]/g, '')) || (!customer.solarSystem?.inverterType && it === 'Hybrid')
+                                return (
+                                  <Badge key={it} variant="outline" className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-500"} >
+                                    {isSelected ? '☑ ' : '☐ '} {it}
+                                  </Badge>
+                                )
+                              })}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Inverter Phase Type */}
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Phase Type</TableCell>
+                          <TableCell className="text-xs">
+                            <div className="flex gap-2">
+                              {['Single Phase', 'Three Phase'].map(p => {
+                                const isSelected = (customer.solarSystem?.inverterPhase?.toLowerCase().includes(p.toLowerCase().slice(0, 4))) || (!customer.solarSystem?.inverterPhase && p === 'Three Phase')
+                                return (
+                                  <Badge key={p} variant="outline" className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-500"}>
+                                    {isSelected ? '☑ ' : '☐ '} {p}
+                                  </Badge>
+                                )
+                              })}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Inverter Category */}
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Category</TableCell>
+                          <TableCell className="text-xs">
+                            <div className="flex gap-2">
+                              {['High Voltage', 'Low Voltage'].map(cat => {
+                                const isSelected = (customer.solarSystem?.inverterCategory?.toLowerCase() === cat.toLowerCase()) || (!customer.solarSystem?.inverterCategory && cat === 'High Voltage')
+                                return (
+                                  <Badge key={cat} variant="outline" className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-500"}>
+                                    {isSelected ? '☑ ' : '☐ '} {cat}
+                                  </Badge>
+                                )
+                              })}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Inverter Size */}
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Size</TableCell>
+                          <TableCell className="text-xs font-semibold text-[var(--color-ink)]">
+                            {customer.solarSystem?.inverterSize || '6 kW'}
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Meter Phase */}
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Meter Phase</TableCell>
+                          <TableCell className="text-xs">
+                            <div className="flex gap-2">
+                              {['Single Phase', 'Three Phase'].map(mp => {
+                                const isSelected = (customer.solarSystem?.meterPhase?.toLowerCase().includes(mp.toLowerCase().slice(0, 4))) || (!customer.solarSystem?.meterPhase && mp === 'Three Phase')
+                                return (
+                                  <Badge key={mp} variant="outline" className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-500"}>
+                                    {isSelected ? '☑ ' : '☐ '} {mp}
+                                  </Badge>
+                                )
+                              })}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+
+                        {/* No. of Inverters */}
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">No. of Inverters</TableCell>
+                          <TableCell className="text-xs font-semibold text-[var(--color-ink)]">
+                            {noOfInverters}
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Inverter Units Breakdown & Warranty */}
+                        {noOfInverters > 1 ? (
+                          <TableRow className="hover:bg-transparent bg-amber-50/20">
+                            <TableCell className="font-bold text-xs bg-amber-50/60 border-r border-slate-200 text-[#002868]">
+                              <div>Inverters Units</div>
+                              <span className="text-[10px] text-amber-800 font-normal">All {noOfInverters} units</span>
+                            </TableCell>
+                            <TableCell className="text-xs p-2.5">
+                              <div className="space-y-2">
+                                {Array.from({ length: noOfInverters }).map((_, idx) => {
+                                  const brand = invBrands[idx] || invBrands[0] || customer.solarSystem?.inverterBrand || 'Huawei'
+                                  const serial = invSerials[idx] || (idx === 0 ? (customer.solarSystem?.inverterSerial || '—') : `${customer.solarSystem?.inverterSerial || 'INV'}-${idx + 1}`)
+                                  return (
+                                    <div key={idx} className="p-2.5 rounded-lg border border-amber-200/80 bg-white shadow-2xs space-y-1">
+                                      <div className="font-bold text-[#002868] text-xs flex items-center justify-between border-b border-slate-100 pb-1">
+                                        <span>Inverter #{idx + 1}</span>
+                                        <Badge variant="outline" className="bg-amber-100 text-amber-950 border-amber-300 font-bold text-[10px]">{brand}</Badge>
+                                      </div>
+                                      <div className="text-[11px] text-slate-700 flex justify-between">
+                                        <span className="font-semibold text-slate-500">Serial #:</span> 
+                                        <span className="font-mono font-bold text-[#002868]">{serial}</span>
+                                      </div>
+                                      <div className="text-[11px] text-slate-700 flex justify-between items-center">
+                                        <span className="font-semibold text-slate-500">Warranty End:</span> 
+                                        <span className="font-mono font-semibold text-amber-900 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                                          {formatDate(customer.solarSystem?.inverterWarrantyEnd)}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          <>
+                            <TableRow className="border-b hover:bg-transparent">
+                              <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Serial #</TableCell>
+                              <TableCell className="font-mono text-xs font-semibold text-[var(--color-ink)]">
+                                {customer.solarSystem?.inverterSerial || '—'}
+                              </TableCell>
+                            </TableRow>
+                            <TableRow className="hover:bg-transparent">
+                              <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Warranty End Date</TableCell>
+                              <TableCell className="font-mono text-xs font-semibold text-amber-900">
+                                {formatDate(customer.solarSystem?.inverterWarrantyEnd)}
+                              </TableCell>
+                            </TableRow>
+                          </>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {/* Right Column: Solar Array, Battery Storage, Grounding & Installation */}
+                  <div className="w-full">
+                    <div className="bg-slate-100/80 px-4 py-2 text-xs font-bold text-[#002868] border-b border-slate-200 uppercase tracking-wider">
+                      PV Panels, Battery Storage & Earthing
+                    </div>
+                    <Table>
+                      <TableBody>
+                        {/* Panel Technology */}
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs w-44 bg-slate-50 border-r border-slate-200 text-[#002868]">Panel Technology</TableCell>
+                          <TableCell className="text-xs">
+                            <div className="flex flex-wrap gap-1.5">
+                              {['TOPCON', 'ABC', 'HJT', 'HIBC', 'TBC', 'PERC', 'Other'].map(tech => {
+                                const isSelected = (customer.solarSystem?.panelTechnology?.toUpperCase().includes(tech)) || (!customer.solarSystem?.panelTechnology && tech === 'TOPCON')
+                                return (
+                                  <Badge key={tech} variant="outline" className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-500"}>
+                                    {tech}
+                                  </Badge>
+                                )
+                              })}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Panel Brand */}
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Panel Brand</TableCell>
+                          <TableCell className="text-xs">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {['AIKO', 'LONGi', 'Risen', 'Trina Solar', 'Jinko', 'Canadian Solar', 'Astronergy', 'JA Solar', 'Other'].map(pb => {
+                                const isSelected = customer.solarSystem?.panelBrand?.toLowerCase() === pb.toLowerCase() || (!customer.solarSystem?.panelBrand && pb === 'AIKO')
+                                return (
+                                  <Badge 
+                                    key={pb} 
+                                    variant="outline" 
+                                    className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-600 hover:bg-slate-100"}
+                                  >
+                                    {pb}
+                                  </Badge>
+                                )
+                              })}
+                              {customer.solarSystem?.panelBrand && !['aiko', 'longi', 'risen', 'trina solar', 'jinko', 'canadian solar', 'astronergy', 'ja solar', 'other'].includes(customer.solarSystem.panelBrand.toLowerCase()) && (
+                                <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold">
+                                  {customer.solarSystem.panelBrand}
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Panel Wattage & No of Panels */}
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Panel Wattage</TableCell>
+                          <TableCell className="text-xs font-semibold text-[var(--color-ink)]">
+                            {customer.solarSystem?.panelWattage || 585} W
+                          </TableCell>
+                        </TableRow>
+
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">No of Panels</TableCell>
+                          <TableCell className="text-xs font-semibold text-[var(--color-ink)]">
+                            {customer.solarSystem?.noOfPanels || 10}
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Total Wattage */}
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">
+                            <div>Total Wattage</div>
+                            <span className="text-[10px] text-slate-500 font-normal">(Wattage x Panels)</span>
+                          </TableCell>
+                          <TableCell className="text-xs font-bold text-[#002868] bg-sky-50/50">
+                            {customer.solarSystem?.totalWattage || ((customer.solarSystem?.panelWattage || 585) * (customer.solarSystem?.noOfPanels || 10))} W ({(((customer.solarSystem?.totalWattage || ((customer.solarSystem?.panelWattage || 585) * (customer.solarSystem?.noOfPanels || 10)))) / 1000).toFixed(2)} kW)
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Panel Warranty End Date */}
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Panel Warranty End Date</TableCell>
+                          <TableCell className="font-mono text-xs font-semibold text-amber-900">
+                            {formatDate(customer.solarSystem?.panelWarrantyEnd)}
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Panel Type */}
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Panel Type</TableCell>
+                          <TableCell className="text-xs">
+                            <div className="flex gap-2">
+                              {['Monofacial', 'Bifacial'].map(pt => {
+                                const isSelected = (customer.solarSystem?.panelType?.toLowerCase() === pt.toLowerCase()) || (!customer.solarSystem?.panelType && pt === 'Monofacial')
+                                return (
+                                  <Badge key={pt} variant="outline" className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-500"} >
+                                    {isSelected ? '☑ ' : '☐ '} {pt}
+                                  </Badge>
+                                )
+                              })}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Battery Category */}
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Battery Category</TableCell>
+                          <TableCell className="text-xs">
+                            <div className="flex gap-2">
+                              {['High Voltage', 'Low Voltage'].map(bc => {
+                                const isSelected = (customer.solarSystem?.batteryCategory?.toLowerCase() === bc.toLowerCase()) || (!customer.solarSystem?.batteryCategory && bc === 'High Voltage')
+                                return (
+                                  <Badge key={bc} variant="outline" className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-500"} >
+                                    {isSelected ? '☑ ' : '☐ '} {bc}
+                                  </Badge>
+                                )
+                              })}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Battery Type */}
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Battery Type</TableCell>
+                          <TableCell className="text-xs">
+                            <div className="flex gap-2">
+                              {['Lithium', 'Lead Acid', 'Dry'].map(bt => {
+                                const isSelected = (customer.solarSystem?.batteryType?.toLowerCase().includes(bt.toLowerCase().slice(0, 4))) || (!customer.solarSystem?.batteryType && bt === 'Lithium')
+                                return (
+                                  <Badge key={bt} variant="outline" className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-500"} >
+                                    {isSelected ? '☑ ' : '☐ '} {bt}
+                                  </Badge>
+                                )
+                              })}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Battery Brand */}
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Battery Brand</TableCell>
+                          <TableCell className="text-xs">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {['Dyness', 'Narada', 'Pylontech', 'Sacred Sun', 'BYD', 'Huawei', 'Inverex', 'Growatt', 'Other'].map(bb => {
+                                const isSelected = customer.solarSystem?.batteryBrand?.toLowerCase() === bb.toLowerCase() || (!customer.solarSystem?.batteryBrand && bb === 'Dyness')
+                                return (
+                                  <Badge 
+                                    key={bb} 
+                                    variant="outline" 
+                                    className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-600 hover:bg-slate-100"}
+                                  >
+                                    {bb}
+                                  </Badge>
+                                )
+                              })}
+                              {customer.solarSystem?.batteryBrand && !['dyness', 'narada', 'pylontech', 'sacred sun', 'byd', 'huawei', 'inverex', 'growatt', 'other'].includes(customer.solarSystem.batteryBrand.toLowerCase()) && (
+                                <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold">
+                                  {customer.solarSystem.batteryBrand}
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+
+                        {/* No. of Batteries */}
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">No. of Batteries</TableCell>
+                          <TableCell className="text-xs font-semibold text-[var(--color-ink)]">
+                            {noOfBatteries}
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Battery Units Breakdown & Warranty */}
+                        {noOfBatteries > 1 ? (
+                          <TableRow className="border-b hover:bg-transparent bg-amber-50/20">
+                            <TableCell className="font-bold text-xs bg-amber-50/60 border-r border-slate-200 text-[#002868]">
+                              <div>Batteries Units</div>
+                              <span className="text-[10px] text-amber-800 font-normal">All {noOfBatteries} units</span>
+                            </TableCell>
+                            <TableCell className="text-xs p-2.5">
+                              <div className="space-y-2">
+                                {Array.from({ length: noOfBatteries }).map((_, idx) => {
+                                  const brand = customer.solarSystem?.batteryBrand || 'Dyness'
+                                  const serial = batSerials[idx] || (idx === 0 ? (customer.solarSystem?.batterySerial || '—') : `${customer.solarSystem?.batterySerial || 'BAT'}-${idx + 1}`)
+                                  return (
+                                    <div key={idx} className="p-2.5 rounded-lg border border-amber-200/80 bg-white shadow-2xs space-y-1">
+                                      <div className="font-bold text-[#002868] text-xs flex items-center justify-between border-b border-slate-100 pb-1">
+                                        <span>Battery #{idx + 1}</span>
+                                        <Badge variant="outline" className="bg-amber-100 text-amber-950 border-amber-300 font-bold text-[10px]">{brand}</Badge>
+                                      </div>
+                                      <div className="text-[11px] text-slate-700 flex justify-between">
+                                        <span className="font-semibold text-slate-500">Serial #:</span> 
+                                        <span className="font-mono font-bold text-[#002868]">{serial}</span>
+                                      </div>
+                                      <div className="text-[11px] text-slate-700 flex justify-between items-center">
+                                        <span className="font-semibold text-slate-500">Warranty End:</span> 
+                                        <span className="font-mono font-semibold text-amber-900 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                                          {formatDate(customer.solarSystem?.batteryWarrantyEnd)}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          <>
+                            <TableRow className="border-b hover:bg-transparent">
+                              <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Battery Serial #</TableCell>
+                              <TableCell className="font-mono text-xs font-semibold text-[var(--color-ink)]">
+                                {customer.solarSystem?.batterySerial || '—'}
+                              </TableCell>
+                            </TableRow>
+                            <TableRow className="border-b hover:bg-transparent">
+                              <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Battery Warranty End Date</TableCell>
+                              <TableCell className="font-mono text-xs font-semibold text-amber-900">
+                                {formatDate(customer.solarSystem?.batteryWarrantyEnd)}
+                              </TableCell>
+                            </TableRow>
+                          </>
+                        )}
+
+                        {/* Earthing / OHMs */}
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Earthing & OHMs</TableCell>
+                          <TableCell className="text-xs p-0">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x border-t-0">
+                              <div className="p-2.5">
+                                <span className="font-bold text-slate-600 mr-2">AC:</span>
+                                <span className="font-semibold text-[#002868]">{Number(customer.solarSystem?.earthingAcOhms) || 0.5} Ω</span>
+                              </div>
+                              <div className="p-2.5">
+                                <span className="font-bold text-slate-600 mr-2">DC:</span>
+                                <span className="font-semibold text-[#002868]">{Number(customer.solarSystem?.earthingDcOhms) || 0.5} Ω</span>
+                              </div>
+                              <div className="p-2.5 bg-slate-50/50">
+                                <span className="font-bold text-slate-600 mr-2">Last Check:</span>
+                                <span className="text-slate-700 font-medium">
+                                  {formatDate(customer.solarSystem?.earthingLastCheck || '2021-06-20')}
+                                </span>
+                              </div>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Ingress Protection (IP) */}
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Ingress Protection (IP)</TableCell>
+                          <TableCell className="text-xs">
+                            <div className="flex gap-2 flex-wrap">
+                              {['20', '21', '34', '40', '65', '67'].map(ip => {
+                                const isSelected = (customer.solarSystem?.ingressProtection === ip) || (!customer.solarSystem?.ingressProtection && ip === '20')
+                                return (
+                                  <Badge key={ip} variant="outline" className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-500"}>
+                                    IP {ip}
+                                  </Badge>
+                                )
+                              })}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Structure Type */}
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Structure Type</TableCell>
+                          <TableCell className="text-xs space-y-2">
+                            <div className="flex gap-2">
+                              {['Elevated', 'Standard'].map(st => {
+                                const isSelected = (customer.solarSystem?.structureType?.toLowerCase() === st.toLowerCase()) || (!customer.solarSystem?.structureType && st === 'Elevated')
+                                return (
+                                  <Badge key={st} variant="outline" className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-500"}>
+                                    {isSelected ? '☑ ' : '☐ '} {st}
+                                  </Badge>
+                                )
+                              })}
+                            </div>
+                            <div className="flex flex-wrap gap-1.5 pt-1">
+                              {['Painted', 'Aluminium (L1)', 'Aluminium (L2)', 'Hot Dip Galvanized (L1)', 'Pre Galvanized (L2)'].map(mat => {
+                                const isSelected = (customer.solarSystem?.structureMaterial?.toLowerCase().includes(mat.toLowerCase().slice(0, 5))) || (!customer.solarSystem?.structureMaterial && mat === 'Painted')
+                                return (
+                                  <Badge key={mat} variant="outline" className={isSelected ? "bg-amber-100 text-amber-950 border-amber-400 font-semibold" : "bg-slate-50 text-slate-500"}>
+                                    {mat}
+                                  </Badge>
+                                )
+                              })}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+
+                        {/* System Installation Date */}
+                        <TableRow className="hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">System Installation Date</TableCell>
+                          <TableCell className="text-xs font-semibold text-[var(--color-ink)] flex items-center gap-2 font-mono">
+                            <span className="text-slate-500">📅</span>
+                            {formatDate(customer.solarSystem?.systemInstallationDate || customer.activationDate || customer.signupDate)}
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
-              )}
-            </div>
-            <CardContent className="p-0">
-              <Table>
-                <TableBody>
-                  {/* Meter Type */}
-                  <TableRow className="border-b hover:bg-transparent">
-                    <TableCell className="font-bold text-xs w-52 bg-slate-50 border-r border-slate-200 text-[#002868]">Meter Type</TableCell>
-                    <TableCell className="text-xs">
-                      <div className="flex gap-2">
-                        {['Green Meter', 'Non Green'].map(m => {
-                          const isSelected = (customer.solarSystem?.meterType?.toLowerCase() === m.toLowerCase()) || (!customer.solarSystem?.meterType && m === 'Green Meter')
-                          return (
-                            <Badge 
-                              key={m} 
-                              variant="outline" 
-                              className={isSelected ? "bg-amber-100 text-amber-950 border-amber-400 font-bold shadow-xs" : "bg-slate-50 text-slate-500"}
-                            >
-                              {isSelected ? '☑ ' : '☐ '} {m}
-                            </Badge>
-                          )
-                        })}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-
-                  {/* Zero Export Device */}
-                  <TableRow className="border-b hover:bg-transparent">
-                    <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Zero Export Device</TableCell>
-                    <TableCell className="text-xs">
-                      <div className="flex gap-2">
-                        {['Installed', 'Not Installed'].map(z => {
-                          const isSelected = (customer.solarSystem?.zeroExportDevice && z === 'Installed') || (!customer.solarSystem?.zeroExportDevice && z === 'Not Installed')
-                          return (
-                            <Badge 
-                              key={z} 
-                              variant="outline" 
-                              className={isSelected ? "bg-amber-100 text-amber-950 border-amber-400 font-bold shadow-xs" : "bg-slate-50 text-slate-500"}
-                            >
-                              {isSelected ? '☑ ' : '☐ '} {z}
-                            </Badge>
-                          )
-                        })}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-
-                  {/* DISCO */}
-                  <TableRow className="border-b hover:bg-transparent">
-                    <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">DISCO</TableCell>
-                    <TableCell className="text-xs font-semibold text-[var(--color-ink)] bg-sky-50/60 w-fit">
-                      <span className="px-2 py-0.5 rounded bg-sky-100 text-sky-900 border border-sky-200 font-bold">
-                        {customer.solarSystem?.disco || 'LESCO'}
-                      </span>
-                    </TableCell>
-                  </TableRow>
-
-                  {/* Customer ID */}
-                  <TableRow className="border-b hover:bg-transparent">
-                    <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Customer ID</TableCell>
-                    <TableCell className="font-mono text-xs font-semibold text-[var(--color-ink)]">
-                      {customer.customerCode || customer.id}
-                    </TableCell>
-                  </TableRow>
-
-                  {/* Inverter Brand */}
-                  <TableRow className="border-b hover:bg-transparent">
-                    <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Brand</TableCell>
-                    <TableCell className="text-xs">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {['Huawei', 'Solis', 'Growatt', 'Knox', 'Deye', 'Fronius', 'Inverex', 'Sungrow', 'GoodWe', 'Other'].map(b => {
-                          const isSelected = customer.solarSystem?.inverterBrand?.toLowerCase() === b.toLowerCase() || (!customer.solarSystem?.inverterBrand && b === 'Huawei')
-                          return (
-                            <Badge 
-                              key={b} 
-                              variant="outline" 
-                              className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-600 hover:bg-slate-100"}
-                            >
-                              {b}
-                            </Badge>
-                          )
-                        })}
-                        {customer.solarSystem?.inverterBrand && !['huawei', 'solis', 'growatt', 'knox', 'deye', 'fronius', 'inverex', 'sungrow', 'goodwe', 'other'].includes(customer.solarSystem.inverterBrand.toLowerCase()) && (
-                          <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold">
-                            {customer.solarSystem.inverterBrand}
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-
-                  {/* Inverter Type */}
-                  <TableRow className="border-b hover:bg-transparent">
-                    <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Type</TableCell>
-                    <TableCell className="text-xs">
-                      <div className="flex gap-2">
-                        {['Hybrid', 'On-grid', 'Hybrid + On-grid'].map(it => {
-                          const isSelected = (customer.solarSystem?.inverterType?.toLowerCase().replace(/[\s\-_]/g, '') === it.toLowerCase().replace(/[\s\-_+]/g, '')) || (!customer.solarSystem?.inverterType && it === 'Hybrid')
-                          return (
-                            <Badge key={it} variant="outline" className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-500"} >
-                              {isSelected ? '☑ ' : '☐ '} {it}
-                            </Badge>
-                          )
-                        })}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-
-                  {/* Inverter Phase Type */}
-                  <TableRow className="border-b hover:bg-transparent">
-                    <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Phase Type</TableCell>
-                    <TableCell className="text-xs">
-                      <div className="flex gap-2">
-                        {['Single Phase', 'Three Phase'].map(p => {
-                          const isSelected = (customer.solarSystem?.inverterPhase?.toLowerCase().includes(p.toLowerCase().slice(0, 4))) || (!customer.solarSystem?.inverterPhase && p === 'Three Phase')
-                          return (
-                            <Badge key={p} variant="outline" className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-500"}>
-                              {isSelected ? '☑ ' : '☐ '} {p}
-                            </Badge>
-                          )
-                        })}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-
-                  {/* No. of Inverters */}
-                  <TableRow className="border-b hover:bg-transparent">
-                    <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">No. of Inverters</TableCell>
-                    <TableCell className="text-xs font-semibold text-[var(--color-ink)]">
-                      {customer.solarSystem?.noOfInverters || 1}
-                    </TableCell>
-                  </TableRow>
-
-                  {/* Inverter Serial # */}
-                  <TableRow className="border-b hover:bg-transparent">
-                    <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Serial #</TableCell>
-                    <TableCell className="font-mono text-xs font-semibold text-[var(--color-ink)]">
-                      {customer.solarSystem?.inverterSerial || 'INV-99382'}
-                    </TableCell>
-                  </TableRow>
-
-                  {/* Inverter Category & Size */}
-                  <TableRow className="border-b hover:bg-transparent">
-                    <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Category</TableCell>
-                    <TableCell className="text-xs">
-                      <div className="flex gap-2">
-                        {['High Voltage', 'Low Voltage'].map(cat => {
-                          const isSelected = (customer.solarSystem?.inverterCategory?.toLowerCase() === cat.toLowerCase()) || (!customer.solarSystem?.inverterCategory && cat === 'High Voltage')
-                          return (
-                            <Badge key={cat} variant="outline" className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-500"}>
-                              {isSelected ? '☑ ' : '☐ '} {cat}
-                            </Badge>
-                          )
-                        })}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-
-                  {/* Inverter Size */}
-                  <TableRow className="border-b hover:bg-transparent">
-                    <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Size</TableCell>
-                    <TableCell className="text-xs font-semibold text-[var(--color-ink)]">
-                      {customer.solarSystem?.inverterSize || '6 kW'}
-                    </TableCell>
-                  </TableRow>
-
-                  {/* Meter Phase */}
-                  <TableRow className="border-b hover:bg-transparent">
-                    <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Meter Phase</TableCell>
-                    <TableCell className="text-xs">
-                      <div className="flex gap-2">
-                        {['Single Phase', 'Three Phase'].map(mp => {
-                          const isSelected = (customer.solarSystem?.meterPhase?.toLowerCase().includes(mp.toLowerCase().slice(0, 4))) || (!customer.solarSystem?.meterPhase && mp === 'Three Phase')
-                          return (
-                            <Badge key={mp} variant="outline" className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-500"}>
-                              {isSelected ? '☑ ' : '☐ '} {mp}
-                            </Badge>
-                          )
-                        })}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-
-                  {/* Panel Technology */}
-                  <TableRow className="border-b hover:bg-transparent">
-                    <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Panel Technology</TableCell>
-                    <TableCell className="text-xs">
-                      <div className="flex flex-wrap gap-1.5">
-                        {['TOPCON', 'ABC', 'HJT', 'HIBC', 'TBC', 'PERC', 'Other'].map(tech => {
-                          const isSelected = (customer.solarSystem?.panelTechnology?.toUpperCase().includes(tech)) || (!customer.solarSystem?.panelTechnology && tech === 'TOPCON')
-                          return (
-                            <Badge key={tech} variant="outline" className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-500"}>
-                              {isSelected ? '☑ ' : '☐ '} {tech}
-                            </Badge>
-                          )
-                        })}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-
-                  {/* Panel Brand */}
-                  <TableRow className="border-b hover:bg-transparent">
-                    <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Panel Brand</TableCell>
-                    <TableCell className="text-xs">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {['AIKO', 'LONGi', 'Risen', 'Trina Solar', 'Jinko', 'Canadian Solar', 'Astronergy', 'JA Solar', 'Other'].map(pb => {
-                          const isSelected = customer.solarSystem?.panelBrand?.toLowerCase() === pb.toLowerCase() || (!customer.solarSystem?.panelBrand && pb === 'AIKO')
-                          return (
-                            <Badge 
-                              key={pb} 
-                              variant="outline" 
-                              className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-600 hover:bg-slate-100"}
-                            >
-                              {pb}
-                            </Badge>
-                          )
-                        })}
-                        {customer.solarSystem?.panelBrand && !['aiko', 'longi', 'risen', 'trina solar', 'jinko', 'canadian solar', 'astronergy', 'ja solar', 'other'].includes(customer.solarSystem.panelBrand.toLowerCase()) && (
-                          <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold">
-                            {customer.solarSystem.panelBrand}
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-
-                  {/* Panel Wattage & No of Panels */}
-                  <TableRow className="border-b hover:bg-transparent">
-                    <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Panel Wattage</TableCell>
-                    <TableCell className="text-xs font-semibold text-[var(--color-ink)]">
-                      {customer.solarSystem?.panelWattage || 585} W
-                    </TableCell>
-                  </TableRow>
-
-                  <TableRow className="border-b hover:bg-transparent">
-                    <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">No of Panels</TableCell>
-                    <TableCell className="text-xs font-semibold text-[var(--color-ink)]">
-                      {customer.solarSystem?.noOfPanels || 10}
-                    </TableCell>
-                  </TableRow>
-
-                  {/* Total Wattage */}
-                  <TableRow className="border-b hover:bg-transparent">
-                    <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">
-                      <div>Total Wattage</div>
-                      <span className="text-[10px] text-slate-500 font-normal">(Panel Wattage x No of Panels)</span>
-                    </TableCell>
-                    <TableCell className="text-xs font-bold text-[#002868] bg-sky-50/50">
-                      {customer.solarSystem?.totalWattage || ((customer.solarSystem?.panelWattage || 585) * (customer.solarSystem?.noOfPanels || 10))} W ({(((customer.solarSystem?.totalWattage || ((customer.solarSystem?.panelWattage || 585) * (customer.solarSystem?.noOfPanels || 10)))) / 1000).toFixed(2)} kW)
-                    </TableCell>
-                  </TableRow>
-
-                  {/* Panel Type */}
-                  <TableRow className="border-b hover:bg-transparent">
-                    <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Panel Type</TableCell>
-                    <TableCell className="text-xs">
-                      <div className="flex gap-2">
-                        {['Monofacial', 'Bifacial'].map(pt => {
-                          const isSelected = (customer.solarSystem?.panelType?.toLowerCase() === pt.toLowerCase()) || (!customer.solarSystem?.panelType && pt === 'Monofacial')
-                          return (
-                            <Badge key={pt} variant="outline" className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-500"}>
-                              {isSelected ? '☑ ' : '☐ '} {pt}
-                            </Badge>
-                          )
-                        })}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-
-                  {/* Battery Category */}
-                  <TableRow className="border-b hover:bg-transparent">
-                    <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Battery Category</TableCell>
-                    <TableCell className="text-xs">
-                      <div className="flex gap-2">
-                        {['High Voltage', 'Low Voltage'].map(bc => {
-                          const isSelected = (customer.solarSystem?.batteryCategory?.toLowerCase() === bc.toLowerCase()) || (!customer.solarSystem?.batteryCategory && bc === 'High Voltage')
-                          return (
-                            <Badge key={bc} variant="outline" className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-500"}>
-                              {isSelected ? '☑ ' : '☐ '} {bc}
-                            </Badge>
-                          )
-                        })}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-
-                  {/* Battery Type */}
-                  <TableRow className="border-b hover:bg-transparent">
-                    <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Battery Type</TableCell>
-                    <TableCell className="text-xs">
-                      <div className="flex gap-2">
-                        {['Lithium', 'Lead Acid', 'Dry'].map(bt => {
-                          const isSelected = (customer.solarSystem?.batteryType?.toLowerCase().includes(bt.toLowerCase().slice(0, 4))) || (!customer.solarSystem?.batteryType && bt === 'Lithium')
-                          return (
-                            <Badge key={bt} variant="outline" className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-500"}>
-                              {isSelected ? '☑ ' : '☐ '} {bt}
-                            </Badge>
-                          )
-                        })}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-
-                  {/* Battery Brand */}
-                  <TableRow className="border-b hover:bg-transparent">
-                    <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Battery Brand</TableCell>
-                    <TableCell className="text-xs">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {['Dyness', 'Narada', 'Pylontech', 'Sacred Sun', 'BYD', 'Huawei', 'Inverex', 'Growatt', 'Other'].map(bb => {
-                          const isSelected = customer.solarSystem?.batteryBrand?.toLowerCase() === bb.toLowerCase() || (!customer.solarSystem?.batteryBrand && bb === 'Dyness')
-                          return (
-                            <Badge 
-                              key={bb} 
-                              variant="outline" 
-                              className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-600 hover:bg-slate-100"}
-                            >
-                              {bb}
-                            </Badge>
-                          )
-                        })}
-                        {customer.solarSystem?.batteryBrand && !['dyness', 'narada', 'pylontech', 'sacred sun', 'byd', 'huawei', 'inverex', 'growatt', 'other'].includes(customer.solarSystem.batteryBrand.toLowerCase()) && (
-                          <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold">
-                            {customer.solarSystem.batteryBrand}
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-
-                  {/* No. of Batteries */}
-                  <TableRow className="border-b hover:bg-transparent">
-                    <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">No. of Batteries</TableCell>
-                    <TableCell className="text-xs font-semibold text-[var(--color-ink)]">
-                      {customer.solarSystem?.noOfBatteries || 2}
-                    </TableCell>
-                  </TableRow>
-
-                  {/* Earthing / OHMs */}
-                  <TableRow className="border-b hover:bg-transparent">
-                    <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Earthing & OHMs</TableCell>
-                    <TableCell className="text-xs p-0">
-                      <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x border-t-0">
-                        <div className="p-2.5">
-                          <span className="font-bold text-slate-600 mr-2">AC:</span>
-                          <span className="font-semibold text-[#002868]">{Number(customer.solarSystem?.earthingAcOhms) || 0.5} Ω</span>
-                        </div>
-                        <div className="p-2.5">
-                          <span className="font-bold text-slate-600 mr-2">DC:</span>
-                          <span className="font-semibold text-[#002868]">{Number(customer.solarSystem?.earthingDcOhms) || 0.5} Ω</span>
-                        </div>
-                        <div className="p-2.5 bg-slate-50/50">
-                          <span className="font-bold text-slate-600 mr-2">Date of Last Check:</span>
-                          <span className="text-slate-700 font-medium">
-                            {customer.solarSystem?.earthingLastCheck ? new Date(customer.solarSystem.earthingLastCheck).toLocaleDateString() : '6/20/2021'}
-                          </span>
-                        </div>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-
-                  {/* Ingress Protection (IP) */}
-                  <TableRow className="border-b hover:bg-transparent">
-                    <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Ingress Protection (IP)</TableCell>
-                    <TableCell className="text-xs">
-                      <div className="flex gap-2 flex-wrap">
-                        {['20', '21', '34', '40', '65', '67'].map(ip => {
-                          const isSelected = (customer.solarSystem?.ingressProtection === ip) || (!customer.solarSystem?.ingressProtection && ip === '20')
-                          return (
-                            <Badge key={ip} variant="outline" className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-500"}>
-                              IP {ip}
-                            </Badge>
-                          )
-                        })}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-
-                  {/* Structure Type */}
-                  <TableRow className="border-b hover:bg-transparent">
-                    <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Structure Type</TableCell>
-                    <TableCell className="text-xs space-y-2">
-                      <div className="flex gap-2">
-                        {['Elevated', 'Standard'].map(st => {
-                          const isSelected = (customer.solarSystem?.structureType?.toLowerCase() === st.toLowerCase()) || (!customer.solarSystem?.structureType && st === 'Elevated')
-                          return (
-                            <Badge key={st} variant="outline" className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-500"}>
-                              {isSelected ? '☑ ' : '☐ '} {st}
-                            </Badge>
-                          )
-                        })}
-                      </div>
-                      <div className="flex flex-wrap gap-1.5 pt-1">
-                        {['Painted', 'Aluminium (L1)', 'Aluminium (L2)', 'Hot Dip Galvanized (L1)', 'Pre Galvanized (L2)'].map(mat => {
-                          const isSelected = (customer.solarSystem?.structureMaterial?.toLowerCase().includes(mat.toLowerCase().slice(0, 5))) || (!customer.solarSystem?.structureMaterial && mat === 'Painted')
-                          return (
-                            <Badge key={mat} variant="outline" className={isSelected ? "bg-amber-100 text-amber-950 border-amber-400 font-semibold" : "bg-slate-50 text-slate-500"}>
-                              {mat}
-                            </Badge>
-                          )
-                        })}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-
-                  {/* System Installation Date */}
-                  <TableRow className="hover:bg-transparent">
-                    <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">System Installation Date</TableCell>
-                    <TableCell className="text-xs font-semibold text-[var(--color-ink)] flex items-center gap-2">
-                      <span className="text-slate-500">📅</span>
-                      {customer.solarSystem?.systemInstallationDate ? new Date(customer.solarSystem.systemInstallationDate).toLocaleDateString() : (customer.activationDate ? new Date(customer.activationDate).toLocaleDateString() : 'Pending Confirmation')}
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        )}
+              </CardContent>
+            </Card>
+          )
+        })()}
 
         {/* 3. Customer Ledger Tab (Image 5 Layout) */}
         {activeTab === 'ledger' && (
@@ -765,7 +901,7 @@ export default async function CustomerDetailPage({
                         title="Click to view/download Invoice PDF"
                       >
                         LHR-146062
-                        <span className="text-[10px] bg-amber-100 text-amber-900 px-1 py-0.2 rounded border border-amber-300 font-bold">PDF</span>
+                        <span className="text-[10px] bg-amber-100 text-amber-900 px-1 py-0.2 rounded border border-amber-300 font-bold">Invoice PDF</span>
                       </a>
                     </TableCell>
                     <TableCell className="border-r border-blue-200">Sales Invoice</TableCell>
@@ -776,10 +912,21 @@ export default async function CustomerDetailPage({
 
                   <TableRow className="bg-[#EEF4FB] hover:bg-[#E3EDF8] border-b border-blue-200 text-xs">
                     <TableCell className="font-medium border-r border-blue-200">12-Aug-26</TableCell>
-                    <TableCell className="font-mono font-semibold border-r border-blue-200">PAY-KuickPay-303798</TableCell>
+                    <TableCell className="font-mono font-semibold border-r border-blue-200">
+                      <a 
+                        href={`/api/receipt/PAY-KuickPay-303798`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-emerald-700 hover:text-emerald-950 underline font-bold inline-flex items-center gap-1 group"
+                        title="Click to view/download Payment Receipt Voucher"
+                      >
+                        PAY-KuickPay-303798
+                        <span className="text-[10px] bg-emerald-100 text-emerald-900 px-1 py-0.2 rounded border border-emerald-300 font-bold">Voucher PDF</span>
+                      </a>
+                    </TableCell>
                     <TableCell className="border-r border-blue-200">PAYMENT / COLLECTION AGAINST BILLING BY KUICKPAY</TableCell>
                     <TableCell className="text-right border-r border-blue-200">0</TableCell>
-                    <TableCell className="text-right border-r border-blue-200 font-semibold">1000</TableCell>
+                    <TableCell className="text-right border-r border-blue-200 font-semibold text-emerald-800">1000</TableCell>
                     <TableCell className="text-right font-bold">-</TableCell>
                   </TableRow>
 
@@ -794,7 +941,7 @@ export default async function CustomerDetailPage({
                         title="Click to view/download Invoice PDF"
                       >
                         LHR-175946
-                        <span className="text-[10px] bg-amber-100 text-amber-900 px-1 py-0.2 rounded border border-amber-300 font-bold">PDF</span>
+                        <span className="text-[10px] bg-amber-100 text-amber-900 px-1 py-0.2 rounded border border-amber-300 font-bold">Invoice PDF</span>
                       </a>
                     </TableCell>
                     <TableCell className="border-r border-blue-200">RECURRING INVOICE PERIOD Sep-2026</TableCell>
@@ -803,33 +950,49 @@ export default async function CustomerDetailPage({
                     <TableCell className="text-right font-bold">1,000</TableCell>
                   </TableRow>
 
-                  {/* Render additional database ledger entries if any */}
+                  {/* Render database ledger entries */}
                   {(customer.ledgerEntries || []).map((le: any) => {
-                    const isInvoice = le.invoiceId || (le.refNumber && (le.refNumber.startsWith('INV-') || le.refNumber.startsWith('LHR-') || le.narration?.toLowerCase().includes('invoice')))
-                    const invoiceTarget = le.invoiceId || le.refNumber || customer.id
+                    const isPayment = Number(le.credit) > 0 || le.narration?.toLowerCase().includes('payment') || le.narration?.toLowerCase().includes('collection') || le.refNumber?.startsWith('PAY-') || le.refNumber?.startsWith('RCP-') || le.refNumber?.startsWith('PRV-')
+                    const isReversal = le.refNumber?.startsWith('REV-') || le.narration?.toLowerCase().includes('reversal')
+                    const isInvoice = !isPayment && !isReversal && (le.invoiceId || Number(le.debit) > 0 || le.refNumber?.startsWith('INV-') || le.refNumber?.startsWith('LHR-') || le.narration?.toLowerCase().includes('invoice'))
+
+                    const refLabel = isPayment && !le.refNumber?.startsWith('PRV-') && !le.refNumber?.startsWith('RCP-') && !le.refNumber?.startsWith('PAY-')
+                      ? `PRV-${le.refNumber.replace(/^(INV|TX)-/, '')}`
+                      : le.refNumber
 
                     return (
                       <TableRow key={le.id} className="border-b hover:bg-slate-50 text-xs">
-                        <TableCell className="font-medium border-r">{new Date(le.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell className="font-medium border-r font-mono">{formatDate(le.createdAt)}</TableCell>
                         <TableCell className="font-mono font-semibold border-r">
                           {isInvoice ? (
                             <a 
-                              href={`/api/invoice/${invoiceTarget}`} 
+                              href={`/api/invoice/${le.invoiceId || le.refNumber || customer.id}`} 
                               target="_blank" 
                               rel="noopener noreferrer"
                               className="text-[#002868] hover:text-blue-950 underline font-bold inline-flex items-center gap-1 group"
                               title="Click to view/download Invoice PDF"
                             >
                               {le.refNumber || 'View Invoice'}
-                              <span className="text-[10px] bg-amber-100 text-amber-900 px-1 py-0.2 rounded border border-amber-300 font-bold">PDF</span>
+                              <span className="text-[10px] bg-amber-100 text-amber-900 px-1 py-0.2 rounded border border-amber-300 font-bold">Invoice PDF</span>
+                            </a>
+                          ) : isPayment ? (
+                            <a 
+                              href={`/api/receipt/${le.id || le.refNumber || customer.id}`} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-emerald-700 hover:text-emerald-950 underline font-bold inline-flex items-center gap-1 group"
+                              title="Click to view/download Payment Receipt Voucher PDF"
+                            >
+                              {refLabel || 'PRV-Receipt'}
+                              <span className="text-[10px] bg-emerald-100 text-emerald-900 px-1 py-0.2 rounded border border-emerald-300 font-bold">Voucher PDF</span>
                             </a>
                           ) : (
-                            le.refNumber
+                            <span className={isReversal ? "text-slate-600 font-semibold" : ""}>{le.refNumber}</span>
                           )}
                         </TableCell>
                         <TableCell className="border-r">{le.narration}</TableCell>
                         <TableCell className="text-right border-r font-medium text-rose-700">{Number(le.debit) > 0 ? Number(le.debit).toLocaleString() : '0'}</TableCell>
-                        <TableCell className="text-right border-r font-medium text-sky-700">{Number(le.credit) > 0 ? Number(le.credit).toLocaleString() : '0'}</TableCell>
+                        <TableCell className="text-right border-r font-bold text-emerald-700">{Number(le.credit) > 0 ? Number(le.credit).toLocaleString() : '0'}</TableCell>
                         <TableCell className="text-right font-bold">PKR {Number(le.balance).toLocaleString()}</TableCell>
                       </TableRow>
                     )
@@ -878,7 +1041,7 @@ export default async function CustomerDetailPage({
                       <TableRow key={t.id} className="hover:bg-slate-50 border-b text-xs">
                         <TableCell className="font-medium border-r">{t.assignedTo || 'Operation & Maintenance'}</TableCell>
                         <TableCell className="font-mono font-semibold border-r text-[var(--color-graphite)]">{t.ticketNumber}</TableCell>
-                        <TableCell className="font-mono text-slate-600 border-r">{new Date(t.createdAt).toLocaleString()}</TableCell>
+                        <TableCell className="font-mono text-slate-700 font-semibold border-r">{formatDateTime(t.createdAt)}</TableCell>
                         <TableCell className="border-r">
                           <Badge variant="outline" className="bg-white text-xs font-semibold">{t.category}</Badge>
                           {t.fault && <span className="block text-[11px] text-slate-500">{t.fault}</span>}

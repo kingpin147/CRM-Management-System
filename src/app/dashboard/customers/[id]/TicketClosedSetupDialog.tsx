@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { updateTicket } from '@/app/dashboard/tickets/actions'
+import { formatDateTime } from '@/lib/utils'
 
 
 export function TicketClosedSetupDialog({ ticket }: { ticket: any }) {
@@ -69,7 +70,7 @@ export function TicketClosedSetupDialog({ ticket }: { ticket: any }) {
           {/* Customer Code & Name Header */}
           <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs border-b border-gray-200 pb-3">
             <div>
-              <span className="font-bold text-gray-700">Customer Code: </span>
+              <span className="font-bold text-gray-700">Customer ID: </span>
               <span className="font-mono font-semibold text-gray-900">{customer.customerCode || '—'}</span>
             </div>
             <div>
@@ -191,7 +192,7 @@ export function TicketClosedSetupDialog({ ticket }: { ticket: any }) {
                       <TableCell className="font-medium text-gray-800">{h.department}</TableCell>
                       <TableCell className="text-gray-600">{h.remarks || '—'}</TableCell>
                       <TableCell className="text-gray-700">{h.createdBy || 'System'}</TableCell>
-                      <TableCell className="font-mono text-gray-600">{new Date(h.createdAt).toLocaleString()}</TableCell>
+                      <TableCell className="font-mono text-gray-600">{formatDateTime(h.createdAt)}</TableCell>
                       <TableCell className="text-right font-mono text-gray-600">{h.timeInDept || '—'}</TableCell>
                     </TableRow>
                   ))

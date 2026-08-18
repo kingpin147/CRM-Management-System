@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge'
 import { UserFormDialog } from './UserFormDialog'
 import { UserRowActions } from './UserRowActions'
+import { formatDate } from '@/lib/utils'
 
 export default async function AdminPage() {
   const users = await prisma.user.findMany({
@@ -66,7 +67,7 @@ export default async function AdminPage() {
                           {user.isActive ? 'Active' : 'Disabled'}
                         </Badge>
                       </TableCell>
-                      <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
+                      <TableCell className="font-mono text-xs">{formatDate(user.createdAt)}</TableCell>
                       <TableCell className="text-right">
                         <UserRowActions user={{
                           id: user.id,

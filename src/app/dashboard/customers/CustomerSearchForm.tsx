@@ -101,7 +101,7 @@ export function CustomerSearchForm({
               Customer Search Page
             </CardTitle>
             <CardDescription className="text-xs text-[var(--color-slate-custom)] mt-0.5">
-              Filter registered customers by code, CRF #, full name, contact, CNIC, or email.
+              Filter registered customers by customer ID, CRF #, full name, contact, CNIC, or email.
             </CardDescription>
           </div>
           {canRegisterCustomer && (
@@ -116,20 +116,20 @@ export function CustomerSearchForm({
           <form onSubmit={(e) => { e.preventDefault(); handleSearch() }} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
 
-              {/* Row 1: Customer Code & CRF # */}
+              {/* Row 1: Customer ID & CRF # */}
               <div className="space-y-1">
                 <label className="text-sm font-semibold text-[var(--color-graphite)] flex items-center gap-1">
-                  Customer Code:
+                  Customer ID:
                 </label>
                 <Input
                   type="text"
-                  placeholder="Enter Customer Code"
+                  placeholder="Enter Customer ID"
                   value={customerCode}
                   onChange={(e) => setCustomerCode(e.target.value)}
                   onKeyDown={handleKeyDown}
                   className="bg-white border-line text-sm focus-visible:ring-[var(--color-amber)] placeholder:text-gray-400"
                 />
-                <p className="text-[11px] text-gray-400">Please enter your customer code</p>
+                <p className="text-[11px] text-gray-400">Please enter your customer id</p>
               </div>
 
               <div className="space-y-1">
@@ -253,7 +253,7 @@ export function CustomerSearchForm({
             <Table>
               <TableHeader className="bg-gray-50/80">
                 <TableRow>
-                  <TableHead className="font-bold text-xs">Customer Code</TableHead>
+                  <TableHead className="font-bold text-xs">Customer ID</TableHead>
                   <TableHead className="font-bold text-xs">CRF #</TableHead>
                   <TableHead className="font-bold text-xs">Full Name</TableHead>
                   <TableHead className="font-bold text-xs">Contact Number</TableHead>

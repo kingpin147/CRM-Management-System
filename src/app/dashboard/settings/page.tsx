@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ChangePasswordForm } from './ChangePasswordForm'
 import { User, Users, ShieldCheck, ArrowRight, CheckCircle2 } from 'lucide-react'
+import { formatDate } from '@/lib/utils'
 
 export default async function SettingsPage() {
   const supabase = await createClient()
@@ -67,8 +68,8 @@ export default async function SettingsPage() {
           </div>
           <div>
             <span className="text-gray-400 block font-medium">Member Since:</span>
-            <span className="font-medium text-gray-700">
-              {dbUser?.createdAt ? new Date(dbUser.createdAt).toLocaleDateString() : 'Active'}
+            <span className="font-medium text-gray-700 font-mono">
+              {formatDate(dbUser?.createdAt)}
             </span>
           </div>
         </CardContent>

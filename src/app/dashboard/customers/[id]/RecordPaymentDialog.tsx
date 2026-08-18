@@ -36,7 +36,7 @@ export function RecordPaymentDialog({ customerId }: { customerId: string }) {
     formData.append('customerId', customerId)
     formData.append('amount', String(amount))
     formData.append('paymentMethod', paymentMethod)
-    formData.append('reference', reference || 'TX-' + Math.floor(100000 + Math.random() * 900000))
+    formData.append('reference', reference || 'PRV-' + Math.floor(100000 + Math.random() * 900000))
     formData.append('narration', narration)
 
     const res = await recordPayment(formData)

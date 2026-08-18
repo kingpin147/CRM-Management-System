@@ -4,11 +4,29 @@ import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/render
 const styles = StyleSheet.create({
   page: {
     padding: 18,
-    paddingBottom: 28,
+    paddingBottom: 26,
     fontFamily: 'Helvetica',
     fontSize: 8.5,
     color: '#000',
     backgroundColor: '#FFFFFF',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+  },
+
+  topContent: {
+    flexShrink: 0,
+  },
+
+  flexSpacer: {
+    flexGrow: 1,
+    minHeight: 8,
+  },
+
+  bottomPinnedContainer: {
+    marginTop: 'auto',
+    marginBottom: 4,
+    flexShrink: 0,
   },
   
   // Top Header
@@ -175,7 +193,7 @@ const styles = StyleSheet.create({
   
   // Important Notes
   notesSection: {
-    marginTop: 2,
+    marginTop: 0,
     border: '1px solid #c2d0e0',
     borderRadius: 3,
     overflow: 'hidden',
@@ -213,7 +231,7 @@ const styles = StyleSheet.create({
   // Footer Addresses
   footerRow: {
     flexDirection: 'row',
-    marginTop: 6,
+    marginTop: 5,
     justifyContent: 'space-between',
     paddingHorizontal: 4,
   },
@@ -258,6 +276,32 @@ const styles = StyleSheet.create({
   }
 })
 
+function getBillingPeriod(baseDate: Date, billingTypeStr?: string): string {
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+  const year = baseDate.getFullYear()
+  const monthIdx = baseDate.getMonth()
+  
+  let numMonths = 1
+  const bType = (billingTypeStr || '').toLowerCase()
+  if (bType.includes('quarter')) {
+    numMonths = 3
+  } else if (bType.includes('half') || bType.includes('semi') || bType.includes('bi')) {
+    numMonths = 6
+  } else if (bType.includes('year') || bType.includes('annual')) {
+    numMonths = 12
+  }
+
+  const startDateStr = `1-${monthNames[monthIdx]}-${year}`
+  
+  const endTargetMonthIdx = monthIdx + numMonths - 1
+  const endYear = year + Math.floor(endTargetMonthIdx / 12)
+  const normalizedEndMonthIdx = ((endTargetMonthIdx % 12) + 12) % 12
+  const lastDay = new Date(endYear, normalizedEndMonthIdx + 1, 0).getDate()
+  const endDateStr = `${lastDay}-${monthNames[normalizedEndMonthIdx]}-${endYear}`
+  
+  return `${startDateStr} To ${endDateStr}`
+}
+
 export function InvoiceDocument({ 
   customer, 
   invoice, 
@@ -266,256 +310,268 @@ export function InvoiceDocument({
 }: { 
   customer: any; 
   invoice?: any; 
-  logoSrc?: string;
+  logoSrc?: string; 
   rightGraphicSrc?: string;
 }) {
   const issueDate = invoice ? new Date(invoice.createdAt) : new Date()
-  const dueDate = invoice && invoice.dueDate ? new Date(invoice.dueDate) : new Date(issueDate.getTime() + 10 * 24 * 60 * 60 * 1000)
-  const invoiceNumber = invoice?.invoiceNumber || (customer?.customerCode ? `LHR-${customer.customerCode}` : 'LHR-50833')
+  const invoiceNumber = invoice?.invoiceNumber || (customer?.customerCode ? `INV-${customer.customerCode.replace(/^[A-Za-z]+-/, '')}` : 'INV-520722')
   
-  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
   const monthShorts = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
   
-  const billingMonth = `${monthNames[issueDate.getMonth()]}-${issueDate.getFullYear()}`
-  const issueDateStr = `${issueDate.getDate()}-${monthShorts[issueDate.getMonth()]}-${issueDate.getFullYear()}`
-  const dueDateStr = `${dueDate.getDate()}-${monthShorts[dueDate.getMonth()]}-${dueDate.getFullYear()}`
+  const billingType = customer?.packagePlan?.billingType || 'Quarterly'
+  const billingMonth = getBillingPeriod(issueDate, billingType)
   
-  const totalAmount = invoice ? Number(invoice.totalAmount) : (customer?.packagePlan ? Number(customer.packagePlan.totalAmount) : 18900)
-  const basePrice = invoice ? Number(invoice.amount) : (customer?.packagePlan ? Number(customer.packagePlan.monthlyBasePrice) : 18000)
-  const salesTax = invoice ? Number(invoice.salesTax) : (customer?.packagePlan ? Number(customer.packagePlan.salesTaxAmount) : 900)
+  // Issue Date is ALWAYS 1st of the month, Due Date is ALWAYS 10th of the month
+  const issueDateStr = `1-${monthShorts[issueDate.getMonth()]}-${issueDate.getFullYear()}`
+  const dueDateStr = `10-${monthShorts[issueDate.getMonth()]}-${issueDate.getFullYear()}`
+  
+  const totalAmount = invoice ? Number(invoice.totalAmount) : (customer?.packagePlan ? Number(customer.packagePlan.totalAmount) : 50000)
+  const basePrice = invoice ? Number(invoice.amount) : (customer?.packagePlan ? Number(customer.packagePlan.monthlyBasePrice) : 50000)
+  const salesTax = invoice ? Number(invoice.salesTax) : (customer?.packagePlan ? Number(customer.packagePlan.salesTaxAmount) : 0)
   const arrears = 0.00
   
-  const systemType = customer?.packagePlan?.systemSizeKw || customer?.solarSystem?.inverterSize || '10–20 kW'
-  const packageTier = customer?.packagePlan?.packageTier || 'Comprehensive'
+  const systemType = customer?.packagePlan?.systemSizeKw || customer?.solarSystem?.inverterSize || '1-10 kW'
+  const packageTier = customer?.packagePlan?.packageTier || 'Moderate'
   const monitoringTime = customer?.packagePlan?.monitoringTime || '12 Hours'
-  const billingType = customer?.packagePlan?.billingType || 'Half Yearly'
+  const customerIdDigits = customer?.customerCode ? customer.customerCode.replace(/^[A-Za-z]+-/, '') : (customer?.id || '9742')
   
-  // Default billing history matching sample if none exists
-  const pastInvoices = (customer?.invoices && customer.invoices.length > 0) ? customer.invoices.slice(0, 6) : [
-    { id: '1', invoiceNumber: 'LHE-1234', month: 'Aug-26', amount: '18,00.00', payment: '18,00.00' },
-    { id: '2', invoiceNumber: 'LHE-234', month: 'July-26', amount: '18,00.00', payment: '18,00.00' },
-    { id: '3', invoiceNumber: 'LHE-345', month: 'June-26', amount: '18,00.00', payment: '18,00.00' },
-    { id: '4', invoiceNumber: 'LHE-456', month: 'May-26', amount: '18,00.00', payment: '18,00.00' },
-    { id: '5', invoiceNumber: 'LHE-2355', month: 'April-26', amount: '18,00.00', payment: '18,00.00' },
-    { id: '6', invoiceNumber: 'LHE-3466', month: 'Mar-26', amount: '18,00.00', payment: '18,00.00' },
+  // Billing history for up to 6 invoices
+  const dbInvoices = (customer?.invoices && customer.invoices.length > 0) ? customer.invoices : []
+  const pastInvoices = dbInvoices.length > 0 ? dbInvoices.slice(0, 6) : [
+    { 
+      id: '1', 
+      invoiceNumber: invoiceNumber, 
+      createdAt: issueDate, 
+      totalAmount: totalAmount, 
+      status: invoice?.status || 'PAID' 
+    }
   ]
 
   return (
     <Document>
       <Page size="A4" style={styles.page}>
         
-        {/* Top Header */}
-        <View style={styles.topHeader}>
-          {logoSrc ? (
-            <Image src={logoSrc} style={styles.logo} />
-          ) : (
-            <View style={styles.logo}>
-              <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#002868' }}>EnergyGurus.Online</Text>
-            </View>
-          )}
-          <View style={styles.invoiceTitleWrapper}>
-            <Text style={styles.invoiceTitle}>INVOICE</Text>
-            <View style={styles.invoiceNumberPill}>
-              <Text style={styles.invoiceNumberPillLeft}>Invoice #</Text>
-              <Text style={styles.invoiceNumberPillRight}>{invoiceNumber}</Text>
-            </View>
-          </View>
-        </View>
-        
-        {/* Main Grid */}
-        <View style={styles.mainGrid}>
-          
-          {/* LEFT COLUMN */}
-          <View style={styles.leftCol}>
-            {/* Customer Details */}
-            <View style={styles.card}>
-              <Text style={styles.cardHeader}>CUSTOMER DETAILS</Text>
-              <View style={styles.cardBody}>
-                <View style={styles.row}>
-                  <Text style={styles.label}>Customer ID:</Text>
-                  <Text style={styles.value}>{customer?.customerCode || '8273'}</Text>
-                </View>
-                <View style={styles.row}>
-                  <Text style={styles.label}>Customer Name:</Text>
-                  <Text style={styles.value}>{customer?.fullName || 'Aafaq Ali Ichsan'}</Text>
-                </View>
-                <View style={styles.row}>
-                  <Text style={styles.label}>Contact #:</Text>
-                  <Text style={styles.value}>{customer?.contactNumber || '03064006882'}</Text>
-                </View>
-                <View style={styles.row}>
-                  <Text style={styles.label}>Email:</Text>
-                  <Text style={styles.value}>{customer?.email || 'aafaaq.a.ichsan@gmail.com'}</Text>
-                </View>
-                <View style={styles.row}>
-                  <Text style={styles.label}>CNIC #:</Text>
-                  <Text style={styles.value}>{customer?.cnic || '35201-2701829-0'}</Text>
-                </View>
-                <View style={styles.row}>
-                  <Text style={styles.label}>Address:</Text>
-                  <Text style={styles.value}>
-                    {customer?.address || '401 G Phase - 1 State Life Housing Society Lahore'}
-                    {customer?.block ? `, ${customer.block}` : ''}
-                  </Text>
-                </View>
+        {/* Top Header & Main Cards Section */}
+        <View style={styles.topContent}>
+          {/* Top Header */}
+          <View style={styles.topHeader}>
+            {logoSrc ? (
+              <Image src={logoSrc} style={styles.logo} />
+            ) : (
+              <View style={styles.logo}>
+                <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#002868' }}>EnergyGurus.Online</Text>
               </View>
-            </View>
-            
-            {/* Invoice Summary */}
-            <View style={styles.card}>
-              <Text style={styles.cardHeader}>INVOICE SUMMARY</Text>
-              <View style={styles.cardBody}>
-                <View style={styles.row}>
-                  <Text style={styles.label}>System Type:</Text>
-                  <Text style={styles.value}>{systemType}</Text>
-                </View>
-                <View style={styles.row}>
-                  <Text style={styles.label}>Package:</Text>
-                  <Text style={styles.value}>{packageTier}</Text>
-                </View>
-                <View style={styles.row}>
-                  <Text style={styles.label}>Monitoring Time:</Text>
-                  <Text style={styles.value}>{monitoringTime}</Text>
-                </View>
-                <View style={styles.row}>
-                  <Text style={styles.label}>Billing Type:</Text>
-                  <Text style={styles.value}>{billingType}</Text>
-                </View>
-                
-                <View style={styles.dottedLine} />
-                
-                <View style={styles.row}>
-                  <Text style={styles.label}>Subscription Charges:</Text>
-                  <Text style={styles.value}>{basePrice.toLocaleString(undefined, {minimumFractionDigits: 2})}</Text>
-                </View>
-                <View style={styles.row}>
-                  <Text style={styles.label}>Sales Tax:</Text>
-                  <Text style={styles.value}>{salesTax.toLocaleString(undefined, {minimumFractionDigits: 2})}</Text>
-                </View>
-                <View style={styles.row}>
-                  <Text style={styles.label}>Arrears:</Text>
-                  <Text style={styles.value}>{arrears.toLocaleString(undefined, {minimumFractionDigits: 2})}</Text>
-                </View>
-                
-                {/* Total Row with High-Contrast White Text */}
-                <View style={styles.totalRow}>
-                  <Text style={styles.totalLabel}>Total:</Text>
-                  <Text style={styles.totalValue}>{totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</Text>
-                </View>
-                
-                {/* Orange Rebate Box */}
-                <View style={styles.rebateBox}>
-                  <Text style={styles.rebateText}>
-                    Pay Your bill before Due Date {dueDateStr} and enjoy rebate of Rs. 100/-
-                  </Text>
-                </View>
-              </View>
-            </View>
-            
-            {/* Billing History */}
-            <View style={styles.card}>
-              <Text style={styles.cardHeader}>BILLING HISTORY</Text>
-              <View style={styles.cardBody}>
-                <View style={styles.tableHeader}>
-                  <Text style={styles.th}>Invoice #</Text>
-                  <Text style={styles.th}>Month</Text>
-                  <Text style={styles.th}>Bill Amount</Text>
-                  <Text style={styles.th}>Payment</Text>
-                </View>
-                {pastInvoices.map((inv: any, idx: number) => {
-                  const isDbInvoice = inv.createdAt !== undefined
-                  const d = isDbInvoice ? new Date(inv.createdAt) : null
-                  const invNum = inv.invoiceNumber || `LHE-${1000 + idx * 111}`
-                  const month = isDbInvoice && d ? `${monthShorts[d.getMonth()]}-${d.getFullYear().toString().substr(-2)}` : (inv.month || 'Aug-26')
-                  const amt = isDbInvoice ? Number(inv.totalAmount).toLocaleString(undefined, {minimumFractionDigits: 2}) : inv.amount
-                  const pay = isDbInvoice ? (inv.status === 'PAID' ? Number(inv.totalAmount).toLocaleString(undefined, {minimumFractionDigits: 2}) : '-') : inv.payment
-
-                  return (
-                    <View style={{flexDirection: 'row'}} key={inv.id || idx}>
-                      <Text style={styles.td}>{invNum}</Text>
-                      <Text style={styles.td}>{month}</Text>
-                      <Text style={styles.td}>{amt}</Text>
-                      <Text style={styles.td}>{pay}</Text>
-                    </View>
-                  )
-                })}
-              </View>
-            </View>
-            
-          </View>
-          
-          {/* RIGHT COLUMN */}
-          <View style={styles.rightCol}>
-            {/* Invoice Details */}
-            <View style={styles.card}>
-              <Text style={styles.cardHeader}>INVOICE DETAILS</Text>
-              <View style={styles.cardBody}>
-                <View style={styles.row}>
-                  <Text style={styles.label}>Invoice #:</Text>
-                  <Text style={styles.value}>{invoiceNumber}</Text>
-                </View>
-                <View style={styles.row}>
-                  <Text style={styles.label}>Billing Month:</Text>
-                  <Text style={styles.value}>{billingMonth}</Text>
-                </View>
-                <View style={styles.row}>
-                  <Text style={styles.label}>Issue Date:</Text>
-                  <Text style={styles.value}>{issueDateStr}</Text>
-                </View>
-                <View style={styles.row}>
-                  <Text style={styles.label}>Due Date:</Text>
-                  <Text style={styles.value}>{dueDateStr}</Text>
-                </View>
-              </View>
-            </View>
-            
-            {/* Solar House Illustration and Payment Options Graphic */}
-            {rightGraphicSrc && (
-              <Image src={rightGraphicSrc} style={styles.rightGraphic} />
             )}
-            
+            <View style={styles.invoiceTitleWrapper}>
+              <Text style={styles.invoiceTitle}>INVOICE</Text>
+              <View style={styles.invoiceNumberPill}>
+                <Text style={styles.invoiceNumberPillLeft}>Invoice #</Text>
+                <Text style={styles.invoiceNumberPillRight}>{invoiceNumber}</Text>
+              </View>
+            </View>
           </View>
           
-        </View>
-        
-        {/* Important Notes */}
-        <View style={styles.notesSection}>
-          <Text style={styles.notesHeader}>IMPORTANT NOTES</Text>
-          <View style={styles.notesBody}>
-            <View style={styles.noteItem}>
-              <Text style={styles.bullet}>•</Text>
-              <Text style={styles.noteText}>In case of any arrears the connection can be disconnected without any further notice</Text>
+          {/* Main Grid */}
+          <View style={styles.mainGrid}>
+            
+            {/* LEFT COLUMN */}
+            <View style={styles.leftCol}>
+              {/* Customer Details */}
+              <View style={styles.card}>
+                <Text style={styles.cardHeader}>CUSTOMER DETAILS</Text>
+                <View style={styles.cardBody}>
+                  <View style={styles.row}>
+                    <Text style={styles.label}>Customer ID:</Text>
+                    <Text style={styles.value}>{customerIdDigits}</Text>
+                  </View>
+                  <View style={styles.row}>
+                    <Text style={styles.label}>Customer Name:</Text>
+                    <Text style={styles.value}>{customer?.fullName || 'Aafaq Ali Ichsan'}</Text>
+                  </View>
+                  <View style={styles.row}>
+                    <Text style={styles.label}>Contact #:</Text>
+                    <Text style={styles.value}>{customer?.contactNumber || '03064006882'}</Text>
+                  </View>
+                  <View style={styles.row}>
+                    <Text style={styles.label}>Email:</Text>
+                    <Text style={styles.value}>{customer?.email || 'aafaaq.a.ichsan@gmail.com'}</Text>
+                  </View>
+                  <View style={styles.row}>
+                    <Text style={styles.label}>CNIC #:</Text>
+                    <Text style={styles.value}>{customer?.cnic || '35201-2701829-0'}</Text>
+                  </View>
+                  <View style={styles.row}>
+                    <Text style={styles.label}>Address:</Text>
+                    <Text style={styles.value}>
+                      {customer?.address || '401 G Phase - 1 State Life Housing Society Lahore'}
+                      {customer?.block ? `, ${customer.block}` : ''}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+              
+              {/* Invoice Summary */}
+              <View style={styles.card}>
+                <Text style={styles.cardHeader}>INVOICE SUMMARY</Text>
+                <View style={styles.cardBody}>
+                  <View style={styles.row}>
+                    <Text style={styles.label}>System Type:</Text>
+                    <Text style={styles.value}>{systemType}</Text>
+                  </View>
+                  <View style={styles.row}>
+                    <Text style={styles.label}>Package:</Text>
+                    <Text style={styles.value}>{packageTier}</Text>
+                  </View>
+                  <View style={styles.row}>
+                    <Text style={styles.label}>Monitoring Time:</Text>
+                    <Text style={styles.value}>{monitoringTime}</Text>
+                  </View>
+                  <View style={styles.row}>
+                    <Text style={styles.label}>Billing Type:</Text>
+                    <Text style={styles.value}>{billingType}</Text>
+                  </View>
+                  
+                  <View style={styles.dottedLine} />
+                  
+                  <View style={styles.row}>
+                    <Text style={styles.label}>Subscription Charges:</Text>
+                    <Text style={styles.value}>{basePrice.toLocaleString(undefined, {minimumFractionDigits: 2})}</Text>
+                  </View>
+                  <View style={styles.row}>
+                    <Text style={styles.label}>Sales Tax:</Text>
+                    <Text style={styles.value}>{salesTax.toLocaleString(undefined, {minimumFractionDigits: 2})}</Text>
+                  </View>
+                  <View style={styles.row}>
+                    <Text style={styles.label}>Arrears:</Text>
+                    <Text style={styles.value}>{arrears.toLocaleString(undefined, {minimumFractionDigits: 2})}</Text>
+                  </View>
+                  
+                  {/* Total Row with High-Contrast White Text */}
+                  <View style={styles.totalRow}>
+                    <Text style={styles.totalLabel}>Total:</Text>
+                    <Text style={styles.totalValue}>{totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</Text>
+                  </View>
+                  
+                  {/* Orange Rebate Box */}
+                  <View style={styles.rebateBox}>
+                    <Text style={styles.rebateText}>
+                      Pay Your bill before Due Date {dueDateStr} and enjoy rebate of Rs. 100/-
+                    </Text>
+                  </View>
+                </View>
+              </View>
+              
+              {/* Billing History */}
+              <View style={styles.card}>
+                <Text style={styles.cardHeader}>BILLING HISTORY</Text>
+                <View style={styles.cardBody}>
+                  <View style={styles.tableHeader}>
+                    <Text style={styles.th}>Invoice #</Text>
+                    <Text style={styles.th}>Month</Text>
+                    <Text style={styles.th}>Bill Amount</Text>
+                    <Text style={styles.th}>Payment</Text>
+                  </View>
+                  {pastInvoices.map((inv: any, idx: number) => {
+                    const isDbInvoice = inv.createdAt !== undefined
+                    const d = isDbInvoice ? new Date(inv.createdAt) : null
+                    const invNum = inv.invoiceNumber || `INV-${1000 + idx * 111}`
+                    const month = isDbInvoice && d ? `${monthShorts[d.getMonth()]}-${d.getFullYear().toString().substr(-2)}` : (inv.month || 'Aug-26')
+                    const amt = isDbInvoice ? Number(inv.totalAmount).toLocaleString(undefined, {minimumFractionDigits: 2}) : inv.amount
+                    const pay = isDbInvoice ? (inv.status === 'PAID' ? Number(inv.totalAmount).toLocaleString(undefined, {minimumFractionDigits: 2}) : (inv.status === 'PENDING' ? '0.00' : Number(inv.paidAmount || 0).toLocaleString(undefined, {minimumFractionDigits: 2}))) : inv.payment
+
+                    return (
+                      <View style={{flexDirection: 'row'}} key={inv.id || idx}>
+                        <Text style={styles.td}>{invNum}</Text>
+                        <Text style={styles.td}>{month}</Text>
+                        <Text style={styles.td}>{amt}</Text>
+                        <Text style={styles.td}>{pay}</Text>
+                      </View>
+                    )
+                  })}
+                </View>
+              </View>
+              
             </View>
-            <View style={styles.noteItem}>
-              <Text style={styles.bullet}>•</Text>
-              <Text style={styles.noteText}>5% surcharge will be charged on payable after due date</Text>
+            
+            {/* RIGHT COLUMN */}
+            <View style={styles.rightCol}>
+              {/* Invoice Details */}
+              <View style={styles.card}>
+                <Text style={styles.cardHeader}>INVOICE DETAILS</Text>
+                <View style={styles.cardBody}>
+                  <View style={styles.row}>
+                    <Text style={styles.label}>Invoice #:</Text>
+                    <Text style={styles.value}>{invoiceNumber}</Text>
+                  </View>
+                  <View style={styles.row}>
+                    <Text style={[styles.label, { width: '36%' }]}>Billing Month:</Text>
+                    <Text style={[styles.value, { width: '64%', fontSize: 7.6, fontWeight: 'bold' }]}>{billingMonth}</Text>
+                  </View>
+                  <View style={styles.row}>
+                    <Text style={styles.label}>Issue Date:</Text>
+                    <Text style={styles.value}>{issueDateStr}</Text>
+                  </View>
+                  <View style={styles.row}>
+                    <Text style={styles.label}>Due Date:</Text>
+                    <Text style={styles.value}>{dueDateStr}</Text>
+                  </View>
+                </View>
+              </View>
+              
+              {/* Solar House Illustration and Payment Options Graphic */}
+              {rightGraphicSrc && (
+                <Image src={rightGraphicSrc} style={styles.rightGraphic} />
+              )}
+              
             </View>
-            <View style={styles.noteItem}>
-              <Text style={styles.bullet}>•</Text>
-              <Text style={styles.noteText}>Dishonored Cheque: Rs 300/- will be charged incase customer cheque dishonored</Text>
-            </View>
-            <View style={styles.noteItem}>
-              <Text style={styles.bullet}>•</Text>
-              <Text style={styles.noteText}>You are requested to pay your bill via our recommended payment options i.e. __________________</Text>
-            </View>
-            <View style={styles.noteItem}>
-              <Text style={styles.bullet}>•</Text>
-              <Text style={styles.noteText}>This is computer generated invoice no need for signature and stamp</Text>
-            </View>
+            
           </View>
         </View>
+
+        {/* Dynamic Spacer: Fills remaining empty vertical space so bottom section is pinned to page bottom */}
+        <View style={styles.flexSpacer} />
         
-        {/* Footer Addresses */}
-        <View style={styles.footerRow}>
-          <View style={styles.footerAddress}>
-            <Text style={styles.footerTitle}>Head Office:</Text>
-            <Text style={styles.footerText}>Building No 61, Block A, Bankers Society,</Text>
-            <Text style={styles.footerText}>Adjacent State Life Housing Society - Lahore</Text>
+        {/* Bottom Pinned Section */}
+        <View style={styles.bottomPinnedContainer}>
+          {/* Important Notes */}
+          <View style={styles.notesSection}>
+            <Text style={styles.notesHeader}>IMPORTANT NOTES</Text>
+            <View style={styles.notesBody}>
+              <View style={styles.noteItem}>
+                <Text style={styles.bullet}>•</Text>
+                <Text style={styles.noteText}>In case of any arrears the connection can be disconnected without any further notice</Text>
+              </View>
+              <View style={styles.noteItem}>
+                <Text style={styles.bullet}>•</Text>
+                <Text style={styles.noteText}>5% surcharge will be charged on payable after due date</Text>
+              </View>
+              <View style={styles.noteItem}>
+                <Text style={styles.bullet}>•</Text>
+                <Text style={styles.noteText}>Dishonored Cheque: Rs 300/- will be charged incase customer cheque dishonored</Text>
+              </View>
+              <View style={styles.noteItem}>
+                <Text style={styles.bullet}>•</Text>
+                <Text style={styles.noteText}>You are requested to pay your bill via our recommended payment options i.e. __________________</Text>
+              </View>
+              <View style={styles.noteItem}>
+                <Text style={styles.bullet}>•</Text>
+                <Text style={styles.noteText}>This is computer generated invoice no need for signature and stamp</Text>
+              </View>
+            </View>
           </View>
-          <View style={[styles.footerAddress, {borderLeft: '1px solid #c2d0e0', paddingLeft: 12}]}>
-            <Text style={styles.footerTitle}>South Office:</Text>
-            <Text style={styles.footerText}>80 C, Ground Floor 13th Commercial Street Road,</Text>
-            <Text style={styles.footerText}>DHA Phase II Extension CCA - Karachi</Text>
+          
+          {/* Footer Addresses */}
+          <View style={styles.footerRow}>
+            <View style={styles.footerAddress}>
+              <Text style={styles.footerTitle}>Head Office:</Text>
+              <Text style={styles.footerText}>Building No 61, Block A, Bankers Society,</Text>
+              <Text style={styles.footerText}>Adjacent State Life Housing Society - Lahore</Text>
+            </View>
+            <View style={[styles.footerAddress, {borderLeft: '1px solid #c2d0e0', paddingLeft: 12}]}>
+              <Text style={styles.footerTitle}>South Office:</Text>
+              <Text style={styles.footerText}>80 C, Ground Floor 13th Commercial Street Road,</Text>
+              <Text style={styles.footerText}>DHA Phase II Extension CCA - Karachi</Text>
+            </View>
           </View>
         </View>
         

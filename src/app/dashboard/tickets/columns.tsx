@@ -4,6 +4,7 @@ import { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
 import { Ticket, Customer } from '@prisma/client'
 import { TicketUpdateDialog } from './TicketUpdateDialog'
+import { formatDateTime } from '@/lib/utils'
 
 export type TicketWithCustomer = Ticket & { customer: Customer }
 
@@ -12,6 +13,11 @@ export const columns: ColumnDef<any, TicketWithCustomer, any>[] = [
     accessorKey: 'ticketNumber',
     header: 'Ticket ID',
     cell: ({ row }) => <span className="font-mono text-xs font-semibold">{row.getValue('ticketNumber')}</span>,
+  },
+  {
+    accessorKey: 'createdAt',
+    header: 'Date & Time',
+    cell: ({ row }) => <span className="font-mono text-xs text-slate-700">{formatDateTime(row.original.createdAt)}</span>,
   },
   {
     accessorKey: 'customer.fullName',

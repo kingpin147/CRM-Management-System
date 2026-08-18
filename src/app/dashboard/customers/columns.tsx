@@ -9,7 +9,7 @@ import { Customer } from '@prisma/client'
 export const columns: ColumnDef<any, Customer, any>[] = [
   {
     accessorKey: 'customerCode',
-    header: 'Code',
+    header: 'Customer ID',
     cell: ({ row }) => <span className="font-mono text-xs">{row.getValue('customerCode')}</span>,
   },
   {

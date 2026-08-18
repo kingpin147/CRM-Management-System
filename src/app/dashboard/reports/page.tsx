@@ -6,7 +6,7 @@ import { ReportsView } from './ReportsView'
 export default async function ReportsPage({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined }
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
