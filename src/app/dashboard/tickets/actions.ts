@@ -31,7 +31,31 @@ export async function updateTicket(formData: FormData) {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    const updaterName = user?.email || 'Staff'
+    const dbUser = user ? await prisma.user.findUnique({ where: { supabaseId: user.id } }) : null
+    const updaterName = dbUser?.fullName || dbUser?.email || user?.email?.split('@')[0] || 'Staff / Operations'
+
+    // Fetch previous history or ticket creation time to calculate timeInDept
+    const lastHistory = await prisma.ticketHistory.findFirst({
+      where: { ticketId },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    const existingTicket = await prisma.ticket.findUnique({
+      where: { id: ticketId },
+    })
+
+    const prevDate = lastHistory?.createdAt || existingTicket?.createdAt || new Date()
+    const diffMs = Math.max(0, Date.now() - new Date(prevDate).getTime())
+    const diffMins = Math.floor(diffMs / (1000 * 60))
+    const diffHours = Math.floor(diffMins / 60)
+    const diffDays = Math.floor(diffHours / 24)
+
+    let timeInDept = `${diffMins} min${diffMins === 1 ? '' : 's'}`
+    if (diffDays > 0) {
+      timeInDept = `${diffDays}d ${diffHours % 24}h`
+    } else if (diffHours > 0) {
+      timeInDept = `${diffHours}h ${diffMins % 60}m`
+    }
 
     const dataToUpdate: any = {
       status,
@@ -48,13 +72,14 @@ export async function updateTicket(formData: FormData) {
     })
 
     // Log history
-    await prisma.ticketHistory.create({
+    const newHistory = await prisma.ticketHistory.create({
       data: {
         ticketId,
         status,
         department: assignedTo,
-        remarks: remarks || `Status updated to ${status} and assigned to ${assignedTo}.`,
+        remarks: remarks || `Status updated to ${status} (Priority: ${actionPriority}).`,
         createdBy: updaterName,
+        timeInDept,
       },
     })
 
@@ -62,7 +87,7 @@ export async function updateTicket(formData: FormData) {
     if (updated.customerId) {
       revalidatePath(`/dashboard/customers/${updated.customerId}`)
     }
-    return { success: true }
+    return { success: true, history: JSON.parse(JSON.stringify(newHistory)) }
   } catch (error: any) {
     console.error('Error updating ticket:', error)
     return { error: error.message || 'Failed to update ticket.' }

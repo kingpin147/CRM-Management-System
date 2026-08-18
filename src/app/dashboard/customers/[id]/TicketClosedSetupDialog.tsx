@@ -22,6 +22,11 @@ export function TicketClosedSetupDialog({ ticket }: { ticket: any }) {
   const [department, setDepartment] = React.useState(ticket.assignedTo || 'Operation & Maintenance')
   const [status, setStatus] = React.useState(ticket.status || 'Pending')
   const [remarks, setRemarks] = React.useState('')
+  const [histories, setHistories] = React.useState<any[]>(ticket.histories || [])
+
+  React.useEffect(() => {
+    setHistories(ticket.histories || [])
+  }, [ticket.histories])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -42,11 +47,15 @@ export function TicketClosedSetupDialog({ ticket }: { ticket: any }) {
     if (res?.error) {
       setError(res.error)
     } else {
-      setOpen(false)
+      if (res.history) {
+        setHistories(prev => [res.history, ...prev.filter(h => h.id !== res.history.id)])
+      }
       setRemarks('')
       router.refresh()
     }
   }
+
+  const customerIdDigits = customer.customerCode ? customer.customerCode.replace(/^[A-Za-z]+-/, '') : (customer.id || '—')
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -71,7 +80,7 @@ export function TicketClosedSetupDialog({ ticket }: { ticket: any }) {
           <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs border-b border-gray-200 pb-3">
             <div>
               <span className="font-bold text-gray-700">Customer ID: </span>
-              <span className="font-mono font-semibold text-gray-900">{customer.customerCode || '—'}</span>
+              <span className="font-mono font-semibold text-gray-900">{customerIdDigits}</span>
             </div>
             <div>
               <span className="font-bold text-gray-700">Customer Name: </span>
@@ -126,9 +135,9 @@ export function TicketClosedSetupDialog({ ticket }: { ticket: any }) {
                     onChange={(e) => setStatus(e.target.value)}
                     className="w-full h-9 px-2 rounded border border-gray-300 text-xs font-medium bg-white"
                   >
-                    <option value="CLOSED">Closed</option>
-                    <option value="RESOLVED">Resolved</option>
                     <option value="PENDING">Pending</option>
+                    <option value="RESOLVED">Resolved</option>
+                    <option value="CLOSED">Closed</option>
                     <option value="ON_HOLD">On Hold</option>
                     <option value="CANCELED">Canceled</option>
                   </select>
@@ -140,7 +149,7 @@ export function TicketClosedSetupDialog({ ticket }: { ticket: any }) {
                 <TableCell colSpan={3}>
                   <Textarea
                     rows={3}
-                    placeholder="Enter closing remarks or status update notes..."
+                    placeholder="Enter update remarks or status resolution notes..."
                     value={remarks}
                     onChange={(e) => setRemarks(e.target.value)}
                     className="border-gray-300 text-xs focus-visible:ring-[#002868] bg-white"
@@ -156,7 +165,7 @@ export function TicketClosedSetupDialog({ ticket }: { ticket: any }) {
             </Button>
           </div>
 
-          {/* Department History Audit Table matching bottom of Image 1 */}
+          {/* Department History Audit Table */}
           <div className="space-y-2 pt-2 border-t border-gray-200">
             <p className="text-xs font-bold text-gray-800 uppercase tracking-wider">Department Transition History</p>
             <Table className="border border-gray-200 rounded-lg overflow-hidden">
@@ -171,26 +180,26 @@ export function TicketClosedSetupDialog({ ticket }: { ticket: any }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(!ticket.histories || ticket.histories.length === 0) ? (
+                {(!histories || histories.length === 0) ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-4 text-xs text-gray-500">
                       No status transitions recorded yet.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  ticket.histories.map((h: any) => (
+                  histories.map((h: any) => (
                     <TableRow key={h.id} className="text-xs">
                       <TableCell>
                         <Badge variant="outline" className={
                           h.status === 'CLOSED' ? 'bg-gray-100 text-gray-800' :
                           h.status === 'RESOLVED' ? 'bg-[#002868] text-white' :
-                          'bg-amber-100 text-amber-900'
+                          'bg-amber-100 text-amber-900 border-amber-300 font-semibold'
                         }>
                           {h.status}
                         </Badge>
                       </TableCell>
                       <TableCell className="font-medium text-gray-800">{h.department}</TableCell>
-                      <TableCell className="text-gray-600">{h.remarks || '—'}</TableCell>
+                      <TableCell className="text-gray-700 font-medium">{h.remarks || '—'}</TableCell>
                       <TableCell className="text-gray-700">{h.createdBy || 'System'}</TableCell>
                       <TableCell className="font-mono text-gray-600">{formatDateTime(h.createdAt)}</TableCell>
                       <TableCell className="text-right font-mono text-gray-600">{h.timeInDept || '—'}</TableCell>

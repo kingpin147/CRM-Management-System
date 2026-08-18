@@ -41,6 +41,11 @@ export default async function CustomerDetailPage({
       solarSystem: true,
       packagePlan: true,
       tickets: {
+        include: {
+          histories: {
+            orderBy: { createdAt: 'desc' }
+          }
+        },
         orderBy: { createdAt: 'desc' }
       },
       ledgerEntries: {
