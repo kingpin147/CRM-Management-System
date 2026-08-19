@@ -1,0 +1,341 @@
+import React from 'react'
+import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer'
+
+const styles = StyleSheet.create({
+  page: {
+    padding: 16,
+    paddingBottom: 20,
+    fontFamily: 'Helvetica',
+    fontSize: 8.5,
+    color: '#000000',
+    backgroundColor: '#FFFFFF',
+    display: 'flex',
+    flexDirection: 'column',
+  },
+
+  topHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  logo: {
+    width: 180,
+    height: 'auto',
+  },
+  titleWrapper: {
+    alignItems: 'flex-end',
+  },
+  statementTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#002868',
+    marginBottom: 3,
+    letterSpacing: 0.5,
+  },
+  datePill: {
+    flexDirection: 'row',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  datePillLeft: {
+    backgroundColor: '#002868',
+    color: '#FFFFFF',
+    paddingVertical: 3,
+    paddingHorizontal: 6,
+    fontWeight: 'bold',
+    fontSize: 8.5,
+  },
+  datePillRight: {
+    backgroundColor: '#F58220',
+    color: '#FFFFFF',
+    paddingVertical: 3,
+    paddingHorizontal: 6,
+    fontWeight: 'bold',
+    fontSize: 8.5,
+  },
+
+  // 2-Column Customer Details Card as requested
+  detailsCard: {
+    border: '1px solid #c2d0e0',
+    borderRadius: 3,
+    marginBottom: 8,
+    overflow: 'hidden',
+  },
+  cardHeader: {
+    backgroundColor: '#002868',
+    color: '#FFFFFF',
+    paddingVertical: 3.5,
+    textAlign: 'center',
+    fontWeight: 'bold',
+    fontSize: 9,
+    letterSpacing: 0.5,
+  },
+  cardGrid: {
+    flexDirection: 'row',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+  },
+  gridColLeft: {
+    width: '50%',
+    paddingRight: 6,
+    borderRight: '1px solid #e2e8f0',
+  },
+  gridColRight: {
+    width: '50%',
+    paddingLeft: 6,
+  },
+  row: {
+    flexDirection: 'row',
+    paddingVertical: 2,
+    alignItems: 'flex-start',
+  },
+  label: {
+    width: '40%',
+    color: '#000000',
+    fontSize: 8.5,
+    fontWeight: 'bold', // Headings bold as requested
+  },
+  value: {
+    width: '60%',
+    color: '#000000',
+    fontSize: 8.5,
+  },
+
+  // Ledger Table
+  tableCard: {
+    border: '1px solid #c2d0e0',
+    borderRadius: 3,
+    flexGrow: 1,
+    overflow: 'hidden',
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#002868',
+    borderBottom: '1px solid #001d4a',
+    paddingVertical: 4,
+  },
+  th: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 8,
+    paddingHorizontal: 4,
+  },
+  tableRow: {
+    flexDirection: 'row',
+    borderBottom: '1px solid #e2e8f0',
+    paddingVertical: 3.5,
+    alignItems: 'center',
+  },
+  td: {
+    fontSize: 8,
+    paddingHorizontal: 4,
+    color: '#1e293b',
+  },
+
+  // Column Widths (Reduced Ref column, Increased Narration column as requested)
+  colDate: { width: '13%' },
+  colRef: { width: '22%' },     // Reduced Ref column
+  colNarration: { width: '35%' }, // Increased Narration column
+  colDebit: { width: '10%', textAlign: 'right' },
+  colCredit: { width: '10%', textAlign: 'right' },
+  colBalance: { width: '10%', textAlign: 'right' },
+
+  // Summary Row
+  summaryRow: {
+    flexDirection: 'row',
+    backgroundColor: '#f8fafc',
+    borderTop: '1.5px solid #002868',
+    paddingVertical: 4,
+    fontWeight: 'bold',
+  },
+
+  // Footer
+  footer: {
+    marginTop: 8,
+    borderTop: '1px solid #cbd5e1',
+    paddingTop: 4,
+    alignItems: 'center',
+  },
+  footerText: {
+    fontSize: 7.5,
+    color: '#64748b',
+    textAlign: 'center',
+    marginVertical: 1,
+  },
+  boldDisclaimer: {
+    fontSize: 8,
+    fontWeight: 'bold',
+    color: '#002868',
+    marginTop: 2,
+  }
+})
+
+interface LedgerDocumentProps {
+  customer: any
+  ledgerEntries: any[]
+  logoSrc?: string
+}
+
+export function LedgerDocument({ customer, ledgerEntries, logoSrc }: LedgerDocumentProps) {
+  const customerIdDigits = customer?.customerCode ? customer.customerCode.replace(/^[A-Za-z]+-/, '') : (customer?.id || '9742')
+  const systemType = customer?.packagePlan?.systemSizeKw || customer?.solarSystem?.inverterSize || '1-10 kW'
+  const packageTier = customer?.packagePlan?.packageTier || 'Moderate'
+  const monitoringTime = customer?.packagePlan?.monitoringTime || '12 Hours'
+  const billingType = customer?.packagePlan?.billingType || 'Quarterly'
+
+  const todayStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+
+  let totalDebit = 0
+  let totalCredit = 0
+  ledgerEntries.forEach(le => {
+    totalDebit += Number(le.debit) || 0
+    totalCredit += Number(le.credit) || 0
+  })
+  const closingBalance = ledgerEntries.length > 0 ? Number(ledgerEntries[ledgerEntries.length - 1].balance) || 0 : 0
+
+  return (
+    <Document>
+      <Page size="LETTER" style={styles.page}>
+        
+        {/* Top Header */}
+        <View style={styles.topHeader}>
+          {logoSrc ? (
+            <Image src={logoSrc} style={styles.logo} />
+          ) : (
+            <View style={styles.logo}>
+              <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#002868' }}>EnergyGurus.Online</Text>
+            </View>
+          )}
+          <View style={styles.titleWrapper}>
+            <Text style={styles.statementTitle}>CUSTOMER LEDGER</Text>
+            <View style={styles.datePill}>
+              <Text style={styles.datePillLeft}>Statement Date</Text>
+              <Text style={styles.datePillRight}>{todayStr}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* 2-Column CUSTOMER DETAILS Card */}
+        <View style={styles.detailsCard}>
+          <Text style={styles.cardHeader}>CUSTOMER DETAILS</Text>
+          <View style={styles.cardGrid}>
+            {/* Left Column */}
+            <View style={styles.gridColLeft}>
+              <View style={styles.row}>
+                <Text style={styles.label}>Customer ID:</Text>
+                <Text style={{ ...styles.value, fontWeight: 'bold' }}>{customerIdDigits}</Text>
+              </View>
+              <View style={styles.row}>
+                <Text style={styles.label}>Customer Name:</Text>
+                <Text style={styles.value}>{customer?.fullName || '—'}</Text>
+              </View>
+              <View style={styles.row}>
+                <Text style={styles.label}>Contact #:</Text>
+                <Text style={styles.value}>{customer?.contactNumber || '—'}</Text>
+              </View>
+              <View style={styles.row}>
+                <Text style={styles.label}>Email:</Text>
+                <Text style={styles.value}>{customer?.email || '—'}</Text>
+              </View>
+              <View style={styles.row}>
+                <Text style={styles.label}>CNIC #:</Text>
+                <Text style={styles.value}>{customer?.cnic || '—'}</Text>
+              </View>
+              <View style={styles.row}>
+                <Text style={styles.label}>Address:</Text>
+                <Text style={styles.value}>
+                  {customer?.address || '—'}
+                  {customer?.block ? `, ${customer.block}` : ''}
+                  {customer?.city ? `, ${customer.city}` : ''}
+                </Text>
+              </View>
+            </View>
+
+            {/* Right Column */}
+            <View style={styles.gridColRight}>
+              <View style={styles.row}>
+                <Text style={styles.label}>System Type:</Text>
+                <Text style={styles.value}>{systemType}</Text>
+              </View>
+              <View style={styles.row}>
+                <Text style={styles.label}>Package:</Text>
+                <Text style={styles.value}>{packageTier}</Text>
+              </View>
+              <View style={styles.row}>
+                <Text style={styles.label}>Monitoring Time:</Text>
+                <Text style={styles.value}>{monitoringTime}</Text>
+              </View>
+              <View style={styles.row}>
+                <Text style={styles.label}>Billing Type:</Text>
+                <Text style={styles.value}>{billingType}</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* LEDGER TABLE */}
+        <View style={styles.tableCard}>
+          <View style={styles.tableHeader}>
+            <Text style={[styles.th, styles.colDate]}>Date</Text>
+            <Text style={[styles.th, styles.colRef]}>Ref # (Receipt / Invoice)</Text>
+            <Text style={[styles.th, styles.colNarration]}>Narration</Text>
+            <Text style={[styles.th, styles.colDebit]}>Debit</Text>
+            <Text style={[styles.th, styles.colCredit]}>Credit</Text>
+            <Text style={[styles.th, styles.colBalance]}>Balance</Text>
+          </View>
+
+          {ledgerEntries.map((le, idx) => {
+            const isPayment = Number(le.credit) > 0 || le.narration?.toLowerCase().includes('payment')
+            const refDisplay = isPayment && !le.refNumber?.startsWith('PRV-') && !le.refNumber?.startsWith('RCP-') && !le.refNumber?.startsWith('PAY-')
+              ? `PRV-${le.refNumber?.replace(/^(INV|TX)-/, '') || 'PAY'}`
+              : (le.refNumber || '—')
+
+            const dStr = le.createdAt ? new Date(le.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
+
+            return (
+              <View key={le.id || idx} style={styles.tableRow}>
+                <Text style={[styles.td, styles.colDate]}>{dStr}</Text>
+                <Text style={[styles.td, styles.colRef, { fontWeight: 'bold' }]}>{refDisplay}</Text>
+                <Text style={[styles.td, styles.colNarration]}>{le.narration || '—'}</Text>
+                <Text style={[styles.td, styles.colDebit, { color: '#b91c1c' }]}>
+                  {Number(le.debit) > 0 ? Number(le.debit).toLocaleString() : '0'}
+                </Text>
+                <Text style={[styles.td, styles.colCredit, { color: '#047857', fontWeight: 'bold' }]}>
+                  {Number(le.credit) > 0 ? Number(le.credit).toLocaleString() : '0'}
+                </Text>
+                <Text style={[styles.td, styles.colBalance, { fontWeight: 'bold' }]}>
+                  PKR {Number(le.balance).toLocaleString()}
+                </Text>
+              </View>
+            )
+          })}
+
+          {/* Summary Row */}
+          <View style={styles.summaryRow}>
+            <Text style={[styles.td, styles.colDate, { fontWeight: 'bold' }]}>TOTAL</Text>
+            <Text style={[styles.td, styles.colRef]}></Text>
+            <Text style={[styles.td, styles.colNarration, { fontWeight: 'bold' }]}>Account Statement Summary</Text>
+            <Text style={[styles.td, styles.colDebit, { fontWeight: 'bold', color: '#b91c1c' }]}>
+              {totalDebit.toLocaleString()}
+            </Text>
+            <Text style={[styles.td, styles.colCredit, { fontWeight: 'bold', color: '#047857' }]}>
+              {totalCredit.toLocaleString()}
+            </Text>
+            <Text style={[styles.td, styles.colBalance, { fontWeight: 'bold', color: '#002868' }]}>
+              PKR {closingBalance.toLocaleString()}
+            </Text>
+          </View>
+        </View>
+
+        {/* Footer */}
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>EnergyGurus Private Limited • Solar Operations & O&M Management</Text>
+          <Text style={styles.footerText}>Support: info@energygurus.online | UAN: +92 331 4111483</Text>
+          <Text style={styles.boldDisclaimer}>This is computer generated statement no need for signature and stamp</Text>
+        </View>
+
+      </Page>
+    </Document>
+  )
+}

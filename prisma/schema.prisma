@@ -85,6 +85,7 @@ model SolarSystem {
   customerId             String    @unique
   customer               Customer  @relation(fields: [customerId], references: [id])
   disco                  String? // LESCO, etc.
+  discoRefNo             String? // DISCO Reference Number / Consumer ID
   meterType              String // Green Meter, Non Green
   meterPhase             String? // Single Phase, Three Phase
   zeroExportDevice       Boolean

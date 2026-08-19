@@ -57,6 +57,7 @@ export function SolarSystemDialog({
     solarSystem?.batteryWarrantyEnd ? new Date(solarSystem.batteryWarrantyEnd).toISOString().split('T')[0] : ''
   )
   const [disco, setDisco] = React.useState(solarSystem?.disco || 'LESCO')
+  const [discoRefNo, setDiscoRefNo] = React.useState(solarSystem?.discoRefNo || '')
   const [meterType, setMeterType] = React.useState(solarSystem?.meterType || 'Green Meter')
 
   async function handleSave(e: React.FormEvent) {
@@ -87,6 +88,7 @@ export function SolarSystemDialog({
     if (batteryWarrantyEnd) formData.append('batteryWarrantyEnd', batteryWarrantyEnd)
 
     formData.append('disco', disco)
+    formData.append('discoRefNo', discoRefNo)
     formData.append('meterType', meterType)
 
     const res = await saveSolarSystem(formData)
@@ -327,12 +329,21 @@ export function SolarSystemDialog({
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-[var(--color-ink)]">DISCO</Label>
+                    <Label className="text-xs font-semibold text-[var(--color-ink)]">DISCO Utility Company</Label>
                     <Input
                       value={disco}
                       onChange={(e) => setDisco(e.target.value)}
                       placeholder="LESCO / IESCO / K-Electric"
                       className="h-9 text-xs border-[var(--color-line)] bg-white"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-[var(--color-ink)]">{disco || 'DISCO'} Ref / Consumer ID #</Label>
+                    <Input
+                      value={discoRefNo}
+                      onChange={(e) => setDiscoRefNo(e.target.value)}
+                      placeholder="e.g. 14-digit DISCO Ref / Consumer ID"
+                      className="h-9 text-xs border-[var(--color-line)] bg-white font-mono"
                     />
                   </div>
                   <div className="space-y-1">

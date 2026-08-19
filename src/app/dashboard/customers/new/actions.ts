@@ -60,6 +60,7 @@ export async function createCustomer(formData: FormData) {
 
   // Solar System fields
   const disco = (formData.get('disco') as string) || 'LESCO'
+  const discoRefNo = (formData.get('discoRefNo') as string) || null
   const meterType = (formData.get('meterType') as string) || 'Green Meter'
   const meterPhase = (formData.get('meterPhase') as string) || 'Three Phase'
   const zeroExportDevice = formData.get('zeroExportDevice') === 'Installed'
@@ -156,6 +157,7 @@ export async function createCustomer(formData: FormData) {
         solarSystem: {
           create: {
             disco,
+            discoRefNo,
             meterType,
             meterPhase,
             zeroExportDevice,
@@ -204,18 +206,31 @@ export async function createCustomer(formData: FormData) {
             lightningProtection: true,
           }
         },
+        invoices: totalAmount > 0 ? {
+          create: [
+            {
+              invoiceNumber: `INV-${customerCode.replace(/^[A-Za-z]+-/, '')}`,
+              billingPeriod: signUpDate || new Date(),
+              amount: totalAmount,
+              salesTax: salesTaxAmount,
+              totalAmount,
+              status: paidAmount >= totalAmount ? 'PAID' : 'UNPAID',
+              dueDate: nextBillingDate,
+            }
+          ]
+        } : undefined,
         ledgerEntries: totalAmount > 0 ? {
           create: [
             {
               narration: `Initial Package Subscription (${packageTier} ${systemSizeKw})${onboardingFee > 0 ? ' + On-Boarding Fee (PKR 3,000)' : ''}`,
-              refNumber: customerCode,
+              refNumber: `INV-${customerCode.replace(/^[A-Za-z]+-/, '')}`,
               debit: totalAmount,
               credit: 0,
               balance: totalAmount,
             },
             ...(paidAmount > 0 ? [{
               narration: `Advance Payment Received`,
-              refNumber: `REC-${Math.floor(100000 + Math.random() * 900000)}`,
+              refNumber: `PRV-${Math.floor(100000 + Math.random() * 900000)}`,
               debit: 0,
               credit: paidAmount,
               balance: Math.max(0, totalAmount - paidAmount),

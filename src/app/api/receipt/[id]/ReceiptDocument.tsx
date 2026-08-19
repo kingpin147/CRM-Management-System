@@ -3,10 +3,11 @@ import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/render
 
 const styles = StyleSheet.create({
   page: {
-    padding: 24,
-    paddingBottom: 28,
+    paddingTop: 12,
+    paddingBottom: 10,
+    paddingHorizontal: 16,
     fontFamily: 'Helvetica',
-    fontSize: 9,
+    fontSize: 8.5,
     color: '#000',
     backgroundColor: '#FFFFFF',
     display: 'flex',
@@ -23,22 +24,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
-    borderBottom: '2px solid #002868',
-    paddingBottom: 10,
+    marginBottom: 6,
+    borderBottom: '1.5px solid #002868',
+    paddingBottom: 5,
   },
   logo: {
-    width: 190,
+    width: 145,
     height: 'auto',
   },
   titleWrapper: {
     alignItems: 'flex-end',
   },
   voucherTitle: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: 'extrabold',
     color: '#002868',
-    marginBottom: 4,
+    marginBottom: 2,
     letterSpacing: 0.5,
   },
   voucherNumberPill: {
@@ -49,72 +50,73 @@ const styles = StyleSheet.create({
   voucherNumberPillLeft: {
     backgroundColor: '#002868',
     color: '#FFFFFF',
-    paddingVertical: 3.5,
-    paddingHorizontal: 8,
+    paddingVertical: 2.5,
+    paddingHorizontal: 6,
     fontWeight: 'bold',
-    fontSize: 9,
+    fontSize: 8.5,
   },
   voucherNumberPillRight: {
     backgroundColor: '#10B981',
     color: '#FFFFFF',
-    paddingVertical: 3.5,
-    paddingHorizontal: 8,
+    paddingVertical: 2.5,
+    paddingHorizontal: 6,
     fontWeight: 'bold',
-    fontSize: 9,
+    fontSize: 8.5,
   },
 
   // Info Grid
   grid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 6,
   },
   col: {
     width: '48.8%',
   },
   card: {
     border: '1px solid #c2d0e0',
-    borderRadius: 4,
+    borderRadius: 3,
     overflow: 'hidden',
   },
   cardHeader: {
     backgroundColor: '#002868',
     color: '#FFFFFF',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
+    paddingVertical: 3,
+    paddingHorizontal: 6,
     fontWeight: 'bold',
-    fontSize: 9,
+    fontSize: 8.5,
     letterSpacing: 0.5,
   },
   cardBody: {
-    paddingHorizontal: 8,
-    paddingVertical: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
   },
   row: {
     flexDirection: 'row',
-    paddingVertical: 2.5,
+    paddingVertical: 1.8,
     alignItems: 'flex-start',
   },
   label: {
     width: '40%',
     color: '#555555',
-    fontSize: 8.5,
+    fontSize: 8,
     fontWeight: 'bold',
   },
   value: {
     width: '60%',
     color: '#000000',
-    fontSize: 8.5,
+    fontSize: 8,
     fontWeight: 'bold',
   },
 
   // Payment Highlight Box
   paymentBox: {
     backgroundColor: '#F0FDF4',
-    border: '1.5px solid #10B981',
-    borderRadius: 4,
-    padding: 12,
-    marginBottom: 14,
+    border: '1px solid #10B981',
+    borderRadius: 3,
+    paddingVertical: 5,
+    paddingHorizontal: 9,
+    marginBottom: 6,
   },
   paymentRow: {
     flexDirection: 'row',
@@ -122,68 +124,68 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   paymentAmountLabel: {
-    fontSize: 12,
+    fontSize: 9.5,
     fontWeight: 'bold',
     color: '#065F46',
   },
   paymentAmountValue: {
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: 'extrabold',
     color: '#047857',
   },
   statusBadge: {
     backgroundColor: '#10B981',
     color: '#FFFFFF',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 3,
-    fontSize: 8.5,
+    paddingHorizontal: 6,
+    paddingVertical: 1.5,
+    borderRadius: 2,
+    fontSize: 7.5,
     fontWeight: 'bold',
-    marginTop: 4,
+    marginTop: 2,
     alignSelf: 'flex-start',
   },
 
   // Details Table
   table: {
     border: '1px solid #c2d0e0',
-    borderRadius: 4,
+    borderRadius: 3,
     overflow: 'hidden',
-    marginBottom: 14,
-    marginTop: 4,
+    marginBottom: 5,
+    marginTop: 1,
   },
   tableHeader: {
     flexDirection: 'row',
     backgroundColor: '#002868',
     color: '#FFFFFF',
-    paddingVertical: 4.5,
-    paddingHorizontal: 8,
+    paddingVertical: 3,
+    paddingHorizontal: 6,
   },
   tableHeaderCol1: {
     width: '70%',
     fontWeight: 'bold',
-    fontSize: 8.5,
+    fontSize: 8,
   },
   tableHeaderCol3: {
     width: '30%',
     fontWeight: 'bold',
-    fontSize: 8.5,
+    fontSize: 8,
     textAlign: 'right',
   },
   tableRow: {
     flexDirection: 'row',
-    paddingVertical: 6,
-    paddingHorizontal: 8,
+    paddingVertical: 3.5,
+    paddingHorizontal: 6,
     borderBottom: '1px solid #E5E7EB',
     backgroundColor: '#FAFAFA',
   },
   tableCol1: {
     width: '70%',
-    fontSize: 8.5,
+    fontSize: 8,
     color: '#000',
   },
   tableCol3: {
     width: '30%',
-    fontSize: 8.5,
+    fontSize: 8,
     color: '#000',
     fontWeight: 'bold',
     textAlign: 'right',
@@ -192,50 +194,50 @@ const styles = StyleSheet.create({
   // Spacer
   flexSpacer: {
     flexGrow: 1,
-    minHeight: 12,
+    minHeight: 2,
   },
 
   // Bottom Content
   bottomPinnedContainer: {
     marginTop: 'auto',
-    marginBottom: 6,
+    marginBottom: 2,
     flexShrink: 0,
   },
   notesSection: {
     border: '1px solid #c2d0e0',
-    borderRadius: 4,
+    borderRadius: 3,
     overflow: 'hidden',
-    marginBottom: 10,
+    marginBottom: 4,
   },
   notesHeader: {
     backgroundColor: '#002868',
     color: '#FFFFFF',
-    paddingVertical: 3,
-    paddingHorizontal: 8,
+    paddingVertical: 2.5,
+    paddingHorizontal: 6,
     fontWeight: 'bold',
-    fontSize: 8,
+    fontSize: 7.8,
   },
   notesBody: {
-    padding: 6,
-    fontSize: 7.5,
+    padding: 4,
+    fontSize: 7,
     color: '#333333',
-    lineHeight: 1.3,
+    lineHeight: 1.2,
   },
   signRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 10,
-    marginBottom: 8,
-    paddingHorizontal: 12,
+    marginTop: 4,
+    marginBottom: 4,
+    paddingHorizontal: 10,
   },
   signBox: {
     width: '35%',
     borderTop: '1px dashed #9CA3AF',
-    paddingTop: 4,
+    paddingTop: 2,
     alignItems: 'center',
   },
   signText: {
-    fontSize: 7.8,
+    fontSize: 7.5,
     color: '#4B5563',
     fontWeight: 'bold',
   },
@@ -243,19 +245,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: 4,
-    marginTop: 4,
+    marginTop: 2,
   },
   footerAddress: {
     width: '48%',
-    fontSize: 7.5,
+    fontSize: 7.2,
     color: '#4B5563',
-    lineHeight: 1.2,
+    lineHeight: 1.15,
   },
   footerTitle: {
     color: '#002868',
     fontWeight: 'bold',
     marginBottom: 1,
-    fontSize: 8,
+    fontSize: 7.8,
   },
 
   // Bottom Blue Bar
@@ -264,15 +266,14 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingVertical: 4.5,
-    borderRadius: 3,
-    marginTop: 6,
-    fontSize: 7.5,
+    paddingVertical: 3.5,
+    borderRadius: 2,
+    marginTop: 4,
     alignItems: 'center',
   },
   footerBarText: {
     color: '#FFFFFF',
-    fontSize: 7.5,
+    fontSize: 7.2,
   },
 })
 
@@ -290,7 +291,6 @@ export function ReceiptDocument({
   const paymentDate = receipt?.createdAt ? new Date(receipt.createdAt) : new Date()
   const paymentDateStr = `${paymentDate.getDate()}-${monthShorts[paymentDate.getMonth()]}-${paymentDate.getFullYear()}`
   
-  // Format clean random / dynamic voucher number without mentioning KuickPay
   const rawRef = receipt?.refNumber || receipt?.id || '847291'
   const cleanDigits = rawRef.replace(/^(PAY|RCP|PRV|INV|TX|REV|KuickPay|KUICKPAY)-+/gi, '') || '847291'
   const voucherNumber = `PRV-${cleanDigits}`
@@ -301,7 +301,7 @@ export function ReceiptDocument({
 
   return (
     <Document>
-      <Page size="LETTER" style={styles.page}>
+      <Page size={[612, 396]} style={styles.page}>
         <View style={styles.topSection}>
           {/* Top Header */}
           <View style={styles.topHeader}>
@@ -309,7 +309,7 @@ export function ReceiptDocument({
               <Image src={logoSrc} style={styles.logo} />
             ) : (
               <View style={styles.logo}>
-                <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#002868' }}>EnergyGurus.Online</Text>
+                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#002868' }}>EnergyGurus.Online</Text>
               </View>
             )}
             <View style={styles.titleWrapper}>
@@ -417,7 +417,7 @@ export function ReceiptDocument({
               <Text>• This is a computer-generated Payment Receipt Voucher confirming acknowledgment of received funds.</Text>
               <Text>• All payments are subject to real-time clearance and bank reconciliation.</Text>
               <Text>• Thank you for choosing EnergyGurus for your Solar Operations & Maintenance services.</Text>
-              <Text style={{ fontWeight: 'bold', marginTop: 2 }}>• This is computer generated Receipt no need for signature and stamp</Text>
+              <Text style={{ fontWeight: 'bold', marginTop: 1 }}>• This is computer generated Receipt no need for signature and stamp</Text>
             </View>
           </View>
 
@@ -437,7 +437,7 @@ export function ReceiptDocument({
               <Text style={styles.footerTitle}>Head Office:</Text>
               <Text>Building No 61, Block A, Bankers Society, State Life - Lahore</Text>
             </View>
-            <View style={[styles.footerAddress, { borderLeft: '1px solid #c2d0e0', paddingLeft: 10 }]}>
+            <View style={[styles.footerAddress, { borderLeft: '1px solid #c2d0e0', paddingLeft: 6 }]}>
               <Text style={styles.footerTitle}>South Office:</Text>
               <Text>80 C, Ground Floor 13th Commercial Street Road, DHA Phase II - Karachi</Text>
             </View>
@@ -446,9 +446,9 @@ export function ReceiptDocument({
           {/* Bottom Blue Bar */}
           <View style={styles.footerBlueBar}>
             <Text style={styles.footerBarText}>www.energygurus.online</Text>
-            <Text style={{ color: '#FFF' }}>|</Text>
+            <Text style={{ color: '#FFF', fontSize: 7.2 }}>|</Text>
             <Text style={styles.footerBarText}>facebook.com/energygurus.online</Text>
-            <Text style={{ color: '#FFF' }}>|</Text>
+            <Text style={{ color: '#FFF', fontSize: 7.2 }}>|</Text>
             <Text style={styles.footerBarText}>youtube.com/energygurus.online</Text>
           </View>
         </View>

@@ -100,6 +100,7 @@ export async function createPackagePlan(formData: FormData) {
 export async function saveSolarSystem(formData: FormData) {
   const customerId = formData.get('customerId') as string
   const disco = formData.get('disco') as string || null
+  const discoRefNo = formData.get('discoRefNo') as string || null
   const meterType = formData.get('meterType') as string || 'Green Meter'
   const meterPhase = formData.get('meterPhase') as string || 'Three Phase'
   const zeroExportDevice = formData.get('zeroExportDevice') === 'true'
@@ -152,6 +153,7 @@ export async function saveSolarSystem(formData: FormData) {
       where: { customerId },
       update: {
         disco,
+        discoRefNo,
         meterType,
         meterPhase,
         zeroExportDevice,
@@ -188,6 +190,7 @@ export async function saveSolarSystem(formData: FormData) {
       create: {
         customerId,
         disco,
+        discoRefNo,
         meterType,
         meterPhase,
         zeroExportDevice,
@@ -242,7 +245,7 @@ export async function recordPayment(formData: FormData) {
     return { error: 'Please enter a valid payment amount.' }
   }
 
-  const reference = customRef || `TX-${Date.now().toString().slice(-8)}`
+  const reference = customRef || `PRV-${Math.floor(100000 + Math.random() * 900000)}`
 
   try {
     // Atomic transaction guarantees zero balance race conditions

@@ -414,11 +414,13 @@ export default async function CustomerDetailPage({
                           </TableCell>
                         </TableRow>
 
-                        {/* Customer ID */}
+                        {/* DISCO Consumer ID */}
                         <TableRow className="border-b hover:bg-transparent">
-                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Customer ID</TableCell>
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">
+                            {customer.solarSystem?.disco || 'DISCO'} Consumer ID
+                          </TableCell>
                           <TableCell className="font-mono text-xs font-semibold text-[var(--color-ink)]">
-                            {customer.customerCode?.replace(/^[A-Za-z]+-/, '') || customer.customerCode || customer.id}
+                            {customer.solarSystem?.discoRefNo || '—'}
                           </TableCell>
                         </TableRow>
 
@@ -829,95 +831,178 @@ export default async function CustomerDetailPage({
           )
         })()}
 
-        {/* 3. Customer Ledger Tab (Image 5 Layout) */}
+        {/* 3. Customer Ledger Tab */}
         {activeTab === 'ledger' && (
-          <Card className="shadow-sm border-slate-200 overflow-hidden bg-white">
-            <div className="bg-[#002868] text-white px-4 py-2.5 font-bold text-sm text-center border-b border-[#001d4a] flex justify-between items-center tracking-wide">
-              <span className="flex-1 text-center font-bold">Customer Ledger</span>
-              <div className="flex gap-2">
-                <a 
-                  href={`/api/invoice/${customer.invoices?.[0]?.id || customer.id}?customerId=${customer.id}`} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded text-xs font-bold shadow-xs transition-all"
-                >
-                  <Receipt className="w-3.5 h-3.5 text-white" />
-                  View Invoice PDF
-                </a>
+          <div className="space-y-6">
+            {/* Customer Details Card (2-Column Side by Side) */}
+            <Card className="shadow-sm border-slate-200 overflow-hidden bg-white">
+              <div className="bg-[#002868] text-white px-4 py-2.5 font-bold text-sm border-b border-[#001d4a] tracking-wide text-center">
+                CUSTOMER DETAILS
               </div>
-            </div>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader className="bg-slate-100/90 border-b border-slate-200">
-                  <TableRow>
-                    <TableHead className="font-bold text-xs text-[#002868] border-r">Payment Date</TableHead>
-                    <TableHead className="font-bold text-xs text-[#002868] border-r">Ref # ( Receipt and Invoice#)</TableHead>
-                    <TableHead className="font-bold text-xs text-[#002868] border-r">Narration</TableHead>
-                    <TableHead className="font-bold text-xs text-[#002868] border-r text-right">Debit</TableHead>
-                    <TableHead className="font-bold text-xs text-[#002868] border-r text-right">Credit</TableHead>
-                    <TableHead className="font-bold text-xs text-[#002868] text-right">Balance</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {/* Render database ledger entries for this customer */}
-                  {customer.ledgerEntries && customer.ledgerEntries.length > 0 ? (
-                    customer.ledgerEntries.map((le: any) => {
-                      const isPayment = Number(le.credit) > 0 || le.narration?.toLowerCase().includes('payment') || le.narration?.toLowerCase().includes('collection') || le.refNumber?.startsWith('PAY-') || le.refNumber?.startsWith('RCP-') || le.refNumber?.startsWith('PRV-')
-                      const isReversal = le.refNumber?.startsWith('REV-') || le.narration?.toLowerCase().includes('reversal')
-                      const isInvoice = !isPayment && !isReversal && (le.invoiceId || Number(le.debit) > 0 || le.refNumber?.startsWith('INV-') || le.refNumber?.startsWith('LHR-') || le.narration?.toLowerCase().includes('invoice'))
-
-                      const refLabel = isPayment && !le.refNumber?.startsWith('PRV-') && !le.refNumber?.startsWith('RCP-') && !le.refNumber?.startsWith('PAY-')
-                        ? `PRV-${le.refNumber.replace(/^(INV|TX)-/, '')}`
-                        : le.refNumber
-
-                      return (
-                        <TableRow key={le.id} className="border-b hover:bg-slate-50 text-xs">
-                          <TableCell className="font-medium border-r font-mono">{formatDate(le.createdAt)}</TableCell>
-                          <TableCell className="font-mono font-semibold border-r">
-                            {isInvoice ? (
-                              <a 
-                                href={`/api/invoice/${le.invoiceId || le.refNumber || customer.id}?customerId=${customer.id}`} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-[#002868] hover:text-blue-950 underline font-bold inline-flex items-center gap-1 group"
-                                title="Click to view/download Invoice PDF"
-                              >
-                                {le.refNumber || 'View Invoice'}
-                                <span className="text-[10px] bg-amber-100 text-amber-900 px-1 py-0.2 rounded border border-amber-300 font-bold">Invoice PDF</span>
-                              </a>
-                            ) : isPayment ? (
-                              <a 
-                                href={`/api/receipt/${le.id || le.refNumber || customer.id}?customerId=${customer.id}`} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-emerald-700 hover:text-emerald-950 underline font-bold inline-flex items-center gap-1 group"
-                                title="Click to view/download Payment Receipt Voucher PDF"
-                              >
-                                {refLabel || 'PRV-Receipt'}
-                                <span className="text-[10px] bg-emerald-100 text-emerald-900 px-1 py-0.2 rounded border border-emerald-300 font-bold">Voucher PDF</span>
-                              </a>
-                            ) : (
-                              <span className={isReversal ? "text-slate-600 font-semibold" : ""}>{le.refNumber}</span>
-                            )}
+              <CardContent className="p-0">
+                <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-slate-200">
+                  {/* Left Column: Personal Information */}
+                  <div className="w-full">
+                    <Table>
+                      <TableBody>
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs w-40 bg-slate-50 border-r border-slate-200 text-[#002868]">Customer ID:</TableCell>
+                          <TableCell className="font-mono text-xs font-bold text-[var(--color-ink)]">
+                            {customer.customerCode?.replace(/^[A-Za-z]+-/, '') || customer.id}
                           </TableCell>
-                          <TableCell className="border-r">{le.narration}</TableCell>
-                          <TableCell className="text-right border-r font-medium text-rose-700">{Number(le.debit) > 0 ? Number(le.debit).toLocaleString() : '0'}</TableCell>
-                          <TableCell className="text-right border-r font-bold text-emerald-700">{Number(le.credit) > 0 ? Number(le.credit).toLocaleString() : '0'}</TableCell>
-                          <TableCell className="text-right font-bold">PKR {Number(le.balance).toLocaleString()}</TableCell>
                         </TableRow>
-                      )
-                    })
-                  ) : (
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Customer Name:</TableCell>
+                          <TableCell className="text-xs font-semibold text-[var(--color-ink)]">{customer.fullName}</TableCell>
+                        </TableRow>
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Contact #:</TableCell>
+                          <TableCell className="text-xs text-[var(--color-ink)] font-medium font-mono">{customer.contactNumber}</TableCell>
+                        </TableRow>
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Email:</TableCell>
+                          <TableCell className="text-xs text-[var(--color-ink)]">{customer.email || '—'}</TableCell>
+                        </TableRow>
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">CNIC #:</TableCell>
+                          <TableCell className="text-xs font-mono text-[var(--color-ink)]">{customer.cnic || '—'}</TableCell>
+                        </TableRow>
+                        <TableRow className="hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Address:</TableCell>
+                          <TableCell className="text-xs text-[var(--color-ink)]">
+                            {customer.address}
+                            {customer.block ? `, ${customer.block}` : ''}
+                            {customer.city ? `, ${customer.city}` : ''}
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {/* Right Column: System & Plan Specs */}
+                  <div className="w-full">
+                    <Table>
+                      <TableBody>
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs w-40 bg-slate-50 border-r border-slate-200 text-[#002868]">System Type:</TableCell>
+                          <TableCell className="text-xs font-semibold text-[var(--color-ink)]">
+                            {customer.packagePlan?.systemSizeKw || customer.solarSystem?.inverterSize || '1-10 kW'}
+                          </TableCell>
+                        </TableRow>
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Package:</TableCell>
+                          <TableCell className="text-xs font-semibold text-[var(--color-ink)]">
+                            {customer.packagePlan?.packageTier || 'Moderate'}
+                          </TableCell>
+                        </TableRow>
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Monitoring Time:</TableCell>
+                          <TableCell className="text-xs font-semibold text-[var(--color-ink)]">
+                            {customer.packagePlan?.monitoringTime || '12 Hours'}
+                          </TableCell>
+                        </TableRow>
+                        <TableRow className="hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Billing Type:</TableCell>
+                          <TableCell className="text-xs font-semibold text-[var(--color-ink)]">
+                            {customer.packagePlan?.billingType || 'Quarterly'}
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Customer Ledger Table */}
+            <Card className="shadow-sm border-slate-200 overflow-hidden bg-white">
+              <div className="bg-[#002868] text-white px-4 py-2.5 font-bold text-sm border-b border-[#001d4a] flex justify-between items-center tracking-wide">
+                <span className="flex-1 text-center font-bold">Customer Ledger</span>
+                <div className="flex gap-2">
+                  <a 
+                    href={`/api/ledger/${customer.id}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded text-xs font-bold shadow-xs transition-all"
+                  >
+                    <Receipt className="w-3.5 h-3.5 text-white" />
+                    View Ledger PDF
+                  </a>
+                </div>
+              </div>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader className="bg-slate-100/90 border-b border-slate-200">
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-slate-500 text-xs">
-                        No ledger transactions recorded yet for this customer. Record a payment or generate an invoice to populate the ledger.
-                      </TableCell>
+                      <TableHead className="font-bold text-xs text-[#002868] border-r w-28">Payment Date</TableHead>
+                      <TableHead className="font-bold text-xs text-[#002868] border-r w-56">Ref # ( Receipt and Invoice#)</TableHead>
+                      <TableHead className="font-bold text-xs text-[#002868] border-r min-w-[240px]">Narration</TableHead>
+                      <TableHead className="font-bold text-xs text-[#002868] border-r text-right w-24">Debit</TableHead>
+                      <TableHead className="font-bold text-xs text-[#002868] border-r text-right w-24">Credit</TableHead>
+                      <TableHead className="font-bold text-xs text-[#002868] text-right w-32">Balance</TableHead>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {/* Render database ledger entries for this customer */}
+                    {customer.ledgerEntries && customer.ledgerEntries.length > 0 ? (
+                      customer.ledgerEntries.map((le: any) => {
+                        const isPayment = Number(le.credit) > 0 || le.narration?.toLowerCase().includes('payment') || le.narration?.toLowerCase().includes('collection') || le.refNumber?.startsWith('PAY-') || le.refNumber?.startsWith('RCP-') || le.refNumber?.startsWith('PRV-')
+                        const isReversal = le.refNumber?.startsWith('REV-') || le.narration?.toLowerCase().includes('reversal')
+                        const isInvoice = !isPayment && !isReversal && (le.invoiceId || Number(le.debit) > 0 || le.refNumber?.startsWith('INV-') || le.refNumber?.startsWith('LHR-') || le.narration?.toLowerCase().includes('invoice'))
+
+                        const refLabel = isPayment && !le.refNumber?.startsWith('PRV-') && !le.refNumber?.startsWith('RCP-') && !le.refNumber?.startsWith('PAY-')
+                          ? `PRV-${le.refNumber.replace(/^(INV|TX)-/, '')}`
+                          : le.refNumber
+
+                        return (
+                          <TableRow key={le.id} className="border-b hover:bg-slate-50 text-xs">
+                            <TableCell className="font-medium border-r font-mono whitespace-nowrap">{formatDate(le.createdAt)}</TableCell>
+                            <TableCell className="font-mono font-semibold border-r">
+                              {isInvoice ? (
+                                <a 
+                                  href={`/api/invoice/${le.invoiceId || le.refNumber || customer.id}?customerId=${customer.id}`} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-[#002868] hover:text-blue-950 underline font-bold inline-flex items-center gap-1 group"
+                                  title="Click to view/download Invoice PDF"
+                                >
+                                  {le.refNumber || 'View Invoice'}
+                                  <span className="text-[10px] bg-amber-100 text-amber-900 px-1 py-0.2 rounded border border-amber-300 font-bold">Invoice PDF</span>
+                                </a>
+                              ) : isPayment ? (
+                                <a 
+                                  href={`/api/receipt/${le.id || le.refNumber || customer.id}?customerId=${customer.id}`} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-emerald-700 hover:text-emerald-950 underline font-bold inline-flex items-center gap-1 group"
+                                  title="Click to view/download Payment Receipt Voucher PDF"
+                                >
+                                  {refLabel || 'PRV-Receipt'}
+                                  <span className="text-[10px] bg-emerald-100 text-emerald-900 px-1 py-0.2 rounded border border-emerald-300 font-bold">Voucher PDF</span>
+                                </a>
+                              ) : (
+                                <span className={isReversal ? "text-slate-600 font-semibold" : ""}>{le.refNumber}</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="border-r font-medium">{le.narration}</TableCell>
+                            <TableCell className="text-right border-r font-medium text-rose-700">{Number(le.debit) > 0 ? Number(le.debit).toLocaleString() : '0'}</TableCell>
+                            <TableCell className="text-right border-r font-bold text-emerald-700">{Number(le.credit) > 0 ? Number(le.credit).toLocaleString() : '0'}</TableCell>
+                            <TableCell className="text-right font-bold">PKR {Number(le.balance).toLocaleString()}</TableCell>
+                          </TableRow>
+                        )
+                      })
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-8 text-slate-500 text-xs">
+                          No ledger transactions recorded yet for this customer. Record a payment or generate an invoice to populate the ledger.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {/* 4. Create Ticket Tab */}

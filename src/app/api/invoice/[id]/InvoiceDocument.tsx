@@ -3,10 +3,11 @@ import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/render
 
 const styles = StyleSheet.create({
   page: {
-    padding: 16,
-    paddingBottom: 16,
+    paddingTop: 15,
+    paddingBottom: 14,
+    paddingHorizontal: 20,
     fontFamily: 'Helvetica',
-    fontSize: 8.5,
+    fontSize: 9,
     color: '#000',
     backgroundColor: '#FFFFFF',
     display: 'flex',
@@ -20,12 +21,12 @@ const styles = StyleSheet.create({
 
   flexSpacer: {
     flexGrow: 1,
-    minHeight: 6,
+    minHeight: 2,
   },
 
   bottomPinnedContainer: {
     marginTop: 'auto',
-    marginBottom: 6,
+    marginBottom: 2,
     flexShrink: 0,
   },
   
@@ -37,14 +38,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   logo: {
-    width: 200,
+    width: 195,
     height: 'auto',
   },
   invoiceTitleWrapper: {
     alignItems: 'flex-end',
   },
   invoiceTitle: {
-    fontSize: 26,
+    fontSize: 27,
     fontWeight: 'extrabold',
     color: '#002868',
     marginBottom: 3,
@@ -58,18 +59,18 @@ const styles = StyleSheet.create({
   invoiceNumberPillLeft: {
     backgroundColor: '#002868',
     color: '#FFFFFF',
-    paddingVertical: 3.5,
-    paddingHorizontal: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 9,
     fontWeight: 'bold',
-    fontSize: 9.5,
+    fontSize: 10,
   },
   invoiceNumberPillRight: {
     backgroundColor: '#F58220',
     color: '#FFFFFF',
-    paddingVertical: 3.5,
-    paddingHorizontal: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 9,
     fontWeight: 'bold',
-    fontSize: 9.5,
+    fontSize: 10,
   },
   
   // Grid Layout
@@ -88,67 +89,68 @@ const styles = StyleSheet.create({
   card: {
     border: '1px solid #c2d0e0',
     borderRadius: 3,
-    marginBottom: 6,
+    marginBottom: 7,
     overflow: 'hidden',
   },
   cardHeader: {
     backgroundColor: '#002868',
     color: '#FFFFFF',
-    paddingVertical: 3.5,
+    paddingVertical: 4,
     textAlign: 'center',
     fontWeight: 'bold',
-    fontSize: 9,
+    fontSize: 9.8,
     letterSpacing: 0.5,
   },
   cardBody: {
-    paddingHorizontal: 7,
-    paddingVertical: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 5.5,
   },
   row: {
     flexDirection: 'row',
-    paddingVertical: 2.2,
+    paddingVertical: 3.2,
     alignItems: 'flex-start',
   },
   label: {
     width: '42%',
     color: '#000000',
-    fontSize: 8.5,
+    fontSize: 9,
+    fontWeight: 'bold',
   },
   value: {
     width: '58%',
     color: '#000000',
-    fontSize: 8.5,
+    fontSize: 9,
   },
   
   // Invoice Summary Specific
   dottedLine: {
     borderBottom: '1px dashed #c2d0e0',
-    marginVertical: 3.5,
+    marginVertical: 4.5,
   },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     backgroundColor: '#002868',
-    paddingVertical: 5,
-    paddingHorizontal: 8,
+    paddingVertical: 5.5,
+    paddingHorizontal: 9,
     alignItems: 'center',
-    marginTop: 3,
+    marginTop: 4,
   },
   totalLabel: {
     color: '#FFFFFF',
     fontWeight: 'bold',
-    fontSize: 10.5,
+    fontSize: 11,
   },
   totalValue: {
     color: '#FFFFFF',
     fontWeight: 'bold',
-    fontSize: 10.5,
+    fontSize: 11,
   },
   rebateBox: {
     border: '1px solid #F58220',
     backgroundColor: '#FFFFFF',
-    paddingVertical: 3.5,
-    paddingHorizontal: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 5,
     marginTop: 4,
     flexDirection: 'row',
     alignItems: 'center',
@@ -157,7 +159,7 @@ const styles = StyleSheet.create({
   },
   rebateText: {
     color: '#002868',
-    fontSize: 7.8,
+    fontSize: 8.4,
     fontWeight: 'bold',
     textAlign: 'center',
   },
@@ -169,25 +171,55 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   
-  // Billing History Table
-  tableHeader: {
-    flexDirection: 'row',
-    borderBottom: '1px solid #c2d0e0',
-    paddingBottom: 3,
-    marginBottom: 2.5,
+  // Billing History Table Grid
+  tableContainer: {
+    border: '1px solid #b0c4de',
+    borderRadius: 2,
+    overflow: 'hidden',
+    marginTop: 1,
   },
-  th: {
+  tableHeaderRow: {
+    flexDirection: 'row',
+    backgroundColor: '#edf2f7',
+    borderBottom: '1px solid #b0c4de',
+  },
+  thCell: {
     width: '25%',
     color: '#002868',
     fontWeight: 'bold',
-    fontSize: 8.2,
+    fontSize: 8.8,
     textAlign: 'center',
+    paddingVertical: 3.5,
+    borderRight: '1px solid #b0c4de',
   },
-  td: {
+  thCellLast: {
     width: '25%',
-    fontSize: 8,
+    color: '#002868',
+    fontWeight: 'bold',
+    fontSize: 8.8,
     textAlign: 'center',
-    paddingVertical: 2,
+    paddingVertical: 3.5,
+  },
+  tableDataRow: {
+    flexDirection: 'row',
+    borderBottom: '1px solid #cbd5e1',
+  },
+  tableDataRowLast: {
+    flexDirection: 'row',
+  },
+  tdCell: {
+    width: '25%',
+    fontSize: 8.6,
+    textAlign: 'center',
+    paddingVertical: 3.2,
+    color: '#000000',
+    borderRight: '1px solid #cbd5e1',
+  },
+  tdCellLast: {
+    width: '25%',
+    fontSize: 8.6,
+    textAlign: 'center',
+    paddingVertical: 3.2,
     color: '#000000',
   },
   
@@ -196,24 +228,24 @@ const styles = StyleSheet.create({
     border: '1px solid #c2d0e0',
     borderRadius: 3,
     overflow: 'hidden',
-    marginBottom: 6,
+    marginBottom: 5,
   },
   notesHeader: {
     backgroundColor: '#002868',
     color: '#FFFFFF',
-    paddingVertical: 3.5,
-    paddingHorizontal: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 9,
     fontWeight: 'bold',
-    fontSize: 9.2,
+    fontSize: 9.8,
     letterSpacing: 0.5,
   },
   notesBody: {
-    paddingHorizontal: 8,
-    paddingVertical: 5.5,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
   },
   noteItem: {
     flexDirection: 'row',
-    marginBottom: 2.5,
+    marginBottom: 2.8,
   },
   bullet: {
     width: 10,
@@ -222,7 +254,7 @@ const styles = StyleSheet.create({
     lineHeight: 1.1,
   },
   noteText: {
-    fontSize: 8.3,
+    fontSize: 8.5,
     lineHeight: 1.28,
     color: '#000000',
     flex: 1,
@@ -231,24 +263,24 @@ const styles = StyleSheet.create({
   // Footer Addresses
   footerRow: {
     flexDirection: 'row',
-    marginTop: 5,
+    marginTop: 4,
     justifyContent: 'space-between',
     paddingHorizontal: 4,
   },
   footerAddress: {
     width: '48%',
-    fontSize: 8.2,
+    fontSize: 8.5,
     lineHeight: 1.28,
   },
   footerTitle: {
     color: '#002868',
     fontWeight: 'bold',
     marginBottom: 2,
-    fontSize: 8.8,
+    fontSize: 9.0,
   },
   footerText: {
     color: '#333333',
-    fontSize: 8.2,
+    fontSize: 8.5,
   },
   
   // Bottom Blue Bar
@@ -259,17 +291,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     paddingVertical: 4.5,
     borderRadius: 3,
-    marginTop: 6,
-    fontSize: 7.8,
+    marginTop: 5,
     alignItems: 'center',
   },
   footerBarText: {
     color: '#FFFFFF',
-    fontSize: 7.8,
+    fontSize: 8.4,
   },
   footerBarDivider: {
     color: '#FFFFFF',
-    fontSize: 7.8,
+    fontSize: 8.4,
     opacity: 0.8,
   }
 })
@@ -323,10 +354,28 @@ export function InvoiceDocument({
   const issueDateStr = `1-${monthShorts[issueDate.getMonth()]}-${issueDate.getFullYear()}`
   const dueDateStr = `10-${monthShorts[issueDate.getMonth()]}-${issueDate.getFullYear()}`
   
-  const totalAmount = invoice ? Number(invoice.totalAmount) : (customer?.packagePlan ? Number(customer.packagePlan.totalAmount) : 50000)
   const basePrice = invoice ? Number(invoice.amount) : (customer?.packagePlan ? Number(customer.packagePlan.monthlyBasePrice) : 50000)
   const salesTax = invoice ? Number(invoice.salesTax) : (customer?.packagePlan ? Number(customer.packagePlan.salesTaxAmount) : 0)
-  const arrears = 0.00
+
+  // Calculate Arrears from unpaid previous invoices
+  const dbInvoices = (customer?.invoices && customer.invoices.length > 0) ? customer.invoices : []
+  let arrears = 0
+  if (invoice?.arrears != null) {
+    arrears = Number(invoice.arrears)
+  } else if (dbInvoices.length > 0) {
+    const currentInvId = invoice?.id
+    arrears = dbInvoices.reduce((sum: number, inv: any) => {
+      if (inv.id !== currentInvId && inv.status !== 'PAID') {
+        const total = Number(inv.totalAmount || 0)
+        const paid = Number(inv.paidAmount || 0)
+        return sum + Math.max(0, total - paid)
+      }
+      return sum
+    }, 0)
+  }
+
+  // Exact mathematically perfect total calculation: Base + Tax + Arrears
+  const totalAmount = basePrice + salesTax + arrears
   
   const systemType = customer?.packagePlan?.systemSizeKw || customer?.solarSystem?.inverterSize || '1-10 kW'
   const packageTier = customer?.packagePlan?.packageTier || 'Moderate'
@@ -334,7 +383,6 @@ export function InvoiceDocument({
   const customerIdDigits = customer?.customerCode ? customer.customerCode.replace(/^[A-Za-z]+-/, '') : (customer?.id || '9742')
   
   // Billing history: 6 full rows
-  const dbInvoices = (customer?.invoices && customer.invoices.length > 0) ? customer.invoices : []
   const pastInvoices: any[] = []
   
   if (dbInvoices.length > 0) {
@@ -351,8 +399,8 @@ export function InvoiceDocument({
       invoiceNumber: invCode,
       month: mStr,
       amount: totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 }),
-      payment: totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 }),
-      status: 'PAID',
+      payment: cycleIdx === 0 ? '0.00' : totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 }),
+      status: cycleIdx === 0 ? 'PENDING' : 'PAID',
       isMock: true,
     })
   }
@@ -476,29 +524,32 @@ export function InvoiceDocument({
               <View style={styles.card}>
                 <Text style={styles.cardHeader}>BILLING HISTORY</Text>
                 <View style={styles.cardBody}>
-                  <View style={styles.tableHeader}>
-                    <Text style={styles.th}>Invoice #</Text>
-                    <Text style={styles.th}>Month</Text>
-                    <Text style={styles.th}>Bill Amount</Text>
-                    <Text style={styles.th}>Payment</Text>
-                  </View>
-                  {pastInvoices.map((inv: any, idx: number) => {
-                    const isDbInvoice = inv.createdAt !== undefined && !inv.isMock
-                    const d = isDbInvoice ? new Date(inv.createdAt) : null
-                    const invNum = inv.invoiceNumber || `INV-${1000 + idx * 111}`
-                    const month = isDbInvoice && d ? `${monthShorts[d.getMonth()]}-${d.getFullYear().toString().substr(-2)}` : (inv.month || 'Aug-26')
-                    const amt = isDbInvoice ? Number(inv.totalAmount).toLocaleString(undefined, {minimumFractionDigits: 2}) : inv.amount
-                    const pay = isDbInvoice ? (inv.status === 'PAID' ? Number(inv.totalAmount).toLocaleString(undefined, {minimumFractionDigits: 2}) : (inv.status === 'PENDING' ? '0.00' : Number(inv.paidAmount || 0).toLocaleString(undefined, {minimumFractionDigits: 2}))) : inv.payment
+                  <View style={styles.tableContainer}>
+                    <View style={styles.tableHeaderRow}>
+                      <Text style={styles.thCell}>Invoice #</Text>
+                      <Text style={styles.thCell}>Month</Text>
+                      <Text style={styles.thCell}>Bill Amount</Text>
+                      <Text style={styles.thCellLast}>Payment</Text>
+                    </View>
+                    {pastInvoices.map((inv: any, idx: number) => {
+                      const isDbInvoice = inv.createdAt !== undefined && !inv.isMock
+                      const d = isDbInvoice ? new Date(inv.createdAt) : null
+                      const invNum = inv.invoiceNumber || `INV-${1000 + idx * 111}`
+                      const month = isDbInvoice && d ? `${monthShorts[d.getMonth()]}-${d.getFullYear().toString().slice(-2)}` : (inv.month || 'Aug-26')
+                      const amt = isDbInvoice ? Number(inv.totalAmount).toLocaleString(undefined, {minimumFractionDigits: 2}) : inv.amount
+                      const pay = isDbInvoice ? (inv.status === 'PAID' ? Number(inv.totalAmount).toLocaleString(undefined, {minimumFractionDigits: 2}) : (inv.status === 'PENDING' || inv.status === 'UNPAID' ? '0.00' : Number(inv.paidAmount || 0).toLocaleString(undefined, {minimumFractionDigits: 2}))) : inv.payment
+                      const isLast = idx === pastInvoices.length - 1
 
-                    return (
-                      <View style={{flexDirection: 'row'}} key={inv.id || idx}>
-                        <Text style={styles.td}>{invNum}</Text>
-                        <Text style={styles.td}>{month}</Text>
-                        <Text style={styles.td}>{amt}</Text>
-                        <Text style={styles.td}>{pay}</Text>
-                      </View>
-                    )
-                  })}
+                      return (
+                        <View style={isLast ? styles.tableDataRowLast : styles.tableDataRow} key={inv.id || idx}>
+                          <Text style={styles.tdCell}>{invNum}</Text>
+                          <Text style={styles.tdCell}>{month}</Text>
+                          <Text style={styles.tdCell}>{amt}</Text>
+                          <Text style={styles.tdCellLast}>{pay}</Text>
+                        </View>
+                      )
+                    })}
+                  </View>
                 </View>
               </View>
               
@@ -539,7 +590,7 @@ export function InvoiceDocument({
           </View>
         </View>
 
-        {/* Dynamic Spacer: Fills remaining empty vertical space so bottom section is pinned to page bottom */}
+        {/* Dynamic Spacer */}
         <View style={styles.flexSpacer} />
         
         {/* Bottom Pinned Section */}
@@ -599,3 +650,5 @@ export function InvoiceDocument({
     </Document>
   )
 }
+
+
