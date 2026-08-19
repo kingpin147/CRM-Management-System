@@ -82,9 +82,9 @@ export default async function PendingSalesPage() {
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-amber-800 font-bold text-sm">
                 <Clock className="h-4 w-4 text-amber-600" />
-                Stage 1: Sales Manager Approval
+                Stage 1: Pending on Sales
               </div>
-              <p className="text-xs text-amber-900/70">Created by Sales Person → Sent to Sales Manager</p>
+              <p className="text-xs text-amber-900/70">Sign Up Created → Pending Sales Manager Approval</p>
               <p className="text-2xl font-bold text-amber-950 mt-1">{stage1Count} Pending</p>
             </div>
           </CardContent>
@@ -96,23 +96,23 @@ export default async function PendingSalesPage() {
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-blue-800 font-bold text-sm">
                 <DollarSign className="h-4 w-4 text-blue-600" />
-                Stage 2: Billing Manager Verification
+                Stage 2: Pending for Payment Verification
               </div>
-              <p className="text-xs text-blue-900/70">Approved by Sales Mgr → Pending Payment Verification</p>
+              <p className="text-xs text-blue-900/70">Sales Manager Approved → Pending Billing Manager Verification</p>
               <p className="text-2xl font-bold text-blue-950 mt-1">{stage2Count} Pending</p>
             </div>
           </CardContent>
         </Card>
 
-        {/* Stage 3: SD Manager Approval */}
+        {/* Stage 3: O&M Manager Approval */}
         <Card className="border-line bg-sky-50/40">
           <CardContent className="p-4 flex items-center justify-between">
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-[#002868] font-bold text-sm">
                 <Wrench className="h-4 w-4 text-[#002868]" />
-                Stage 3: SD Manager Approval
+                Stage 3: Pending for O&M
               </div>
-              <p className="text-xs text-sky-900/70">Payment Verified → Sent to SD Manager / Inventory</p>
+              <p className="text-xs text-sky-900/70">Payment Verified → Pending O&M Manager Approval</p>
               <p className="text-2xl font-bold text-[#002868] mt-1">{stage3Count} Pending</p>
             </div>
           </CardContent>
@@ -179,16 +179,16 @@ export default async function PendingSalesPage() {
                         <Badge 
                           variant="outline"
                           className={
-                            isStage1 ? 'bg-amber-100 text-amber-900 border-amber-300 font-semibold' :
-                            isStage2 ? 'bg-blue-100 text-blue-900 border-blue-300 font-semibold' :
-                            'bg-[#002868] text-white border-[#002868] font-semibold'
+                            isStage1 ? 'bg-amber-100 text-amber-950 border-amber-300 font-bold' :
+                            isStage2 ? 'bg-blue-100 text-blue-950 border-blue-300 font-bold' :
+                            'bg-sky-100 text-sky-950 border-sky-300 font-bold'
                           }
                         >
-                          {isStage1 ? 'Sales Manager Review' : isStage2 ? 'Payment Verification' : 'SD Manager Commissioning'}
+                          {isStage1 ? 'Pending on Sales' : isStage2 ? 'Pending for Payment Verification' : 'Pending for O&M'}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-xs font-semibold text-gray-700">
-                        {isStage1 ? 'Sales Manager' : isStage2 ? 'Billing Manager' : 'SD (Technical) Manager'}
+                        {isStage1 ? 'Sales Manager' : isStage2 ? 'Billing Manager' : 'O&M Manager'}
                       </TableCell>
                       <TableCell className="text-right">
                         <form action={advanceWorkflow} className="inline-block">
@@ -198,13 +198,13 @@ export default async function PendingSalesPage() {
                             type="submit" 
                             size="sm" 
                             className={
-                              isStage1 ? 'bg-amber-600 hover:bg-amber-700 text-white text-xs gap-1 shadow-xs' :
-                              isStage2 ? 'bg-blue-600 hover:bg-blue-700 text-white text-xs gap-1 shadow-xs' :
-                              'bg-[#002868] hover:bg-[#001d4a] text-white text-xs gap-1 shadow-xs'
+                              isStage1 ? 'bg-amber-600 hover:bg-amber-700 text-white text-xs gap-1 shadow-xs font-bold' :
+                              isStage2 ? 'bg-blue-600 hover:bg-blue-700 text-white text-xs gap-1 shadow-xs font-bold' :
+                              'bg-[#002868] hover:bg-[#001d4a] text-white text-xs gap-1 shadow-xs font-bold'
                             }
                           >
                             <CheckCircle2 className="h-3.5 w-3.5" />
-                            {isStage1 ? 'Approve Sale' : isStage2 ? 'Verify Payment' : 'Approve & Activate'}
+                            {isStage1 ? 'Sales Manager Approval' : isStage2 ? 'Payment Verified' : 'O&M Manager Approval'}
                           </Button>
                         </form>
                       </TableCell>

@@ -303,20 +303,35 @@ export function CustomerSearchForm({
                         </Badge>
                       </TableCell>
                       <TableCell className="text-xs">
-                        <Badge
-                          variant="outline"
-                          className={
-                            c.status === 'CONNECTION_ACTIVE'
-                              ? 'bg-[#002868] text-white border-[#002868] text-xs font-medium'
-                              : c.status === 'TEMPORARY_BLOCKED'
-                              ? 'bg-amber-100 text-amber-900 border-amber-300 text-xs font-medium'
-                              : c.status === 'PERMANENT_DISCONNECTION'
-                              ? 'bg-rose-100 text-rose-800 border-rose-200 text-xs font-medium'
-                              : 'bg-slate-100 text-slate-800 border-slate-200 text-xs font-medium'
+                        {(() => {
+                          const st = c.status
+                          let label = st?.replace(/_/g, ' ')
+                          let style = 'bg-slate-100 text-slate-800 border-slate-200 text-xs font-semibold'
+                          if (st === 'SIGNUP_GENERATED') {
+                            label = 'Pending on Sales'
+                            style = 'bg-amber-100 text-amber-950 border-amber-300 text-xs font-semibold'
+                          } else if (st === 'PENDING_PAYMENT_VERIFICATION') {
+                            label = 'Pending for Payment Verification'
+                            style = 'bg-blue-100 text-blue-950 border-blue-300 text-xs font-semibold'
+                          } else if (st === 'PENDING_ACTIVATION') {
+                            label = 'Pending for O&M'
+                            style = 'bg-sky-100 text-sky-950 border-sky-300 text-xs font-semibold'
+                          } else if (st === 'CONNECTION_ACTIVE') {
+                            label = 'Active'
+                            style = 'bg-[#002868] text-white border-[#002868] text-xs font-semibold'
+                          } else if (st === 'TEMPORARY_BLOCKED') {
+                            label = 'Temporary Blocked'
+                            style = 'bg-amber-100 text-amber-900 border-amber-300 text-xs font-semibold'
+                          } else if (st === 'PERMANENT_DISCONNECTION') {
+                            label = 'Terminated'
+                            style = 'bg-rose-100 text-rose-800 border-rose-200 text-xs font-semibold'
                           }
-                        >
-                          {c.status?.replace(/_/g, ' ')}
-                        </Badge>
+                          return (
+                            <Badge variant="outline" className={style}>
+                              {label}
+                            </Badge>
+                          )
+                        })()}
                       </TableCell>
                       <TableCell className="text-right">
                         <Link href={`/dashboard/customers/${c.id}`}>

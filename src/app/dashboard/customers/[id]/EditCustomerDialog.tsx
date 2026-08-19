@@ -183,13 +183,13 @@ export function EditCustomerDialog({ customer }: { customer: Customer }) {
                     onChange={(e) => setStatus(e.target.value)}
                     className="w-full h-10 px-3 rounded-lg border border-[var(--color-line)] bg-white text-sm font-medium text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-amber)]"
                   >
-                    <option value={CustomerStatus.SIGNUP_GENERATED}>Signup Generated</option>
-                    <option value={CustomerStatus.PENDING_PAYMENT_VERIFICATION}>Pending Payment Verification</option>
-                    <option value={CustomerStatus.PENDING_ACTIVATION}>Pending Activation</option>
-                    <option value={CustomerStatus.CONNECTION_ACTIVE}>Connection Active</option>
+                    <option value={CustomerStatus.SIGNUP_GENERATED}>Pending on Sales</option>
+                    <option value={CustomerStatus.PENDING_PAYMENT_VERIFICATION}>Pending for Payment Verification</option>
+                    <option value={CustomerStatus.PENDING_ACTIVATION}>Pending for O&M</option>
+                    <option value={CustomerStatus.CONNECTION_ACTIVE}>Active</option>
                     <option value={CustomerStatus.NON_PAYMENT_BLOCKED}>Non-Payment Blocked</option>
                     <option value={CustomerStatus.TEMPORARY_BLOCKED}>Temporary Blocked</option>
-                    <option value={CustomerStatus.PERMANENT_DISCONNECTION}>Permanent Disconnection</option>
+                    <option value={CustomerStatus.PERMANENT_DISCONNECTION}>Terminated</option>
                     <option value={CustomerStatus.FOC_CONNECTION}>FOC Connection</option>
                     <option value={CustomerStatus.IN_HOUSE_CONNECTION}>In-House Connection</option>
                   </select>

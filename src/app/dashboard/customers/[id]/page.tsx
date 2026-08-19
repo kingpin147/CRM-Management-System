@@ -207,30 +207,36 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Customer Type</TableCell>
                           <TableCell className="text-xs">
-                            <div className="flex gap-2">
-                              {['Residential', 'Corporate', 'Industrial'].map(type => (
-                                <Badge key={type} variant="outline" className={customer.customerType?.toUpperCase() === type.toUpperCase() ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-400"}>
-                                  {type}
-                                </Badge>
-                              ))}
-                            </div>
+                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                              {customer.customerType ? (customer.customerType.charAt(0).toUpperCase() + customer.customerType.slice(1).toLowerCase()) : 'Residential'}
+                            </Badge>
                           </TableCell>
                         </TableRow>
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Customer Status</TableCell>
                           <TableCell className="text-xs">
-                            <div className="flex gap-2">
-                              {['Active', 'Temporary Blocked', 'Terminated'].map(st => (
-                                <Badge key={st} variant="outline" className={
-                                  customer.status === 'CONNECTION_ACTIVE' && st === 'Active' ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" :
-                                  customer.status === 'TEMPORARY_BLOCKED' && st === 'Temporary Blocked' ? "bg-amber-100 text-amber-900 border-amber-300 font-bold" :
-                                  customer.status === 'PERMANENT_DISCONNECTION' && st === 'Terminated' ? "bg-rose-100 text-rose-900 border-rose-300 font-bold" :
-                                  "bg-slate-50 text-slate-400"
-                                }>
-                                  {st}
-                                </Badge>
-                              ))}
-                            </div>
+                            {(() => {
+                              const st = customer.status
+                              if (st === 'SIGNUP_GENERATED') {
+                                return <Badge variant="outline" className="bg-amber-100 text-amber-950 border-amber-300 font-bold shadow-xs">Pending on Sales</Badge>
+                              }
+                              if (st === 'PENDING_PAYMENT_VERIFICATION') {
+                                return <Badge variant="outline" className="bg-blue-100 text-blue-950 border-blue-300 font-bold shadow-xs">Pending for Payment Verification</Badge>
+                              }
+                              if (st === 'PENDING_ACTIVATION') {
+                                return <Badge variant="outline" className="bg-sky-100 text-sky-950 border-sky-300 font-bold shadow-xs">Pending for O&M</Badge>
+                              }
+                              if (st === 'CONNECTION_ACTIVE') {
+                                return <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">Active</Badge>
+                              }
+                              if (st === 'TEMPORARY_BLOCKED') {
+                                return <Badge variant="outline" className="bg-amber-100 text-amber-900 border-amber-300 font-bold">Temporary Blocked</Badge>
+                              }
+                              if (st === 'PERMANENT_DISCONNECTION') {
+                                return <Badge variant="outline" className="bg-rose-100 text-rose-900 border-rose-300 font-bold">Terminated</Badge>
+                              }
+                              return <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">{st ? st.replace(/_/g, ' ') : 'Pending on Sales'}</Badge>
+                            })()}
                           </TableCell>
                         </TableRow>
                         <TableRow className="border-b hover:bg-transparent">
@@ -264,37 +270,25 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs w-44 bg-slate-50 border-r border-slate-200 text-[#002868]">System Type:</TableCell>
                           <TableCell className="text-xs">
-                            <div className="flex gap-2 flex-wrap">
-                              {['1 – 10 kW', '10 – 20 kW', '20 – 30 kW', '30 kW & Above'].map(st => (
-                                <Badge key={st} variant="outline" className={customer.packagePlan?.systemSizeKw === st || (customer.solarSystem?.inverterSize && customer.solarSystem.inverterSize.includes(st.slice(0, 2))) ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-500"}>
-                                  {st}
-                                </Badge>
-                              ))}
-                            </div>
+                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                              {customer.packagePlan?.systemSizeKw || '1 – 10 kW'}
+                            </Badge>
                           </TableCell>
                         </TableRow>
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Package:</TableCell>
                           <TableCell className="text-xs">
-                            <div className="flex gap-2">
-                              {['Basic', 'Moderate', 'Comprehensive'].map(pkg => (
-                                <Badge key={pkg} variant="outline" className={customer.packagePlan?.packageTier === pkg ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-500"}>
-                                  {pkg}
-                                </Badge>
-                              ))}
-                            </div>
+                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                              {customer.packagePlan?.packageTier || 'Basic'}
+                            </Badge>
                           </TableCell>
                         </TableRow>
                         <TableRow className="hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Monitoring Time</TableCell>
                           <TableCell className="text-xs">
-                            <div className="flex gap-2">
-                              {['12 hours', '24 hours'].map(mt => (
-                                <Badge key={mt} variant="outline" className={customer.packagePlan?.monitoringTime === mt ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-500"}>
-                                  {mt}
-                                </Badge>
-                              ))}
-                            </div>
+                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                              {customer.packagePlan?.monitoringTime || '12 Hours'}
+                            </Badge>
                           </TableCell>
                         </TableRow>
                       </TableBody>
@@ -308,13 +302,9 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs w-44 bg-slate-50 border-r border-slate-200 text-[#002868]">Billing Type</TableCell>
                           <TableCell className="text-xs">
-                            <div className="flex gap-2 flex-wrap">
-                              {['Monthly', 'Quarterly', 'Half Yearly', 'Yearly'].map(bt => (
-                                <Badge key={bt} variant="outline" className={customer.packagePlan?.billingType === bt ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-500"}>
-                                  {bt}
-                                </Badge>
-                              ))}
-                            </div>
+                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                              {customer.packagePlan?.billingType || 'Monthly'}
+                            </Badge>
                           </TableCell>
                         </TableRow>
                         <TableRow className="hover:bg-transparent">
@@ -370,32 +360,18 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs w-44 bg-slate-50 border-r border-slate-200 text-[#002868]">Meter Type</TableCell>
                           <TableCell className="text-xs">
-                            <div className="flex gap-2">
-                              {['Green Meter', 'Non Green'].map(m => {
-                                const isSelected = (customer.solarSystem?.meterType?.toLowerCase() === m.toLowerCase()) || (!customer.solarSystem?.meterType && m === 'Green Meter')
-                                return (
-                                  <Badge key={m} variant="outline" className={isSelected ? "bg-amber-100 text-amber-950 border-amber-400 font-bold shadow-xs" : "bg-slate-50 text-slate-500"}>
-                                    {isSelected ? '☑ ' : '☐ '} {m}
-                                  </Badge>
-                                )
-                              })}
-                            </div>
+                            <Badge variant="outline" className="bg-amber-100 text-amber-950 border-amber-400 font-bold shadow-xs">
+                              {customer.solarSystem?.meterType || 'Green Meter'}
+                            </Badge>
                           </TableCell>
                         </TableRow>
 
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Zero Export Device</TableCell>
                           <TableCell className="text-xs">
-                            <div className="flex gap-2">
-                              {['Installed', 'Not Installed'].map(z => {
-                                const isSelected = (customer.solarSystem?.zeroExportDevice && z === 'Installed') || (!customer.solarSystem?.zeroExportDevice && z === 'Not Installed')
-                                return (
-                                  <Badge key={z} variant="outline" className={isSelected ? "bg-amber-100 text-amber-950 border-amber-400 font-bold shadow-xs" : "bg-slate-50 text-slate-500"}>
-                                    {isSelected ? '☑ ' : '☐ '} {z}
-                                  </Badge>
-                                )
-                              })}
-                            </div>
+                            <Badge variant="outline" className="bg-amber-100 text-amber-950 border-amber-400 font-bold shadow-xs">
+                              {customer.solarSystem?.zeroExportDevice ? 'Installed' : 'Not Installed'}
+                            </Badge>
                           </TableCell>
                         </TableRow>
 
@@ -422,16 +398,9 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Brand</TableCell>
                           <TableCell className="text-xs">
-                            <div className="flex flex-wrap items-center gap-1.5">
-                              {['Huawei', 'Solis', 'Growatt', 'Knox', 'Deye', 'Fronius', 'Inverex', 'Sungrow', 'GoodWe', 'Other'].map(b => {
-                                const isSelected = invBrands.some((ib: string) => ib.toLowerCase() === b.toLowerCase()) || (!customer.solarSystem?.inverterBrand && b === 'Huawei')
-                                return (
-                                  <Badge key={b} variant="outline" className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-600 hover:bg-slate-100"}>
-                                    {b}
-                                  </Badge>
-                                )
-                              })}
-                            </div>
+                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                              {invBrands.join(', ') || customer.solarSystem?.inverterBrand || 'Huawei'}
+                            </Badge>
                           </TableCell>
                         </TableRow>
 
@@ -439,16 +408,9 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Type</TableCell>
                           <TableCell className="text-xs">
-                            <div className="flex gap-2">
-                              {['Hybrid', 'On-grid', 'Hybrid + On-grid'].map(t => {
-                                const isSelected = (customer.solarSystem?.inverterType?.toLowerCase() === t.toLowerCase()) || (!customer.solarSystem?.inverterType && t === 'Hybrid')
-                                return (
-                                  <Badge key={t} variant="outline" className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-500"} >
-                                    {isSelected ? '☑ ' : '☐ '} {t}
-                                  </Badge>
-                                )
-                              })}
-                            </div>
+                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                              {customer.solarSystem?.inverterType || 'Hybrid'}
+                            </Badge>
                           </TableCell>
                         </TableRow>
 
@@ -456,16 +418,9 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Phase Type</TableCell>
                           <TableCell className="text-xs">
-                            <div className="flex gap-2">
-                              {['Single Phase', 'Three Phase'].map(p => {
-                                const isSelected = (customer.solarSystem?.inverterPhase?.toLowerCase() === p.toLowerCase()) || (!customer.solarSystem?.inverterPhase && p === 'Three Phase')
-                                return (
-                                  <Badge key={p} variant="outline" className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-500"} >
-                                    {isSelected ? '☑ ' : '☐ '} {p}
-                                  </Badge>
-                                )
-                              })}
-                            </div>
+                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                              {customer.solarSystem?.inverterPhase || 'Three Phase'}
+                            </Badge>
                           </TableCell>
                         </TableRow>
 
@@ -473,16 +428,9 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Category</TableCell>
                           <TableCell className="text-xs">
-                            <div className="flex gap-2">
-                              {['High Voltage', 'Low Voltage'].map(cat => {
-                                const isSelected = (customer.solarSystem?.inverterCategory?.toLowerCase() === cat.toLowerCase()) || (!customer.solarSystem?.inverterCategory && cat === 'Low Voltage')
-                                return (
-                                  <Badge key={cat} variant="outline" className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-500"} >
-                                    {isSelected ? '☑ ' : '☐ '} {cat}
-                                  </Badge>
-                                )
-                              })}
-                            </div>
+                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                              {customer.solarSystem?.inverterCategory || 'Low Voltage'}
+                            </Badge>
                           </TableCell>
                         </TableRow>
 
@@ -498,16 +446,9 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Meter Phase</TableCell>
                           <TableCell className="text-xs">
-                            <div className="flex gap-2">
-                              {['Single Phase', 'Three Phase'].map(p => {
-                                const isSelected = (customer.solarSystem?.meterPhase?.toLowerCase() === p.toLowerCase()) || (!customer.solarSystem?.meterPhase && p === 'Three Phase')
-                                return (
-                                  <Badge key={p} variant="outline" className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-500"} >
-                                    {isSelected ? '☑ ' : '☐ '} {p}
-                                  </Badge>
-                                )
-                              })}
-                            </div>
+                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                              {customer.solarSystem?.meterPhase || 'Three Phase'}
+                            </Badge>
                           </TableCell>
                         </TableRow>
 
@@ -597,42 +538,23 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Ingress Protection (IP)</TableCell>
                           <TableCell className="text-xs">
-                            <div className="flex gap-2 flex-wrap">
-                              {['20', '21', '34', '40', '65', '67'].map(ip => {
-                                const isSelected = (customer.solarSystem?.ingressProtection === ip) || (!customer.solarSystem?.ingressProtection && ip === '20')
-                                return (
-                                  <Badge key={ip} variant="outline" className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-500"}>
-                                    IP {ip}
-                                  </Badge>
-                                )
-                              })}
-                            </div>
+                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                              IP {customer.solarSystem?.ingressProtection || '20'}
+                            </Badge>
                           </TableCell>
                         </TableRow>
 
                         {/* Structure Type */}
                         <TableRow className="border-b hover:bg-transparent">
-                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Structure Type</TableCell>
-                          <TableCell className="text-xs space-y-2">
-                            <div className="flex gap-2">
-                              {['Elevated', 'Standard'].map(st => {
-                                const isSelected = (customer.solarSystem?.structureType?.toLowerCase() === st.toLowerCase()) || (!customer.solarSystem?.structureType && st === 'Elevated')
-                                return (
-                                  <Badge key={st} variant="outline" className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-500"}>
-                                    {isSelected ? '☑ ' : '☐ '} {st}
-                                  </Badge>
-                                )
-                              })}
-                            </div>
-                            <div className="flex flex-wrap gap-1.5 pt-1">
-                              {['Painted', 'Aluminium (L1)', 'Aluminium (L2)', 'Hot Dip Galvanized (L1)', 'Pre Galvanized (L2)'].map(mat => {
-                                const isSelected = (customer.solarSystem?.structureMaterial?.toLowerCase().includes(mat.toLowerCase().slice(0, 5))) || (!customer.solarSystem?.structureMaterial && mat === 'Painted')
-                                return (
-                                  <Badge key={mat} variant="outline" className={isSelected ? "bg-amber-100 text-amber-950 border-amber-400 font-semibold" : "bg-slate-50 text-slate-500"}>
-                                    {mat}
-                                  </Badge>
-                                )
-                              })}
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Structure Type & Material</TableCell>
+                          <TableCell className="text-xs">
+                            <div className="flex gap-2 items-center flex-wrap">
+                              <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                                {customer.solarSystem?.structureType || 'Elevated'}
+                              </Badge>
+                              <Badge variant="outline" className="bg-amber-100 text-amber-950 border-amber-400 font-semibold">
+                                {customer.solarSystem?.structureMaterial || 'Pre Galvanized'}
+                              </Badge>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -660,16 +582,9 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs w-44 bg-slate-50 border-r border-slate-200 text-[#002868]">Panel Technology</TableCell>
                           <TableCell className="text-xs">
-                            <div className="flex flex-wrap gap-1.5">
-                              {['TOPCON', 'ABC', 'HJT', 'HIBC', 'TBC', 'PERC', 'Other'].map(tech => {
-                                const isSelected = (customer.solarSystem?.panelTechnology?.toUpperCase().includes(tech)) || (!customer.solarSystem?.panelTechnology && tech === 'TOPCON')
-                                return (
-                                  <Badge key={tech} variant="outline" className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-500"}>
-                                    {tech}
-                                  </Badge>
-                                )
-                              })}
-                            </div>
+                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                              {customer.solarSystem?.panelTechnology || 'TOPCON'}
+                            </Badge>
                           </TableCell>
                         </TableRow>
 
@@ -677,16 +592,9 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Panel Brand</TableCell>
                           <TableCell className="text-xs">
-                            <div className="flex flex-wrap items-center gap-1.5">
-                              {['AIKO', 'LONGi', 'Risen', 'Trina Solar', 'Jinko', 'Canadian Solar', 'Astronergy', 'JA Solar', 'Other'].map(pb => {
-                                const isSelected = customer.solarSystem?.panelBrand?.toLowerCase() === pb.toLowerCase() || (!customer.solarSystem?.panelBrand && pb === 'AIKO')
-                                return (
-                                  <Badge key={pb} variant="outline" className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-600 hover:bg-slate-100"}>
-                                    {pb}
-                                  </Badge>
-                                )
-                              })}
-                            </div>
+                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                              {customer.solarSystem?.panelBrand || 'LONGi'}
+                            </Badge>
                           </TableCell>
                         </TableRow>
 
@@ -728,16 +636,9 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Battery Category</TableCell>
                           <TableCell className="text-xs">
-                            <div className="flex gap-2">
-                              {['High Voltage', 'Low Voltage'].map(bc => {
-                                const isSelected = (customer.solarSystem?.batteryCategory?.toLowerCase() === bc.toLowerCase()) || (!customer.solarSystem?.batteryCategory && bc === 'High Voltage')
-                                return (
-                                  <Badge key={bc} variant="outline" className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-500"} >
-                                    {isSelected ? '☑ ' : '☐ '} {catBadge(bc)}
-                                  </Badge>
-                                )
-                              })}
-                            </div>
+                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                              {customer.solarSystem?.batteryCategory || 'Low Voltage'}
+                            </Badge>
                           </TableCell>
                         </TableRow>
 
@@ -745,16 +646,9 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Battery Brand</TableCell>
                           <TableCell className="text-xs">
-                            <div className="flex flex-wrap items-center gap-1.5">
-                              {['Dyness', 'Narada', 'Pylontech', 'Sacred Sun', 'BYD', 'Huawei', 'Inverex', 'Growatt', 'Other'].map(bb => {
-                                const isSelected = customer.solarSystem?.batteryBrand?.toLowerCase() === bb.toLowerCase() || (!customer.solarSystem?.batteryBrand && bb === 'Dyness')
-                                return (
-                                  <Badge key={bb} variant="outline" className={isSelected ? "bg-[#002868] text-white border-[#002868] font-bold shadow-xs" : "bg-slate-50 text-slate-600 hover:bg-slate-100"}>
-                                    {bb}
-                                  </Badge>
-                                )
-                              })}
-                            </div>
+                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                              {customer.solarSystem?.batteryBrand || 'N/A'}
+                            </Badge>
                           </TableCell>
                         </TableRow>
 
