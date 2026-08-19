@@ -313,9 +313,9 @@ export function ReceiptDocument({
               </View>
             )}
             <View style={styles.titleWrapper}>
-              <Text style={styles.voucherTitle}>RECEIPT VOUCHER</Text>
+              <Text style={styles.voucherTitle}>PAYMENT RECEIPT</Text>
               <View style={styles.voucherNumberPill}>
-                <Text style={styles.voucherNumberPillLeft}>Voucher #</Text>
+                <Text style={styles.voucherNumberPillLeft}>Receipt #</Text>
                 <Text style={styles.voucherNumberPillRight}>{voucherNumber}</Text>
               </View>
             </View>
@@ -367,13 +367,13 @@ export function ReceiptDocument({
               </View>
             </View>
 
-            {/* Right: Voucher Info */}
+            {/* Right: Receipt Info */}
             <View style={styles.col}>
               <View style={styles.card}>
-                <Text style={styles.cardHeader}>RECEIPT VOUCHER DETAILS</Text>
+                <Text style={styles.cardHeader}>PAYMENT RECEIPT DETAILS</Text>
                 <View style={styles.cardBody}>
                   <View style={styles.row}>
-                    <Text style={styles.label}>Voucher #:</Text>
+                    <Text style={styles.label}>Receipt #:</Text>
                     <Text style={styles.value}>{voucherNumber}</Text>
                   </View>
                   <View style={styles.row}>
@@ -414,7 +414,7 @@ export function ReceiptDocument({
           <View style={styles.notesSection}>
             <Text style={styles.notesHeader}>TERMS & ACKNOWLEDGEMENT</Text>
             <View style={styles.notesBody}>
-              <Text>• This is a computer-generated Payment Receipt Voucher confirming acknowledgment of received funds.</Text>
+              <Text>• This is a computer-generated Payment Receipt confirming acknowledgment of received funds.</Text>
               <Text>• All payments are subject to real-time clearance and bank reconciliation.</Text>
               <Text>• Thank you for choosing EnergyGurus for your Solar Operations & Maintenance services.</Text>
               <Text style={{ fontWeight: 'bold', marginTop: 1 }}>• This is computer generated Receipt no need for signature and stamp</Text>

@@ -496,7 +496,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-xs font-semibold">Customer Name *</FormLabel>
-                          <FormControl><Input placeholder="e.g. Aafaaq Ali Khan" {...field} className="h-10 text-xs" /></FormControl>
+                          <FormControl><Input placeholder="e.g. Yousaf Zaman" {...field} className="h-10 text-xs" /></FormControl>
                           <FormMessage />
                         </FormItem>
                       )}

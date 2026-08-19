@@ -151,23 +151,57 @@ const styles = StyleSheet.create({
   },
 
   // Footer
-  footer: {
-    marginTop: 8,
-    borderTop: '1px solid #cbd5e1',
-    paddingTop: 4,
+  bottomPinnedContainer: {
+    marginTop: 'auto',
+    marginBottom: 2,
+    flexShrink: 0,
+  },
+  footerRow: {
+    flexDirection: 'row',
+    marginTop: 4,
+    justifyContent: 'space-between',
+    paddingHorizontal: 4,
+  },
+  footerAddress: {
+    width: '48%',
+    fontSize: 8,
+    lineHeight: 1.25,
+  },
+  footerTitle: {
+    color: '#002868',
+    fontWeight: 'bold',
+    marginBottom: 2,
+    fontSize: 8.5,
+  },
+  footerAddressText: {
+    color: '#333333',
+    fontSize: 8,
+  },
+  footerBlueBar: {
+    backgroundColor: '#002868',
+    color: '#FFFFFF',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 4,
+    borderRadius: 3,
+    marginTop: 5,
     alignItems: 'center',
   },
-  footerText: {
-    fontSize: 7.5,
-    color: '#64748b',
-    textAlign: 'center',
-    marginVertical: 1,
+  footerBarText: {
+    color: '#FFFFFF',
+    fontSize: 8,
+  },
+  footerBarDivider: {
+    color: '#FFFFFF',
+    fontSize: 8,
+    opacity: 0.8,
   },
   boldDisclaimer: {
     fontSize: 8,
     fontWeight: 'bold',
     color: '#002868',
-    marginTop: 2,
+    textAlign: 'center',
+    marginBottom: 3,
   }
 })
 
@@ -329,10 +363,31 @@ export function LedgerDocument({ customer, ledgerEntries, logoSrc }: LedgerDocum
         </View>
 
         {/* Footer */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>EnergyGurus Private Limited • Solar Operations & O&M Management</Text>
-          <Text style={styles.footerText}>Support: info@energygurus.online | UAN: +92 331 4111483</Text>
+        <View style={styles.bottomPinnedContainer}>
           <Text style={styles.boldDisclaimer}>This is computer generated statement no need for signature and stamp</Text>
+          
+          {/* Footer Addresses */}
+          <View style={styles.footerRow}>
+            <View style={styles.footerAddress}>
+              <Text style={styles.footerTitle}>Head Office:</Text>
+              <Text style={styles.footerAddressText}>Building No 61, Block A, Bankers Society,</Text>
+              <Text style={styles.footerAddressText}>Adjacent State Life Housing Society - Lahore</Text>
+            </View>
+            <View style={[styles.footerAddress, { borderLeft: '1px solid #c2d0e0', paddingLeft: 12 }]}>
+              <Text style={styles.footerTitle}>South Office:</Text>
+              <Text style={styles.footerAddressText}>80 C, Ground Floor 13th Commercial Street Road,</Text>
+              <Text style={styles.footerAddressText}>DHA Phase II Extension CCA - Karachi</Text>
+            </View>
+          </View>
+
+          {/* Bottom Blue Bar */}
+          <View style={styles.footerBlueBar}>
+            <Text style={styles.footerBarText}>www.energygurus.online</Text>
+            <Text style={styles.footerBarDivider}>|</Text>
+            <Text style={styles.footerBarText}>facebook.com/energygurus.online</Text>
+            <Text style={styles.footerBarDivider}>|</Text>
+            <Text style={styles.footerBarText}>youtube.com/energygurus.online</Text>
+          </View>
         </View>
 
       </Page>

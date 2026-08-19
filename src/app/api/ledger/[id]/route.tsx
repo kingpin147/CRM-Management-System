@@ -67,9 +67,13 @@ export async function GET(
   // Load logo as base64 data URI
   let logoSrc = ''
   try {
-    const logoPath = path.join(process.cwd(), 'public', 'energygurus-logo.png')
+    const logoPath = path.join(process.cwd(), 'public', 'invoice-logo.png')
+    const logoPathPdf = path.join(process.cwd(), 'public', 'LogoNew-pdf.png')
     if (fs.existsSync(logoPath)) {
       const logoBuffer = fs.readFileSync(logoPath)
+      logoSrc = `data:image/png;base64,${logoBuffer.toString('base64')}`
+    } else if (fs.existsSync(logoPathPdf)) {
+      const logoBuffer = fs.readFileSync(logoPathPdf)
       logoSrc = `data:image/png;base64,${logoBuffer.toString('base64')}`
     }
   } catch (e) {

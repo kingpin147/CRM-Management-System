@@ -975,10 +975,10 @@ export default async function CustomerDetailPage({
                                   target="_blank" 
                                   rel="noopener noreferrer"
                                   className="text-emerald-700 hover:text-emerald-950 underline font-bold inline-flex items-center gap-1 group"
-                                  title="Click to view/download Payment Receipt Voucher PDF"
+                                  title="Click to view/download Payment Receipt PDF"
                                 >
                                   {refLabel || 'PRV-Receipt'}
-                                  <span className="text-[10px] bg-emerald-100 text-emerald-900 px-1 py-0.2 rounded border border-emerald-300 font-bold">Voucher PDF</span>
+                                  <span className="text-[10px] bg-emerald-100 text-emerald-900 px-1 py-0.2 rounded border border-emerald-300 font-bold">Receipt PDF</span>
                                 </a>
                               ) : (
                                 <span className={isReversal ? "text-slate-600 font-semibold" : ""}>{le.refNumber}</span>

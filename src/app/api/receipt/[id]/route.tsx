@@ -100,7 +100,7 @@ export async function GET(
 
   // Load logo
   let logoSrc: string | undefined
-  const logoPath = path.join(process.cwd(), 'public', 'logo.png')
+  const logoPath = path.join(process.cwd(), 'public', 'invoice-logo.png')
   if (fs.existsSync(logoPath)) {
     const logoBuffer = fs.readFileSync(logoPath)
     logoSrc = `data:image/png;base64,${logoBuffer.toString('base64')}`
@@ -117,12 +117,12 @@ export async function GET(
 
     const headers = new Headers()
     headers.set('Content-Type', 'application/pdf')
-    const fileName = `Receipt-Voucher-${receiptData.refNumber || 'Payment'}.pdf`
+    const fileName = `Payment-Receipt-${receiptData.refNumber || 'Payment'}.pdf`
     headers.set('Content-Disposition', `${isDownload ? 'attachment' : 'inline'}; filename="${fileName}"`)
 
     return new NextResponse(stream as any, { headers })
   } catch (error: any) {
-    console.error('Error generating Receipt Voucher PDF:', error)
-    return NextResponse.json({ error: 'Failed to generate receipt voucher PDF' }, { status: 500 })
+    console.error('Error generating Payment Receipt PDF:', error)
+    return NextResponse.json({ error: 'Failed to generate payment receipt PDF' }, { status: 500 })
   }
 }
