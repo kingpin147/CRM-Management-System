@@ -56,3 +56,33 @@ export function formatDateTime(
   return `${day} ${month} ${year} ${formattedHours}:${minutes} ${ampm}`
 }
 
+/**
+ * Auto-formats Pakistani DISCO Consumer / Reference ID (e.g., 04-11515-0469701 U)
+ * When executive types digits only, hyphens are inserted automatically: XX-XXXXX-XXXXXXX.
+ */
+export function formatDiscoRefNo(val: string): string {
+  if (!val) return ''
+  const upper = val.toUpperCase()
+
+  const raw = upper.replace(/[^A-Z0-9]/g, '')
+  if (!raw) return ''
+
+  const digitsMatch = raw.match(/^\d+/)
+  const digits = digitsMatch ? digitsMatch[0] : ''
+  const lettersMatch = raw.match(/[A-Z]+$/)
+  const letters = lettersMatch ? lettersMatch[0] : ''
+
+  if (!digits) return letters
+
+  let formattedDigits = ''
+  if (digits.length <= 2) {
+    formattedDigits = digits
+  } else if (digits.length <= 7) {
+    formattedDigits = `${digits.slice(0, 2)}-${digits.slice(2)}`
+  } else {
+    formattedDigits = `${digits.slice(0, 2)}-${digits.slice(2, 7)}-${digits.slice(7, 14)}`
+  }
+
+  return letters ? `${formattedDigits} ${letters}` : formattedDigits
+}
+

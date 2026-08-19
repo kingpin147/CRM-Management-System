@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog'
 import { saveSolarSystem } from './actions'
 import { AutoSuggestInput } from '@/components/ui/auto-suggest-input'
+import { formatDiscoRefNo } from '@/lib/utils'
 
 const INVERTER_BRANDS = [
   'Knox', 'Fronius', 'Livoltek', 'GoodWe', 'Galaxy', 'Solis', 'CoreTech', 'Inverex',
@@ -359,9 +360,9 @@ export function SolarSystemDialog({
                     <Label className="text-xs font-semibold text-[var(--color-ink)]">{disco || 'DISCO'} Ref / Consumer ID #</Label>
                     <Input
                       value={discoRefNo}
-                      onChange={(e) => setDiscoRefNo(e.target.value)}
-                      placeholder="e.g. 14-digit DISCO Ref / Consumer ID"
-                      className="h-9 text-xs border-[var(--color-line)] bg-white font-mono"
+                      onChange={(e) => setDiscoRefNo(formatDiscoRefNo(e.target.value))}
+                      placeholder="e.g. 04-11515-0469701 U"
+                      className="h-9 text-xs border-[var(--color-line)] bg-white font-mono font-bold tracking-wider"
                     />
                   </div>
                   <div className="space-y-1">

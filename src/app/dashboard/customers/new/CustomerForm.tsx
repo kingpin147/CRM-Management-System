@@ -17,6 +17,7 @@ import { CustomerType } from '@prisma/client'
 import { ChevronRight, ChevronLeft, CheckCircle2, Check, Sparkles, Loader2, AlertCircle } from 'lucide-react'
 import { AutoSuggestInput } from '@/components/ui/auto-suggest-input'
 import { CITIES_LIST, getAreasForCity, getDefaultDiscoForCity } from '@/lib/pakistan-cities-areas'
+import { formatDiscoRefNo } from '@/lib/utils'
 
 const customerSchema = z.object({
   // TAB 1: Customer Details + Package Details
@@ -1118,12 +1119,19 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                   {/* DISCO Customer ID # */}
                   <FormField control={form.control} name="discoRefNo" render={({ field }) => {
                     const currentDisco = form.watch('disco') || 'LESCO'
-                    const placeholder = DISCO_PLACEHOLDERS[currentDisco] || `e.g. ${currentDisco} Consumer / ID #`
                     return (
                       <FormItem>
                         <FormLabel className="text-xs font-semibold">{currentDisco} Customer ID #</FormLabel>
                         <FormControl>
-                          <Input placeholder={placeholder} {...field} className="h-10 text-xs font-mono" />
+                          <Input
+                            placeholder="e.g. 04-11515-0469701 U"
+                            value={field.value || ''}
+                            onChange={(e) => {
+                              const formatted = formatDiscoRefNo(e.target.value)
+                              field.onChange(formatted)
+                            }}
+                            className="h-10 text-xs font-mono font-bold tracking-wider"
+                          />
                         </FormControl>
                       </FormItem>
                     )
