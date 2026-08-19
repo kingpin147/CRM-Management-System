@@ -15,6 +15,32 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { saveSolarSystem } from './actions'
+import { AutoSuggestInput } from '@/components/ui/auto-suggest-input'
+
+const INVERTER_BRANDS = [
+  'Knox', 'Fronius', 'Livoltek', 'GoodWe', 'Galaxy', 'Solis', 'CoreTech', 'Inverex',
+  'Ziewnic', 'Itel', 'Sunviour', 'Yinergy', 'Huawei', 'SAJ', 'Fox ESS', 'Solplanet',
+  'Solax Power', 'Tesla', 'Crown', 'Growatt', 'Deye', 'Sungrow', 'Sofar', 'SMA',
+  'SolarEdge', 'KSTAR', 'SolarMax', 'SRNE', 'Voltronic / Axpert', 'Kodak', 'Sineng',
+  'FIMER', 'Canadian Solar', 'Apex', 'Gripsun', 'Anicsun', 'Maxpower', 'Auxsol',
+  'Onyx', 'Powerage', 'Sunlife', 'Other'
+]
+
+const PANEL_BRANDS = [
+  'AIKO', 'LONGi', 'Risen', 'Trina Solar', 'Jinko', 'Astronergy', 'GCL', 'Huasun',
+  'DMEGC', 'JA Solar', 'Jolywood', 'DASolar', 'DAH Solar', 'TW Solar', 'Jetion Solar',
+  'Grand Sunergy', 'SPIC', 'Solargiga', 'Canadian Solar', 'REC Group', 'Eging PV',
+  'RUNERGY', 'URECO', 'Yingli', 'Suntech', 'Kalyon PV', 'Qcells', 'CECEP',
+  'Jinergy', 'Meyer Burger', 'Qn-SOLAR', 'Seraphim', 'ZNSHINE', 'OSDA', 'Other'
+]
+
+const BATTERY_BRANDS = [
+  'Dyness', 'Narada', 'Pylontech', 'Sunwoda', 'Dongjin', 'BYD', 'Knox', 'GoodWe',
+  'Sacred Sun', 'Genix Green', 'Inverex', 'Growatt', 'Deye', 'Huawei', 'Fox ESS',
+  'Sungrow', 'Sofar', 'SolaX', 'SRNE', 'Osaka', 'Phoenix', 'Apex Solar', 'MaxPower', 'Other'
+]
+
+const DISCO_LIST = ['LESCO', 'IESCO', 'K-Electric', 'FESCO', 'MEPCO', 'PESCO', 'GEPCO', 'QESCO', 'HESCO', 'SEPCO', 'TESCO', 'Other']
 
 export function SolarSystemDialog({
   customerId,
@@ -29,36 +55,36 @@ export function SolarSystemDialog({
   const [error, setError] = React.useState<string | null>(null)
 
   // Inverter
-  const [inverterBrand, setInverterBrand] = React.useState(solarSystem?.inverterBrand || 'Huawei')
-  const [inverterType, setInverterType] = React.useState(solarSystem?.inverterType || 'Hybrid')
-  const [inverterPhase, setInverterPhase] = React.useState(solarSystem?.inverterPhase || 'Three Phase')
-  const [inverterSize, setInverterSize] = React.useState(solarSystem?.inverterSize || '10 kW')
+  const [inverterBrand, setInverterBrand] = React.useState(solarSystem?.inverterBrand || '')
+  const [inverterType, setInverterType] = React.useState(solarSystem?.inverterType || '')
+  const [inverterPhase, setInverterPhase] = React.useState(solarSystem?.inverterPhase || '')
+  const [inverterSize, setInverterSize] = React.useState(solarSystem?.inverterSize || '')
   const [inverterSerial, setInverterSerial] = React.useState(solarSystem?.inverterSerial || '')
-  const [noOfInverters, setNoOfInverters] = React.useState(solarSystem?.noOfInverters || 1)
+  const [noOfInverters, setNoOfInverters] = React.useState<number>(solarSystem?.noOfInverters ?? 0)
   const [inverterWarrantyEnd, setInverterWarrantyEnd] = React.useState(
     solarSystem?.inverterWarrantyEnd ? new Date(solarSystem.inverterWarrantyEnd).toISOString().split('T')[0] : ''
   )
 
   // Panels
-  const [panelBrand, setPanelBrand] = React.useState(solarSystem?.panelBrand || 'Longi')
-  const [panelType, setPanelType] = React.useState(solarSystem?.panelType || 'Bifacial')
-  const [panelWattage, setPanelWattage] = React.useState(solarSystem?.panelWattage || 585)
-  const [noOfPanels, setNoOfPanels] = React.useState(solarSystem?.noOfPanels || 18)
+  const [panelBrand, setPanelBrand] = React.useState(solarSystem?.panelBrand || '')
+  const [panelType, setPanelType] = React.useState(solarSystem?.panelType || '')
+  const [panelWattage, setPanelWattage] = React.useState<number>(solarSystem?.panelWattage ?? 0)
+  const [noOfPanels, setNoOfPanels] = React.useState<number>(solarSystem?.noOfPanels ?? 0)
   const [panelWarrantyEnd, setPanelWarrantyEnd] = React.useState(
     solarSystem?.panelWarrantyEnd ? new Date(solarSystem.panelWarrantyEnd).toISOString().split('T')[0] : ''
   )
 
   // Battery & Grid
-  const [batteryBrand, setBatteryBrand] = React.useState(solarSystem?.batteryBrand || 'Narada')
-  const [batteryType, setBatteryType] = React.useState(solarSystem?.batteryType || 'Lithium')
-  const [noOfBatteries, setNoOfBatteries] = React.useState(solarSystem?.noOfBatteries || 1)
+  const [batteryBrand, setBatteryBrand] = React.useState(solarSystem?.batteryBrand || '')
+  const [batteryType, setBatteryType] = React.useState(solarSystem?.batteryType || '')
+  const [noOfBatteries, setNoOfBatteries] = React.useState<number>(solarSystem?.noOfBatteries ?? 0)
   const [batterySerial, setBatterySerial] = React.useState(solarSystem?.batterySerial || '')
   const [batteryWarrantyEnd, setBatteryWarrantyEnd] = React.useState(
     solarSystem?.batteryWarrantyEnd ? new Date(solarSystem.batteryWarrantyEnd).toISOString().split('T')[0] : ''
   )
-  const [disco, setDisco] = React.useState(solarSystem?.disco || 'LESCO')
+  const [disco, setDisco] = React.useState(solarSystem?.disco || '')
   const [discoRefNo, setDiscoRefNo] = React.useState(solarSystem?.discoRefNo || '')
-  const [meterType, setMeterType] = React.useState(solarSystem?.meterType || 'Green Meter')
+  const [meterType, setMeterType] = React.useState(solarSystem?.meterType || '')
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
@@ -134,20 +160,13 @@ export function SolarSystemDialog({
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold text-[var(--color-ink)]">Brand</Label>
-                    <select
+                    <AutoSuggestInput
                       value={inverterBrand}
-                      onChange={(e) => setInverterBrand(e.target.value)}
-                      className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white focus:ring-2 focus:ring-[var(--color-amber)]"
-                    >
-                      <option value="Huawei">Huawei</option>
-                      <option value="Solis">Solis</option>
-                      <option value="Sungrow">Sungrow</option>
-                      <option value="Fronius">Fronius</option>
-                      <option value="Growatt">Growatt</option>
-                      <option value="GoodWe">GoodWe</option>
-                      <option value="Inverex">Inverex</option>
-                      <option value="Knox">Knox</option>
-                    </select>
+                      onChange={setInverterBrand}
+                      options={INVERTER_BRANDS}
+                      placeholder="Type or select brand..."
+                      className="h-9 text-xs bg-white"
+                    />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold text-[var(--color-ink)]">Type</Label>
@@ -187,10 +206,11 @@ export function SolarSystemDialog({
                     <Label className="text-xs font-semibold text-[var(--color-ink)]">No. of Inverters</Label>
                     <Input
                       type="number"
-                      min={1}
+                      min={0}
                       max={10}
+                      placeholder="0"
                       value={noOfInverters}
-                      onChange={(e) => setNoOfInverters(Number(e.target.value) || 1)}
+                      onChange={(e) => setNoOfInverters(Math.max(0, Number(e.target.value) || 0))}
                       className="h-9 text-xs border-[var(--color-line)] bg-white font-mono"
                     />
                   </div>
@@ -221,17 +241,13 @@ export function SolarSystemDialog({
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold text-[var(--color-ink)]">Panel Brand</Label>
-                    <select
+                    <AutoSuggestInput
                       value={panelBrand}
-                      onChange={(e) => setPanelBrand(e.target.value)}
-                      className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white"
-                    >
-                      <option value="Longi">Longi</option>
-                      <option value="Jinko">Jinko</option>
-                      <option value="Canadian Solar">Canadian Solar</option>
-                      <option value="Trina">Trina Solar</option>
-                      <option value="JA Solar">JA Solar</option>
-                    </select>
+                      onChange={setPanelBrand}
+                      options={PANEL_BRANDS}
+                      placeholder="Type or select brand..."
+                      className="h-9 text-xs bg-white"
+                    />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold text-[var(--color-ink)]">Technology</Label>
@@ -249,18 +265,22 @@ export function SolarSystemDialog({
                     <Label className="text-xs font-semibold text-[var(--color-ink)]">Wattage (W)</Label>
                     <Input
                       type="number"
+                      min={0}
+                      placeholder="0"
                       value={panelWattage}
-                      onChange={(e) => setPanelWattage(Number(e.target.value))}
-                      className="h-9 text-xs border-[var(--color-line)] bg-white"
+                      onChange={(e) => setPanelWattage(Math.max(0, Number(e.target.value) || 0))}
+                      className="h-9 text-xs border-[var(--color-line)] bg-white font-mono"
                     />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold text-[var(--color-ink)]">Qty Panels</Label>
                     <Input
                       type="number"
+                      min={0}
+                      placeholder="0"
                       value={noOfPanels}
-                      onChange={(e) => setNoOfPanels(Number(e.target.value))}
-                      className="h-9 text-xs border-[var(--color-line)] bg-white"
+                      onChange={(e) => setNoOfPanels(Math.max(0, Number(e.target.value) || 0))}
+                      className="h-9 text-xs border-[var(--color-line)] bg-white font-mono"
                     />
                   </div>
                 </div>
@@ -283,17 +303,13 @@ export function SolarSystemDialog({
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold text-[var(--color-ink)]">Battery Brand</Label>
-                    <select
+                    <AutoSuggestInput
                       value={batteryBrand}
-                      onChange={(e) => setBatteryBrand(e.target.value)}
-                      className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white"
-                    >
-                      <option value="Narada">Narada</option>
-                      <option value="Pylontech">Pylontech</option>
-                      <option value="BYD">BYD</option>
-                      <option value="Dyness">Dyness</option>
-                      <option value="None">None</option>
-                    </select>
+                      onChange={setBatteryBrand}
+                      options={BATTERY_BRANDS}
+                      placeholder="Type or select brand..."
+                      className="h-9 text-xs bg-white"
+                    />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold text-[var(--color-ink)]">Battery Chemistry</Label>
@@ -312,10 +328,11 @@ export function SolarSystemDialog({
                     <Label className="text-xs font-semibold text-[var(--color-ink)]">No. of Batteries</Label>
                     <Input
                       type="number"
-                      min={1}
+                      min={0}
                       max={20}
+                      placeholder="0"
                       value={noOfBatteries}
-                      onChange={(e) => setNoOfBatteries(Number(e.target.value) || 1)}
+                      onChange={(e) => setNoOfBatteries(Math.max(0, Number(e.target.value) || 0))}
                       className="h-9 text-xs border-[var(--color-line)] bg-white font-mono"
                     />
                   </div>
@@ -330,11 +347,12 @@ export function SolarSystemDialog({
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold text-[var(--color-ink)]">DISCO Utility Company</Label>
-                    <Input
+                    <AutoSuggestInput
                       value={disco}
-                      onChange={(e) => setDisco(e.target.value)}
-                      placeholder="LESCO / IESCO / K-Electric"
-                      className="h-9 text-xs border-[var(--color-line)] bg-white"
+                      onChange={setDisco}
+                      options={DISCO_LIST}
+                      placeholder="Type or select DISCO..."
+                      className="h-9 text-xs bg-white"
                     />
                   </div>
                   <div className="space-y-1">

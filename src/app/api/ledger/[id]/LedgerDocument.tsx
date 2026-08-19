@@ -1,6 +1,8 @@
 import React from 'react'
 import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer'
 
+import { formatDate } from '@/lib/utils'
+
 const styles = StyleSheet.create({
   page: {
     padding: 16,
@@ -218,7 +220,7 @@ export function LedgerDocument({ customer, ledgerEntries, logoSrc }: LedgerDocum
   const monitoringTime = customer?.packagePlan?.monitoringTime || '12 Hours'
   const billingType = customer?.packagePlan?.billingType || 'Quarterly'
 
-  const todayStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+  const todayStr = formatDate(new Date())
 
   let totalDebit = 0
   let totalCredit = 0
@@ -325,7 +327,7 @@ export function LedgerDocument({ customer, ledgerEntries, logoSrc }: LedgerDocum
               ? `PRV-${le.refNumber?.replace(/^(INV|TX)-/, '') || 'PAY'}`
               : (le.refNumber || '—')
 
-            const dStr = le.createdAt ? new Date(le.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
+            const dStr = le.createdAt ? formatDate(le.createdAt) : '—'
 
             return (
               <View key={le.id || idx} style={styles.tableRow}>
@@ -364,8 +366,6 @@ export function LedgerDocument({ customer, ledgerEntries, logoSrc }: LedgerDocum
 
         {/* Footer */}
         <View style={styles.bottomPinnedContainer}>
-          <Text style={styles.boldDisclaimer}>This is computer generated statement no need for signature and stamp</Text>
-          
           {/* Footer Addresses */}
           <View style={styles.footerRow}>
             <View style={styles.footerAddress}>

@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Download } from 'lucide-react'
+import { formatDate } from '@/lib/utils'
 
 export function ExportLedgerCsvButton({
   customerName,
@@ -17,7 +18,7 @@ export function ExportLedgerCsvButton({
 
     const headers = ['Date', 'Reference #', 'Narration / Description', 'Debit (PKR)', 'Credit (PKR)', 'Running Balance (PKR)']
     const rows = ledgerEntries.map((e) => [
-      `"${new Date(e.createdAt || e.date).toLocaleDateString()}"`,
+      `"${formatDate(e.createdAt || e.date)}"`,
       `"${e.refNumber || '-'}"`,
       `"${(e.narration || '').replace(/"/g, '""')}"`,
       Number(e.debit || 0).toFixed(2),

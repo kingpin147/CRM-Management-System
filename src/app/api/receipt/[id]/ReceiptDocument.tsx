@@ -289,7 +289,7 @@ export function ReceiptDocument({
   const monthShorts = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
   
   const paymentDate = receipt?.createdAt ? new Date(receipt.createdAt) : new Date()
-  const paymentDateStr = `${paymentDate.getDate()}-${monthShorts[paymentDate.getMonth()]}-${paymentDate.getFullYear()}`
+  const paymentDateStr = `${String(paymentDate.getDate()).padStart(2, '0')} ${monthShorts[paymentDate.getMonth()]} ${paymentDate.getFullYear()}`
   
   const rawRef = receipt?.refNumber || receipt?.id || '847291'
   const cleanDigits = rawRef.replace(/^(PAY|RCP|PRV|INV|TX|REV|KuickPay|KUICKPAY)-+/gi, '') || '847291'
@@ -417,17 +417,6 @@ export function ReceiptDocument({
               <Text>• This is a computer-generated Payment Receipt confirming acknowledgment of received funds.</Text>
               <Text>• All payments are subject to real-time clearance and bank reconciliation.</Text>
               <Text>• Thank you for choosing EnergyGurus for your Solar Operations & Maintenance services.</Text>
-              <Text style={{ fontWeight: 'bold', marginTop: 1 }}>• This is computer generated Receipt no need for signature and stamp</Text>
-            </View>
-          </View>
-
-          {/* Signatures */}
-          <View style={styles.signRow}>
-            <View style={styles.signBox}>
-              <Text style={styles.signText}>Customer Signature</Text>
-            </View>
-            <View style={styles.signBox}>
-              <Text style={styles.signText}>Authorized Officer / Accounts</Text>
             </View>
           </View>
 

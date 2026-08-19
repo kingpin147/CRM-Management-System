@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog'
 import { createInventoryItem, createCustomBrand } from './actions'
 import { Plus, Sparkles, Tag, Layers, MapPin, DollarSign, AlertCircle } from 'lucide-react'
+import { AutoSuggestInput } from '@/components/ui/auto-suggest-input'
 
 const CATEGORIES = [
   { value: 'INVERTER', label: 'Inverters (Hybrid / OnGrid / OffGrid)', prefix: 'INV' },
@@ -42,24 +43,25 @@ export function AddInventoryItemDialog({
   const [error, setError] = useState<string | null>(null)
 
   // Form State
-  const [category, setCategory] = useState('INVERTER')
+  const [category, setCategory] = useState('')
+  const [categoryInput, setCategoryInput] = useState('')
   const [sku, setSku] = useState('')
   const [name, setName] = useState('')
-  const [brand, setBrand] = useState(existingBrands[0]?.name || 'Huawei')
+  const [brand, setBrand] = useState('')
   const [customBrandMode, setCustomBrandMode] = useState(false)
   const [newBrandName, setNewBrandName] = useState('')
   const [model, setModel] = useState('')
   const [specifications, setSpecifications] = useState('')
-  const [unit, setUnit] = useState('Units')
-  const [quantityInStock, setQuantityInStock] = useState('10')
-  const [minStockAlert, setMinStockAlert] = useState('5')
+  const [unit, setUnit] = useState('')
+  const [quantityInStock, setQuantityInStock] = useState('0')
+  const [minStockAlert, setMinStockAlert] = useState('0')
   const [unitCost, setUnitCost] = useState('')
   const [unitSellingPrice, setUnitSellingPrice] = useState('')
-  const [warehouseLocation, setWarehouseLocation] = useState('Lahore Central Warehouse - Bay 1')
+  const [warehouseLocation, setWarehouseLocation] = useState('')
 
   // Auto-generate SKU helper
   function generateSuggestedSku() {
-    const catObj = CATEGORIES.find(c => c.value === category)
+    const catObj = CATEGORIES.find(c => c.value === category || c.label === categoryInput)
     const prefix = catObj ? catObj.prefix : 'SOL'
     const brandCode = (customBrandMode ? newBrandName : brand || 'GEN').substring(0, 3).toUpperCase()
     const modelCode = model ? model.replace(/[^a-zA-Z0-9]/g, '').substring(0, 6).toUpperCase() : Math.floor(100 + Math.random() * 900)
@@ -159,21 +161,21 @@ export function AddInventoryItemDialog({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs font-bold text-[#002868]">Equipment Category *</Label>
-                  <select
-                    value={category}
-                    onChange={(e) => {
-                      setCategory(e.target.value)
-                      if (!sku) {
-                        const catObj = CATEGORIES.find(c => c.value === e.target.value)
-                        if (catObj) setSku(`${catObj.prefix}-`)
+                  <AutoSuggestInput
+                    value={categoryInput}
+                    onChange={(val) => {
+                      setCategoryInput(val)
+                      const catObj = CATEGORIES.find(c => c.label.toLowerCase() === val.toLowerCase() || c.value.toLowerCase() === val.toLowerCase())
+                      const catVal = catObj ? catObj.value : val
+                      setCategory(catVal)
+                      if (catObj && !sku) {
+                        setSku(`${catObj.prefix}-`)
                       }
                     }}
-                    className="w-full h-10 px-3 rounded-lg border border-slate-300 text-xs font-semibold text-slate-800 bg-white"
-                  >
-                    {CATEGORIES.map(c => (
-                      <option key={c.value} value={c.value}>{c.label}</option>
-                    ))}
-                  </select>
+                    options={CATEGORIES.map(c => c.label)}
+                    placeholder="Type or select category..."
+                    className="h-10 text-xs font-semibold bg-white"
+                  />
                 </div>
 
                 <div className="space-y-1.5">
@@ -241,15 +243,13 @@ export function AddInventoryItemDialog({
                       </Button>
                     </div>
                   ) : (
-                    <select
+                    <AutoSuggestInput
                       value={brand}
-                      onChange={(e) => setBrand(e.target.value)}
-                      className="w-full h-10 px-3 rounded-lg border border-slate-300 text-xs font-semibold text-slate-800 bg-white"
-                    >
-                      {existingBrands.map(b => (
-                        <option key={b.id || b.name} value={b.name}>{b.name}</option>
-                      ))}
-                    </select>
+                      onChange={setBrand}
+                      options={existingBrands.map(b => b.name)}
+                      placeholder="Type or select brand..."
+                      className="h-10 text-xs bg-white"
+                    />
                   )}
                 </div>
 

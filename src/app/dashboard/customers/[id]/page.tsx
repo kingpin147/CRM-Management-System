@@ -317,12 +317,6 @@ export default async function CustomerDetailPage({
                             </div>
                           </TableCell>
                         </TableRow>
-                        <TableRow className="border-b hover:bg-transparent">
-                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Subscription Charges</TableCell>
-                          <TableCell className="text-xs font-bold text-[#002868] font-mono">
-                            PKR {Number(customer.packagePlan?.totalAmount || customer.packagePlan?.monthlyBasePrice || 50000).toLocaleString(undefined, {minimumFractionDigits: 2})}
-                          </TableCell>
-                        </TableRow>
                         <TableRow className="hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Next Billing date</TableCell>
                           <TableCell className="text-xs text-[var(--color-ink)] font-semibold font-mono">

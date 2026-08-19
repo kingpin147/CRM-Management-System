@@ -13,6 +13,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { getItemStockLogs } from './actions'
+import { formatDate } from '@/lib/utils'
 import { History, ArrowDownLeft, ArrowUpRight, ShieldAlert, FileText, Clock } from 'lucide-react'
 
 export function StockHistoryDialog({ item }: { item: any }) {
@@ -89,7 +90,7 @@ export function StockHistoryDialog({ item }: { item: any }) {
                 <TableBody>
                   {logs.map((log) => {
                     const d = new Date(log.createdAt)
-                    const dateStr = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                    const dateStr = formatDate(log.createdAt)
                     const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                     const isPositive = log.changeType === 'STOCK_IN' || log.changeType === 'INITIAL_STOCK'
 

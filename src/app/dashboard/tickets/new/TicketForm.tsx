@@ -52,12 +52,12 @@ export function TicketForm({ customers }: { customers: { id: string, fullName: s
     resolver: zodResolver(ticketSchema),
     defaultValues: {
       customerId: '',
-      ticketType: 'TECHNICAL_COMPLAINT',
-      category: 'Inverter',
+      ticketType: '' as any,
+      category: '',
       subCategory: '',
       faultCode: '',
-      actionPriority: 'Medium',
-      assignedTo: 'O&M',
+      actionPriority: '',
+      assignedTo: '',
       description: '',
     },
   })

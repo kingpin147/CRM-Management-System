@@ -16,6 +16,8 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { updateCustomer } from './actions'
+import { AutoSuggestInput } from '@/components/ui/auto-suggest-input'
+import { CITIES_LIST, getAreasForCity } from '@/lib/pakistan-cities-areas'
 
 export function EditCustomerDialog({ customer }: { customer: Customer }) {
   const router = useRouter()
@@ -236,10 +238,22 @@ export function EditCustomerDialog({ customer }: { customer: Customer }) {
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-[11px] font-semibold text-[var(--color-ink)]">City</Label>
-                  <Input
+                  <Label className="text-[11px] font-semibold text-[var(--color-ink)]">City *</Label>
+                  <AutoSuggestInput
                     value={city}
-                    onChange={(e) => setCity(e.target.value)}
+                    onChange={setCity}
+                    options={CITIES_LIST}
+                    placeholder="Select city..."
+                    className="h-9 text-xs border-[var(--color-line)] bg-white font-semibold"
+                  />
+                </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <Label className="text-[11px] font-semibold text-[var(--color-ink)]">Area / Society</Label>
+                  <AutoSuggestInput
+                    value={area}
+                    onChange={setArea}
+                    options={getAreasForCity(city)}
+                    placeholder="Select or type area/society..."
                     className="h-9 text-xs border-[var(--color-line)] bg-white"
                   />
                 </div>

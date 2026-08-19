@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog'
 import { updateInventoryItem, createCustomBrand } from './actions'
 import { Edit2, Layers, AlertCircle } from 'lucide-react'
+import { AutoSuggestInput } from '@/components/ui/auto-suggest-input'
 
 const CATEGORIES = [
   { value: 'INVERTER', label: 'Inverters (Hybrid / OnGrid / OffGrid)' },
@@ -43,8 +44,9 @@ export function EditInventoryItemDialog({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Form State initialized from item
-  const [category, setCategory] = useState(item.category || 'INVERTER')
+  const initialCatObj = CATEGORIES.find(c => c.value === item.category)
+  const [category, setCategory] = useState(item.category || '')
+  const [categoryInput, setCategoryInput] = useState(initialCatObj ? initialCatObj.label : (item.category || ''))
   const [sku, setSku] = useState(item.sku || '')
   const [name, setName] = useState(item.name || '')
   const [brand, setBrand] = useState(item.brand || 'Huawei')
@@ -146,15 +148,17 @@ export function EditInventoryItemDialog({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs font-bold text-[#002868]">Equipment Category *</Label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full h-10 px-3 rounded-lg border border-slate-300 text-xs font-semibold text-slate-800 bg-white"
-                  >
-                    {CATEGORIES.map(c => (
-                      <option key={c.value} value={c.value}>{c.label}</option>
-                    ))}
-                  </select>
+                  <AutoSuggestInput
+                    value={categoryInput}
+                    onChange={(val) => {
+                      setCategoryInput(val)
+                      const catObj = CATEGORIES.find(c => c.label.toLowerCase() === val.toLowerCase() || c.value.toLowerCase() === val.toLowerCase())
+                      setCategory(catObj ? catObj.value : val)
+                    }}
+                    options={CATEGORIES.map(c => c.label)}
+                    placeholder="Type or select category..."
+                    className="h-10 text-xs font-semibold bg-white"
+                  />
                 </div>
 
                 <div className="space-y-1.5">

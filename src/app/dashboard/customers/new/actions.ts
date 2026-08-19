@@ -44,7 +44,16 @@ export async function createCustomer(formData: FormData) {
   const cnicBackUrl = (formData.get('cnicBackUrl') as string) || null
 
   let accountExecutiveId = formData.get('accountExecutiveId') as string | null
-  if (accountExecutiveId === '' || accountExecutiveId === 'none') accountExecutiveId = null
+  if (!accountExecutiveId || accountExecutiveId === '' || accountExecutiveId === 'none' || accountExecutiveId === 'undefined') {
+    accountExecutiveId = null
+  } else if (accountExecutiveId) {
+    try {
+      const userExists = await prisma.user.findUnique({ where: { id: accountExecutiveId } })
+      if (!userExists) accountExecutiveId = null
+    } catch {
+      accountExecutiveId = null
+    }
+  }
 
   // Package fields
   const systemSizeKw = (formData.get('systemSizeKw') as string) || '10-20 kW'
@@ -63,14 +72,14 @@ export async function createCustomer(formData: FormData) {
   const discoRefNo = (formData.get('discoRefNo') as string) || null
   const meterType = (formData.get('meterType') as string) || 'Green Meter'
   const meterPhase = (formData.get('meterPhase') as string) || 'Three Phase'
-  const zeroExportDevice = formData.get('zeroExportDevice') === 'Installed'
+  const zeroExportDevice = formData.get('zeroExportDevice') === 'Installed' || formData.get('zeroExportDevice') === 'true'
   const inverterBrand = (formData.get('inverterBrand') as string) || 'Solis'
   const inverterType = (formData.get('inverterType') as string) || 'Hybrid'
   const inverterPhase = (formData.get('inverterPhase') as string) || 'Three Phase'
   const inverterCategory = (formData.get('inverterCategory') as string) || 'Low Voltage'
   const inverterSize = (formData.get('inverterSize') as string) || '6kW'
   const noOfInverters = Number(formData.get('noOfInverters') || 1)
-  const inverterSerial = (formData.get('inverterSerial') as string) || ''
+  const inverterSerial = (formData.get('inverterSerial') as string) || 'INV-GENERIC'
   const inverterWarrantyEnd = parseDate(formData.get('inverterWarrantyExpiry'))
   const panelBrand = (formData.get('panelBrand') as string) || 'LONGi'
   const panelType = (formData.get('panelType') as string) || 'Monofacial'
@@ -79,10 +88,10 @@ export async function createCustomer(formData: FormData) {
   const noOfPanels = Number(formData.get('noOfPanels') || 10)
   const totalWattage = panelWattage * noOfPanels
   const panelWarrantyEnd = parseDate(formData.get('panelWarrantyExpiry'))
-  const batteryCategory = (formData.get('batteryCategory') as string) || 'High Voltage'
+  const batteryCategory = (formData.get('batteryCategory') as string) || 'Low Voltage'
   const batteryType = (formData.get('batteryType') as string) || 'Lithium'
-  const batteryBrand = (formData.get('batteryBrand') as string) || 'Pylontech'
-  const noOfBatteries = Number(formData.get('noOfBatteries') || 1)
+  const batteryBrand = (formData.get('batteryBrand') as string) || 'N/A'
+  const noOfBatteries = Number(formData.get('noOfBatteries') || 0)
   const batteryWarrantyEnd = parseDate(formData.get('batteryWarrantyExpiry'))
   const earthing = (formData.get('earthingType') as string) || 'AC'
   const earthingOhms = (formData.get('earthingOhms') as string) || '0.5'
@@ -244,9 +253,10 @@ export async function createCustomer(formData: FormData) {
     revalidatePath('/dashboard/reports')
     return { success: true, customerId: newCustomer.id }
   } catch (error: any) {
+    console.error('Database/Server error in createCustomer:', error)
     if (error.code === 'P2002') {
-      return { error: 'A customer with this CNIC already exists.' }
+      return { error: 'A customer with this CNIC or Customer Code already exists in the system.' }
     }
-    return { error: error.message || 'Failed to create customer.' }
+    return { error: `Server error (${error.message || 'Database transaction failed'}). Please contact site administrator.` }
   }
 }

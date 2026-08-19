@@ -10,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card'
 
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table'
 import { createCustomerTicket } from './actions'
+import { AutoSuggestInput } from '@/components/ui/auto-suggest-input'
 
 const CATEGORY_MAP: Record<string, string[]> = {
   TECHNICAL_COMPLAINT: ['Inverter', 'Panel', 'Battery', 'Breaker'],
@@ -30,30 +31,23 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
   const [error, setError] = React.useState<string | null>(null)
   const [success, setSuccess] = React.useState<string | null>(null)
 
-  const [ticketType, setTicketType] = React.useState<string>('TECHNICAL_COMPLAINT')
-  const [category, setCategory] = React.useState('Inverter')
-  const [subCategory, setSubCategory] = React.useState('Inverter Brands')
-  const [faultCode, setFaultCode] = React.useState('(01) BatVolLow')
-  const [sourceOfComplain, setSourceOfComplain] = React.useState('UAN')
-  const [escalation, setEscalation] = React.useState('Level-1')
-  const [assignedTo, setAssignedTo] = React.useState('Operation & Maintenance')
+  const [ticketType, setTicketType] = React.useState<string>('')
+  const [category, setCategory] = React.useState('')
+  const [subCategory, setSubCategory] = React.useState('')
+  const [faultCode, setFaultCode] = React.useState('')
+  const [sourceOfComplain, setSourceOfComplain] = React.useState('')
+  const [escalation, setEscalation] = React.useState('')
+  const [assignedTo, setAssignedTo] = React.useState('')
   const [complainStatus, setComplainStatus] = React.useState('Pending')
-  const [firstCallResolution, setFirstCallResolution] = React.useState('No')
+  const [firstCallResolution, setFirstCallResolution] = React.useState('')
   const [description, setDescription] = React.useState('')
 
-  // When ticketType changes, reset category
+  // When ticketType changes, reset category & dependents
   const handleTicketTypeChange = (type: string) => {
     setTicketType(type)
-    const cats = CATEGORY_MAP[type] || []
-    const defaultCat = cats[0] || 'Inverter'
-    setCategory(defaultCat)
-    if (type === 'TECHNICAL_COMPLAINT') {
-      setSubCategory(`${defaultCat} Brands`)
-      setFaultCode(FAULT_MAP[defaultCat]?.[0] || '(01) BatVolLow')
-    } else {
-      setSubCategory('N/A')
-      setFaultCode('General')
-    }
+    setCategory('')
+    setSubCategory('')
+    setFaultCode('')
   }
 
   // When category changes, reset subCategory & fault
@@ -61,7 +55,7 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
     setCategory(cat)
     if (ticketType === 'TECHNICAL_COMPLAINT') {
       setSubCategory(`${cat} Brands`)
-      setFaultCode(FAULT_MAP[cat]?.[0] || 'General')
+      setFaultCode('')
     } else {
       setSubCategory('N/A')
       setFaultCode('General')
@@ -74,12 +68,18 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
     setError(null)
     setSuccess(null)
 
+    if (!ticketType || !category || !sourceOfComplain || !escalation || !assignedTo || !firstCallResolution) {
+      setError('Please select all required ticket options before submitting.')
+      setLoading(false)
+      return
+    }
+
     const formData = new FormData()
     formData.append('customerId', customerId)
     formData.append('ticketType', ticketType)
     formData.append('category', category)
-    formData.append('subCategory', subCategory)
-    formData.append('faultCode', faultCode)
+    formData.append('subCategory', subCategory || 'General')
+    formData.append('faultCode', faultCode || 'General')
     formData.append('sourceOfComplain', sourceOfComplain)
     formData.append('escalation', escalation)
     formData.append('assignedTo', assignedTo)
@@ -98,6 +98,10 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
       router.refresh()
     }
   }
+
+  const faultOptions = ticketType === 'TECHNICAL_COMPLAINT'
+    ? (category ? FAULT_MAP[category] || ['(01) BatVolLow', '(02) BatOverCurrSw'] : [])
+    : [category || 'General']
 
   return (
     <Card className="shadow-sm border-line overflow-hidden bg-white">
@@ -122,26 +126,28 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
             <TableBody>
               {/* Row 1: Ticket Type, Category, Sub Category, Fault */}
               <TableRow className="hover:bg-transparent border-b border-slate-200">
-                <TableCell className="font-bold text-xs bg-slate-50 w-36 border-r border-slate-200 text-[#002868]">Ticket Type:</TableCell>
+                <TableCell className="font-bold text-xs bg-slate-50 w-36 border-r border-slate-200 text-[#002868]">Ticket Type *:</TableCell>
                 <TableCell className="border-r border-slate-200">
                   <select
                     value={ticketType}
                     onChange={(e) => handleTicketTypeChange(e.target.value)}
                     className="w-full h-9 px-2 rounded border border-gray-300 text-xs font-medium bg-white"
                   >
-                    <option value="TECHNICAL_COMPLAINT">Technical Compaint</option>
+                    <option value="">Select Ticket Type...</option>
+                    <option value="TECHNICAL_COMPLAINT">Technical Complaint</option>
                     <option value="BILLING_COMPLAINT">Billing Complaint</option>
                     <option value="SERVICE_REQUEST">Service Request</option>
                   </select>
                 </TableCell>
 
-                <TableCell className="font-bold text-xs bg-slate-50 w-28 border-r border-slate-200 text-[#002868]">Category</TableCell>
+                <TableCell className="font-bold text-xs bg-slate-50 w-28 border-r border-slate-200 text-[#002868]">Category *</TableCell>
                 <TableCell className="border-r border-slate-200">
                   <select
                     value={category}
                     onChange={(e) => handleCategoryChange(e.target.value)}
                     className="w-full h-9 px-2 rounded border border-gray-300 text-xs font-medium bg-white"
                   >
+                    <option value="">Select Category...</option>
                     {(CATEGORY_MAP[ticketType] || []).map((cat) => (
                       <option key={cat} value={cat}>{cat}</option>
                     ))}
@@ -155,6 +161,7 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
                     onChange={(e) => setSubCategory(e.target.value)}
                     className="w-full h-9 px-2 rounded border border-gray-300 text-xs font-medium bg-white"
                   >
+                    <option value="">Select Sub Category...</option>
                     {ticketType === 'TECHNICAL_COMPLAINT' ? (
                       ['Inverter Brands', 'Panel Brands', 'Battery Brands', 'Breaker Brands'].map(s => (
                         <option key={s} value={s}>{s}</option>
@@ -167,44 +174,37 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
 
                 <TableCell className="font-bold text-xs bg-slate-50 w-24 border-r border-slate-200 text-[#002868]">Fault</TableCell>
                 <TableCell>
-                  <select
+                  <AutoSuggestInput
                     value={faultCode}
-                    onChange={(e) => setFaultCode(e.target.value)}
-                    className="w-full h-9 px-2 rounded border border-gray-300 text-xs font-medium bg-white"
-                  >
-                    {ticketType === 'TECHNICAL_COMPLAINT' ? (
-                      (FAULT_MAP[category] || ['(01) BatVolLow', '(02) BatOverCurrSw']).map(f => (
-                        <option key={f} value={f}>{f}</option>
-                      ))
-                    ) : (
-                      <option value={category}>{category}</option>
-                    )}
-                  </select>
+                    onChange={setFaultCode}
+                    options={faultOptions}
+                    placeholder="Type or select fault..."
+                    className="h-9 text-xs bg-white"
+                  />
                 </TableCell>
               </TableRow>
 
               {/* Row 2: Source Of Complain, Escalation */}
               <TableRow className="hover:bg-transparent border-b border-slate-200">
-                <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Source Of Complain</TableCell>
+                <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Source Of Complain *</TableCell>
                 <TableCell className="border-r border-slate-200">
-                  <select
+                  <AutoSuggestInput
                     value={sourceOfComplain}
-                    onChange={(e) => setSourceOfComplain(e.target.value)}
-                    className="w-full h-9 px-2 rounded border border-gray-300 text-xs font-medium bg-white"
-                  >
-                    {['UAN', 'Email', 'Whatsapp', 'Sales', 'Billing'].map(src => (
-                      <option key={src} value={src}>{src}</option>
-                    ))}
-                  </select>
+                    onChange={setSourceOfComplain}
+                    options={['UAN', 'Email', 'Whatsapp', 'Sales', 'Billing']}
+                    placeholder="Type or select source..."
+                    className="h-9 text-xs bg-white"
+                  />
                 </TableCell>
 
-                <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Escalation</TableCell>
+                <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Escalation *</TableCell>
                 <TableCell colSpan={5}>
                   <select
                     value={escalation}
                     onChange={(e) => setEscalation(e.target.value)}
                     className="w-full h-9 px-2 rounded border border-gray-300 text-xs font-medium bg-white"
                   >
+                    <option value="">Select Escalation Level...</option>
                     {['Level-1', 'Level-2', 'Level-3'].map(esc => (
                       <option key={esc} value={esc}>{esc}</option>
                     ))}
@@ -214,17 +214,15 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
 
               {/* Row 3: Assigned To, Complain Status, First Call Resolution */}
               <TableRow className="hover:bg-transparent border-b border-slate-200">
-                <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Assigned To</TableCell>
+                <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Assigned To *</TableCell>
                 <TableCell className="border-r border-slate-200">
-                  <select
+                  <AutoSuggestInput
                     value={assignedTo}
-                    onChange={(e) => setAssignedTo(e.target.value)}
-                    className="w-full h-9 px-2 rounded border border-gray-300 text-xs font-medium bg-white"
-                  >
-                    {['Operation & Maintenance', 'Billing', 'Sales', 'Customer Service', 'Support'].map(dept => (
-                      <option key={dept} value={dept}>{dept}</option>
-                    ))}
-                  </select>
+                    onChange={setAssignedTo}
+                    options={['Operation & Maintenance', 'Billing', 'Sales', 'Customer Service', 'Support']}
+                    placeholder="Type or select department..."
+                    className="h-9 text-xs bg-white"
+                  />
                 </TableCell>
 
                 <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Complain Status</TableCell>
@@ -234,13 +232,14 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
                   </Badge>
                 </TableCell>
 
-                <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">First Call Resolution</TableCell>
+                <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">First Call Resolution *</TableCell>
                 <TableCell colSpan={3}>
                   <select
                     value={firstCallResolution}
                     onChange={(e) => setFirstCallResolution(e.target.value)}
                     className="w-full h-9 px-2 rounded border border-gray-300 text-xs font-medium bg-white"
                   >
+                    <option value="">Select Option...</option>
                     <option value="No">No</option>
                     <option value="Yes">Yes</option>
                   </select>

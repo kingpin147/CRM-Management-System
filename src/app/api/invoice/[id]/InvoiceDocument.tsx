@@ -351,8 +351,8 @@ export function InvoiceDocument({
   const billingMonth = getBillingPeriod(issueDate, billingType)
   
   // Issue Date is ALWAYS 1st of the month, Due Date is ALWAYS 10th of the month
-  const issueDateStr = `1-${monthShorts[issueDate.getMonth()]}-${issueDate.getFullYear()}`
-  const dueDateStr = `10-${monthShorts[issueDate.getMonth()]}-${issueDate.getFullYear()}`
+  const issueDateStr = `01 ${monthShorts[issueDate.getMonth()]} ${issueDate.getFullYear()}`
+  const dueDateStr = `10 ${monthShorts[issueDate.getMonth()]} ${issueDate.getFullYear()}`
   
   const basePrice = invoice ? Number(invoice.amount) : (customer?.packagePlan ? Number(customer.packagePlan.monthlyBasePrice) : 50000)
   const salesTax = invoice ? Number(invoice.salesTax) : (customer?.packagePlan ? Number(customer.packagePlan.salesTaxAmount) : 0)
@@ -535,7 +535,7 @@ export function InvoiceDocument({
                       const isDbInvoice = inv.createdAt !== undefined && !inv.isMock
                       const d = isDbInvoice ? new Date(inv.createdAt) : null
                       const invNum = inv.invoiceNumber || `INV-${1000 + idx * 111}`
-                      const month = isDbInvoice && d ? `${monthShorts[d.getMonth()]}-${d.getFullYear().toString().slice(-2)}` : (inv.month || 'Aug-26')
+                      const month = isDbInvoice && d ? `${monthShorts[d.getMonth()]} ${d.getFullYear()}` : (inv.month || 'Aug 2026')
                       const amt = isDbInvoice ? Number(inv.totalAmount).toLocaleString(undefined, {minimumFractionDigits: 2}) : inv.amount
                       const pay = isDbInvoice ? (inv.status === 'PAID' ? Number(inv.totalAmount).toLocaleString(undefined, {minimumFractionDigits: 2}) : (inv.status === 'PENDING' || inv.status === 'UNPAID' ? '0.00' : Number(inv.paidAmount || 0).toLocaleString(undefined, {minimumFractionDigits: 2}))) : inv.payment
                       const isLast = idx === pastInvoices.length - 1
@@ -614,10 +614,6 @@ export function InvoiceDocument({
               <View style={styles.noteItem}>
                 <Text style={styles.bullet}>•</Text>
                 <Text style={styles.noteText}>You are requested to pay your bill via our recommended payment options i.e. __________________</Text>
-              </View>
-              <View style={styles.noteItem}>
-                <Text style={styles.bullet}>•</Text>
-                <Text style={styles.noteText}>This is computer generated invoice no need for signature and stamp</Text>
               </View>
             </View>
           </View>
