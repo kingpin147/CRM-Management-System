@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ChevronDown, ShoppingBag, AlertCircle, BarChart3, Truck, Users, Settings, Search } from 'lucide-react'
+import { ChevronDown, ShoppingBag, AlertCircle, BarChart3, Truck, Users, Settings, Search, CreditCard } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -93,7 +93,40 @@ export function MainNav({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* 2. Complaint Management Tab with Sub-menu */}
+        {/* 2. Billing & CPM Tab with Sub-menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger className={triggerClass(pathname.startsWith('/dashboard/billing-cpm'))}>
+            <span className="flex items-center gap-1 xl:gap-1.5">
+              <CreditCard className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
+              <span>Billing & CPM</span>
+            </span>
+            <ChevronDown className="h-3 w-3 xl:h-3.5 xl:w-3.5 opacity-70 shrink-0 ml-0.5" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-56 bg-white p-1.5 shadow-lg border-line rounded-xl animate-in fade-in-50 zoom-in-95">
+            <DropdownMenuItem>
+              <Link href="/dashboard/billing-cpm?tab=package-status" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
+                Package & Status Change
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Link href="/dashboard/billing-cpm?tab=debit-credit" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
+                Debit / Credit Notes
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Link href="/dashboard/billing-cpm?tab=payments" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
+                Payment Entry & Approval
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Link href="/dashboard/billing-cpm?tab=bulk-status" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
+                Bulk Status Change
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* 3. Complaint Management Tab with Sub-menu */}
         <DropdownMenu>
           <DropdownMenuTrigger className={triggerClass(pathname.startsWith('/dashboard/tickets'))}>
             <span className="flex items-center gap-1 xl:gap-1.5">
@@ -116,7 +149,7 @@ export function MainNav({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* 3. Reports Tab with Sub-menu */}
+        {/* 4. Reports Tab with Sub-menu */}
         <DropdownMenu>
           <DropdownMenuTrigger className={triggerClass(pathname.startsWith('/dashboard/reports'))}>
             <span className="flex items-center gap-1 xl:gap-1.5">
@@ -159,7 +192,7 @@ export function MainNav({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* 4. Service Delivery Tab with Sub-menu */}
+        {/* 5. Service Delivery Tab with Sub-menu */}
         <DropdownMenu>
           <DropdownMenuTrigger className={triggerClass(pathname.startsWith('/dashboard/service-delivery'))}>
             <span className="flex items-center gap-1 xl:gap-1.5">
@@ -213,6 +246,24 @@ export function MainNav({
           </Link>
           <Link href="/dashboard/sales/pending" className={linkClass('/dashboard/sales/pending')}>
             Manager Approval
+          </Link>
+        </div>
+      </div>
+
+      <div>
+        <p className="px-3 text-xs font-bold text-[var(--color-slate-custom)] uppercase tracking-wider mb-1">Billing & CPM</p>
+        <div className="space-y-0.5">
+          <Link href="/dashboard/billing-cpm?tab=package-status" className={linkClass('/dashboard/billing-cpm?tab=package-status')}>
+            Package & Status Change
+          </Link>
+          <Link href="/dashboard/billing-cpm?tab=debit-credit" className={linkClass('/dashboard/billing-cpm?tab=debit-credit')}>
+            Debit / Credit Notes
+          </Link>
+          <Link href="/dashboard/billing-cpm?tab=payments" className={linkClass('/dashboard/billing-cpm?tab=payments')}>
+            Payment Entry & Approval
+          </Link>
+          <Link href="/dashboard/billing-cpm?tab=bulk-status" className={linkClass('/dashboard/billing-cpm?tab=bulk-status')}>
+            Bulk Status Change
           </Link>
         </div>
       </div>
