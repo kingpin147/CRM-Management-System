@@ -1,35 +1,53 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 
-export async function login(formData: FormData) {
-  const supabase = await createClient()
+export type LoginActionState = {
+  error?: string | null
+  success?: boolean
+}
 
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
+export async function loginAction(
+  prevState: LoginActionState | null,
+  formData: FormData
+): Promise<LoginActionState> {
+  try {
+    const supabase = await createClient()
 
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
 
-  if (error) {
-    redirect('/login?error=Invalid login credentials. Please contact your company administrator.')
+    if (!email || !password) {
+      return { error: 'Please enter both email and password.' }
+    }
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    })
+
+    if (error) {
+      return { error: error.message || 'Invalid email or password.' }
+    }
+
+    if (!data.session) {
+      return { error: 'Failed to establish user session. Please try again.' }
+    }
+
+    return { success: true }
+  } catch (err: any) {
+    console.error('Login action error:', err)
+    return { error: err.message || 'An unexpected error occurred during login.' }
   }
-
-  revalidatePath('/', 'layout')
-  redirect('/dashboard/customers')
 }
 
 export async function seedDatabaseAction() {
   try {
     const { runSeed } = await import('@/lib/seed-db')
     await runSeed()
-    redirect('/login?success=Database successfully seeded with demo customers, packages, solar configurations, and tickets!')
+    return { success: true, message: 'Database successfully seeded!' }
   } catch (err: any) {
-    if (err?.message?.includes('NEXT_REDIRECT')) throw err
-    redirect(`/login?error=${encodeURIComponent(err.message || 'Seeding failed')}`)
+    console.error('Seed error:', err)
+    return { error: err.message || 'Seeding failed' }
   }
 }

@@ -13,6 +13,7 @@ export function ExportCsvButton({ data }: { data: any[] }) {
 
     const headers = [
       'Customer ID',
+      'CRF #',
       'Customer Name',
       'Contact #',
       'Address',
@@ -22,16 +23,24 @@ export function ExportCsvButton({ data }: { data: any[] }) {
       'Status',
     ]
 
-    const rows = data.map((c) => [
-      c.customerCode || c.id,
-      `"${(c.fullName || '').replace(/"/g, '""')}"`,
-      `"${c.contactNumber || ''}"`,
-      `"${(c.address || '').replace(/"/g, '""')}"`,
-      `"${c.block || ''}"`,
-      `"${c.city || ''}"`,
-      `"${c.packagePlan?.packageTier || 'N/A'}"`,
-      `"${c.status || ''}"`,
-    ])
+    const rows = data.map((c) => {
+      const customerId = c.customerCode ? c.customerCode.replace(/\D/g, '') || c.customerCode : c.id
+      const crf = c.crfNumber?.startsWith('CRF-')
+        ? c.crfNumber
+        : `CRF-${c.crfNumber?.replace(/^CRF/i, '').replace(/^-+/, '') || customerId}`
+
+      return [
+        `"${customerId}"`,
+        `"${crf}"`,
+        `"${(c.fullName || '').replace(/"/g, '""')}"`,
+        `"${c.contactNumber || ''}"`,
+        `"${(c.address || '').replace(/"/g, '""')}"`,
+        `"${c.block || ''}"`,
+        `"${c.city || ''}"`,
+        `"${c.packagePlan?.packageTier || 'N/A'}"`,
+        `"${c.status || ''}"`,
+      ]
+    })
 
     const csvContent = [headers.join(','), ...rows.map((e) => e.join(','))].join('\n')
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
@@ -45,7 +54,7 @@ export function ExportCsvButton({ data }: { data: any[] }) {
   }
 
   return (
-    <Button onClick={handleExport} variant="outline" className="shadow-sm border-[var(--color-line)] bg-white">
+    <Button onClick={handleExport} variant="outline" className="shadow-sm border-[var(--color-line)] bg-white text-xs font-semibold">
       <Download className="mr-2 h-4 w-4 text-[var(--color-amber)]" /> Export to CSV/Excel
     </Button>
   )

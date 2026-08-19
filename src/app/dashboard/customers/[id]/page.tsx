@@ -67,10 +67,10 @@ export default async function CustomerDetailPage({
   // Sanitize Decimal and custom instances to plain JSON primitives
   const customer = JSON.parse(JSON.stringify(rawCustomer))
 
-  const canViewLedger = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES'].includes(userRole)
-  const canEditProfile = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES'].includes(userRole)
-  const canEditSolarSpecs = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'INSTALLATION'].includes(userRole)
-  const canRecordPayment = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES'].includes(userRole)
+  const canViewLedger = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'BILLING_MANAGER', 'SALES_MANAGER', 'SALES'].includes(userRole)
+  const canEditProfile = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES_MANAGER', 'SALES'].includes(userRole)
+  const canEditSolarSpecs = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'OM_MANAGER', 'INSTALLATION'].includes(userRole)
+  const canRecordPayment = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'BILLING_MANAGER', 'SALES_MANAGER', 'SALES'].includes(userRole)
 
   const allTabs = [
     { id: 'profile', label: 'Customer Profile', allowed: true },
@@ -85,12 +85,13 @@ export default async function CustomerDetailPage({
   const currentTab = tab === 'package' ? 'system' : (tab || 'profile')
   const activeTab = tabs.some(t => t.id === currentTab) ? currentTab : 'profile'
 
-  // Compute ledger financial summaries
+  // Compute ledger financial summaries and current payable
   const totalInvoiced = (customer.invoices || []).reduce((acc: number, inv: any) => acc + (Number(inv.totalAmount) || 0), 0)
   const totalPaid = (customer.transactions || []).reduce((acc: number, tx: any) => acc + (Number(tx.amount) || 0), 0)
   const currentBalance = (customer.ledgerEntries && customer.ledgerEntries.length > 0)
     ? Number(customer.ledgerEntries[0].balance)
     : (totalInvoiced - totalPaid)
+  const currentPayable = Math.max(0, currentBalance)
 
   return (
     <div className="space-y-6 animate-reveal">
@@ -111,7 +112,7 @@ export default async function CustomerDetailPage({
             </h1>
             <div className="flex items-center gap-2.5 mt-1 flex-wrap">
               <span className="text-[var(--color-slate-custom)] font-mono text-xs sm:text-sm">
-                CRF: {customer.crfNumber || customer.customerCode}
+                CRF: {customer.crfNumber || (customer.customerCode ? `CRF-${customer.customerCode.replace(/\D/g, '')}` : customer.customerCode)}
               </span>
               <Badge variant="outline" className="bg-[var(--color-paper)] text-[var(--color-ink)] border-[var(--color-line)] text-xs">
                 {customer.customerType}
@@ -173,7 +174,7 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs w-44 bg-slate-50 border-r border-slate-200 text-[#002868]">Customer ID</TableCell>
                           <TableCell className="font-mono text-xs font-bold text-[var(--color-ink)]">
-                            {customer.customerCode?.replace(/^[A-Za-z]+-/, '') || customer.id}
+                            {customer.customerCode?.replace(/\D/g, '') || customer.customerCode?.replace(/^[A-Za-z]+-/, '') || customer.id}
                           </TableCell>
                         </TableRow>
                         <TableRow className="border-b hover:bg-transparent">
@@ -241,7 +242,9 @@ export default async function CustomerDetailPage({
                         </TableRow>
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">CRF Number:</TableCell>
-                          <TableCell className="font-mono text-xs text-[var(--color-ink)]">{customer.crfNumber || '—'}</TableCell>
+                          <TableCell className="font-mono text-xs text-[var(--color-ink)]">
+                            {customer.crfNumber || (customer.customerCode ? `CRF-${customer.customerCode.replace(/\D/g, '')}` : '—')}
+                          </TableCell>
                         </TableRow>
                         <TableRow className="hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Activation Date:</TableCell>
@@ -307,10 +310,22 @@ export default async function CustomerDetailPage({
                             </Badge>
                           </TableCell>
                         </TableRow>
-                        <TableRow className="hover:bg-transparent">
+                        <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Next Billing date</TableCell>
                           <TableCell className="text-xs text-[var(--color-ink)] font-semibold font-mono">
                             {formatDate(customer.packagePlan?.nextBillingDate)}
+                          </TableCell>
+                        </TableRow>
+                        <TableRow className="hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Current Payable</TableCell>
+                          <TableCell className="text-xs font-mono font-semibold">
+                            {currentPayable > 0 ? (
+                              <span className="font-bold text-[#002868]">
+                                PKR {currentPayable.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                              </span>
+                            ) : (
+                              <span className="text-[var(--color-ink)]">0</span>
+                            )}
                           </TableCell>
                         </TableRow>
                       </TableBody>

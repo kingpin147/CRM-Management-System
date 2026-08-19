@@ -56,13 +56,13 @@ async function main() {
   // 2. Create Dummy Customers with Full Solar Specs, Packages, Invoices, Ledger & Tickets
   const dummyCustomers = [
     {
-      code: 'EG-2026-001',
+      code: '9484',
       name: 'Dr. Zafar Iqbal',
       type: CustomerType.RESIDENTIAL,
       phone: '+92 300 8451234',
       email: 'zafar.iqbal@gmail.com',
       cnic: '35201-1234567-1',
-      crf: 'CRF-2026-0101',
+      crf: 'CRF-964256',
       status: CustomerStatus.CONNECTION_ACTIVE,
       house: '142-A',
       street: 'Street 7',
@@ -159,13 +159,13 @@ async function main() {
       ]
     },
     {
-      code: 'EG-2026-002',
+      code: '1002',
       name: 'Kohinoor Textile Mills (HQ)',
       type: CustomerType.CORPORATE,
       phone: '+92 42 35789000',
       email: 'facilities@kohinoor.com.pk',
       cnic: '35202-9988776-5',
-      crf: 'CRF-2026-0102',
+      crf: 'CRF-964257',
       status: CustomerStatus.CONNECTION_ACTIVE,
       house: 'Plot 45',
       street: 'Main Boulevard',
@@ -262,13 +262,13 @@ async function main() {
       ]
     },
     {
-      code: 'EG-2026-003',
+      code: '1003',
       name: 'Syed Usman Ali',
       type: CustomerType.RESIDENTIAL,
       phone: '+92 321 4455667',
       email: 'usman.ali@outlook.com',
       cnic: '35202-3344556-9',
-      crf: 'CRF-2026-0103',
+      crf: 'CRF-964258',
       status: CustomerStatus.PENDING_ACTIVATION,
       house: '88',
       street: 'Street 12',
@@ -355,13 +355,13 @@ async function main() {
       ]
     },
     {
-      code: 'EG-2026-004',
+      code: '1004',
       name: 'Al-Madina Agro Industries',
       type: CustomerType.INDUSTRIAL,
       phone: '+92 301 7788990',
       email: 'contact@almadina-agro.pk',
       cnic: '36302-5566778-1',
-      crf: 'CRF-2026-0104',
+      crf: 'CRF-964259',
       status: CustomerStatus.CONNECTION_ACTIVE,
       house: 'Industrial Area',
       street: 'Vehari Road',
@@ -444,13 +444,13 @@ async function main() {
       tickets: []
     },
     {
-      code: 'EG-2026-005',
+      code: '1005',
       name: 'Chaudhry Nadeem Akhtar',
       type: CustomerType.RESIDENTIAL,
       phone: '+92 333 5566778',
       email: 'nadeem.akhtar@yahoo.com',
       cnic: '35201-9988112-3',
-      crf: 'CRF-2026-0105',
+      crf: 'CRF-964260',
       status: CustomerStatus.NON_PAYMENT_BLOCKED,
       house: '52',
       street: 'Canal Road',
@@ -547,13 +547,13 @@ async function main() {
       ]
     },
     {
-      code: 'EG-2026-006',
+      code: '1006',
       name: 'Fatima Memorial Hospital (Solar Wing)',
       type: CustomerType.CORPORATE,
       phone: '+92 42 111 555 600',
       email: 'admin.solar@fms.edu.pk',
       cnic: '35201-7788990-2',
-      crf: 'CRF-2026-0106',
+      crf: 'CRF-964261',
       status: CustomerStatus.FOC_CONNECTION,
       house: 'Block G',
       street: 'Shadman Road',
@@ -618,13 +618,13 @@ async function main() {
 
   for (const cust of dummyCustomers) {
     const customer = await prisma.customer.upsert({
-      where: { customerCode: cust.code },
+      where: { cnic: cust.cnic },
       update: {
+        customerCode: cust.code,
         fullName: cust.name,
         customerType: cust.type,
         contactNumber: cust.phone,
         email: cust.email,
-        cnic: cust.cnic,
         crfNumber: cust.crf,
         status: cust.status,
         houseNumber: cust.house,

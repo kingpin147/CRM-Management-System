@@ -2,11 +2,26 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { createUser } from './actions'
+import { UserPlus, User, Mail, Lock, Shield, AlertCircle, Loader2 } from 'lucide-react'
 
 export function UserFormDialog() {
   const [open, setOpen] = useState(false)
@@ -28,57 +43,136 @@ export function UserFormDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button className="shadow-md" />}>
-        Create User
+      <DialogTrigger render={<Button className="shadow-md flex items-center gap-2" />}>
+        <UserPlus className="h-4 w-4" />
+        <span>Create User</span>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] border-line">
+      <DialogContent className="sm:max-w-[440px] border-line">
         <DialogHeader>
-          <DialogTitle className="text-[var(--color-graphite)] font-display text-xl">Create New User</DialogTitle>
-          <DialogDescription className="text-[var(--color-slate-custom)]">
-            Add a new team member and assign them a role.
-          </DialogDescription>
-        </DialogHeader>
-        <form action={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            {error && (
-              <div className="p-3 text-sm bg-destructive/10 border border-destructive/20 text-destructive rounded-lg font-medium">
-                {error}
-              </div>
-            )}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right text-[var(--color-ink)]">Name</Label>
-              <Input id="name" name="name" className="col-span-3 border-[var(--color-line)]" required />
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-[var(--color-amber)] shrink-0">
+              <UserPlus className="h-5 w-5" />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="email" className="text-right text-[var(--color-ink)]">Email</Label>
-              <Input id="email" name="email" type="email" className="col-span-3 border-[var(--color-line)]" required />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="password" className="text-right text-[var(--color-ink)]">Password</Label>
-              <Input id="password" name="password" type="password" className="col-span-3 border-[var(--color-line)]" required minLength={6} />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="role" className="text-right text-[var(--color-ink)]">Role</Label>
-              <div className="col-span-3">
-                <Select name="role" defaultValue="SALES">
-                  <SelectTrigger className="border-[var(--color-line)]">
-                    <SelectValue placeholder="Select a role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
-                    <SelectItem value="ADMIN">Admin</SelectItem>
-                    <SelectItem value="MANAGER">Manager</SelectItem>
-                    <SelectItem value="SALES">Sales</SelectItem>
-                    <SelectItem value="INSTALLATION">Installation</SelectItem>
-                    <SelectItem value="CUSTOMER_SUPPORT">Customer Support</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div>
+              <DialogTitle className="text-xl font-display font-bold text-[var(--color-graphite)]">
+                Create New User
+              </DialogTitle>
+              <DialogDescription className="text-slate-500 text-xs">
+                Add a new team member and assign their CRM role and permissions.
+              </DialogDescription>
             </div>
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button type="submit" disabled={loading}>{loading ? 'Creating...' : 'Save User'}</Button>
+        </DialogHeader>
+
+        <form action={handleSubmit} className="space-y-4 pt-2">
+          {error && (
+            <div className="p-3 text-xs bg-destructive/10 border border-destructive/20 text-destructive rounded-xl flex items-center gap-2 font-medium animate-in fade-in-50">
+              <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <div className="space-y-1.5">
+            <Label htmlFor="name" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              Full Name <span className="text-destructive">*</span>
+            </Label>
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+              <Input
+                id="name"
+                name="name"
+                placeholder="e.g. Hamza Tariq"
+                className="pl-9 h-10 text-sm bg-slate-50/50 focus:bg-white border-line transition-all"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="email" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              Email Address <span className="text-destructive">*</span>
+            </Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="staff@energygurus.pk"
+                className="pl-9 h-10 text-sm bg-slate-50/50 focus:bg-white border-line transition-all"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="password" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              Initial Password <span className="text-destructive">*</span>
+            </Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="••••••••"
+                className="pl-9 h-10 text-sm bg-slate-50/50 focus:bg-white border-line transition-all"
+                required
+                minLength={6}
+              />
+            </div>
+            <p className="text-[11px] text-slate-400">Must be at least 6 characters long.</p>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="role" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              System Role & Access <span className="text-destructive">*</span>
+            </Label>
+            <div className="relative">
+              <Select name="role" defaultValue="SALES_MANAGER">
+                <SelectTrigger className="h-10 text-sm bg-slate-50/50 focus:bg-white border-line transition-all">
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-4 w-4 text-slate-400" />
+                    <SelectValue placeholder="Select a role" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent className="rounded-xl shadow-lg border-line">
+                  <SelectItem value="SUPER_ADMIN" className="text-xs font-medium py-2">Super Admin (Full Access)</SelectItem>
+                  <SelectItem value="ADMIN" className="text-xs font-medium py-2">Admin (System Operations)</SelectItem>
+                  <SelectItem value="SALES_MANAGER" className="text-xs font-medium py-2">Sales Manager</SelectItem>
+                  <SelectItem value="BILLING_MANAGER" className="text-xs font-medium py-2">Billing Manager</SelectItem>
+                  <SelectItem value="OM_MANAGER" className="text-xs font-medium py-2">O&M Manager</SelectItem>
+                  <SelectItem value="MANAGER" className="text-xs font-medium py-2">Manager (General)</SelectItem>
+                  <SelectItem value="INSTALLATION" className="text-xs font-medium py-2">Installation / Technician</SelectItem>
+                  <SelectItem value="CUSTOMER_SUPPORT" className="text-xs font-medium py-2">Customer Support</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter className="pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              className="text-xs font-semibold h-9 px-4"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={loading}
+              className="text-xs font-semibold h-9 px-5 shadow-sm"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Save User'
+              )}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

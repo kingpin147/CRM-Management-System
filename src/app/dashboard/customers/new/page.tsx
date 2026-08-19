@@ -14,9 +14,9 @@ export default async function NewCustomerPage() {
     where: { supabaseId: user.id },
     select: { role: true }
   })
-  const userRole = dbUser?.role || 'SALES'
+  const userRole = dbUser?.role || 'SALES_MANAGER'
 
-  if (!['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES'].includes(userRole)) {
+  if (!['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES_MANAGER'].includes(userRole)) {
     redirect('/dashboard/customers')
   }
 

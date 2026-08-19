@@ -50,6 +50,23 @@ const STATUS_OPTIONS = [
   { key: 'IN_HOUSE_CONNECTION', label: 'In House Connection' },
 ]
 
+function formatCustomerId(code?: string | null): string {
+  if (!code) return ''
+  const digits = code.replace(/\D/g, '')
+  return digits || code.replace(/^[A-Za-z]+-/, '')
+}
+
+function formatCrf(crf?: string | null, code?: string | null): string {
+  if (crf && crf.trim()) {
+    return crf.startsWith('CRF-') ? crf : `CRF-${crf.replace(/^CRF/i, '').replace(/^-+/, '')}`
+  }
+  if (code) {
+    const digits = code.replace(/\D/g, '')
+    if (digits) return `CRF-${digits}`
+  }
+  return ''
+}
+
 export function ReportsView({ 
   customers, 
   initialView = 'status' 
@@ -226,12 +243,13 @@ export function ReportsView({
 
     if (activeCategory === 'STATUS') {
       headers = [
-        'Customer ID', 'Customer Name', 'Customer Address', 'Contact #',
+        'Customer ID', 'CRF #', 'Customer Name', 'Customer Address', 'Contact #',
         'House #', 'Block', 'Street #', 'Sub Area', 'Area', 'City',
         'Customer Package', 'Status'
       ]
       rows = filteredCustomers.map((c) => [
-        `"${c.customerCode || c.crfNumber || ''}"`,
+        `"${formatCustomerId(c.customerCode || c.id)}"`,
+        `"${formatCrf(c.crfNumber, c.customerCode)}"`,
         `"${c.fullName}"`,
         `"${c.address}"`,
         `"${c.contactNumber}"`,
@@ -246,12 +264,13 @@ export function ReportsView({
       ])
     } else if (activeCategory === 'SALES') {
       headers = [
-        'Customer ID', 'Customer Name', 'Contact #', 'Package Tier',
+        'Customer ID', 'CRF #', 'Customer Name', 'Contact #', 'Package Tier',
         'System Size', 'Billing Type', 'Monthly Base Price (PKR)', 'Applied Discount (%)',
         'Sales Tax (PKR)', 'Total Amount (PKR)', 'Paid Amount (PKR)', 'Sign Up Date'
       ]
       rows = filteredCustomers.map((c) => [
-        `"${c.customerCode || c.crfNumber || ''}"`,
+        `"${formatCustomerId(c.customerCode || c.id)}"`,
+        `"${formatCrf(c.crfNumber, c.customerCode)}"`,
         `"${c.fullName}"`,
         `"${c.contactNumber}"`,
         `"${c.packagePlan?.packageTier || '-'}"`,
@@ -266,7 +285,7 @@ export function ReportsView({
       ])
     } else if (activeCategory === 'RECEIVABLE') {
       headers = [
-        'Customer ID', 'Customer Name', 'Contact #', 'City', 'Package Tier',
+        'Customer ID', 'CRF #', 'Customer Name', 'Contact #', 'City', 'Package Tier',
         'Total Amount (PKR)', 'Paid Amount (PKR)', 'Receivable Balance (PKR)', 'Status'
       ]
       rows = filteredCustomers.map((c) => {
@@ -274,7 +293,8 @@ export function ReportsView({
         const paid = Math.round(Number(c.packagePlan?.paidAmount || 0))
         const receivable = Math.max(0, total - paid)
         return [
-          `"${c.customerCode || c.crfNumber || ''}"`,
+          `"${formatCustomerId(c.customerCode || c.id)}"`,
+          `"${formatCrf(c.crfNumber, c.customerCode)}"`,
           `"${c.fullName}"`,
           `"${c.contactNumber}"`,
           `"${c.city}"`,
@@ -287,11 +307,12 @@ export function ReportsView({
       })
     } else if (activeCategory === 'ADJUSTMENT') {
       headers = [
-        'Customer ID', 'Customer Name', 'City', 'Package Tier', 'Billing Type',
+        'Customer ID', 'CRF #', 'Customer Name', 'City', 'Package Tier', 'Billing Type',
         'Discount (%)', 'On-Boarding Fee (PKR)', 'Total Amount (PKR)', 'Sign Up Date'
       ]
       rows = filteredCustomers.map((c) => [
-        `"${c.customerCode || c.crfNumber || ''}"`,
+        `"${formatCustomerId(c.customerCode || c.id)}"`,
+        `"${formatCrf(c.crfNumber, c.customerCode)}"`,
         `"${c.fullName}"`,
         `"${c.city}"`,
         `"${c.packagePlan?.packageTier || '-'}"`,
@@ -303,11 +324,12 @@ export function ReportsView({
       ])
     } else if (activeCategory === 'PAYMENTS') {
       headers = [
-        'Customer ID', 'Customer Name', 'Contact #', 'City', 'Package',
+        'Customer ID', 'CRF #', 'Customer Name', 'Contact #', 'City', 'Package',
         'Paid Amount (PKR)', 'Total Package Amount (PKR)', 'Sign Up Date', 'Status'
       ]
       rows = filteredCustomers.map((c) => [
-        `"${c.customerCode || c.crfNumber || ''}"`,
+        `"${formatCustomerId(c.customerCode || c.id)}"`,
+        `"${formatCrf(c.crfNumber, c.customerCode)}"`,
         `"${c.fullName}"`,
         `"${c.contactNumber}"`,
         `"${c.city}"`,
@@ -324,8 +346,8 @@ export function ReportsView({
         'CNIC', 'City', 'Package', 'Sign Up Date', 'Status'
       ]
       rows = filteredCustomers.map((c) => [
-        `"${c.customerCode || ''}"`,
-        `"${c.crfNumber || ''}"`,
+        `"${formatCustomerId(c.customerCode || c.id)}"`,
+        `"${formatCrf(c.crfNumber, c.customerCode)}"`,
         `"${c.fullName}"`,
         `"${c.customerType}"`,
         `"${c.contactNumber}"`,
@@ -525,6 +547,7 @@ export function ReportsView({
                 <TableHeader className="bg-[var(--color-paper)]">
                   <TableRow className="border-b border-gray-200">
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Customer ID</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">CRF #</TableHead>
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Customer Name</TableHead>
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Customer Address</TableHead>
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Contact #</TableHead>
@@ -541,7 +564,7 @@ export function ReportsView({
                 <TableBody>
                   {filteredCustomers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={12} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">
+                      <TableCell colSpan={13} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">
                         No customers found matching the selected filters.
                       </TableCell>
                     </TableRow>
@@ -550,8 +573,11 @@ export function ReportsView({
                       <TableRow key={c.id} className="hover:bg-[var(--color-paper)]/50 text-xs">
                         <TableCell className="font-mono font-bold text-[var(--color-ink)]">
                           <Link href={`/dashboard/customers/${c.id}`} className="hover:underline text-amber-900">
-                            {c.customerCode || c.crfNumber || c.id.slice(0, 8)}
+                            {formatCustomerId(c.customerCode || c.id)}
                           </Link>
+                        </TableCell>
+                        <TableCell className="font-mono font-semibold text-gray-700">
+                          {formatCrf(c.crfNumber, c.customerCode)}
                         </TableCell>
                         <TableCell className="font-semibold text-gray-900">{c.fullName}</TableCell>
                         <TableCell className="text-gray-600 max-w-xs truncate">{c.address}</TableCell>
@@ -585,6 +611,7 @@ export function ReportsView({
                 <TableHeader className="bg-[var(--color-paper)]">
                   <TableRow className="border-b border-gray-200">
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Customer ID</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">CRF #</TableHead>
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Customer Name</TableHead>
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Contact #</TableHead>
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Package Tier</TableHead>
@@ -601,7 +628,7 @@ export function ReportsView({
                 <TableBody>
                   {filteredCustomers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={12} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">
+                      <TableCell colSpan={13} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">
                         No sales records found matching the selected filters.
                       </TableCell>
                     </TableRow>
@@ -610,8 +637,11 @@ export function ReportsView({
                       <TableRow key={c.id} className="hover:bg-[var(--color-paper)]/50 text-xs">
                         <TableCell className="font-mono font-bold text-[var(--color-ink)]">
                           <Link href={`/dashboard/customers/${c.id}`} className="hover:underline text-amber-900">
-                            {c.customerCode || c.crfNumber || c.id.slice(0, 8)}
+                            {formatCustomerId(c.customerCode || c.id)}
                           </Link>
+                        </TableCell>
+                        <TableCell className="font-mono font-semibold text-gray-700">
+                          {formatCrf(c.crfNumber, c.customerCode)}
                         </TableCell>
                         <TableCell className="font-semibold text-gray-900">{c.fullName}</TableCell>
                         <TableCell className="font-mono">{c.contactNumber}</TableCell>
@@ -641,6 +671,7 @@ export function ReportsView({
                 <TableHeader className="bg-[var(--color-paper)]">
                   <TableRow className="border-b border-gray-200">
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Customer ID</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">CRF #</TableHead>
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Customer Name</TableHead>
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Contact #</TableHead>
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)]">City</TableHead>
@@ -654,7 +685,7 @@ export function ReportsView({
                 <TableBody>
                   {filteredCustomers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">
+                      <TableCell colSpan={10} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">
                         No outstanding receivables found.
                       </TableCell>
                     </TableRow>
@@ -667,8 +698,11 @@ export function ReportsView({
                         <TableRow key={c.id} className="hover:bg-[var(--color-paper)]/50 text-xs">
                           <TableCell className="font-mono font-bold text-[var(--color-ink)]">
                             <Link href={`/dashboard/customers/${c.id}`} className="hover:underline text-amber-900">
-                              {c.customerCode || c.crfNumber || c.id.slice(0, 8)}
+                              {formatCustomerId(c.customerCode || c.id)}
                             </Link>
+                          </TableCell>
+                          <TableCell className="font-mono font-semibold text-gray-700">
+                            {formatCrf(c.crfNumber, c.customerCode)}
                           </TableCell>
                           <TableCell className="font-semibold text-gray-900">{c.fullName}</TableCell>
                           <TableCell className="font-mono">{c.contactNumber}</TableCell>
@@ -696,6 +730,7 @@ export function ReportsView({
                 <TableHeader className="bg-[var(--color-paper)]">
                   <TableRow className="border-b border-gray-200">
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Customer ID</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">CRF #</TableHead>
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Customer Name</TableHead>
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)]">City</TableHead>
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Package Tier</TableHead>
@@ -709,7 +744,7 @@ export function ReportsView({
                 <TableBody>
                   {filteredCustomers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">
+                      <TableCell colSpan={10} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">
                         No adjustment / discounted records found.
                       </TableCell>
                     </TableRow>
@@ -718,8 +753,11 @@ export function ReportsView({
                       <TableRow key={c.id} className="hover:bg-[var(--color-paper)]/50 text-xs">
                         <TableCell className="font-mono font-bold text-[var(--color-ink)]">
                           <Link href={`/dashboard/customers/${c.id}`} className="hover:underline text-amber-900">
-                            {c.customerCode || c.crfNumber || c.id.slice(0, 8)}
+                            {formatCustomerId(c.customerCode || c.id)}
                           </Link>
+                        </TableCell>
+                        <TableCell className="font-mono font-semibold text-gray-700">
+                          {formatCrf(c.crfNumber, c.customerCode)}
                         </TableCell>
                         <TableCell className="font-semibold text-gray-900">{c.fullName}</TableCell>
                         <TableCell>{c.city}</TableCell>
@@ -752,6 +790,7 @@ export function ReportsView({
                 <TableHeader className="bg-[var(--color-paper)]">
                   <TableRow className="border-b border-gray-200">
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Customer ID</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">CRF #</TableHead>
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Customer Name</TableHead>
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Contact #</TableHead>
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)]">City</TableHead>
@@ -765,7 +804,7 @@ export function ReportsView({
                 <TableBody>
                   {filteredCustomers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">
+                      <TableCell colSpan={10} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">
                         No payment records found matching the selected filters.
                       </TableCell>
                     </TableRow>
@@ -774,8 +813,11 @@ export function ReportsView({
                       <TableRow key={c.id} className="hover:bg-[var(--color-paper)]/50 text-xs">
                         <TableCell className="font-mono font-bold text-[var(--color-ink)]">
                           <Link href={`/dashboard/customers/${c.id}`} className="hover:underline text-amber-900">
-                            {c.customerCode || c.crfNumber || c.id.slice(0, 8)}
+                            {formatCustomerId(c.customerCode || c.id)}
                           </Link>
+                        </TableCell>
+                        <TableCell className="font-mono font-semibold text-gray-700">
+                          {formatCrf(c.crfNumber, c.customerCode)}
                         </TableCell>
                         <TableCell className="font-semibold text-gray-900">{c.fullName}</TableCell>
                         <TableCell className="font-mono">{c.contactNumber}</TableCell>
@@ -829,10 +871,10 @@ export function ReportsView({
                       <TableRow key={c.id} className="hover:bg-[var(--color-paper)]/50 text-xs">
                         <TableCell className="font-mono font-bold text-[var(--color-ink)]">
                           <Link href={`/dashboard/customers/${c.id}`} className="hover:underline text-amber-900">
-                            {c.customerCode || c.id.slice(0, 8)}
+                            {formatCustomerId(c.customerCode || c.id)}
                           </Link>
                         </TableCell>
-                        <TableCell className="font-mono font-semibold text-gray-700">{c.crfNumber || '-'}</TableCell>
+                        <TableCell className="font-mono font-semibold text-gray-700">{formatCrf(c.crfNumber, c.customerCode) || '—'}</TableCell>
                         <TableCell className="font-semibold text-gray-900">{c.fullName}</TableCell>
                         <TableCell>
                           <Badge variant="outline" className="bg-slate-100 text-slate-800 text-[10px]">
@@ -861,3 +903,4 @@ export function ReportsView({
     </div>
   )
 }
+

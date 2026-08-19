@@ -1,8 +1,5 @@
-import { login, seedDatabaseAction } from './actions'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { SubmitButton } from './SubmitButton'
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { LoginForm } from './LoginForm'
 import Image from 'next/image'
 
 export default async function LoginPage({
@@ -37,44 +34,10 @@ export default async function LoginPage({
           </CardDescription>
         </CardHeader>
         
-        <form action={login}>
-          <CardContent className="space-y-4">
-            {resolvedParams?.success && (
-              <div className="p-3 text-sm bg-sky-500/10 border border-sky-500/20 text-sky-700 dark:text-sky-300 rounded-lg text-center font-medium">
-                {resolvedParams.success}
-              </div>
-            )}
-            {resolvedParams?.error && (
-              <div className="p-3 text-sm bg-destructive/10 border border-destructive/20 text-destructive rounded-lg text-center font-medium">
-                {resolvedParams.error}
-              </div>
-            )}
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-[var(--color-ink)] font-medium">Email</Label>
-              <Input 
-                id="email" 
-                name="email" 
-                type="email" 
-                placeholder="m.manager@energygurus.online" 
-                required 
-                className="bg-white/50 text-[var(--color-ink)] placeholder:text-[var(--color-slate-custom)] focus-visible:ring-[var(--color-amber)] border-[var(--color-line)]"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-[var(--color-ink)] font-medium">Password</Label>
-              <Input 
-                id="password" 
-                name="password" 
-                type="password" 
-                required 
-                className="bg-white/50 text-[var(--color-ink)] placeholder:text-[var(--color-slate-custom)] focus-visible:ring-[var(--color-amber)] border-[var(--color-line)]"
-              />
-            </div>
-          </CardContent>
-          <CardFooter className="pt-2 pb-6">
-            <SubmitButton />
-          </CardFooter>
-        </form>
+        <LoginForm 
+          initialError={resolvedParams?.error} 
+          initialSuccess={resolvedParams?.success} 
+        />
       </Card>
     </div>
   )

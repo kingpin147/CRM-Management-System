@@ -164,8 +164,10 @@ export function UserRowActions({ user }: { user: UserProps }) {
                 <SelectContent>
                   <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
                   <SelectItem value="ADMIN">Admin</SelectItem>
-                  <SelectItem value="MANAGER">Manager</SelectItem>
-                  <SelectItem value="SALES">Sales</SelectItem>
+                  <SelectItem value="SALES_MANAGER">Sales Manager</SelectItem>
+                  <SelectItem value="BILLING_MANAGER">Billing Manager</SelectItem>
+                  <SelectItem value="OM_MANAGER">O&M Manager</SelectItem>
+                  <SelectItem value="MANAGER">Manager (General)</SelectItem>
                   <SelectItem value="INSTALLATION">Installation</SelectItem>
                   <SelectItem value="CUSTOMER_SUPPORT">Customer Support</SelectItem>
                 </SelectContent>

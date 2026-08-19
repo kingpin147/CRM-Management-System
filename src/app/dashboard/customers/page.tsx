@@ -8,7 +8,7 @@ export default async function CustomersPage() {
   const dbUser = user ? await prisma.user.findUnique({ where: { supabaseId: user.id }, select: { role: true } }) : null
   const userRole = dbUser?.role || 'SALES'
 
-  const canRegisterCustomer = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES'].includes(userRole)
+  const canRegisterCustomer = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES_MANAGER', 'SALES'].includes(userRole)
 
   // No customer data is pre-fetched here.
   // The CustomerSearchForm will query the API only when the user performs a search.

@@ -32,19 +32,19 @@ export default async function DashboardLayout({
   const dbUser = await prisma.user.findUnique({
     where: { supabaseId: user.id }
   })
-  const userRole = dbUser?.role || 'SALES'
+  const userRole = dbUser?.role || 'SALES_MANAGER'
 
   return (
     <div className="flex min-h-screen w-full bg-background">
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="h-16 flex items-center justify-between px-4 md:px-6 border-b border-[var(--color-line)] bg-white/90 backdrop-blur-md sticky top-0 z-30 shadow-2xs shrink-0">
+        <header className="h-16 flex items-center justify-between px-3 sm:px-4 lg:px-6 border-b border-[var(--color-line)] bg-white/90 backdrop-blur-md sticky top-0 z-30 shadow-2xs shrink-0">
           
           {/* Mobile Navigation */}
-          <div className="flex items-center gap-3 md:hidden">
+          <div className="flex items-center gap-2 md:hidden">
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="shrink-0 md:hidden">
+                <Button variant="ghost" size="icon" className="shrink-0 md:hidden h-9 w-9">
                   <Menu className="h-5 w-5" />
                   <span className="sr-only">Toggle navigation menu</span>
                 </Button>
@@ -59,23 +59,25 @@ export default async function DashboardLayout({
                 </nav>
               </SheetContent>
             </Sheet>
-            <Link href="/dashboard/customers" className="font-display font-bold text-lg text-[var(--color-graphite)] hover:opacity-80 transition-opacity">EnergyGurus</Link>
+            <Link href="/dashboard/customers" className="font-display font-bold text-base text-[var(--color-graphite)] hover:opacity-80 transition-opacity">EnergyGurus</Link>
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center flex-1 gap-8">
-            <Link href="/dashboard/customers" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <Image src="/logo-icon.svg" alt="EnergyGurus Logo" width={28} height={28} />
-              <span className="font-display font-bold text-xl text-[var(--color-graphite)]">EnergyGurus</span>
+          <div className="hidden md:flex items-center flex-1 gap-2 lg:gap-4 xl:gap-6 min-w-0">
+            <Link href="/dashboard/customers" className="flex items-center gap-1.5 lg:gap-2 shrink-0 hover:opacity-80 transition-opacity">
+              <Image src="/logo-icon.svg" alt="EnergyGurus Logo" width={26} height={26} className="w-6 h-6 lg:w-7 lg:h-7" />
+              <span className="font-display font-bold text-base lg:text-lg xl:text-xl text-[var(--color-graphite)] tracking-tight">EnergyGurus</span>
             </Link>
-            <MainNav role={userRole} orientation="horizontal" />
+            <div className="flex-1 min-w-0 overflow-x-auto no-scrollbar">
+              <MainNav role={userRole} orientation="horizontal" />
+            </div>
           </div>
 
-          <div className="flex items-center justify-end space-x-4 ml-4">
+          <div className="flex items-center justify-end shrink-0 ml-2">
             <UserNav email={user.email} />
           </div>
         </header>
-        <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 bg-background">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 bg-background">
           {children}
         </div>
       </main>

@@ -286,10 +286,10 @@ export function CustomerSearchForm({
                   results.map((c) => (
                     <TableRow key={c.id} className="hover:bg-[var(--color-paper)]/40 transition-colors">
                       <TableCell className="font-mono text-xs font-semibold text-[var(--color-ink)]">
-                        {c.customerCode}
+                        {c.customerCode?.replace(/\D/g, '') || c.customerCode}
                       </TableCell>
                       <TableCell className="font-mono text-xs font-medium text-[var(--color-graphite)]">
-                        {c.crfNumber || '—'}
+                        {c.crfNumber || (c.customerCode ? `CRF-${c.customerCode.replace(/\D/g, '')}` : '—')}
                       </TableCell>
                       <TableCell className="font-medium text-xs text-[var(--color-ink)]">
                         {c.fullName}

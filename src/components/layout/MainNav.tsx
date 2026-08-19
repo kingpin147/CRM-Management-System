@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 export function MainNav({ 
-  role = 'SALES', 
+  role = 'SALES_MANAGER', 
   orientation = 'vertical' 
 }: { 
   role?: string;
@@ -31,8 +31,10 @@ export function MainNav({
   }
 
   const triggerClass = (baseActive: boolean) => {
-    const base = "flex items-center gap-1 text-sm font-semibold rounded-lg transition-all duration-200 cursor-pointer select-none"
-    const layout = orientation === 'horizontal' ? "px-3.5 py-2" : "w-full justify-between px-3 py-2"
+    const base = "flex items-center gap-1 xl:gap-1.5 text-xs xl:text-sm font-semibold rounded-lg transition-all duration-200 cursor-pointer select-none whitespace-nowrap shrink-0"
+    const layout = orientation === 'horizontal' 
+      ? "px-2 py-1.5 lg:px-2.5 lg:py-1.5 xl:px-3 xl:py-2" 
+      : "w-full justify-between px-3 py-2 text-xs"
     
     if (baseActive) {
       return `${base} ${layout} bg-[var(--color-amber)]/15 text-[var(--color-ink)] font-bold shadow-2xs`
@@ -41,8 +43,10 @@ export function MainNav({
   }
 
   const linkClass = (path: string) => {
-    const base = "flex items-center text-sm font-medium rounded-lg transition-all duration-200"
-    const layout = orientation === 'horizontal' ? "px-3.5 py-2" : "px-3 py-2"
+    const base = "flex items-center text-xs xl:text-sm font-medium rounded-lg transition-all duration-200 whitespace-nowrap shrink-0"
+    const layout = orientation === 'horizontal' 
+      ? "px-2 py-1.5 lg:px-2.5 lg:py-1.5 xl:px-3 xl:py-2" 
+      : "px-3 py-2 text-xs"
 
     if (isActive(path)) {
       return `${base} ${layout} bg-[var(--color-amber)]/15 text-[var(--color-ink)] font-semibold shadow-2xs`
@@ -54,28 +58,28 @@ export function MainNav({
 
   if (orientation === 'horizontal') {
     return (
-      <nav className="flex items-center space-x-2">
+      <nav className="flex items-center gap-0.5 lg:gap-1 xl:gap-1.5">
         {/* Customer Search Tab */}
         <Link 
           href="/dashboard/customers" 
           className={linkClass('/dashboard/customers')}
         >
-          <span className="flex items-center gap-1.5 font-semibold">
-            <Search className="h-4 w-4 text-[var(--color-amber)]" />
-            Customer Search
+          <span className="flex items-center gap-1 xl:gap-1.5 font-semibold">
+            <Search className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
+            <span>Customer Search</span>
           </span>
         </Link>
 
         {/* 1. Sales Tab with Sub-menu */}
         <DropdownMenu>
           <DropdownMenuTrigger className={triggerClass(pathname.startsWith('/dashboard/sales') || pathname === '/dashboard/customers/new')}>
-            <span className="flex items-center gap-1.5">
-              <ShoppingBag className="h-4 w-4 text-[var(--color-amber)]" />
-              Sales
+            <span className="flex items-center gap-1 xl:gap-1.5">
+              <ShoppingBag className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
+              <span>Sales</span>
             </span>
-            <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+            <ChevronDown className="h-3 w-3 xl:h-3.5 xl:w-3.5 opacity-70 shrink-0 ml-0.5" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-48 bg-white p-1.5 shadow-md border-line rounded-xl">
+          <DropdownMenuContent align="start" className="w-48 bg-white p-1.5 shadow-lg border-line rounded-xl animate-in fade-in-50 zoom-in-95">
             <DropdownMenuItem>
               <Link href="/dashboard/customers/new" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
                 Create Sale
@@ -83,25 +87,25 @@ export function MainNav({
             </DropdownMenuItem>
             <DropdownMenuItem>
               <Link href="/dashboard/sales/pending" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
-                Pending Sale
+                Manager Approval
               </Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* 2. Complain Management Tab with Sub-menu */}
+        {/* 2. Complaint Management Tab with Sub-menu */}
         <DropdownMenu>
           <DropdownMenuTrigger className={triggerClass(pathname.startsWith('/dashboard/tickets'))}>
-            <span className="flex items-center gap-1.5">
-              <AlertCircle className="h-4 w-4 text-[var(--color-amber)]" />
-              Complain Management
+            <span className="flex items-center gap-1 xl:gap-1.5">
+              <AlertCircle className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
+              <span>Complaints</span>
             </span>
-            <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+            <ChevronDown className="h-3 w-3 xl:h-3.5 xl:w-3.5 opacity-70 shrink-0 ml-0.5" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-48 bg-white p-1.5 shadow-md border-line rounded-xl">
+          <DropdownMenuContent align="start" className="w-48 bg-white p-1.5 shadow-lg border-line rounded-xl animate-in fade-in-50 zoom-in-95">
             <DropdownMenuItem>
               <Link href="/dashboard/tickets?status=PENDING" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
-                Pending Complains
+                Pending Complaints
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem>
@@ -115,13 +119,13 @@ export function MainNav({
         {/* 3. Reports Tab with Sub-menu */}
         <DropdownMenu>
           <DropdownMenuTrigger className={triggerClass(pathname.startsWith('/dashboard/reports'))}>
-            <span className="flex items-center gap-1.5">
-              <BarChart3 className="h-4 w-4 text-[var(--color-amber)]" />
-              Reports
+            <span className="flex items-center gap-1 xl:gap-1.5">
+              <BarChart3 className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
+              <span>Reports</span>
             </span>
-            <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+            <ChevronDown className="h-3 w-3 xl:h-3.5 xl:w-3.5 opacity-70 shrink-0 ml-0.5" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56 bg-white p-1.5 shadow-md border-line rounded-xl">
+          <DropdownMenuContent align="start" className="w-56 bg-white p-1.5 shadow-lg border-line rounded-xl animate-in fade-in-50 zoom-in-95">
             <DropdownMenuItem>
               <Link href="/dashboard/reports?view=status" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
                 Customer Status Report
@@ -158,13 +162,13 @@ export function MainNav({
         {/* 4. Service Delivery Tab with Sub-menu */}
         <DropdownMenu>
           <DropdownMenuTrigger className={triggerClass(pathname.startsWith('/dashboard/service-delivery'))}>
-            <span className="flex items-center gap-1.5">
-              <Truck className="h-4 w-4 text-[var(--color-amber)]" />
-              Service Delivery
+            <span className="flex items-center gap-1 xl:gap-1.5">
+              <Truck className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
+              <span>Service Delivery</span>
             </span>
-            <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+            <ChevronDown className="h-3 w-3 xl:h-3.5 xl:w-3.5 opacity-70 shrink-0 ml-0.5" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-52 bg-white p-1.5 shadow-md border-line rounded-xl">
+          <DropdownMenuContent align="start" className="w-52 bg-white p-1.5 shadow-lg border-line rounded-xl animate-in fade-in-50 zoom-in-95">
             <DropdownMenuItem>
               <Link href="/dashboard/service-delivery/inventory" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
                 Inventory Management
@@ -176,9 +180,9 @@ export function MainNav({
         {/* Admin Management if Authorized */}
         {canViewAdmin && (
           <Link href="/dashboard/admin" className={linkClass('/dashboard/admin')}>
-            <span className="flex items-center gap-1.5">
-              <Users className="h-4 w-4 text-[var(--color-amber)]" />
-              User Roles
+            <span className="flex items-center gap-1 xl:gap-1.5">
+              <Users className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
+              <span>User Roles</span>
             </span>
           </Link>
         )}
@@ -208,19 +212,19 @@ export function MainNav({
             Create Sale
           </Link>
           <Link href="/dashboard/sales/pending" className={linkClass('/dashboard/sales/pending')}>
-            Pending Sale
+            Manager Approval
           </Link>
         </div>
       </div>
 
       <div>
-        <p className="px-3 text-xs font-bold text-[var(--color-slate-custom)] uppercase tracking-wider mb-1">Complain Management</p>
+        <p className="px-3 text-xs font-bold text-[var(--color-slate-custom)] uppercase tracking-wider mb-1">Complaint Management</p>
         <div className="space-y-0.5">
           <Link href="/dashboard/tickets?status=PENDING" className={linkClass('/dashboard/tickets?status=PENDING')}>
-            Pending Complains
+            Pending Complaints
           </Link>
           <Link href="/dashboard/tickets" className={linkClass('/dashboard/tickets')}>
-            All Tickets
+            All Tickets & Support
           </Link>
         </div>
       </div>
@@ -276,4 +280,3 @@ export function MainNav({
     </div>
   )
 }
-
