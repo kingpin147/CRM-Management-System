@@ -1,5 +1,5 @@
 import React from 'react'
-import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer'
+import { Document, Page, Text, View, StyleSheet, Image, Svg, Path, Rect, Circle } from '@react-pdf/renderer'
 
 const styles = StyleSheet.create({
   page: {
@@ -165,11 +165,58 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   
-  // Right Graphic
+  // Right Graphic & Solar Banner
   rightGraphic: {
     width: '100%',
     height: 'auto',
     borderRadius: 3,
+  },
+  solarBannerImage: {
+    width: '100%',
+    height: 'auto',
+    borderRadius: 3,
+  },
+  paymentOptionsBlockImage: {
+    width: '100%',
+    height: 'auto',
+    borderRadius: 3,
+    marginTop: 4,
+  },
+
+  // Native Vector Payment Options Block
+  paymentOptionsCard: {
+    border: '1px solid #c2d0e0',
+    borderTop: 'none',
+    borderBottomLeftRadius: 3,
+    borderBottomRightRadius: 3,
+    backgroundColor: '#FFFFFF',
+    marginTop: -2,
+    overflow: 'hidden',
+  },
+  paymentOptionsGrid: {
+    flexDirection: 'row',
+    paddingVertical: 4.5,
+    paddingHorizontal: 2,
+    alignItems: 'center',
+  },
+  paymentCol: {
+    width: '25%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 1.5,
+  },
+  paymentColDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: '#e2e8f0',
+  },
+  paymentColTitle: {
+    fontSize: 7,
+    fontWeight: 'bold',
+    color: '#002868',
+    textAlign: 'center',
+    marginTop: 2,
+    lineHeight: 1.15,
   },
   
   // Billing History Table Grid
@@ -337,11 +384,15 @@ export function InvoiceDocument({
   customer, 
   invoice, 
   logoSrc, 
+  solarHouseBannerSrc,
+  paymentOptionsBlockSrc,
   rightGraphicSrc,
 }: { 
   customer: any; 
   invoice?: any; 
   logoSrc?: string; 
+  solarHouseBannerSrc?: string;
+  paymentOptionsBlockSrc?: string;
   rightGraphicSrc?: string;
 }) {
   const issueDate = invoice ? new Date(invoice.createdAt) : new Date()
@@ -582,9 +633,71 @@ export function InvoiceDocument({
                 </View>
               </View>
               
-              {/* Solar House Illustration and Payment Options Graphic */}
-              {rightGraphicSrc && (
-                <Image src={rightGraphicSrc} style={styles.rightGraphic} />
+              {/* Solar House Illustration */}
+              {solarHouseBannerSrc ? (
+                <Image src={solarHouseBannerSrc} style={styles.solarBannerImage} />
+              ) : (
+                rightGraphicSrc && <Image src={rightGraphicSrc} style={styles.rightGraphic} />
+              )}
+              
+              {/* Payment Options Block Graphic */}
+              {paymentOptionsBlockSrc ? (
+                <Image src={paymentOptionsBlockSrc} style={styles.paymentOptionsBlockImage} />
+              ) : (
+                <View style={styles.paymentOptionsCard}>
+                  <View style={styles.paymentOptionsGrid}>
+                    {/* Bank Transfer */}
+                    <View style={styles.paymentCol}>
+                      <Svg width={18} height={18} viewBox="0 0 24 24">
+                        <Path d="M4 10v7h3v-7H4zm6 0v7h3v-7h-3zm6 0v7h3v-7h-3zM2 22h20v-3H2v3zM12 2L2 7h20L12 2z" fill="#002868" />
+                      </Svg>
+                      <Text style={styles.paymentColTitle} hyphenationCallback={() => []}>
+                        {`Bank\nTransfer`}
+                      </Text>
+                    </View>
+                    <View style={styles.paymentColDivider} />
+
+                    {/* Credit / Debit Card */}
+                    <View style={styles.paymentCol}>
+                      <Svg width={18} height={18} viewBox="0 0 24 24">
+                        <Rect x="2" y="4" width="20" height="16" rx="3" fill="#002868" />
+                        <Rect x="2" y="8" width="20" height="4" fill="#F58220" />
+                        <Rect x="5" y="15" width="4" height="2" fill="#FFFFFF" />
+                        <Rect x="11" y="15" width="3" height="2" fill="#FFFFFF" />
+                      </Svg>
+                      <Text style={styles.paymentColTitle} hyphenationCallback={() => []}>
+                        {`Credit / Debit\nCard`}
+                      </Text>
+                    </View>
+                    <View style={styles.paymentColDivider} />
+
+                    {/* EasyPaisa / JazzCash */}
+                    <View style={styles.paymentCol}>
+                      <Svg width={18} height={18} viewBox="0 0 24 24">
+                        <Rect x="6" y="2" width="12" height="20" rx="3" fill="none" stroke="#002868" strokeWidth={2} />
+                        <Path d="M10 5h4" stroke="#002868" strokeWidth={2} strokeLinecap="round" />
+                        <Circle cx="12" cy="18" r="1" fill="#F58220" />
+                        <Path d="M9 11l2 2 4-4" fill="none" stroke="#002868" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+                      </Svg>
+                      <Text style={styles.paymentColTitle} hyphenationCallback={() => []}>
+                        {`EasyPaisa /\nJazzCash`}
+                      </Text>
+                    </View>
+                    <View style={styles.paymentColDivider} />
+
+                    {/* Cheque / Pay Order */}
+                    <View style={styles.paymentCol}>
+                      <Svg width={18} height={18} viewBox="0 0 24 24">
+                        <Rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="#002868" strokeWidth={2} />
+                        <Path d="M6 9h7M6 13h4M15 13h3" stroke="#002868" strokeWidth={1.8} strokeLinecap="round" />
+                        <Path d="M14 17l2-3 3 1" fill="none" stroke="#F58220" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+                      </Svg>
+                      <Text style={styles.paymentColTitle} hyphenationCallback={() => []}>
+                        {`Cheque /\nPay Order`}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
               )}
               
             </View>

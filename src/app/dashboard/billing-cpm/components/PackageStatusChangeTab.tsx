@@ -12,7 +12,8 @@ import { searchCustomerForBilling, updateCustomerPackageAndStatus } from '../act
 import { CustomerBillingProfileCard } from './CustomerBillingProfileCard'
 import { CustomerSearchAutoSuggest } from './CustomerSearchAutoSuggest'
 
-const SYSTEM_SIZES = ['1-10 kW', '10-20 kW', '20-30 kW', '30+ kW']
+import { SYSTEM_SIZES } from '@/lib/solar-constants'
+
 const PACKAGES = ['Basic', 'Moderate', 'Comprehensive']
 const BILLING_TYPES = ['Monthly', 'Quarterly', 'Half Yearly', 'Yearly']
 const MONITORING_TIMES = ['12 Hours', '24 Hours']
@@ -99,12 +100,42 @@ export function PackageStatusChangeTab() {
     setCustomAmount(est)
   }
 
-  const oldTotal = customer?.packagePlan?.totalAmount || 0
-  const diff = customAmount - oldTotal
+  const TIER_RANKS: Record<string, number> = { Basic: 1, Moderate: 2, Comprehensive: 3 }
+  const oldTier = customer?.packagePlan?.packageTier || 'Basic'
+  const oldRank = TIER_RANKS[oldTier] || 1
+  const newRank = TIER_RANKS[packageTier] || 1
+  const isDowngrade = newRank < oldRank
+  const isUpgrade = newRank > oldRank
+
+  const invoicesList = customer?.invoices || []
+  const hasRecurringInvoices = invoicesList.length > 1
+  const lastRecurringInvoice = invoicesList[0]
+
+  // Rule: Customer CANNOT downgrade package on initial Signup / Sales Invoice!
+  const isDowngradeBlocked = isDowngrade && !hasRecurringInvoices
+
+  // Calculate base comparison rate for target period (apples to apples comparison)
+  const oldRateForTargetPeriod = customer?.packagePlan
+    ? estimatePlanPrice(systemSize, oldTier, billingType)
+    : (customer?.packagePlan?.totalAmount || 0)
+
+  const baseComparisonRate = (lastRecurringInvoice && oldTier === packageTier && customer?.packagePlan?.billingType === billingType)
+    ? Number(lastRecurringInvoice.totalAmount)
+    : oldRateForTargetPeriod
+
+  // Calculate difference relative to normalized base rate
+  const diff = customAmount - baseComparisonRate
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!customer) return
+    if (isDowngradeBlocked) {
+      setFeedback({
+        type: 'error',
+        message: 'Downgrade Not Allowed: Customer cannot downgrade package on Signup / Sales Invoice.'
+      })
+      return
+    }
 
     setIsSaving(true)
     setFeedback(null)
@@ -118,6 +149,7 @@ export function PackageStatusChangeTab() {
       formData.append('billingType', billingType)
       formData.append('monitoringTime', monitoringTime)
       formData.append('totalAmount', customAmount.toString())
+      formData.append('calculatedDiff', diff.toString())
       formData.append('notes', notes)
 
       const res = await updateCustomerPackageAndStatus(formData)
@@ -180,10 +212,22 @@ export function PackageStatusChangeTab() {
           <CardContent className="pt-6">
             <form onSubmit={handleSave} className="space-y-6">
               
+              {/* Downgrade Blocked Warning Callout */}
+              {isDowngradeBlocked && (
+                <div className="p-3.5 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs flex items-start gap-2.5 shadow-2xs">
+                  <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <p className="font-bold">Package Downgrade Not Allowed on Signup / Sales Invoice</p>
+                    <p className="text-amber-800 text-[11px]">
+                      Customers cannot downgrade packages on initial Signup / Sales Invoice. Package downgrades are only permitted after recurring invoices are generated, based on the last generated recurring invoice. Upgrades are allowed anytime.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Dropdowns Matrix */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 
-                {/* System Type */}
                 {/* System Type */}
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold text-slate-700">System Type (kW)</Label>
@@ -315,12 +359,16 @@ export function PackageStatusChangeTab() {
               {/* Adjustment Note & Automatic Debit/Credit Warning */}
               <div className="p-4 bg-slate-50 rounded-xl border border-line space-y-3">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-600 font-medium">Previous Plan Rate: <strong className="text-slate-900 font-mono">Rs. {oldTotal.toLocaleString()}</strong></span>
-                  <span className="text-slate-600 font-medium">New Plan Rate: <strong className="text-slate-900 font-mono">Rs. {customAmount.toLocaleString()}</strong></span>
+                  <span className="text-slate-600 font-medium">Previous Base Rate ({oldTier}): <strong className="text-slate-900 font-mono">Rs. {baseComparisonRate.toLocaleString()}</strong></span>
+                  <span className="text-slate-600 font-medium">New Plan Rate ({packageTier}): <strong className="text-slate-900 font-mono">Rs. {customAmount.toLocaleString()}</strong></span>
                   <span className="font-bold flex items-center gap-1">
-                    Difference: 
+                    Adjustment: 
                     <span className={`font-mono ${diff > 0 ? 'text-rose-600' : diff < 0 ? 'text-emerald-600' : 'text-slate-600'}`}>
-                      {diff > 0 ? `+Rs. ${diff.toLocaleString()} (Debit Adjustment)` : diff < 0 ? `-Rs. ${Math.abs(diff).toLocaleString()} (Credit Adjustment)` : 'No Price Change'}
+                      {diff > 0 
+                        ? `+Rs. ${diff.toLocaleString()} (Debit Adjustment)` 
+                        : diff < 0 
+                        ? `-Rs. ${Math.abs(diff).toLocaleString()} (Credit Note Adjustment)` 
+                        : 'No Price Change'}
                     </span>
                   </span>
                 </div>
@@ -328,7 +376,7 @@ export function PackageStatusChangeTab() {
                 <div className="space-y-1">
                   <Label className="text-[11px] font-semibold text-slate-600">Reason / Change Notes</Label>
                   <Input 
-                    placeholder="e.g. Upgraded from Basic to Comprehensive package" 
+                    placeholder={isDowngrade ? 'e.g. Downgraded package tier from Comprehensive to Moderate' : 'e.g. Upgraded from Basic to Comprehensive package'} 
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     className="h-8 text-xs bg-white"
@@ -344,7 +392,7 @@ export function PackageStatusChangeTab() {
               )}
 
               <div className="flex justify-end gap-3 pt-2">
-                <Button type="submit" disabled={isSaving} className="h-10 px-6 bg-[var(--color-ink)] hover:bg-black text-white font-semibold text-xs shadow-sm">
+                <Button type="submit" disabled={isSaving || isDowngradeBlocked} className="h-10 px-6 bg-[var(--color-ink)] hover:bg-black text-white font-semibold text-xs shadow-sm disabled:opacity-50">
                   {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Package & Status Changes'}
                 </Button>
               </div>

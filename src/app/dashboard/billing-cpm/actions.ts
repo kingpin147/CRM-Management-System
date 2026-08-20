@@ -156,6 +156,7 @@ export async function updateCustomerPackageAndStatus(formData: FormData) {
     const billingType = formData.get('billingType') as string
     const monitoringTime = formData.get('monitoringTime') as string
     const newTotalAmountStr = formData.get('totalAmount') as string
+    const calculatedDiffStr = formData.get('calculatedDiff') as string
     const adjustmentNotes = formData.get('notes') as string || ''
 
     if (!customerId) return { error: 'Customer ID is required.' }
@@ -164,6 +165,9 @@ export async function updateCustomerPackageAndStatus(formData: FormData) {
       where: { id: customerId },
       include: {
         packagePlan: true,
+        invoices: {
+          orderBy: { createdAt: 'desc' }
+        },
         ledgerEntries: {
           orderBy: { createdAt: 'desc' },
           take: 1
@@ -173,9 +177,28 @@ export async function updateCustomerPackageAndStatus(formData: FormData) {
 
     if (!customer) return { error: 'Customer record not found.' }
 
+    const TIER_RANKS: Record<string, number> = { Basic: 1, Moderate: 2, Comprehensive: 3 }
+    const oldTier = customer.packagePlan?.packageTier || 'Basic'
+    const oldRank = TIER_RANKS[oldTier] || 1
+    const newRank = TIER_RANKS[packageTier] || 1
+    const isDowngrade = newRank < oldRank
+
+    const hasRecurringInvoices = (customer.invoices || []).length > 1
+
+    // Rule: Customer CANNOT downgrade package on initial Signup / Sales invoice!
+    if (isDowngrade && !hasRecurringInvoices) {
+      return {
+        error: 'Downgrade Not Allowed: Package downgrade is not permitted on Signup / Sales Invoice. Customers can only downgrade after recurring invoices are generated.'
+      }
+    }
+
     const oldTotal = customer.packagePlan?.totalAmount ? Number(customer.packagePlan.totalAmount) : 0
     const newTotal = newTotalAmountStr ? parseFloat(newTotalAmountStr) : oldTotal
-    const diff = newTotal - oldTotal
+
+    // Use passed calculated difference if available, otherwise raw diff
+    const diff = calculatedDiffStr !== null && calculatedDiffStr !== undefined
+      ? parseFloat(calculatedDiffStr)
+      : (newTotal - oldTotal)
 
     // 1. Update Customer status
     await prisma.customer.update({
@@ -194,12 +217,12 @@ export async function updateCustomerPackageAndStatus(formData: FormData) {
         newStatus: status,
         oldPackage: customer.packagePlan ? `${customer.packagePlan.packageTier} (${customer.packagePlan.systemSizeKw})` : undefined,
         newPackage: packageTier && systemSizeKw ? `${packageTier} (${systemSizeKw})` : undefined,
-        notes: adjustmentNotes || `Status updated from ${customer.status?.replace(/_/g, ' ')} to ${status.replace(/_/g, ' ')}`,
+        notes: adjustmentNotes || `Status/Package updated from ${oldTier} to ${packageTier}`,
         performedBy: 'Billing & Operations',
       }
     })
 
-    // 2. Upsert Package Plan
+    // 3. Upsert Package Plan
     const basePrice = newTotal * 0.84 // approx before 16% sales tax
     const tax = newTotal * 0.16
 
@@ -227,19 +250,25 @@ export async function updateCustomerPackageAndStatus(formData: FormData) {
       }
     })
 
-    // 3. If price changed, create automatic Ledger adjustment entry
+    // 4. If price changed, create automatic Ledger adjustment entry (Credit Note or Debit Note)
     if (diff !== 0) {
       const currentBal = customer.ledgerEntries[0]?.balance ? Number(customer.ledgerEntries[0].balance) : 0
       const isDebit = diff > 0
       const adjAmount = Math.abs(diff)
       const newBal = isDebit ? currentBal + adjAmount : currentBal - adjAmount
+      const code = Date.now().toString(16).slice(-8).toUpperCase()
+
+      const refNumber = isDebit ? `Debit Note-${code}` : `Credit Note-${code}`
+      const narration = isDebit 
+        ? `Debit Note charged against Package Upgrade${adjustmentNotes ? `: ${adjustmentNotes}` : ''}`
+        : `Credit Note Adjustment against Package Downgrade${adjustmentNotes ? `: ${adjustmentNotes}` : ''}`
 
       await prisma.ledgerEntry.create({
         data: {
           customerId,
           date: new Date(),
-          refNumber: `CPM-ADJ-${Date.now().toString().slice(-6)}`,
-          narration: `Plan Change Adjustment (${packageTier} - ${billingType})${adjustmentNotes ? `: ${adjustmentNotes}` : ''}`,
+          refNumber,
+          narration,
           debit: isDebit ? adjAmount : 0,
           credit: !isDebit ? adjAmount : 0,
           balance: newBal,
@@ -254,11 +283,11 @@ export async function updateCustomerPackageAndStatus(formData: FormData) {
 
     return { 
       success: true, 
-      message: `Package & Status updated successfully!${diff !== 0 ? ` Automatic ${diff > 0 ? 'Debit' : 'Credit'} adjustment of Rs. ${Math.abs(diff).toLocaleString()} applied.` : ''}` 
+      message: `Package updated to ${packageTier} (${billingType}). ${diff !== 0 ? (diff > 0 ? 'Debit Note' : 'Credit Note') : ''} of Rs. ${Math.abs(diff).toLocaleString()} posted to customer ledger.` 
     }
   } catch (error: any) {
-    console.error('Error updating package & status:', error)
-    return { error: error?.message || 'Failed to update package and status.' }
+    console.error('Error updating customer package:', error)
+    return { error: error?.message || 'Failed to update package.' }
   }
 }
 
@@ -374,17 +403,25 @@ export async function postTransaction(transactionId: string) {
     let creditAmount = 0
     let narration = ''
 
+    const txCode = tx.id.slice(0, 8).toUpperCase()
+    let refNumber = `TX-${txCode}`
+
     if (isDebit) {
       debitAmount = amount
       newBalance = currentBalance + amount
-      narration = `Debit Note: ${param3 || param2 || 'Manual Adjustment'}`
+      const noteReason = (param3 || param2 || 'Manual Adjustment').trim()
+      refNumber = `Debit Note-${txCode}`
+      narration = `Debit Note charged against ${noteReason}`
     } else if (isCredit) {
       creditAmount = amount
       newBalance = currentBalance - amount
-      narration = `Credit Note: ${param3 || param2 || 'Manual Adjustment'}`
+      const noteReason = (param3 || param2 || 'Manual Adjustment').trim()
+      refNumber = `Credit Note-${txCode}`
+      narration = `Credit Note Adjustment against ${noteReason}`
     } else if (isPayment) {
       creditAmount = amount
       newBalance = currentBalance - amount
+      refNumber = `PRV-${txCode}`
       narration = `Payment Received (${param2 || 'Cash/Bank'}): ${param4 || param3 || 'Account Settlement'}`
     }
 
@@ -393,7 +430,7 @@ export async function postTransaction(transactionId: string) {
       data: {
         customerId: tx.customerId,
         date: tx.createdAt || new Date(),
-        refNumber: `TX-${tx.id.slice(0, 8).toUpperCase()}`,
+        refNumber,
         narration,
         debit: debitAmount,
         credit: creditAmount,

@@ -19,7 +19,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { AutoSuggestInput } from '@/components/ui/auto-suggest-input'
 import { CITIES_LIST, getAreasForCity, getDefaultDiscoForCity } from '@/lib/pakistan-cities-areas'
 import { formatDiscoRefNo } from '@/lib/utils'
-import { INVERTER_SIZES, INVERTER_BRANDS, PANEL_BRANDS, BATTERY_BRANDS, IP_LIST } from '@/lib/solar-constants'
+import { SYSTEM_SIZES, INVERTER_SIZES, INVERTER_BRANDS, PANEL_BRANDS, BATTERY_BRANDS, IP_LIST } from '@/lib/solar-constants'
 
 
 const customerSchema = z.object({
@@ -848,10 +848,9 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="1-10 kW">1–10 kW</SelectItem>
-                              <SelectItem value="10-20 kW">10–20 kW</SelectItem>
-                              <SelectItem value="20-30 kW">20–30 kW</SelectItem>
-                              <SelectItem value="30+ kW">30 kW &amp; Above</SelectItem>
+                              {SYSTEM_SIZES.map((size) => (
+                                <SelectItem key={size} value={size}>{size}</SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                           <FormMessage />

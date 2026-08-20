@@ -25,7 +25,7 @@ const styles = StyleSheet.create({
   },
 
   bottomPinnedContainer: {
-    marginTop: 'auto',
+    marginTop: 6,
     marginBottom: 2,
     flexShrink: 0,
   },
@@ -585,8 +585,6 @@ export function SignupDocument({ customer, logoSrc }: { customer: any; logoSrc?:
 
         </View>
 
-        {/* Dynamic Spacer */}
-        <View style={styles.flexSpacer} />
 
         {/* Bottom Pinned Section */}
         <View style={styles.bottomPinnedContainer}>
@@ -600,11 +598,6 @@ export function SignupDocument({ customer, logoSrc }: { customer: any; logoSrc?:
             </View>
           </View>
 
-          {/* Dotted Signature Lines (Lines kept, signature labels removed as per rule) */}
-          <View style={styles.signRow}>
-            <View style={styles.signBox} />
-            <View style={styles.signBox} />
-          </View>
 
           {/* Footer Addresses */}
           <View style={styles.footerRow}>

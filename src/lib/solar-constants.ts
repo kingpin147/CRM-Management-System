@@ -18,6 +18,13 @@ export const INVERTER_SIZES = [
   '150kW',
 ]
 
+export const SYSTEM_SIZES = [
+  '1-10 kW',
+  '10-20 kW',
+  '20-30 kW',
+  '30+ kW',
+]
+
 export const INVERTER_BRANDS = [
   'Knox', 'Fronius', 'Livoltek', 'GoodWe', 'Galaxy', 'Solis', 'CoreTech', 'Inverex',
   'Ziewnic', 'Itel', 'Sunviour', 'Yinergy', 'Huawei', 'SAJ', 'Fox ESS', 'Solplanet',

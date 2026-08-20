@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { CheckCircle2, Clock, DollarSign, Wrench, Search, Layers, ArrowRight, UserCheck } from 'lucide-react'
+import { CheckCircle2, Clock, DollarSign, Wrench, Search, Layers, ArrowRight, UserCheck, Edit3, FileText } from 'lucide-react'
+import { EditCrfModal } from './components/EditCrfModal'
 
 type CustomerRecord = {
   id: string
@@ -16,6 +17,10 @@ type CustomerRecord = {
   fullName: string
   cnic: string
   contactNumber: string
+  email?: string | null
+  address?: string | null
+  block?: string | null
+  area?: string | null
   city: string
   status: string
   signupDate: string | Date | null
@@ -23,6 +28,7 @@ type CustomerRecord = {
     packageTier?: string | null
     systemSizeKw?: string | null
     billingType?: string | null
+    monitoringTime?: string | null
     totalAmount?: number | string | null
   } | null
   solarSystem: any | null
@@ -32,6 +38,7 @@ interface ManagerApprovalViewProps {
   customers: CustomerRecord[]
   userRole: string
   onAdvanceWorkflow: (formData: FormData) => Promise<void>
+  onUpdateCrfWorkflow?: (formData: FormData) => Promise<void>
 }
 
 function formatCustomerId(code?: string | null): string {
@@ -55,7 +62,9 @@ export function ManagerApprovalView({
   customers,
   userRole,
   onAdvanceWorkflow,
+  onUpdateCrfWorkflow,
 }: ManagerApprovalViewProps) {
+  const [editingCustomer, setEditingCustomer] = React.useState<CustomerRecord | null>(null)
   // Determine initial stage based on logged in user role
   const getInitialStage = (): 'ALL' | 'STAGE_1' | 'STAGE_2' | 'STAGE_3' => {
     const roleUpper = (userRole || '').toUpperCase()
@@ -362,29 +371,44 @@ export function ManagerApprovalView({
                         {isStage1 ? 'Sales Manager' : isStage2 ? 'Billing Manager' : 'O&M Manager'}
                       </TableCell>
 
-                      {/* Workflow Action Button */}
+                      {/* Workflow Action Buttons (Edit CRF + Approval) */}
                       <TableCell className="text-right">
-                        <form onSubmit={(e) => handleAdvance(e, c.id)} className="inline-block">
-                          <input type="hidden" name="customerId" value={c.id} />
-                          <input type="hidden" name="currentStatus" value={c.status} />
-                          <Button 
-                            type="submit" 
-                            size="sm" 
-                            disabled={isSubmitting}
-                            className={
-                              isStage1 ? 'bg-amber-600 hover:bg-amber-700 text-white text-xs gap-1.5 shadow-xs font-bold cursor-pointer' :
-                              isStage2 ? 'bg-blue-600 hover:bg-blue-700 text-white text-xs gap-1.5 shadow-xs font-bold cursor-pointer' :
-                              'bg-[#002868] hover:bg-[#001d4a] text-white text-xs gap-1.5 shadow-xs font-bold cursor-pointer'
-                            }
+                        <div className="flex items-center justify-end gap-2">
+                          {/* 1. Edit / Check CRF Form Button */}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setEditingCustomer(c)}
+                            className="text-xs border-slate-300 text-slate-700 font-semibold gap-1 hover:bg-slate-100 shadow-2xs cursor-pointer"
                           >
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                            {isSubmitting 
-                              ? 'Advancing...' 
-                              : isStage1 ? 'Sales Manager Approval' 
-                              : isStage2 ? 'Payment Verified' 
-                              : 'O&M Manager Approval'}
+                            <Edit3 className="h-3.5 w-3.5 text-amber-600" />
+                            Check & Edit CRF
                           </Button>
-                        </form>
+
+                          {/* 2. Direct Stage Approval Button */}
+                          <form onSubmit={(e) => handleAdvance(e, c.id)} className="inline-block">
+                            <input type="hidden" name="customerId" value={c.id} />
+                            <input type="hidden" name="currentStatus" value={c.status} />
+                            <Button 
+                              type="submit" 
+                              size="sm" 
+                              disabled={isSubmitting}
+                              className={
+                                isStage1 ? 'bg-amber-600 hover:bg-amber-700 text-white text-xs gap-1.5 shadow-xs font-bold cursor-pointer' :
+                                isStage2 ? 'bg-blue-600 hover:bg-blue-700 text-white text-xs gap-1.5 shadow-xs font-bold cursor-pointer' :
+                                'bg-[#002868] hover:bg-[#001d4a] text-white text-xs gap-1.5 shadow-xs font-bold cursor-pointer'
+                              }
+                            >
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                              {isSubmitting 
+                                ? 'Advancing...' 
+                                : isStage1 ? 'Sales Manager Approval' 
+                                : isStage2 ? 'Payment Verified' 
+                                : 'O&M Manager Approval'}
+                            </Button>
+                          </form>
+                        </div>
                       </TableCell>
                     </TableRow>
                   )
@@ -394,6 +418,16 @@ export function ManagerApprovalView({
           </Table>
         </CardContent>
       </Card>
+
+      {/* Edit CRF Modal for Managers */}
+      {editingCustomer && onUpdateCrfWorkflow && (
+        <EditCrfModal
+          customer={editingCustomer}
+          isOpen={!!editingCustomer}
+          onClose={() => setEditingCustomer(null)}
+          onSaveCrf={onUpdateCrfWorkflow}
+        />
+      )}
     </div>
   )
 }

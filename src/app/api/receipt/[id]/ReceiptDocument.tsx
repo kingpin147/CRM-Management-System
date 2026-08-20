@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
     fontSize: 8.5,
   },
   voucherNumberPillRight: {
-    backgroundColor: '#10B981',
+    backgroundColor: '#F58220',
     color: '#FFFFFF',
     paddingVertical: 2.5,
     paddingHorizontal: 6,
@@ -109,10 +109,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 
-  // Payment Highlight Box
+  // Payment Highlight Box (Orange Brand Theme)
   paymentBox: {
-    backgroundColor: '#F0FDF4',
-    border: '1px solid #10B981',
+    backgroundColor: '#FFF7ED',
+    border: '1px solid #F58220',
     borderRadius: 3,
     paddingVertical: 5,
     paddingHorizontal: 9,
@@ -126,15 +126,15 @@ const styles = StyleSheet.create({
   paymentAmountLabel: {
     fontSize: 9.5,
     fontWeight: 'bold',
-    color: '#065F46',
+    color: '#C2410C',
   },
   paymentAmountValue: {
     fontSize: 15,
     fontWeight: 'extrabold',
-    color: '#047857',
+    color: '#F58220',
   },
   statusBadge: {
-    backgroundColor: '#10B981',
+    backgroundColor: '#F58220',
     color: '#FFFFFF',
     paddingHorizontal: 6,
     paddingVertical: 1.5,
@@ -425,11 +425,6 @@ export function ReceiptDocument({
             </View>
           </View>
 
-          {/* Dotted Signature Lines (Lines kept, signature labels removed as requested) */}
-          <View style={styles.signRow}>
-            <View style={styles.signBox} />
-            <View style={styles.signBox} />
-          </View>
 
           {/* Footer Addresses */}
           <View style={styles.footerRow}>

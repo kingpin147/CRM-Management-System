@@ -875,19 +875,75 @@ export default async function CustomerDetailPage({
                     {/* Render database ledger entries for this customer */}
                     {customer.ledgerEntries && customer.ledgerEntries.length > 0 ? (
                       customer.ledgerEntries.map((le: any) => {
-                        const isPayment = Number(le.credit) > 0 || le.narration?.toLowerCase().includes('payment') || le.narration?.toLowerCase().includes('collection') || le.refNumber?.startsWith('PAY-') || le.refNumber?.startsWith('RCP-') || le.refNumber?.startsWith('PRV-')
-                        const isReversal = le.refNumber?.startsWith('REV-') || le.narration?.toLowerCase().includes('reversal')
-                        const isInvoice = !isPayment && !isReversal && (le.invoiceId || Number(le.debit) > 0 || le.refNumber?.startsWith('INV-') || le.refNumber?.startsWith('LHR-') || le.narration?.toLowerCase().includes('invoice'))
+                        const rawRef = (le.refNumber || '').trim()
+                        const rawNarr = (le.narration || '').trim()
+                        const code = rawRef.replace(/^(TX-|DB-ADJ-|CR-ADJ-|Debit Note-|Credit Note-)/i, '').trim()
 
-                        const refLabel = isPayment && !le.refNumber?.startsWith('PRV-') && !le.refNumber?.startsWith('RCP-') && !le.refNumber?.startsWith('PAY-')
-                          ? `PRV-${le.refNumber.replace(/^(INV|TX)-/, '')}`
-                          : le.refNumber
+                        const isDebitNote = rawNarr.toLowerCase().includes('debit note') || rawRef.startsWith('DB-ADJ-') || (rawRef.startsWith('TX-') && Number(le.debit) > 0 && !rawNarr.toLowerCase().includes('invoice') && !rawNarr.toLowerCase().includes('subscription'))
+                        const isCreditNote = rawNarr.toLowerCase().includes('credit note') || rawRef.startsWith('CR-ADJ-') || (rawRef.startsWith('TX-') && Number(le.credit) > 0 && !rawNarr.toLowerCase().includes('payment'))
+
+                        let formattedRef = rawRef
+                        let formattedNarr = rawNarr
+
+                        if (isDebitNote) {
+                          formattedRef = rawRef.startsWith('Debit Note-') ? rawRef : `Debit Note-${code}`
+                          let reason = rawNarr
+                            .replace(/^Debit Note:\s*/i, '')
+                            .replace(/^Package Change Debit Note\s*/i, '')
+                            .replace(/^Debit Note charged against\s*/i, '')
+                            .trim()
+                          if (reason.includes('(') && reason.includes('->')) {
+                            reason = 'Package Upgrade'
+                          }
+                          formattedNarr = `Debit Note charged against ${reason || 'Manual Adjustment'}`
+                        } else if (isCreditNote) {
+                          formattedRef = rawRef.startsWith('Credit Note-') ? rawRef : `Credit Note-${code}`
+                          let reason = rawNarr
+                            .replace(/^Credit Note:\s*/i, '')
+                            .replace(/^Package Change Credit Note\s*/i, '')
+                            .replace(/^Credit Note Adjustment against\s*/i, '')
+                            .trim()
+                          if (reason.includes('(') && reason.includes('->')) {
+                            reason = 'Package Downgrade'
+                          }
+                          formattedNarr = `Credit Note Adjustment against ${reason || 'Manual Adjustment'}`
+                        }
+
+                        const isPayment = !isDebitNote && !isCreditNote && (Number(le.credit) > 0 || rawNarr.toLowerCase().includes('payment') || rawNarr.toLowerCase().includes('collection') || rawRef.startsWith('PAY-') || rawRef.startsWith('RCP-') || rawRef.startsWith('PRV-'))
+                        const isReversal = rawRef.startsWith('REV-') || rawNarr.toLowerCase().includes('reversal')
+                        const isInvoice = !isDebitNote && !isCreditNote && !isPayment && !isReversal && (le.invoiceId || Number(le.debit) > 0 || rawRef.startsWith('INV-') || rawRef.startsWith('LHR-') || rawNarr.toLowerCase().includes('invoice'))
+
+                        const refLabel = isPayment && !rawRef.startsWith('PRV-') && !rawRef.startsWith('RCP-') && !rawRef.startsWith('PAY-')
+                          ? `PRV-${rawRef.replace(/^(INV|TX)-/, '')}`
+                          : formattedRef
 
                         return (
                           <TableRow key={le.id} className="border-b hover:bg-slate-50 text-xs">
                             <TableCell className="font-medium border-r font-mono whitespace-nowrap">{formatDate(le.createdAt)}</TableCell>
                             <TableCell className="font-mono font-semibold border-r">
-                              {isInvoice ? (
+                              {isDebitNote ? (
+                                <a 
+                                  href={`/api/note/${le.id || le.refNumber || customer.id}?customerId=${customer.id}`} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-red-700 hover:text-red-950 underline font-bold inline-flex items-center gap-1 group"
+                                  title="Click to view/download Debit Note Voucher PDF"
+                                >
+                                  {refLabel}
+                                  <span className="text-[10px] bg-red-100 text-red-900 px-1 py-0.2 rounded border border-red-300 font-bold">Debit Note PDF</span>
+                                </a>
+                              ) : isCreditNote ? (
+                                <a 
+                                  href={`/api/note/${le.id || le.refNumber || customer.id}?customerId=${customer.id}`} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-emerald-700 hover:text-emerald-950 underline font-bold inline-flex items-center gap-1 group"
+                                  title="Click to view/download Credit Note Voucher PDF"
+                                >
+                                  {refLabel}
+                                  <span className="text-[10px] bg-emerald-100 text-emerald-900 px-1 py-0.2 rounded border border-emerald-300 font-bold">Credit Note PDF</span>
+                                </a>
+                              ) : isInvoice ? (
                                 <a 
                                   href={`/api/invoice/${le.invoiceId || le.refNumber || customer.id}?customerId=${customer.id}`} 
                                   target="_blank" 
@@ -895,7 +951,7 @@ export default async function CustomerDetailPage({
                                   className="text-[#002868] hover:text-blue-950 underline font-bold inline-flex items-center gap-1 group"
                                   title="Click to view/download Invoice PDF"
                                 >
-                                  {le.refNumber || 'View Invoice'}
+                                  {refLabel}
                                   <span className="text-[10px] bg-amber-100 text-amber-900 px-1 py-0.2 rounded border border-amber-300 font-bold">Invoice PDF</span>
                                 </a>
                               ) : isPayment ? (
@@ -910,10 +966,10 @@ export default async function CustomerDetailPage({
                                   <span className="text-[10px] bg-emerald-100 text-emerald-900 px-1 py-0.2 rounded border border-emerald-300 font-bold">Receipt PDF</span>
                                 </a>
                               ) : (
-                                <span className={isReversal ? "text-slate-600 font-semibold" : ""}>{le.refNumber}</span>
+                                <span className={isReversal ? "text-slate-600 font-semibold" : ""}>{refLabel}</span>
                               )}
                             </TableCell>
-                            <TableCell className="border-r font-medium">{le.narration}</TableCell>
+                            <TableCell className="border-r font-medium">{formattedNarr}</TableCell>
                             <TableCell className="text-right border-r font-medium text-rose-700">{Number(le.debit) > 0 ? Number(le.debit).toLocaleString() : '0'}</TableCell>
                             <TableCell className="text-right border-r font-bold text-emerald-700">{Number(le.credit) > 0 ? Number(le.credit).toLocaleString() : '0'}</TableCell>
                             <TableCell className="text-right font-bold">PKR {Number(le.balance).toLocaleString()}</TableCell>
@@ -1144,7 +1200,7 @@ export default async function CustomerDetailPage({
               Create / Update Solar Plan & Package
             </div>
             <CardContent className="p-6">
-              <PackageFormDialog customerId={customer.id} inline={true} />
+              <PackageFormDialog customerId={customer.id} initialData={customer.packagePlan} inline={true} />
             </CardContent>
           </Card>
         )}

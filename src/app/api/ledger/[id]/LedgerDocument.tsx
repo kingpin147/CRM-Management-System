@@ -322,10 +322,41 @@ export function LedgerDocument({ customer, ledgerEntries, logoSrc }: LedgerDocum
           </View>
 
           {ledgerEntries.map((le, idx) => {
-            const isPayment = Number(le.credit) > 0 || le.narration?.toLowerCase().includes('payment')
-            const refDisplay = isPayment && !le.refNumber?.startsWith('PRV-') && !le.refNumber?.startsWith('RCP-') && !le.refNumber?.startsWith('PAY-')
-              ? `PRV-${le.refNumber?.replace(/^(INV|TX)-/, '') || 'PAY'}`
-              : (le.refNumber || '—')
+            const rawRef = (le.refNumber || '').trim()
+            const rawNarr = (le.narration || '').trim()
+            const code = rawRef.replace(/^(TX-|DB-ADJ-|CR-ADJ-|Debit Note-|Credit Note-)/i, '').trim()
+
+            const isDebitNote = rawNarr.toLowerCase().includes('debit note') || rawRef.startsWith('DB-ADJ-') || (rawRef.startsWith('TX-') && Number(le.debit) > 0 && !rawNarr.toLowerCase().includes('invoice') && !rawNarr.toLowerCase().includes('subscription'))
+            const isCreditNote = rawNarr.toLowerCase().includes('credit note') || rawRef.startsWith('CR-ADJ-') || (rawRef.startsWith('TX-') && Number(le.credit) > 0 && !rawNarr.toLowerCase().includes('payment'))
+
+            let refDisplay = rawRef
+            let formattedNarr = rawNarr
+
+            if (isDebitNote) {
+              refDisplay = rawRef.startsWith('Debit Note-') ? rawRef : `Debit Note-${code}`
+              let reason = rawNarr
+                .replace(/^Debit Note:\s*/i, '')
+                .replace(/^Package Change Debit Note\s*/i, '')
+                .replace(/^Debit Note charged against\s*/i, '')
+                .trim()
+              if (reason.includes('(') && reason.includes('->')) {
+                reason = 'Package Upgrade'
+              }
+              formattedNarr = `Debit Note charged against ${reason || 'Manual Adjustment'}`
+            } else if (isCreditNote) {
+              refDisplay = rawRef.startsWith('Credit Note-') ? rawRef : `Credit Note-${code}`
+              let reason = rawNarr
+                .replace(/^Credit Note:\s*/i, '')
+                .replace(/^Package Change Credit Note\s*/i, '')
+                .replace(/^Credit Note Adjustment against\s*/i, '')
+                .trim()
+              if (reason.includes('(') && reason.includes('->')) {
+                reason = 'Package Downgrade'
+              }
+              formattedNarr = `Credit Note Adjustment against ${reason || 'Manual Adjustment'}`
+            } else if (Number(le.credit) > 0 && !rawRef.startsWith('PRV-') && !rawRef.startsWith('RCP-') && !rawRef.startsWith('PAY-')) {
+              refDisplay = `PRV-${rawRef.replace(/^(INV|TX)-/, '')}`
+            }
 
             const dStr = le.createdAt ? formatDate(le.createdAt) : '—'
 
@@ -333,7 +364,7 @@ export function LedgerDocument({ customer, ledgerEntries, logoSrc }: LedgerDocum
               <View key={le.id || idx} style={styles.tableRow}>
                 <Text style={[styles.td, styles.colDate]}>{dStr}</Text>
                 <Text style={[styles.td, styles.colRef, { fontWeight: 'bold' }]}>{refDisplay}</Text>
-                <Text style={[styles.td, styles.colNarration]}>{le.narration || '—'}</Text>
+                <Text style={[styles.td, styles.colNarration]}>{formattedNarr || '—'}</Text>
                 <Text style={[styles.td, styles.colDebit, { color: '#b91c1c' }]}>
                   {Number(le.debit) > 0 ? Number(le.debit).toLocaleString() : '0'}
                 </Text>

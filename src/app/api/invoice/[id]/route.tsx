@@ -161,13 +161,24 @@ export async function GET(
 
   try {
     const logoPath = path.join(process.cwd(), 'public', 'invoice-logo.png')
+    const solarBannerPath = path.join(process.cwd(), 'public', 'solar-house-banner.png')
+    const paymentOptionsPath = path.join(process.cwd(), 'public', 'payment-options-block.png')
     const rightGraphicPath = path.join(process.cwd(), 'public', 'invoice-right-graphic.png')
     
     let logoSrc = ''
+    let solarHouseBannerSrc = ''
+    let paymentOptionsBlockSrc = ''
     let rightGraphicSrc = ''
     try {
       if (fs.existsSync(logoPath)) {
         logoSrc = `data:image/png;base64,${fs.readFileSync(logoPath).toString('base64')}`
+      }
+
+      if (fs.existsSync(solarBannerPath)) {
+        solarHouseBannerSrc = `data:image/png;base64,${fs.readFileSync(solarBannerPath).toString('base64')}`
+      }
+      if (fs.existsSync(paymentOptionsPath)) {
+        paymentOptionsBlockSrc = `data:image/png;base64,${fs.readFileSync(paymentOptionsPath).toString('base64')}`
       }
       if (fs.existsSync(rightGraphicPath)) {
         rightGraphicSrc = `data:image/png;base64,${fs.readFileSync(rightGraphicPath).toString('base64')}`
@@ -181,6 +192,8 @@ export async function GET(
         customer={customer} 
         invoice={invoice} 
         logoSrc={logoSrc} 
+        solarHouseBannerSrc={solarHouseBannerSrc}
+        paymentOptionsBlockSrc={paymentOptionsBlockSrc}
         rightGraphicSrc={rightGraphicSrc} 
       />
     )
