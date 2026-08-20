@@ -12,20 +12,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     display: 'flex',
     flexDirection: 'column',
-    justifyContent: 'space-between',
   },
 
   topContent: {
     flexShrink: 0,
   },
 
-  flexSpacer: {
-    flexGrow: 1,
-    minHeight: 2,
-  },
-
   bottomPinnedContainer: {
-    marginTop: 6,
+    marginTop: 8,
     marginBottom: 2,
     flexShrink: 0,
   },
