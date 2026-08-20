@@ -930,7 +930,10 @@ export default async function CustomerDetailPage({
                                   title="Click to view/download Debit Note Voucher PDF"
                                 >
                                   {refLabel}
-                                  <span className="text-[10px] bg-red-100 text-red-900 px-1 py-0.2 rounded border border-red-300 font-bold">Debit Note PDF</span>
+                                  <span className="text-[10px] bg-red-100 text-red-900 px-1.5 py-0.5 rounded border border-red-300 font-bold inline-flex items-center gap-1 shadow-2xs group-hover:bg-red-200">
+                                    <Download className="w-3 h-3 text-red-700" />
+                                    Debit Note PDF
+                                  </span>
                                 </a>
                               ) : isCreditNote ? (
                                 <a 
@@ -941,7 +944,10 @@ export default async function CustomerDetailPage({
                                   title="Click to view/download Credit Note Voucher PDF"
                                 >
                                   {refLabel}
-                                  <span className="text-[10px] bg-emerald-100 text-emerald-900 px-1 py-0.2 rounded border border-emerald-300 font-bold">Credit Note PDF</span>
+                                  <span className="text-[10px] bg-emerald-100 text-emerald-900 px-1.5 py-0.5 rounded border border-emerald-300 font-bold inline-flex items-center gap-1 shadow-2xs group-hover:bg-emerald-200">
+                                    <Download className="w-3 h-3 text-emerald-700" />
+                                    Credit Note PDF
+                                  </span>
                                 </a>
                               ) : isInvoice ? (
                                 <a 
@@ -952,7 +958,10 @@ export default async function CustomerDetailPage({
                                   title="Click to view/download Invoice PDF"
                                 >
                                   {refLabel}
-                                  <span className="text-[10px] bg-amber-100 text-amber-900 px-1 py-0.2 rounded border border-amber-300 font-bold">Invoice PDF</span>
+                                  <span className="text-[10px] bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded border border-amber-300 font-bold inline-flex items-center gap-1 shadow-2xs group-hover:bg-amber-200">
+                                    <Download className="w-3 h-3 text-amber-800" />
+                                    Invoice PDF
+                                  </span>
                                 </a>
                               ) : isPayment ? (
                                 <a 
@@ -963,7 +972,10 @@ export default async function CustomerDetailPage({
                                   title="Click to view/download Payment Receipt PDF"
                                 >
                                   {refLabel || 'PRV-Receipt'}
-                                  <span className="text-[10px] bg-emerald-100 text-emerald-900 px-1 py-0.2 rounded border border-emerald-300 font-bold">Receipt PDF</span>
+                                  <span className="text-[10px] bg-emerald-100 text-emerald-900 px-1.5 py-0.5 rounded border border-emerald-300 font-bold inline-flex items-center gap-1 shadow-2xs group-hover:bg-emerald-200">
+                                    <Download className="w-3 h-3 text-emerald-700" />
+                                    Receipt PDF
+                                  </span>
                                 </a>
                               ) : (
                                 <span className={isReversal ? "text-slate-600 font-semibold" : ""}>{refLabel}</span>
