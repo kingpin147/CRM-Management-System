@@ -926,13 +926,12 @@ export default async function CustomerDetailPage({
                                   href={`/api/note/${le.id || le.refNumber || customer.id}?customerId=${customer.id}`} 
                                   target="_blank" 
                                   rel="noopener noreferrer"
-                                  className="text-red-700 hover:text-red-950 underline font-bold inline-flex items-center gap-1 group"
-                                  title="Click to view/download Debit Note Voucher PDF"
+                                  className="text-red-700 hover:text-red-950 underline font-bold inline-flex items-center gap-1.5 group"
+                                  title="View/Download Debit Note Voucher PDF"
                                 >
                                   {refLabel}
-                                  <span className="text-[10px] bg-red-100 text-red-900 px-1.5 py-0.5 rounded border border-red-300 font-bold inline-flex items-center gap-1 shadow-2xs group-hover:bg-red-200">
-                                    <Download className="w-3 h-3 text-red-700" />
-                                    Debit Note PDF
+                                  <span className="p-1 rounded bg-red-100 border border-red-300 shadow-2xs group-hover:bg-red-200 transition-colors">
+                                    <Download className="w-3.5 h-3.5 text-red-700" />
                                   </span>
                                 </a>
                               ) : isCreditNote ? (
@@ -940,13 +939,12 @@ export default async function CustomerDetailPage({
                                   href={`/api/note/${le.id || le.refNumber || customer.id}?customerId=${customer.id}`} 
                                   target="_blank" 
                                   rel="noopener noreferrer"
-                                  className="text-emerald-700 hover:text-emerald-950 underline font-bold inline-flex items-center gap-1 group"
-                                  title="Click to view/download Credit Note Voucher PDF"
+                                  className="text-emerald-700 hover:text-emerald-950 underline font-bold inline-flex items-center gap-1.5 group"
+                                  title="View/Download Credit Note Voucher PDF"
                                 >
                                   {refLabel}
-                                  <span className="text-[10px] bg-emerald-100 text-emerald-900 px-1.5 py-0.5 rounded border border-emerald-300 font-bold inline-flex items-center gap-1 shadow-2xs group-hover:bg-emerald-200">
-                                    <Download className="w-3 h-3 text-emerald-700" />
-                                    Credit Note PDF
+                                  <span className="p-1 rounded bg-emerald-100 border border-emerald-300 shadow-2xs group-hover:bg-emerald-200 transition-colors">
+                                    <Download className="w-3.5 h-3.5 text-emerald-700" />
                                   </span>
                                 </a>
                               ) : isInvoice ? (
@@ -954,13 +952,12 @@ export default async function CustomerDetailPage({
                                   href={`/api/invoice/${le.invoiceId || le.refNumber || customer.id}?customerId=${customer.id}`} 
                                   target="_blank" 
                                   rel="noopener noreferrer"
-                                  className="text-[#002868] hover:text-blue-950 underline font-bold inline-flex items-center gap-1 group"
-                                  title="Click to view/download Invoice PDF"
+                                  className="text-[#002868] hover:text-blue-950 underline font-bold inline-flex items-center gap-1.5 group"
+                                  title="View/Download Invoice PDF"
                                 >
                                   {refLabel}
-                                  <span className="text-[10px] bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded border border-amber-300 font-bold inline-flex items-center gap-1 shadow-2xs group-hover:bg-amber-200">
-                                    <Download className="w-3 h-3 text-amber-800" />
-                                    Invoice PDF
+                                  <span className="p-1 rounded bg-amber-100 border border-amber-300 shadow-2xs group-hover:bg-amber-200 transition-colors">
+                                    <Download className="w-3.5 h-3.5 text-amber-800" />
                                   </span>
                                 </a>
                               ) : isPayment ? (
@@ -968,13 +965,12 @@ export default async function CustomerDetailPage({
                                   href={`/api/receipt/${le.id || le.refNumber || customer.id}?customerId=${customer.id}`} 
                                   target="_blank" 
                                   rel="noopener noreferrer"
-                                  className="text-emerald-700 hover:text-emerald-950 underline font-bold inline-flex items-center gap-1 group"
-                                  title="Click to view/download Payment Receipt PDF"
+                                  className="text-emerald-700 hover:text-emerald-950 underline font-bold inline-flex items-center gap-1.5 group"
+                                  title="View/Download Payment Receipt PDF"
                                 >
                                   {refLabel || 'PRV-Receipt'}
-                                  <span className="text-[10px] bg-emerald-100 text-emerald-900 px-1.5 py-0.5 rounded border border-emerald-300 font-bold inline-flex items-center gap-1 shadow-2xs group-hover:bg-emerald-200">
-                                    <Download className="w-3 h-3 text-emerald-700" />
-                                    Receipt PDF
+                                  <span className="p-1 rounded bg-emerald-100 border border-emerald-300 shadow-2xs group-hover:bg-emerald-200 transition-colors">
+                                    <Download className="w-3.5 h-3.5 text-emerald-700" />
                                   </span>
                                 </a>
                               ) : (
