@@ -3,11 +3,11 @@ import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/render
 
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 14,
-    paddingBottom: 12,
-    paddingHorizontal: 18,
+    paddingTop: 18,
+    paddingBottom: 14,
+    paddingHorizontal: 20,
     fontFamily: 'Helvetica',
-    fontSize: 8,
+    fontSize: 8.2,
     color: '#000000',
     backgroundColor: '#FFFFFF',
     display: 'flex',
@@ -19,8 +19,8 @@ const styles = StyleSheet.create({
   },
 
   bottomPinnedContainer: {
-    marginTop: 8,
-    marginBottom: 2,
+    marginTop: 10,
+    marginBottom: 4,
     flexShrink: 0,
   },
   
@@ -29,10 +29,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 8,
   },
   logo: {
-    width: 170,
+    width: 175,
     height: 'auto',
   },
   titleWrapper: {
@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'extrabold',
     color: '#002868',
-    marginBottom: 2,
+    marginBottom: 3,
     letterSpacing: 0.5,
   },
   crfPill: {
@@ -53,16 +53,16 @@ const styles = StyleSheet.create({
   crfPillLeft: {
     backgroundColor: '#002868',
     color: '#FFFFFF',
-    paddingVertical: 2.5,
-    paddingHorizontal: 7,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
     fontWeight: 'bold',
     fontSize: 8.5,
   },
   crfPillRight: {
     backgroundColor: '#F58220',
     color: '#FFFFFF',
-    paddingVertical: 2.5,
-    paddingHorizontal: 7,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
     fontWeight: 'bold',
     fontSize: 8.5,
   },
@@ -71,16 +71,16 @@ const styles = StyleSheet.create({
   card: {
     border: '1px solid #c2d0e0',
     borderRadius: 3,
-    marginBottom: 5,
+    marginBottom: 7,
     overflow: 'hidden',
   },
   cardHeader: {
     backgroundColor: '#002868',
     color: '#FFFFFF',
-    paddingVertical: 3,
-    paddingHorizontal: 7,
+    paddingVertical: 3.5,
+    paddingHorizontal: 8,
     fontWeight: 'bold',
-    fontSize: 9,
+    fontSize: 9.2,
     letterSpacing: 0.5,
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -89,10 +89,10 @@ const styles = StyleSheet.create({
   cardHeaderText: {
     color: '#FFFFFF',
     fontWeight: 'bold',
-    fontSize: 9,
+    fontSize: 9.2,
   },
   cardBody: {
-    paddingHorizontal: 5,
+    paddingHorizontal: 6,
     paddingVertical: 3,
   },
 
@@ -100,12 +100,12 @@ const styles = StyleSheet.create({
   gridRow: {
     flexDirection: 'row',
     borderBottom: '1px solid #E5E7EB',
-    paddingVertical: 2.5,
+    paddingVertical: 3.2,
     alignItems: 'center',
   },
   gridRowLast: {
     flexDirection: 'row',
-    paddingVertical: 2.5,
+    paddingVertical: 3.2,
     alignItems: 'center',
   },
   gridColLeft: {
@@ -125,39 +125,39 @@ const styles = StyleSheet.create({
   label: {
     width: '42%',
     color: '#002868',
-    fontSize: 7.8,
+    fontSize: 8.2,
     fontWeight: 'bold',
   },
   value: {
     width: '58%',
     color: '#1F2937',
-    fontSize: 7.8,
+    fontSize: 8.2,
   },
   badgePill: {
     backgroundColor: '#002868',
     color: '#FFFFFF',
-    paddingVertical: 1,
-    paddingHorizontal: 5,
+    paddingVertical: 1.5,
+    paddingHorizontal: 6,
     borderRadius: 2,
-    fontSize: 7.2,
+    fontSize: 7.5,
     fontWeight: 'bold',
   },
   badgeGreen: {
     backgroundColor: '#059669',
     color: '#FFFFFF',
-    paddingVertical: 1,
-    paddingHorizontal: 5,
+    paddingVertical: 1.5,
+    paddingHorizontal: 6,
     borderRadius: 2,
-    fontSize: 7.2,
+    fontSize: 7.5,
     fontWeight: 'bold',
   },
   badgeAmber: {
     backgroundColor: '#D97706',
     color: '#FFFFFF',
-    paddingVertical: 1,
-    paddingHorizontal: 5,
+    paddingVertical: 1.5,
+    paddingHorizontal: 6,
     borderRadius: 2,
-    fontSize: 7.2,
+    fontSize: 7.5,
     fontWeight: 'bold',
   },
 
@@ -175,10 +175,10 @@ const styles = StyleSheet.create({
   colHeader: {
     backgroundColor: '#F3F4F6',
     color: '#002868',
-    paddingVertical: 2.5,
-    paddingHorizontal: 5,
+    paddingVertical: 3,
+    paddingHorizontal: 6,
     fontWeight: 'bold',
-    fontSize: 8,
+    fontSize: 8.2,
     borderBottom: '1px solid #c2d0e0',
   },
 
@@ -187,28 +187,28 @@ const styles = StyleSheet.create({
     border: '1px solid #c2d0e0',
     borderRadius: 3,
     overflow: 'hidden',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   notesHeader: {
     backgroundColor: '#002868',
     color: '#FFFFFF',
-    paddingVertical: 2,
-    paddingHorizontal: 6,
+    paddingVertical: 2.5,
+    paddingHorizontal: 7,
     fontWeight: 'bold',
-    fontSize: 7.8,
+    fontSize: 8.2,
   },
   notesBody: {
-    padding: 3.5,
-    fontSize: 6.8,
+    padding: 4.5,
+    fontSize: 7.2,
     color: '#333333',
-    lineHeight: 1.2,
+    lineHeight: 1.3,
   },
 
   signRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 5,
-    marginBottom: 3,
+    marginTop: 6,
+    marginBottom: 4,
     paddingHorizontal: 10,
   },
   signBox: {
@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: 4,
-    marginTop: 2,
+    marginTop: 4,
   },
   footerAddress: {
     width: '49%',
@@ -231,11 +231,11 @@ const styles = StyleSheet.create({
   footerTitle: {
     fontWeight: 'bold',
     color: '#002868',
-    fontSize: 7.2,
+    fontSize: 7.5,
     marginBottom: 1,
   },
   footerText: {
-    fontSize: 6.5,
+    fontSize: 6.8,
     color: '#4B5563',
   },
   footerBlueBar: {
@@ -243,19 +243,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 2.5,
-    marginTop: 3,
+    paddingVertical: 3,
+    marginTop: 4,
     borderRadius: 2,
   },
   footerBarText: {
     color: '#FFFFFF',
-    fontSize: 7,
+    fontSize: 7.5,
     fontWeight: 'bold',
     marginHorizontal: 8,
   },
   footerBarDivider: {
     color: '#FFFFFF',
-    fontSize: 7,
+    fontSize: 7.5,
   },
 })
 
@@ -283,7 +283,7 @@ export function SignupDocument({ customer, logoSrc }: { customer: any; logoSrc?:
 
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
+      <Page size="LETTER" style={styles.page}>
         <View style={styles.topContent}>
 
           {/* 1. Header */}

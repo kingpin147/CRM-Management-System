@@ -30,7 +30,11 @@ export default async function TicketsPage({
   // Fetch all tickets with full customer details and history
   const tickets = await prisma.ticket.findMany({
     include: {
-      customer: true,
+      customer: {
+        include: {
+          accountExecutive: true,
+        },
+      },
       histories: true,
     },
     orderBy: { createdAt: 'desc' },

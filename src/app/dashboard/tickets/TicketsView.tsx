@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -188,35 +188,35 @@ export function TicketsView({ tickets, userRole, initialStatusParam }: TicketsVi
     }
 
     const headers = [
-      'Ticket ID',
+      'Ticket #',
       'Date & Time',
+      'Customer ID',
       'Customer Name',
-      'Customer Code',
-      'City',
+      'Address',
+      'Contact #',
+      'House',
+      'Block',
+      'Sub Area',
       'Area',
-      'Category',
-      'Sub Category',
-      'Fault',
-      'Assigned To',
-      'Priority',
+      'Complain Description',
+      'Account Executive',
       'Status',
-      'Description',
     ]
 
     const rows = filteredTickets.map((t) => [
       `"${formatTicketId(t.ticketNumber)}"`,
       `"${new Date(t.createdAt).toLocaleString()}"`,
-      `"${t.customer?.fullName || ''}"`,
       `"${t.customer?.customerCode || ''}"`,
-      `"${t.customer?.city || ''}"`,
+      `"${t.customer?.fullName || ''}"`,
+      `"${(t.customer?.address || '').replace(/"/g, '""')}"`,
+      `"${t.customer?.contactNumber || ''}"`,
+      `"${t.customer?.houseNumber || ''}"`,
+      `"${t.customer?.block || ''}"`,
+      `"${t.customer?.subArea || ''}"`,
       `"${t.customer?.area || ''}"`,
-      `"${t.category || ''}"`,
-      `"${t.subCategory || ''}"`,
-      `"${t.fault || ''}"`,
-      `"${t.assignedTo || ''}"`,
-      `"${t.actionPriority || ''}"`,
-      `"${t.status}"`,
       `"${(t.description || '').replace(/"/g, '""')}"`,
+      `"${t.customer?.accountExecutive?.fullName || t.assignedTo || ''}"`,
+      `"${t.status}"`,
     ])
 
     const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n')
@@ -336,76 +336,40 @@ export function TicketsView({ tickets, userRole, initialStatusParam }: TicketsVi
           </div>
         </div>
 
-        {/* Secondary Filter Toolbar - Status Tabs, Department Filter, Searches, Export */}
-        <div className="pt-2 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 border-t border-slate-100">
-          {/* Status Tabs */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            <button
-              onClick={() => setStatusTab('ALL')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                statusTab === 'ALL'
-                  ? 'bg-[var(--color-graphite)] text-white shadow-xs'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
-              }`}
-            >
-              All Tickets ({allCount})
-            </button>
-            <button
-              onClick={() => setStatusTab('PENDING')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                statusTab === 'PENDING'
-                  ? 'bg-amber-600 text-white shadow-xs ring-2 ring-amber-300'
-                  : 'bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100'
-              }`}
-            >
-              Pending Complaints ({pendingCount})
-            </button>
-            <button
-              onClick={() => setStatusTab('RESOLVED')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                statusTab === 'RESOLVED'
-                  ? 'bg-[#002868] text-white shadow-xs'
-                  : 'bg-sky-50 text-sky-900 border border-sky-200 hover:bg-sky-100'
-              }`}
-            >
-              Resolved ({resolvedCount})
-            </button>
-            <button
-              onClick={() => setStatusTab('ON_HOLD')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                statusTab === 'ON_HOLD' || statusTab === 'ONHOLD'
-                  ? 'bg-sky-700 text-white shadow-xs'
-                  : 'bg-sky-50 text-sky-800 border border-sky-200 hover:bg-sky-100'
-              }`}
-            >
-              Onhold ({onHoldCount})
-            </button>
-            <button
-              onClick={() => setStatusTab('CLOSED')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                statusTab === 'CLOSED'
-                  ? 'bg-gray-800 text-white shadow-xs'
-                  : 'bg-gray-100 text-gray-800 border border-gray-200 hover:bg-gray-200'
-              }`}
-            >
-              Closed ({closedCount})
-            </button>
-          </div>
+        {/* Secondary Filter Toolbar - Status & Department Filter, Searches, Export */}
+        <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-t border-slate-100">
+          <div className="flex flex-wrap items-center gap-4">
+            {/* Status Filter Select */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-600 whitespace-nowrap">Status:</span>
+              <select
+                value={statusTab}
+                onChange={(e) => setStatusTab(e.target.value)}
+                className="h-9 px-3 text-xs rounded-lg border border-slate-300 bg-white font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[var(--color-amber)]"
+              >
+                <option value="PENDING">Pending ({pendingCount})</option>
+                <option value="RESOLVED">Resolved ({resolvedCount})</option>
+                <option value="ON_HOLD">Onhold ({onHoldCount})</option>
+                <option value="CLOSED">Closed ({closedCount})</option>
+                <option value="ALL">All Tickets ({allCount})</option>
+              </select>
+            </div>
 
-          {/* Department Filter Select */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-600 whitespace-nowrap">Department:</span>
-            <select
-              value={selectedDept}
-              onChange={(e) => setSelectedDept(e.target.value)}
-              className="h-9 px-3 text-xs rounded-lg border border-slate-300 bg-white font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[var(--color-amber)]"
-            >
-              <option value="ALL">All Departments</option>
-              <option value="Billing">Billing</option>
-              <option value="Sales">Sales</option>
-              <option value="O&M">Operations & Maintenance (O&M)</option>
-              <option value="Customer Support">Customer Support</option>
-            </select>
+            {/* Department Filter Select */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-600 whitespace-nowrap">Department:</span>
+              <select
+                value={selectedDept}
+                onChange={(e) => setSelectedDept(e.target.value)}
+                className="h-9 px-3 text-xs rounded-lg border border-slate-300 bg-white font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[var(--color-amber)]"
+              >
+                <option value="ALL">All Departments</option>
+                <option value="Billing">Billing</option>
+                <option value="Sales">Sales</option>
+                <option value="O&M">Operations & Maintenance (O&M)</option>
+                <option value="Customer Support">Customer Support</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -447,16 +411,6 @@ export function TicketsView({ tickets, userRole, initialStatusParam }: TicketsVi
 
       {/* Main Complaints Table */}
       <Card className="shadow-sm border-line">
-        <CardHeader className="py-4 border-b border-line flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="text-lg font-bold text-[var(--color-graphite)]">
-              {statusTab === 'PENDING' ? 'Pending Complaints' : statusTab === 'ALL' ? 'All Complaints' : `${statusTab} Complaints`} ({filteredTickets.length})
-            </CardTitle>
-            <CardDescription className="text-xs mt-0.5">
-              Showing complaint records matching selected location, department, date, and search filters.
-            </CardDescription>
-          </div>
-        </CardHeader>
         <CardContent className="p-0 sm:p-4">
           <DataTable 
             columns={columns} 

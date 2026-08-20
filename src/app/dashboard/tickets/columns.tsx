@@ -2,11 +2,13 @@
 
 import { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
-import { Ticket, Customer } from '@prisma/client'
+import { Ticket, Customer, User } from '@prisma/client'
 import { TicketUpdateDialog } from './TicketUpdateDialog'
 import { formatDateTime } from '@/lib/utils'
 
-export type TicketWithCustomer = Ticket & { customer: Customer }
+export type TicketWithCustomer = Ticket & {
+  customer: Customer & { accountExecutive?: User | null }
+}
 
 export function formatTicketId(raw?: string | null): string {
   if (!raw) return 'T-0000000'
@@ -24,11 +26,11 @@ export function formatTicketId(raw?: string | null): string {
 export const columns: ColumnDef<any, TicketWithCustomer, any>[] = [
   {
     accessorKey: 'ticketNumber',
-    header: 'TICKET ID',
+    header: 'Ticket #',
     cell: ({ row }) => {
       const ticketIdFormatted = formatTicketId(row.getValue('ticketNumber'))
       return (
-        <span className="font-mono text-xs font-bold text-red-600 bg-red-50/80 border border-red-200/80 px-2 py-0.5 rounded tracking-wide">
+        <span className="font-mono text-xs font-bold text-red-600 bg-red-50/80 border border-red-200/80 px-2 py-0.5 rounded tracking-wide whitespace-nowrap">
           {ticketIdFormatted}
         </span>
       )
@@ -36,57 +38,117 @@ export const columns: ColumnDef<any, TicketWithCustomer, any>[] = [
   },
   {
     accessorKey: 'createdAt',
-    header: 'DATE & TIME',
-    cell: ({ row }) => <span className="font-mono text-xs text-slate-700 font-medium">{formatDateTime(row.original.createdAt)}</span>,
+    header: 'Date & Time',
+    cell: ({ row }) => (
+      <span className="font-mono text-xs text-slate-700 font-medium whitespace-nowrap">
+        {formatDateTime(row.original.createdAt)}
+      </span>
+    ),
+  },
+  {
+    accessorKey: 'customer.customerCode',
+    header: 'Customer ID',
+    cell: ({ row }) => {
+      const code = row.original.customer?.customerCode || 'N/A'
+      return <span className="font-mono text-xs font-bold text-slate-800 whitespace-nowrap">{code}</span>
+    },
   },
   {
     accessorKey: 'customer.fullName',
-    header: 'CUSTOMER',
+    header: 'Customer Name',
     cell: ({ row }) => {
-      const cust = row.original.customer
+      const name = row.original.customer?.fullName || 'N/A'
+      return <span className="text-xs font-bold text-slate-900 whitespace-nowrap">{name}</span>
+    },
+  },
+  {
+    accessorKey: 'customer.address',
+    header: 'Address',
+    cell: ({ row }) => {
+      const addr = row.original.customer?.address || 'N/A'
       return (
-        <div className="flex flex-col">
-          <span className="text-xs font-bold text-slate-800">{cust?.fullName || 'N/A'}</span>
-          {cust?.customerCode && (
-            <span className="text-[10px] text-slate-500 font-mono">{cust.customerCode}</span>
+        <span className="text-xs text-slate-700 max-w-[180px] truncate block" title={addr}>
+          {addr}
+        </span>
+      )
+    },
+  },
+  {
+    accessorKey: 'customer.contactNumber',
+    header: 'Contact #',
+    cell: ({ row }) => {
+      const phone = row.original.customer?.contactNumber || 'N/A'
+      return <span className="font-mono text-xs text-slate-700 whitespace-nowrap">{phone}</span>
+    },
+  },
+  {
+    accessorKey: 'customer.houseNumber',
+    header: 'House',
+    cell: ({ row }) => {
+      const house = row.original.customer?.houseNumber || '-'
+      return <span className="text-xs text-slate-700 whitespace-nowrap">{house}</span>
+    },
+  },
+  {
+    accessorKey: 'customer.block',
+    header: 'Block',
+    cell: ({ row }) => {
+      const block = row.original.customer?.block || '-'
+      return <span className="text-xs text-slate-700 whitespace-nowrap">{block}</span>
+    },
+  },
+  {
+    accessorKey: 'customer.subArea',
+    header: 'Sub Area',
+    cell: ({ row }) => {
+      const subArea = row.original.customer?.subArea || '-'
+      return <span className="text-xs text-slate-700 whitespace-nowrap">{subArea}</span>
+    },
+  },
+  {
+    accessorKey: 'customer.area',
+    header: 'Area',
+    cell: ({ row }) => {
+      const area = row.original.customer?.area || '-'
+      return <span className="text-xs text-slate-700 whitespace-nowrap">{area}</span>
+    },
+  },
+  {
+    accessorKey: 'description',
+    header: 'Complain Description',
+    cell: ({ row }) => {
+      const desc = row.original.description || 'N/A'
+      return (
+        <div className="flex flex-col gap-0.5 max-w-[220px]">
+          <span className="text-xs text-slate-800 line-clamp-2" title={desc}>
+            {desc}
+          </span>
+          {row.original.category && (
+            <span className="text-[10px] text-amber-700 font-semibold">{row.original.category}</span>
           )}
         </div>
       )
     },
   },
   {
-    accessorKey: 'category',
-    header: 'CATEGORY',
+    accessorKey: 'customer.accountExecutive.fullName',
+    header: 'Account Executive',
     cell: ({ row }) => {
-      return (
-        <Badge variant="outline" className="bg-[var(--color-paper)] text-[var(--color-ink)] border-[var(--color-line)] text-[11px] px-2 py-0.5">
-          {row.getValue('category')}
-        </Badge>
-      )
-    },
-  },
-  {
-    accessorKey: 'assignedTo',
-    header: 'ASSIGNED TO',
-    cell: ({ row }) => {
-      return (
-        <span className="text-xs font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-          {row.getValue('assignedTo')}
-        </span>
-      )
+      const execName = row.original.customer?.accountExecutive?.fullName || row.original.assignedTo || 'Unassigned'
+      return <span className="text-xs font-semibold text-slate-700 whitespace-nowrap">{execName}</span>
     },
   },
   {
     accessorKey: 'status',
-    header: 'STATUS',
+    header: 'Status',
     cell: ({ row }) => {
       const status = (row.getValue('status') as string) || ''
       const upper = status.toUpperCase()
       return (
-        <Badge 
-          variant="outline" 
+        <Badge
+          variant="outline"
           className={
-            upper === 'PENDING' 
+            upper === 'PENDING'
               ? 'bg-amber-100 text-amber-800 border-amber-300 font-bold text-[11px]'
               : upper === 'RESOLVED'
               ? 'bg-[#002868] text-white border-[#002868] font-bold text-[11px]'
@@ -102,7 +164,7 @@ export const columns: ColumnDef<any, TicketWithCustomer, any>[] = [
   },
   {
     id: 'actions',
-    header: () => <div className="text-right">ACTION</div>,
+    header: () => <div className="text-right">Action</div>,
     cell: ({ row }) => {
       return (
         <div className="text-right">
@@ -112,4 +174,3 @@ export const columns: ColumnDef<any, TicketWithCustomer, any>[] = [
     },
   },
 ]
-
