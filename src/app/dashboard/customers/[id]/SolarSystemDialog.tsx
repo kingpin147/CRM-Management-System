@@ -17,29 +17,8 @@ import {
 import { saveSolarSystem } from './actions'
 import { AutoSuggestInput } from '@/components/ui/auto-suggest-input'
 import { formatDiscoRefNo } from '@/lib/utils'
+import { INVERTER_SIZES, INVERTER_BRANDS, PANEL_BRANDS, BATTERY_BRANDS } from '@/lib/solar-constants'
 
-const INVERTER_BRANDS = [
-  'Knox', 'Fronius', 'Livoltek', 'GoodWe', 'Galaxy', 'Solis', 'CoreTech', 'Inverex',
-  'Ziewnic', 'Itel', 'Sunviour', 'Yinergy', 'Huawei', 'SAJ', 'Fox ESS', 'Solplanet',
-  'Solax Power', 'Tesla', 'Crown', 'Growatt', 'Deye', 'Sungrow', 'Sofar', 'SMA',
-  'SolarEdge', 'KSTAR', 'SolarMax', 'SRNE', 'Voltronic / Axpert', 'Kodak', 'Sineng',
-  'FIMER', 'Canadian Solar', 'Apex', 'Gripsun', 'Anicsun', 'Maxpower', 'Auxsol',
-  'Onyx', 'Powerage', 'Sunlife', 'Other'
-]
-
-const PANEL_BRANDS = [
-  'AIKO', 'LONGi', 'Risen', 'Trina Solar', 'Jinko', 'Astronergy', 'GCL', 'Huasun',
-  'DMEGC', 'JA Solar', 'Jolywood', 'DASolar', 'DAH Solar', 'TW Solar', 'Jetion Solar',
-  'Grand Sunergy', 'SPIC', 'Solargiga', 'Canadian Solar', 'REC Group', 'Eging PV',
-  'RUNERGY', 'URECO', 'Yingli', 'Suntech', 'Kalyon PV', 'Qcells', 'CECEP',
-  'Jinergy', 'Meyer Burger', 'Qn-SOLAR', 'Seraphim', 'ZNSHINE', 'OSDA', 'Other'
-]
-
-const BATTERY_BRANDS = [
-  'Dyness', 'Narada', 'Pylontech', 'Sunwoda', 'Dongjin', 'BYD', 'Knox', 'GoodWe',
-  'Sacred Sun', 'Genix Green', 'Inverex', 'Growatt', 'Deye', 'Huawei', 'Fox ESS',
-  'Sungrow', 'Sofar', 'SolaX', 'SRNE', 'Osaka', 'Phoenix', 'Apex Solar', 'MaxPower', 'Other'
-]
 
 const DISCO_LIST = ['LESCO', 'IESCO', 'K-Electric', 'FESCO', 'MEPCO', 'PESCO', 'GEPCO', 'QESCO', 'HESCO', 'SEPCO', 'TESCO', 'Other']
 
@@ -183,11 +162,12 @@ export function SolarSystemDialog({
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold text-[var(--color-ink)]">Size</Label>
-                    <Input
+                    <AutoSuggestInput
                       value={inverterSize}
-                      onChange={(e) => setInverterSize(e.target.value)}
-                      placeholder="e.g. 10 kW"
-                      className="h-9 text-xs border-[var(--color-line)] bg-white"
+                      onChange={setInverterSize}
+                      options={INVERTER_SIZES}
+                      placeholder="Type or select size..."
+                      className="h-9 text-xs bg-white"
                     />
                   </div>
                 </div>

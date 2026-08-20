@@ -279,8 +279,13 @@ export function SignupDocument({ customer, logoSrc }: { customer: any; logoSrc?:
 
   const crfCode = customer?.crfNumber || (customer?.customerCode ? `CRF-${customer.customerCode.replace(/\D/g, '')}` : 'CRF-964256')
   const custCode = customer?.customerCode?.replace(/\D/g, '') || customer?.customerCode || customer?.id || '9484'
-  const accountExecName = customer?.accountExecutive?.fullName || 'EnergyGurus Finance'
+  const accountExecName = typeof customer?.accountExecutive === 'object' && customer?.accountExecutive
+    ? (customer.accountExecutive.fullName || customer.accountExecutive.name || 'EnergyGurus Finance')
+    : (typeof customer?.accountExecutive === 'string' ? customer.accountExecutive : 'EnergyGurus Finance')
+    
   const totalAmountVal = Number(plan?.totalAmount || 0)
+  const earthingAcStr = solar?.earthingAcOhms != null ? String(solar.earthingAcOhms) : '0.5'
+  const earthingDcStr = solar?.earthingDcOhms != null ? String(solar.earthingDcOhms) : '0.5'
 
   return (
     <Document>
@@ -508,7 +513,7 @@ export function SignupDocument({ customer, logoSrc }: { customer: any; logoSrc?:
                     </View>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>Earthing & OHMs:</Text>
-                      <Text style={styles.value}>AC: {solar?.earthingAcOhms || 0.5} Ω | DC: {solar?.earthingDcOhms || 0.5} Ω</Text>
+                      <Text style={styles.value}>AC: {earthingAcStr} Ω | DC: {earthingDcStr} Ω</Text>
                     </View>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>Ingress Protection:</Text>

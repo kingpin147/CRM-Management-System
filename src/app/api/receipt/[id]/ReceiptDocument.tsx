@@ -386,7 +386,11 @@ export function ReceiptDocument({
                   </View>
                   <View style={styles.row}>
                     <Text style={styles.label}>Account Exec:</Text>
-                    <Text style={styles.value}>{customer?.accountExecutive || 'EnergyGurus Finance'}</Text>
+                    <Text style={styles.value}>
+                      {typeof customer?.accountExecutive === 'object' && customer?.accountExecutive
+                        ? (customer.accountExecutive.fullName || customer.accountExecutive.name || 'EnergyGurus Finance')
+                        : (typeof customer?.accountExecutive === 'string' ? customer.accountExecutive : 'EnergyGurus Finance')}
+                    </Text>
                   </View>
                 </View>
               </View>

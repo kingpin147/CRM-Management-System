@@ -19,6 +19,8 @@ import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { AutoSuggestInput } from '@/components/ui/auto-suggest-input'
 import { CITIES_LIST, getAreasForCity, getDefaultDiscoForCity } from '@/lib/pakistan-cities-areas'
 import { formatDiscoRefNo } from '@/lib/utils'
+import { INVERTER_SIZES, INVERTER_BRANDS, PANEL_BRANDS, BATTERY_BRANDS, IP_LIST } from '@/lib/solar-constants'
+
 
 const customerSchema = z.object({
   // TAB 1: Customer Details + Package Details
@@ -483,30 +485,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
     { id: 3, label: 'Installer Details' },
   ]
 
-  const INVERTER_BRANDS = [
-    'Knox', 'Fronius', 'Livoltek', 'GoodWe', 'Galaxy', 'Solis', 'CoreTech', 'Inverex',
-    'Ziewnic', 'Itel', 'Sunviour', 'Yinergy', 'Huawei', 'SAJ', 'Fox ESS', 'Solplanet',
-    'Solax Power', 'Tesla', 'Crown', 'Growatt', 'Deye', 'Sungrow', 'Sofar', 'SMA',
-    'SolarEdge', 'KSTAR', 'SolarMax', 'SRNE', 'Voltronic / Axpert', 'Kodak', 'Sineng',
-    'FIMER', 'Canadian Solar', 'Apex', 'Gripsun', 'Anicsun', 'Maxpower', 'Auxsol',
-    'Onyx', 'Powerage', 'Sunlife', 'Other'
-  ]
 
-  const PANEL_BRANDS = [
-    'AIKO', 'LONGi', 'Risen', 'Trina Solar', 'Jinko', 'Astronergy', 'GCL', 'Huasun',
-    'DMEGC', 'JA Solar', 'Jolywood', 'DASolar', 'DAH Solar', 'TW Solar', 'Jetion Solar',
-    'Grand Sunergy', 'SPIC', 'Solargiga', 'Canadian Solar', 'REC Group', 'Eging PV',
-    'RUNERGY', 'URECO', 'Yingli', 'Suntech', 'Kalyon PV', 'Qcells', 'CECEP',
-    'Jinergy', 'Meyer Burger', 'Qn-SOLAR', 'Seraphim', 'ZNSHINE', 'OSDA', 'Other'
-  ]
-
-  const BATTERY_BRANDS = [
-    'Dyness', 'Narada', 'Pylontech', 'Sunwoda', 'Dongjin', 'BYD', 'Knox', 'GoodWe',
-    'Sacred Sun', 'Genix Green', 'Inverex', 'Growatt', 'Deye', 'Huawei', 'Fox ESS',
-    'Sungrow', 'Sofar', 'SolaX', 'SRNE', 'Osaka', 'Phoenix', 'Apex Solar', 'MaxPower', 'Other'
-  ]
-
-  const IP_LIST = ['IP20', 'IP21', 'IP34', 'IP40', 'IP54', 'IP65', 'IP66', 'IP67']
   const DISCO_LIST = ['LESCO', 'IESCO', 'K-Electric', 'FESCO', 'MEPCO', 'PESCO', 'GEPCO', 'QESCO', 'HESCO', 'SEPCO', 'TESCO', 'Other']
 
   const DISCO_PLACEHOLDERS: Record<string, string> = {
@@ -1179,7 +1158,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                         <AutoSuggestInput
                           value={field.value || ''}
                           onChange={field.onChange}
-                          options={['3kW', '5kW', '6kW', '8kW', '10kW', '12kW', '15kW', '20kW', '25kW', '30kW', '50kW', '100kW']}
+                          options={INVERTER_SIZES}
                           placeholder="Type or select size..."
                           className={`h-10 text-xs bg-white ${fieldState.error ? 'border-red-500 ring-2 ring-red-200 bg-red-50/20' : ''}`}
                         />
