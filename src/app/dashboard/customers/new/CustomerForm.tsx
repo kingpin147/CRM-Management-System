@@ -482,7 +482,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
   const tabs = [
     { id: 1, label: 'Customer Details' },
     { id: 2, label: 'Solar System Details' },
-    { id: 3, label: 'Installer Details' },
+    { id: 3, label: 'System Audit Details' },
   ]
 
 
@@ -1256,7 +1256,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
             <Card className="shadow-sm border-line bg-white animate-reveal">
               <CardContent className="p-6 space-y-6">
                 <div className="border-b border-line pb-3">
-                  <h2 className="text-lg font-bold text-[var(--color-graphite)]">3. Installer Details &amp; System Audit</h2>
+                  <h2 className="text-lg font-bold text-[var(--color-graphite)]">3. System Audit Details</h2>
                   <p className="text-xs text-[var(--color-slate-custom)]">Enter audit date, installer contact info, and component audit statuses.</p>
                 </div>
 

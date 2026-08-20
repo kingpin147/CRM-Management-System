@@ -24,6 +24,8 @@ type CustomerRecord = {
   city: string
   status: string
   signupDate: string | Date | null
+  assignedInstallerId?: string | null
+  assignedInstaller?: { id: string; fullName: string } | null
   packagePlan: {
     packageTier?: string | null
     systemSizeKw?: string | null
@@ -36,6 +38,7 @@ type CustomerRecord = {
 
 interface ManagerApprovalViewProps {
   customers: CustomerRecord[]
+  installers?: Array<{ id: string; fullName: string; role: string; email: string }>
   userRole: string
   onAdvanceWorkflow: (formData: FormData) => Promise<void>
   onUpdateCrfWorkflow?: (formData: FormData) => Promise<void>
@@ -60,6 +63,7 @@ function formatCrfNumber(crf?: string | null, code?: string | null): string {
 
 export function ManagerApprovalView({
   customers,
+  installers,
   userRole,
   onAdvanceWorkflow,
   onUpdateCrfWorkflow,
@@ -366,9 +370,16 @@ export function ManagerApprovalView({
                         </Badge>
                       </TableCell>
 
-                      {/* Responsible Department */}
-                      <TableCell className="text-xs font-semibold text-slate-700">
-                        {isStage1 ? 'Sales Manager' : isStage2 ? 'Billing Manager' : 'O&M Manager'}
+                      {/* Responsible Department & Assigned Technician */}
+                      <TableCell className="text-xs">
+                        <span className="font-semibold text-slate-800 block">
+                          {isStage1 ? 'Sales Manager' : isStage2 ? 'Billing Manager' : 'O&M Manager'}
+                        </span>
+                        {c.assignedInstaller && (
+                          <Badge variant="outline" className="bg-emerald-50 text-emerald-800 border-emerald-300 text-[10px] font-medium mt-0.5">
+                            Assigned: {c.assignedInstaller.fullName}
+                          </Badge>
+                        )}
                       </TableCell>
 
                       {/* Workflow Action Buttons (Edit CRF + Approval) */}
@@ -423,6 +434,7 @@ export function ManagerApprovalView({
       {editingCustomer && onUpdateCrfWorkflow && (
         <EditCrfModal
           customer={editingCustomer}
+          installers={installers}
           isOpen={!!editingCustomer}
           onClose={() => setEditingCustomer(null)}
           onSaveCrf={onUpdateCrfWorkflow}

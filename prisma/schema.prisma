@@ -15,6 +15,7 @@ model User {
   isActive   Boolean    @default(true)
   createdAt  DateTime   @default(now())
   customers  Customer[] @relation("CustomerAccountExecutive")
+  assignedJobs Customer[] @relation("CustomerAssignedInstaller")
 }
 
 enum Role {
@@ -62,6 +63,9 @@ model Customer {
 
   accountExecutiveId String?
   accountExecutive   User?   @relation("CustomerAccountExecutive", fields: [accountExecutiveId], references: [id])
+
+  assignedInstallerId String?
+  assignedInstaller   User?   @relation("CustomerAssignedInstaller", fields: [assignedInstallerId], references: [id])
 }
 
 enum CustomerType {

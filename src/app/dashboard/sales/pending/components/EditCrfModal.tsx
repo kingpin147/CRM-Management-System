@@ -24,6 +24,7 @@ const MONITORING_TIMES = ['12 Hours', '24 Hours']
 
 interface EditCrfModalProps {
   customer: any | null
+  installers?: Array<{ id: string; fullName: string; role: string; email: string }>
   isOpen: boolean
   onClose: () => void
   onSaveCrf: (formData: FormData) => Promise<void>
@@ -31,6 +32,7 @@ interface EditCrfModalProps {
 
 export function EditCrfModal({
   customer,
+  installers,
   isOpen,
   onClose,
   onSaveCrf,
@@ -47,6 +49,7 @@ export function EditCrfModal({
   const [block, setBlock] = React.useState('')
   const [area, setArea] = React.useState('')
   const [city, setCity] = React.useState('')
+  const [assignedInstallerId, setAssignedInstallerId] = React.useState('')
 
   // Package State
   const [systemSizeKw, setSystemSizeKw] = React.useState('1-10 kW')
@@ -75,6 +78,7 @@ export function EditCrfModal({
       setBlock(customer.block || '')
       setArea(customer.area || '')
       setCity(customer.city || '')
+      setAssignedInstallerId(customer.assignedInstallerId || '')
 
       if (customer.packagePlan) {
         setSystemSizeKw(customer.packagePlan.systemSizeKw || '1-10 kW')
@@ -127,6 +131,7 @@ export function EditCrfModal({
       formData.append('block', block)
       formData.append('area', area)
       formData.append('city', city)
+      formData.append('assignedInstallerId', assignedInstallerId)
 
       formData.append('systemSizeKw', systemSizeKw)
       formData.append('packageTier', packageTier)
@@ -402,6 +407,35 @@ export function EditCrfModal({
                   className="h-9 text-xs font-mono"
                   placeholder="e.g. 0.8"
                 />
+              </div>
+            </div>
+          </div>
+
+          {/* Section 4: O&M Field Installer Allocation */}
+          <div className="space-y-3 bg-amber-50/40 p-3.5 rounded-xl border border-amber-200/70">
+            <div className="flex items-center gap-2 text-sm font-bold text-[#002868]">
+              <User className="h-4 w-4 text-amber-700" />
+              4. O&M Field Allocation &amp; System Audit
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs font-bold text-amber-950">Assign Installer / Field Specialist</Label>
+                <Select value={assignedInstallerId} onValueChange={(val) => setAssignedInstallerId(val || '')}>
+                  <SelectTrigger className="h-9 text-xs bg-white border-amber-300 font-semibold">
+                    <SelectValue placeholder="Select Technician..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {installers && installers.length > 0 ? (
+                      installers.map((inst) => (
+                        <SelectItem key={inst.id} value={inst.id} className="text-xs font-medium">
+                          {inst.fullName} ({inst.role.replace('_', ' ')})
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="none" disabled className="text-xs">No installers found</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>

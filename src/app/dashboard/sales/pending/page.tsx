@@ -9,26 +9,39 @@ export default async function PendingSalesPage() {
   const dbUser = user ? await prisma.user.findUnique({ where: { supabaseId: user.id }, select: { role: true } }) : null
   const userRole = dbUser?.role || ''
 
-  // Fetch all customer sales in pending pipeline stages
-  const rawPendingCustomers = await prisma.customer.findMany({
-    where: {
-      status: {
-        in: [
-          'SIGNUP_GENERATED',
-          'PENDING_PAYMENT_VERIFICATION',
-          'PENDING_ACTIVATION',
-        ]
-      }
-    },
-    include: {
-      packagePlan: true,
-      solarSystem: true,
-    },
-    orderBy: { signupDate: 'desc' }
-  })
+  // Fetch all customer sales in pending pipeline stages and available installer users
+  const [rawPendingCustomers, rawInstallers] = await Promise.all([
+    prisma.customer.findMany({
+      where: {
+        status: {
+          in: [
+            'SIGNUP_GENERATED',
+            'PENDING_PAYMENT_VERIFICATION',
+            'PENDING_ACTIVATION',
+          ]
+        }
+      },
+      include: {
+        packagePlan: true,
+        solarSystem: true,
+        accountExecutive: true,
+        assignedInstaller: true,
+      },
+      orderBy: { signupDate: 'desc' }
+    }),
+    prisma.user.findMany({
+      where: {
+        role: { in: ['INSTALLATION', 'OM_MANAGER', 'SUPER_ADMIN'] },
+        isActive: true
+      },
+      select: { id: true, fullName: true, role: true, email: true },
+      orderBy: { fullName: 'asc' }
+    })
+  ])
 
   // Sanitize Prisma types to plain JSON objects
   const pendingCustomers = JSON.parse(JSON.stringify(rawPendingCustomers))
+  const installers = JSON.parse(JSON.stringify(rawInstallers))
 
   // Action for advancing workflow status across stages
   async function advanceWorkflow(formData: FormData) {
@@ -101,6 +114,8 @@ export default async function PendingSalesPage() {
       }
     }
 
+    const assignedInstallerId = (formData.get('assignedInstallerId') as string) || undefined
+
     // 1. Update Customer
     await prisma.customer.update({
       where: { id: customerId },
@@ -113,6 +128,7 @@ export default async function PendingSalesPage() {
         block,
         area,
         city,
+        assignedInstallerId,
         status: nextStatus as any,
         ...(nextStatus === 'CONNECTION_ACTIVE' ? { activationDate: new Date() } : {})
       }
@@ -200,6 +216,7 @@ export default async function PendingSalesPage() {
   return (
     <ManagerApprovalView 
       customers={pendingCustomers}
+      installers={installers}
       userRole={userRole}
       onAdvanceWorkflow={advanceWorkflow}
       onUpdateCrfWorkflow={updateCrfAndAdvance}
