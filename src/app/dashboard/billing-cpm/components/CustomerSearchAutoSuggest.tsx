@@ -174,8 +174,8 @@ export function CustomerSearchAutoSuggest({
 
       {/* Auto-suggest Dropdown Overlay */}
       {isOpen && (
-        <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-2xl z-50 overflow-hidden max-h-84 overflow-y-auto divide-y divide-slate-100 animate-in fade-in slide-in-from-top-2 duration-150">
-          <div className="px-3 py-2 bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider flex justify-between items-center">
+        <div className="absolute left-0 top-full mt-1.5 min-w-full w-max max-w-2xl bg-white border border-slate-300 rounded-xl shadow-2xl z-[100] max-h-96 overflow-y-auto divide-y divide-slate-100 animate-in fade-in slide-in-from-top-2 duration-150">
+          <div className="px-3.5 py-2 bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider flex justify-between items-center sticky top-0 z-10 border-b border-slate-200">
             <span>Matching Customers ({suggestions.length})</span>
             <span className="text-[10px] font-normal text-slate-400">Use ↑ ↓ to navigate</span>
           </div>
@@ -208,7 +208,7 @@ export function CustomerSearchAutoSuggest({
 
                     <div className="min-w-0 space-y-0.5">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-bold text-xs text-slate-900 truncate">{c.fullName}</span>
+                        <span className="font-bold text-xs text-slate-900 whitespace-normal">{c.fullName}</span>
                         <Badge variant="outline" className="bg-slate-100 text-slate-800 border-slate-300 font-mono text-[10px]">
                           ID: {custIdDisplay}
                         </Badge>
@@ -217,7 +217,7 @@ export function CustomerSearchAutoSuggest({
                         </Badge>
                       </div>
 
-                      <div className="flex items-center gap-3 text-[11px] text-slate-500 font-medium truncate">
+                      <div className="flex items-center gap-3 text-[11px] text-slate-500 font-medium flex-wrap">
                         <span className="flex items-center gap-1 font-mono">
                           <Phone className="h-3 w-3 text-slate-400 shrink-0" />
                           {c.contactNumber}

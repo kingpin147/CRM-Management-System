@@ -96,7 +96,7 @@ export function DataTable<TData extends Record<string, any>>({
           className="max-w-sm border-[var(--color-line)] focus-visible:ring-[var(--color-amber)]"
         />
       </div>
-      <div className="rounded-md border border-[var(--color-line)] bg-white overflow-hidden shadow-sm">
+      <div className="rounded-md border border-[var(--color-line)] bg-white overflow-x-auto shadow-sm">
         <Table>
           <TableHeader className="bg-[var(--color-paper)]">
             {table.getHeaderGroups().map((headerGroup) => (

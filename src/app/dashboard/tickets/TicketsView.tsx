@@ -41,7 +41,7 @@ export function TicketsView({ tickets, userRole, initialStatusParam }: TicketsVi
   // Filter States
   const [statusTab, setStatusTab] = React.useState<string>(resolvedInitialStatus)
   const [selectedDept, setSelectedDept] = React.useState<string>(defaultDept)
-  const [selectedCountry] = React.useState<string>('Pakistan')
+  const [selectedCountry, setSelectedCountry] = React.useState<string>('Pakistan')
   const [selectedCity, setSelectedCity] = React.useState<string>('ALL')
   const [selectedArea, setSelectedArea] = React.useState<string>('ALL')
   const [selectedSubArea, setSelectedSubArea] = React.useState<string>('ALL')
@@ -109,6 +109,10 @@ export function TicketsView({ tickets, userRole, initialStatusParam }: TicketsVi
       }
 
       // 3. Location Filters
+      if (selectedCountry !== 'ALL') {
+        const cCountry = (cust?.country || 'Pakistan').toLowerCase()
+        if (cCountry !== selectedCountry.toLowerCase()) return false
+      }
       if (selectedCity !== 'ALL') {
         if (!cust?.city || cust.city.toLowerCase() !== selectedCity.toLowerCase()) {
           return false
@@ -159,6 +163,7 @@ export function TicketsView({ tickets, userRole, initialStatusParam }: TicketsVi
     tickets,
     statusTab,
     selectedDept,
+    selectedCountry,
     selectedCity,
     selectedArea,
     selectedSubArea,
@@ -254,11 +259,12 @@ export function TicketsView({ tickets, userRole, initialStatusParam }: TicketsVi
           <div className="space-y-1">
             <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Country</label>
             <select
-              disabled
               value={selectedCountry}
-              className="w-full h-9 px-2.5 text-xs rounded-lg border border-slate-200 bg-slate-100 font-semibold text-slate-700 cursor-not-allowed"
+              onChange={(e) => setSelectedCountry(e.target.value)}
+              className="w-full h-9 px-2.5 text-xs rounded-lg border border-slate-300 bg-white font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[var(--color-amber)]"
             >
-              <option value="Pakistan">Pakistan (Always Selected)</option>
+              <option value="ALL">All Countries</option>
+              <option value="Pakistan">Pakistan</option>
             </select>
           </div>
 

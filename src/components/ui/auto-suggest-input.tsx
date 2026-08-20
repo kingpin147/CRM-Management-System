@@ -75,7 +75,7 @@ export function AutoSuggestInput({
       </div>
 
       {isOpen && (
-        <div className="absolute z-50 left-0 right-0 mt-1 max-h-56 overflow-y-auto bg-white rounded-xl border border-amber-200/80 shadow-lg p-1.5 space-y-0.5 animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute z-[100] left-0 right-0 mt-1 min-w-full w-max max-w-lg max-h-64 overflow-y-auto bg-white rounded-xl border border-amber-300 shadow-xl p-1.5 space-y-0.5 animate-in fade-in zoom-in-95 duration-150">
           {filteredOptions.length > 0 ? (
             filteredOptions.map((option, idx) => (
               <button
@@ -89,7 +89,7 @@ export function AutoSuggestInput({
                 }`}
               >
                 <MapPin className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                <span className="truncate">{option}</span>
+                <span className="whitespace-normal break-words">{option}</span>
               </button>
             ))
           ) : (

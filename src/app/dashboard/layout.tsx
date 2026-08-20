@@ -77,7 +77,7 @@ export default async function DashboardLayout({
             <UserNav email={user.email} />
           </div>
         </header>
-        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 bg-background">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-background">
           {children}
         </div>
       </main>
