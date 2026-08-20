@@ -96,11 +96,16 @@ export function PackageStatusChangeTab() {
 
   const TIER_MULTIPLIERS: Record<string, number> = { Basic: 1.0, Moderate: 1.25, Comprehensive: 1.5 }
   const TIER_RANKS: Record<string, number> = { Basic: 1, Moderate: 2, Comprehensive: 3 }
-  const oldTier = customer?.packagePlan?.packageTier || 'Basic'
-  const oldRank = TIER_RANKS[oldTier] || 1
-  const newRank = TIER_RANKS[packageTier] || 1
+
+  const oldSize = customer?.packagePlan?.systemSizeKw 
+  const oldTier = customer?.packagePlan?.packageTier  
+  const oldBilling = customer?.packagePlan?.billingType  
+
+  const oldRank = TIER_RANKS[oldTier] 
+  const newRank = TIER_RANKS[packageTier] 
   const isDowngrade = newRank < oldRank
   const isUpgrade = newRank > oldRank
+  const isUnchanged = packageTier === oldTier && systemSize === oldSize && billingType === oldBilling
 
   const invoicesList = customer?.invoices || []
   const hasRecurringInvoices = invoicesList.length > 1
@@ -109,16 +114,22 @@ export function PackageStatusChangeTab() {
   // Rule: Customer CANNOT downgrade package on initial Signup / Sales Invoice!
   const isDowngradeBlocked = isDowngrade && !hasRecurringInvoices
 
-  // Previous base rate stored for this customer (from last recurring invoice or current package plan)
+  // Previous base rate stored for this customer
   const currentCustomerBaseRate = (lastRecurringInvoice && hasRecurringInvoices)
     ? Number(lastRecurringInvoice.totalAmount)
     : (customer?.packagePlan?.totalAmount ? Number(customer.packagePlan.totalAmount) : 0)
 
-  // Smart Recalculation on dropdown change (scale relative to customer's actual plan rate when available)
+  const baseComparisonRate = currentCustomerBaseRate > 0 
+    ? currentCustomerBaseRate 
+    : estimatePlanPrice(systemSize, oldTier, billingType)
+
+  // Smart Recalculation on dropdown change:
   const handleDropdownChange = (size: string, tier: string, billing: string) => {
-    if (currentCustomerBaseRate > 0 && customer?.packagePlan?.billingType === billing && size === (customer?.packagePlan?.systemSizeKw || size)) {
-      const oldMult = TIER_MULTIPLIERS[oldTier] || 1.0
-      const newMult = TIER_MULTIPLIERS[tier] || 1.0
+    if (tier === oldTier && size === oldSize && billing === oldBilling) {
+      setCustomAmount(baseComparisonRate)
+    } else if (currentCustomerBaseRate > 0 && billing === oldBilling && size === oldSize) {
+      const oldMult = TIER_MULTIPLIERS[oldTier]
+      const newMult = TIER_MULTIPLIERS[tier]
       const scaledAmount = Math.round(currentCustomerBaseRate * (newMult / oldMult))
       setCustomAmount(scaledAmount)
     } else {
@@ -127,33 +138,29 @@ export function PackageStatusChangeTab() {
     }
   }
 
-  const baseComparisonRate = currentCustomerBaseRate > 0 
-    ? currentCustomerBaseRate 
-    : estimatePlanPrice(systemSize, oldTier, billingType)
-
-  let diff = customAmount - baseComparisonRate
+  let diff = isUnchanged ? 0 : (customAmount - baseComparisonRate)
 
   // Business Rules:
   // 1. Downgrade MUST ALWAYS result in a Credit Note Adjustment (-diff)
   if (isDowngrade) {
     if (diff >= 0) {
-      const oldMult = TIER_MULTIPLIERS[oldTier] || 1.5
-      const newMult = TIER_MULTIPLIERS[packageTier] || 1.25
+      const oldMult = TIER_MULTIPLIERS[oldTier]
+      const newMult = TIER_MULTIPLIERS[packageTier]
       const expectedRate = Math.round(baseComparisonRate * (newMult / oldMult))
       diff = expectedRate - baseComparisonRate
       if (diff >= 0) {
-        diff = -Math.abs(diff || (baseComparisonRate * 0.15))
+        diff = -Math.abs(diff)
       }
     }
   } else if (isUpgrade) {
     // 2. Upgrade MUST ALWAYS result in a Debit Adjustment (+diff)
     if (diff <= 0) {
-      const oldMult = TIER_MULTIPLIERS[oldTier] || 1.0
-      const newMult = TIER_MULTIPLIERS[packageTier] || 1.25
+      const oldMult = TIER_MULTIPLIERS[oldTier] 
+      const newMult = TIER_MULTIPLIERS[packageTier] 
       const expectedRate = Math.round(baseComparisonRate * (newMult / oldMult))
       diff = expectedRate - baseComparisonRate
       if (diff <= 0) {
-        diff = Math.abs(diff || (baseComparisonRate * 0.15))
+        diff = Math.abs(diff)
       }
     }
   }
