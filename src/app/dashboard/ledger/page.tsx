@@ -18,11 +18,10 @@ export default async function LedgerPage() {
     where: { supabaseId: user.id },
     select: { role: true }
   })
-  const userRole = dbUser?.role || 'SALES'
-
-  if (!['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES'].includes(userRole)) {
+  if (!dbUser?.role || !['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES'].includes(dbUser.role)) {
     redirect('/dashboard/customers')
   }
+  const userRole = dbUser.role
 
   const [transactions, rawCustomers] = await Promise.all([
     prisma.transaction.findMany({

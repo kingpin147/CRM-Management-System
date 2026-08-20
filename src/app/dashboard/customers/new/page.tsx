@@ -14,11 +14,10 @@ export default async function NewCustomerPage() {
     where: { supabaseId: user.id },
     select: { role: true }
   })
-  const userRole = dbUser?.role || 'SALES_MANAGER'
-
-  if (!['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES_MANAGER'].includes(userRole)) {
+  if (!dbUser?.role || !['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES_MANAGER', 'SALES'].includes(dbUser.role)) {
     redirect('/dashboard/customers')
   }
+  const userRole = dbUser.role
 
   const users = await prisma.user.findMany({
     where: { isActive: true },

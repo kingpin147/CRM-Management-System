@@ -32,7 +32,7 @@ export default async function DashboardLayout({
   const dbUser = await prisma.user.findUnique({
     where: { supabaseId: user.id }
   })
-  const userRole = dbUser?.role || 'SALES_MANAGER'
+  const userRole = dbUser?.role || ''
 
   return (
     <div className="flex min-h-screen w-full bg-background">

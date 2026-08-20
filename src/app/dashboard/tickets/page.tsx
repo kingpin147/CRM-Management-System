@@ -16,7 +16,7 @@ export default async function TicketsPage({
     data: { user },
   } = await supabase.auth.getUser()
 
-  let userRole = 'SUPER_ADMIN'
+  let userRole = ''
   if (user) {
     const dbUser = await prisma.user.findUnique({
       where: { supabaseId: user.id },

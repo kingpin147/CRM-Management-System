@@ -16,11 +16,10 @@ export default async function ReportsPage({
     where: { supabaseId: user.id },
     select: { role: true }
   })
-  const userRole = dbUser?.role || 'SALES'
-
-  if (!['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES'].includes(userRole)) {
+  if (!dbUser?.role || !['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES'].includes(dbUser.role)) {
     redirect('/dashboard/customers')
   }
+  const userRole = dbUser.role
 
   // Fetch all customers with relations for multi-category reports
   const rawCustomers = await prisma.customer.findMany({

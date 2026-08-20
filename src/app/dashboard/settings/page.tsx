@@ -18,8 +18,8 @@ export default async function SettingsPage() {
     where: { supabaseId: user.id }
   })
 
-  const userRole = dbUser?.role || 'SALES'
-  const isAdminOrSuperAdmin = ['SUPER_ADMIN', 'ADMIN'].includes(userRole)
+  const userRole = dbUser?.role
+  const isAdminOrSuperAdmin = userRole ? ['SUPER_ADMIN', 'ADMIN'].includes(userRole) : false
 
   return (
     <div className="space-y-6 animate-reveal max-w-4xl">
@@ -48,7 +48,7 @@ export default async function SettingsPage() {
             <div className="flex items-center gap-2">
               <Badge variant="outline" className="bg-white text-xs font-bold border-amber-300 text-amber-900 px-2.5 py-1">
                 <ShieldCheck className="w-3.5 h-3.5 mr-1 text-[var(--color-amber)] inline" />
-                {userRole.replace('_', ' ')}
+                {userRole?.replace('_', ' ') || 'Unassigned'}
               </Badge>
               <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 text-xs font-semibold px-2 py-1">
                 <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-emerald-600 inline" />
@@ -60,7 +60,7 @@ export default async function SettingsPage() {
         <CardContent className="pt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
           <div>
             <span className="text-gray-400 block font-medium">Assigned Role:</span>
-            <span className="font-bold text-[var(--color-ink)] text-sm">{userRole.replace('_', ' ')}</span>
+            <span className="font-bold text-[var(--color-ink)] text-sm">{userRole?.replace('_', ' ') || 'Unassigned'}</span>
           </div>
           <div>
             <span className="text-gray-400 block font-medium">Email Address:</span>

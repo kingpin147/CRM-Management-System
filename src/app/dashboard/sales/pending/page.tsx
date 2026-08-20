@@ -7,7 +7,7 @@ export default async function PendingSalesPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const dbUser = user ? await prisma.user.findUnique({ where: { supabaseId: user.id }, select: { role: true } }) : null
-  const userRole = dbUser?.role || 'SUPER_ADMIN'
+  const userRole = dbUser?.role || ''
 
   // Fetch all customer sales in pending pipeline stages
   const rawPendingCustomers = await prisma.customer.findMany({

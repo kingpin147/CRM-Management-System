@@ -33,7 +33,7 @@ export default async function CustomerDetailPage({
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const dbUser = user ? await prisma.user.findUnique({ where: { supabaseId: user.id }, select: { role: true } }) : null
-  const userRole = dbUser?.role || 'SUPER_ADMIN'
+  const userRole = dbUser?.role
 
   const rawCustomer = await prisma.customer.findUnique({
     where: { id },
@@ -70,10 +70,10 @@ export default async function CustomerDetailPage({
   // Sanitize Decimal and custom instances to plain JSON primitives
   const customer = JSON.parse(JSON.stringify(rawCustomer))
 
-  const canViewLedger = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'BILLING_MANAGER', 'SALES_MANAGER', 'SALES'].includes(userRole)
-  const canEditProfile = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES_MANAGER', 'SALES'].includes(userRole)
-  const canEditSolarSpecs = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'OM_MANAGER', 'INSTALLATION'].includes(userRole)
-  const canRecordPayment = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'BILLING_MANAGER', 'SALES_MANAGER', 'SALES'].includes(userRole)
+  const canViewLedger = userRole ? ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'BILLING_MANAGER', 'SALES_MANAGER', 'SALES'].includes(userRole) : false
+  const canEditProfile = userRole ? ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES_MANAGER', 'SALES'].includes(userRole) : false
+  const canEditSolarSpecs = userRole ? ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'OM_MANAGER', 'INSTALLATION'].includes(userRole) : false
+  const canRecordPayment = userRole ? ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'BILLING_MANAGER', 'SALES_MANAGER', 'SALES'].includes(userRole) : false
 
   const allTabs = [
     { id: 'profile', label: 'Customer Profile', allowed: true },
