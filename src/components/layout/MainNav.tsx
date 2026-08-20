@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ChevronDown, ShoppingBag, AlertCircle, BarChart3, Truck, Users, Settings, Search, CreditCard } from 'lucide-react'
+import { ChevronDown, ShoppingBag, AlertCircle, BarChart3, Users, Settings, Search, CreditCard } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -192,23 +192,6 @@ export function MainNav({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* 5. Service Delivery Tab with Sub-menu */}
-        <DropdownMenu>
-          <DropdownMenuTrigger className={triggerClass(pathname.startsWith('/dashboard/service-delivery'))}>
-            <span className="flex items-center gap-1 xl:gap-1.5">
-              <Truck className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
-              <span>Service Delivery</span>
-            </span>
-            <ChevronDown className="h-3 w-3 xl:h-3.5 xl:w-3.5 opacity-70 shrink-0 ml-0.5" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-52 bg-white p-1.5 shadow-lg border-line rounded-xl animate-in fade-in-50 zoom-in-95">
-            <DropdownMenuItem>
-              <Link href="/dashboard/service-delivery/inventory" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
-                Inventory Management
-              </Link>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
 
         {/* Admin Management if Authorized */}
         {canViewAdmin && (
@@ -304,14 +287,6 @@ export function MainNav({
         </div>
       </div>
 
-      <div>
-        <p className="px-3 text-xs font-bold text-[var(--color-slate-custom)] uppercase tracking-wider mb-1">Service Delivery</p>
-        <div className="space-y-0.5">
-          <Link href="/dashboard/service-delivery/inventory" className={linkClass('/dashboard/service-delivery/inventory')}>
-            Inventory Management
-          </Link>
-        </div>
-      </div>
 
       {canViewAdmin && (
         <div>

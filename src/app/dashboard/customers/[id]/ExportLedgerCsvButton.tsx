@@ -16,7 +16,7 @@ export function ExportLedgerCsvButton({
   const exportToCsv = () => {
     if (!ledgerEntries || ledgerEntries.length === 0) return
 
-    const headers = ['Date', 'Reference #', 'Narration / Description', 'Debit (PKR)', 'Credit (PKR)', 'Running Balance (PKR)']
+    const headers = ['Date', 'Reference #', 'Description', 'Debit (PKR)', 'Credit (PKR)', 'Running Balance (PKR)']
     const rows = ledgerEntries.map((e) => [
       `"${formatDate(e.createdAt || e.date)}"`,
       `"${e.refNumber || '-'}"`,

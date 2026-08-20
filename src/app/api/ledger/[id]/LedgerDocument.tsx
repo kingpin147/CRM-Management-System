@@ -315,7 +315,7 @@ export function LedgerDocument({ customer, ledgerEntries, logoSrc }: LedgerDocum
           <View style={styles.tableHeader}>
             <Text style={[styles.th, styles.colDate]}>Date</Text>
             <Text style={[styles.th, styles.colRef]}>Ref # (Receipt / Invoice)</Text>
-            <Text style={[styles.th, styles.colNarration]}>Narration</Text>
+            <Text style={[styles.th, styles.colNarration]}>Description</Text>
             <Text style={[styles.th, styles.colDebit]}>Debit</Text>
             <Text style={[styles.th, styles.colCredit]}>Credit</Text>
             <Text style={[styles.th, styles.colBalance]}>Balance</Text>

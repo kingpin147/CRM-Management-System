@@ -396,7 +396,7 @@ export function ReceiptDocument({
           {/* Breakdown Table */}
           <View style={styles.table}>
             <View style={styles.tableHeader}>
-              <Text style={styles.tableHeaderCol1}>Payment Narration / Description</Text>
+              <Text style={styles.tableHeaderCol1}>Description</Text>
               <Text style={styles.tableHeaderCol3}>Amount (PKR)</Text>
             </View>
             <View style={styles.tableRow}>
@@ -417,7 +417,14 @@ export function ReceiptDocument({
               <Text>• This is a computer-generated Payment Receipt confirming acknowledgment of received funds.</Text>
               <Text>• All payments are subject to real-time clearance and bank reconciliation.</Text>
               <Text>• Thank you for choosing EnergyGurus for your Solar Operations & Maintenance services.</Text>
+              <Text>• This is computer generated Receipt no need for signature and stamp</Text>
             </View>
+          </View>
+
+          {/* Dotted Signature Lines (Lines kept, signature labels removed as requested) */}
+          <View style={styles.signRow}>
+            <View style={styles.signBox} />
+            <View style={styles.signBox} />
           </View>
 
           {/* Footer Addresses */}

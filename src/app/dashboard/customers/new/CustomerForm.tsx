@@ -14,7 +14,8 @@ import { Badge } from '@/components/ui/badge'
 import { createCustomer } from './actions'
 import { uploadFile } from '@/utils/supabase/storage'
 import { CustomerType } from '@prisma/client'
-import { ChevronRight, ChevronLeft, CheckCircle2, Check, Sparkles, Loader2, AlertCircle } from 'lucide-react'
+import { ChevronRight, ChevronLeft, CheckCircle2, Check, Sparkles, Loader2, AlertCircle, Download, FileText } from 'lucide-react'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { AutoSuggestInput } from '@/components/ui/auto-suggest-input'
 import { CITIES_LIST, getAreasForCity, getDefaultDiscoForCity } from '@/lib/pakistan-cities-areas'
 import { formatDiscoRefNo } from '@/lib/utils'
@@ -107,6 +108,12 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
   const [uploading, setUploading] = useState(false)
   const [cnicFrontFile, setCnicFrontFile] = useState<File | null>(null)
   const [cnicBackFile, setCnicBackFile] = useState<File | null>(null)
+  const [successModalData, setSuccessModalData] = useState<{
+    customerId: string
+    fullName: string
+    crfNumber: string
+    totalAmount: number
+  } | null>(null)
 
   const form = useForm<z.infer<typeof customerSchema>>({
     resolver: zodResolver(customerSchema) as any,
@@ -449,7 +456,15 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
         setUploading(false)
         window.scrollTo({ top: 0, behavior: 'smooth' })
       } else if (result?.success) {
-        router.push(`/dashboard/customers/${result.customerId}`)
+        const custName = form.getValues('fullName') || 'New Customer'
+        const generatedCrf = `CRF-${result.customerId.slice(0, 6)}`
+        setSuccessModalData({
+          customerId: result.customerId,
+          fullName: custName,
+          crfNumber: generatedCrf,
+          totalAmount: grandTotal,
+        })
+        setUploading(false)
       } else {
         setUploading(false)
       }
@@ -1815,6 +1830,60 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
           )}
         </form>
       </Form>
+
+      {/* Signup Success Modal Popup */}
+      {successModalData && (
+        <Dialog open={true} onOpenChange={() => {}}>
+          <DialogContent className="max-w-md bg-white p-0 overflow-hidden border-0 shadow-2xl rounded-2xl">
+            <div className="bg-[#002868] text-white p-6 text-center relative overflow-hidden">
+              <div className="mx-auto w-14 h-14 bg-emerald-500 text-white rounded-full flex items-center justify-center mb-3 shadow-lg ring-4 ring-white/20">
+                <CheckCircle2 className="h-8 w-8 text-white" />
+              </div>
+              <h2 className="text-xl font-bold font-display">Signup Submitted Successfully!</h2>
+              <p className="text-slate-200 text-xs mt-1">Customer Registration Form (CRF) has been generated.</p>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2 text-xs">
+                <div className="flex justify-between border-b border-slate-200 pb-2">
+                  <span className="text-slate-500 font-medium">Customer Name:</span>
+                  <span className="font-bold text-[#002868]">{successModalData.fullName}</span>
+                </div>
+                <div className="flex justify-between border-b border-slate-200 pb-2">
+                  <span className="text-slate-500 font-medium">CRF Number:</span>
+                  <span className="font-mono font-bold text-amber-600">{successModalData.crfNumber}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500 font-medium">Total Subscription Payable:</span>
+                  <span className="font-bold text-emerald-700 font-mono">PKR {successModalData.totalAmount.toLocaleString()}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2.5 pt-2">
+                <a
+                  href={`/api/signup/${successModalData.customerId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full"
+                >
+                  <Button className="w-full bg-[#002868] hover:bg-[#001d4a] text-white font-bold text-xs py-3 flex items-center justify-center gap-2 rounded-xl shadow-md cursor-pointer">
+                    <Download className="h-4 w-4 text-amber-400" />
+                    Download / Print Signup Form (CRF PDF)
+                  </Button>
+                </a>
+
+                <Button
+                  variant="outline"
+                  onClick={() => router.push(`/dashboard/customers/${successModalData.customerId}`)}
+                  className="w-full border-slate-300 hover:bg-slate-50 text-slate-800 font-bold text-xs py-2.5 rounded-xl cursor-pointer"
+                >
+                  Go to Customer Profile →
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   )
 }

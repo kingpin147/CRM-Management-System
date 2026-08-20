@@ -25,6 +25,26 @@ export async function updateCustomer(formData: FormData) {
   }
 
   try {
+    const currentCustomer = await prisma.customer.findUnique({
+      where: { id: customerId },
+      select: { status: true, customerCode: true, fullName: true }
+    })
+
+    if (currentCustomer && currentCustomer.status !== status) {
+      await prisma.customerHistory.create({
+        data: {
+          customerId,
+          customerCode: currentCustomer.customerCode,
+          customerName: fullName || currentCustomer.fullName,
+          actionType: 'STATUS_CHANGE',
+          oldStatus: currentCustomer.status,
+          newStatus: status,
+          notes: `Customer status updated via profile edit to ${status.replace(/_/g, ' ')}`,
+          performedBy: 'Account Admin / Manager',
+        }
+      })
+    }
+
     await prisma.customer.update({
       where: { id: customerId },
       data: {

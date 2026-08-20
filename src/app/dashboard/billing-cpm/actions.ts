@@ -27,9 +27,15 @@ export async function searchCustomerForBilling(query: string) {
       include: {
         packagePlan: true,
         solarSystem: true,
+        invoices: {
+          orderBy: { createdAt: 'desc' }
+        },
+        transactions: {
+          orderBy: { createdAt: 'desc' }
+        },
         ledgerEntries: {
           orderBy: { createdAt: 'desc' },
-          take: 1
+          take: 5
         }
       }
     })
@@ -38,10 +44,12 @@ export async function searchCustomerForBilling(query: string) {
       return { error: `Customer '${trimmed}' not found.` }
     }
 
-    // Get current balance
+    // Get financial statistics
+    const totalInvoiced = (customer.invoices || []).reduce((acc: number, inv: any) => acc + (Number(inv.totalAmount) || 0), 0)
+    const totalPaid = (customer.transactions || []).reduce((acc: number, tx: any) => acc + (Number(tx.amount) || 0), 0)
     const currentBalance = customer.ledgerEntries[0]?.balance 
       ? Number(customer.ledgerEntries[0].balance) 
-      : 0
+      : (totalInvoiced - totalPaid)
 
     return {
       success: true,
@@ -52,12 +60,16 @@ export async function searchCustomerForBilling(query: string) {
         fullName: customer.fullName,
         contactNumber: customer.contactNumber,
         email: customer.email,
+        cnic: customer.cnic,
+        customerType: customer.customerType,
         address: customer.address,
         subArea: customer.subArea,
         area: customer.area,
         city: customer.city,
         status: customer.status,
         currentBalance,
+        totalInvoiced,
+        totalPaid,
         packagePlan: customer.packagePlan ? {
           systemSizeKw: customer.packagePlan.systemSizeKw,
           packageTier: customer.packagePlan.packageTier,
@@ -67,7 +79,16 @@ export async function searchCustomerForBilling(query: string) {
           appliedDiscount: Number(customer.packagePlan.appliedDiscount),
           salesTaxAmount: Number(customer.packagePlan.salesTaxAmount),
           totalAmount: Number(customer.packagePlan.totalAmount),
-        } : null
+        } : null,
+        recentLedger: (customer.ledgerEntries || []).map((le: any) => ({
+          id: le.id,
+          date: le.createdAt || le.date,
+          refNumber: le.refNumber || le.id.slice(0, 8),
+          narration: le.narration,
+          debit: Number(le.debit) || 0,
+          credit: Number(le.credit) || 0,
+          balance: Number(le.balance) || 0,
+        }))
       }
     }
   } catch (error: any) {
@@ -111,6 +132,22 @@ export async function updateCustomerPackageAndStatus(formData: FormData) {
     await prisma.customer.update({
       where: { id: customerId },
       data: { status }
+    })
+
+    // 2. Record CustomerHistory entry
+    await prisma.customerHistory.create({
+      data: {
+        customerId: customer.id,
+        customerCode: customer.customerCode,
+        customerName: customer.fullName,
+        actionType: status !== customer.status ? 'STATUS_CHANGE' : 'PACKAGE_CHANGE',
+        oldStatus: customer.status,
+        newStatus: status,
+        oldPackage: customer.packagePlan ? `${customer.packagePlan.packageTier} (${customer.packagePlan.systemSizeKw})` : undefined,
+        newPackage: packageTier && systemSizeKw ? `${packageTier} (${systemSizeKw})` : undefined,
+        notes: adjustmentNotes || `Status updated from ${customer.status?.replace(/_/g, ' ')} to ${status.replace(/_/g, ' ')}`,
+        performedBy: 'Billing & Operations',
+      }
     })
 
     // 2. Upsert Package Plan
@@ -184,6 +221,8 @@ export async function createDebitCreditNote(formData: FormData) {
     const amountStr = formData.get('amount') as string
     const description = formData.get('description') as string
     const accountExecutive = formData.get('accountExecutive') as string || 'Operations'
+    const dateStr = formData.get('date') as string
+    const entryDate = dateStr ? new Date(dateStr) : new Date()
 
     if (!customerId) return { error: 'Customer is required.' }
     if (!amountStr || parseFloat(amountStr) <= 0) return { error: 'Please enter a valid positive amount.' }
@@ -198,6 +237,7 @@ export async function createDebitCreditNote(formData: FormData) {
         amount,
         paymentMethod: `${noteType}_NOTE|${accountExecutive}|${description.trim()}`,
         status: noteType === 'DEBIT' ? 'UNPOSTED_DEBIT' : 'UNPOSTED_CREDIT',
+        createdAt: entryDate,
       }
     })
 
@@ -220,6 +260,8 @@ export async function createPaymentEntry(formData: FormData) {
     const description = formData.get('description') as string
     const accountExecutive = formData.get('accountExecutive') as string || 'Sales & Billing'
     const paymentMode = formData.get('paymentMode') as string || 'Bank Transfer'
+    const dateStr = formData.get('date') as string
+    const entryDate = dateStr ? new Date(dateStr) : new Date()
 
     if (!customerId) return { error: 'Customer is required.' }
     if (!amountStr || parseFloat(amountStr) <= 0) return { error: 'Please enter a valid positive amount.' }
@@ -233,6 +275,7 @@ export async function createPaymentEntry(formData: FormData) {
         amount,
         paymentMethod: `PAYMENT|${paymentMode}|${accountExecutive}|${(description || 'Customer Payment').trim()}`,
         status: 'UNPOSTED_PAYMENT',
+        createdAt: entryDate,
       }
     })
 
@@ -300,7 +343,7 @@ export async function postTransaction(transactionId: string) {
     await prisma.ledgerEntry.create({
       data: {
         customerId: tx.customerId,
-        date: new Date(),
+        date: tx.createdAt || new Date(),
         refNumber: `TX-${tx.id.slice(0, 8).toUpperCase()}`,
         narration,
         debit: debitAmount,
@@ -414,6 +457,11 @@ export async function processBulkStatusChange(customerIds: string[], newStatus: 
       return { error: 'Please select a valid target status.' }
     }
 
+    const targetCustomers = await prisma.customer.findMany({
+      where: { id: { in: customerIds } },
+      select: { id: true, customerCode: true, fullName: true, status: true }
+    })
+
     const result = await prisma.customer.updateMany({
       where: {
         id: { in: customerIds }
@@ -422,6 +470,22 @@ export async function processBulkStatusChange(customerIds: string[], newStatus: 
         status: newStatus
       }
     })
+
+    // Record CustomerHistory entries for all affected customers
+    for (const c of targetCustomers) {
+      await prisma.customerHistory.create({
+        data: {
+          customerId: c.id,
+          customerCode: c.customerCode,
+          customerName: c.fullName,
+          actionType: 'BULK_STATUS_CHANGE',
+          oldStatus: c.status,
+          newStatus: newStatus,
+          notes: `Bulk status update to '${newStatus.replace(/_/g, ' ')}'`,
+          performedBy: 'Billing & Sales Team',
+        }
+      })
+    }
 
     revalidatePath('/dashboard/billing-cpm')
     revalidatePath('/dashboard/customers')

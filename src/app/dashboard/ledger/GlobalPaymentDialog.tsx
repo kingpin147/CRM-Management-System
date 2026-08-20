@@ -28,7 +28,7 @@ export function GlobalPaymentDialog({
 
   const [customerId, setCustomerId] = React.useState(customers[0]?.id || '')
   const [amount, setAmount] = React.useState<number | ''>('')
-  const [paymentMethod, setPaymentMethod] = React.useState('Bank Transfer')
+  const [paymentMethod, setPaymentMethod] = React.useState('IBFT')
   const [reference, setReference] = React.useState('')
   const [narration, setNarration] = React.useState('O&M Subscription Payment')
 
@@ -122,11 +122,11 @@ export function GlobalPaymentDialog({
                 onChange={(e) => setPaymentMethod(e.target.value)}
                 className="w-full h-10 px-3 rounded-lg border border-[var(--color-line)] bg-white text-sm font-medium text-[var(--color-ink)]"
               >
-                <option value="Bank Transfer">Bank Transfer (IBFT)</option>
+                <option value="IBFT">Bank Transfer (IBFT)</option>
                 <option value="Cheque">Cheque</option>
                 <option value="Cash">Cash</option>
-                <option value="JazzCash / EasyPaisa">JazzCash / EasyPaisa</option>
                 <option value="Credit Card">Credit Card</option>
+                <option value="Debit Card">Debit Card</option>
               </select>
             </div>
 
@@ -142,7 +142,7 @@ export function GlobalPaymentDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-[var(--color-ink)]">Narration / Remarks</Label>
+            <Label className="text-xs font-semibold text-[var(--color-ink)]">Description / Remarks</Label>
             <Input
               value={narration}
               onChange={(e) => setNarration(e.target.value)}

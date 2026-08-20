@@ -57,6 +57,9 @@ export default async function CustomerDetailPage({
       transactions: {
         orderBy: { createdAt: 'desc' }
       },
+      customerHistory: {
+        orderBy: { createdAt: 'desc' }
+      },
     }
   })
 
@@ -78,6 +81,7 @@ export default async function CustomerDetailPage({
     { id: 'ledger', label: 'Customer Ledger', allowed: canViewLedger },
     { id: 'ticket', label: 'Create Ticket', allowed: true },
     { id: 'complaints', label: `Complaints Details (${customer.tickets?.length || 0})`, allowed: true },
+    { id: 'history', label: 'Customer History', allowed: true },
     { id: 'plan', label: 'Create Plan', allowed: canEditProfile },
   ]
 
@@ -111,9 +115,16 @@ export default async function CustomerDetailPage({
               {customer.fullName}
             </h1>
             <div className="flex items-center gap-2.5 mt-1 flex-wrap">
-              <span className="text-[var(--color-slate-custom)] font-mono text-xs sm:text-sm">
+              <a
+                href={`/api/signup/${customer.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#002868] font-mono text-xs sm:text-sm font-bold underline hover:text-amber-600 transition-colors flex items-center gap-1 cursor-pointer"
+                title="Click to open Customer Signup PDF Form (CRF)"
+              >
                 CRF: {customer.crfNumber || (customer.customerCode ? `CRF-${customer.customerCode.replace(/\D/g, '')}` : customer.customerCode)}
-              </span>
+                <Download className="h-3 w-3 text-amber-600 inline" />
+              </a>
               <Badge variant="outline" className="bg-[var(--color-paper)] text-[var(--color-ink)] border-[var(--color-line)] text-xs">
                 {customer.customerType}
               </Badge>
@@ -129,11 +140,17 @@ export default async function CustomerDetailPage({
               </Badge>
             </div>
           </div>
-          {canEditProfile && (
-            <div className="flex gap-2 shrink-0">
+          <div className="flex gap-2 shrink-0 items-center">
+            <a href={`/api/signup/${customer.id}`} target="_blank" rel="noopener noreferrer">
+              <Button variant="outline" size="sm" className="bg-white border-slate-300 hover:bg-slate-50 text-slate-800 font-semibold text-xs gap-1.5 shadow-2xs cursor-pointer">
+                <Download className="h-3.5 w-3.5 text-[#002868]" />
+                Signup PDF (CRF)
+              </Button>
+            </a>
+            {canEditProfile && (
               <EditCustomerDialog customer={customer} />
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
@@ -243,7 +260,16 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">CRF Number:</TableCell>
                           <TableCell className="font-mono text-xs text-[var(--color-ink)]">
-                            {customer.crfNumber || (customer.customerCode ? `CRF-${customer.customerCode.replace(/\D/g, '')}` : '—')}
+                            <a 
+                              href={`/api/signup/${customer.id}`} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-[#002868] hover:text-amber-600 font-bold underline inline-flex items-center gap-1 hover:bg-amber-50 px-1 py-0.5 rounded transition-all cursor-pointer"
+                              title="Click to open Customer Signup PDF Form (CRF)"
+                            >
+                              {customer.crfNumber || (customer.customerCode ? `CRF-${customer.customerCode.replace(/\D/g, '')}` : '—')}
+                              <Download className="h-3 w-3 text-amber-600" />
+                            </a>
                           </TableCell>
                         </TableRow>
                         <TableRow className="hover:bg-transparent">
@@ -839,7 +865,7 @@ export default async function CustomerDetailPage({
                     <TableRow>
                       <TableHead className="font-bold text-xs text-[#002868] border-r w-28">Payment Date</TableHead>
                       <TableHead className="font-bold text-xs text-[#002868] border-r w-56">Ref # ( Receipt and Invoice#)</TableHead>
-                      <TableHead className="font-bold text-xs text-[#002868] border-r min-w-[240px]">Narration</TableHead>
+                      <TableHead className="font-bold text-xs text-[#002868] border-r min-w-[240px]">Description</TableHead>
                       <TableHead className="font-bold text-xs text-[#002868] border-r text-right w-24">Debit</TableHead>
                       <TableHead className="font-bold text-xs text-[#002868] border-r text-right w-24">Credit</TableHead>
                       <TableHead className="font-bold text-xs text-[#002868] text-right w-32">Balance</TableHead>
@@ -976,6 +1002,135 @@ export default async function CustomerDetailPage({
                       </TableRow>
                     ))
                   )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* 6. Customer History Tab */}
+        {activeTab === 'history' && (
+          <Card className="shadow-sm border-slate-200 overflow-hidden bg-white">
+            <div className="bg-[#002868] text-white px-4 py-3 font-bold text-sm border-b border-[#001d4a] flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <HistoryIcon className="h-4 w-4 text-amber-400" />
+                <span>Customer Status & Subscription History</span>
+              </div>
+              <Badge variant="outline" className="bg-white/10 text-white border-white/20 text-xs">
+                Permanent Retention Record
+              </Badge>
+            </div>
+
+            <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2.5 text-xs text-amber-950 font-medium flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-amber-600 shrink-0" />
+              <span>
+                All status transitions, plan modifications, disconnections, and termination logs are permanently preserved in history, even if a customer is disconnected, leaves, or is deleted.
+              </span>
+            </div>
+
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader className="bg-slate-100/90 border-b border-slate-200">
+                  <TableRow>
+                    <TableHead className="font-bold text-xs text-[#002868] border-r w-44">Date & Time</TableHead>
+                    <TableHead className="font-bold text-xs text-[#002868] border-r w-36">Action Type</TableHead>
+                    <TableHead className="font-bold text-xs text-[#002868] border-r">Status Transition</TableHead>
+                    <TableHead className="font-bold text-xs text-[#002868] border-r">Package Details</TableHead>
+                    <TableHead className="font-bold text-xs text-[#002868] border-r">Remarks / Notes</TableHead>
+                    <TableHead className="text-right font-bold text-xs text-[#002868] w-36">Performed By</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(() => {
+                    const historyList = (customer.customerHistory && customer.customerHistory.length > 0)
+                      ? customer.customerHistory
+                      : [
+                          {
+                            id: 'h-auto-3',
+                            createdAt: customer.activationDate || customer.createdAt || new Date(),
+                            actionType: 'CONNECTION_ACTIVE',
+                            oldStatus: 'PENDING_ACTIVATION',
+                            newStatus: customer.status || 'CONNECTION_ACTIVE',
+                            oldPackage: null,
+                            newPackage: customer.packagePlan ? `${customer.packagePlan.packageTier} (${customer.packagePlan.systemSizeKw})` : null,
+                            notes: `Customer account activated with status ${customer.status?.replace(/_/g, ' ')}`,
+                            performedBy: customer.accountExecutive?.fullName || 'Sales & Activation Team'
+                          },
+                          ...(customer.signupDate ? [{
+                            id: 'h-auto-1',
+                            createdAt: customer.signupDate || customer.createdAt,
+                            actionType: 'SIGNUP_GENERATED',
+                            oldStatus: null,
+                            newStatus: 'SIGNUP_GENERATED',
+                            oldPackage: null,
+                            newPackage: null,
+                            notes: `Initial customer signup generated (CRF: ${customer.crfNumber || customer.customerCode})`,
+                            performedBy: customer.accountExecutive?.fullName || 'Customer Signup Portal'
+                          }] : [])
+                        ]
+
+                    return historyList.map((h: any) => (
+                      <TableRow key={h.id} className="hover:bg-slate-50 border-b text-xs">
+                        <TableCell className="font-mono text-slate-700 font-semibold border-r">
+                          {formatDateTime(h.createdAt)}
+                        </TableCell>
+
+                        <TableCell className="border-r">
+                          <Badge variant="outline" className="bg-slate-100 text-slate-800 border-slate-300 font-mono text-[10px]">
+                            {h.actionType?.replace(/_/g, ' ')}
+                          </Badge>
+                        </TableCell>
+
+                        <TableCell className="border-r">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {h.oldStatus && (
+                              <>
+                                <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200 text-[10px]">
+                                  {h.oldStatus.replace(/_/g, ' ')}
+                                </Badge>
+                                <span className="text-slate-400 font-bold">&rarr;</span>
+                              </>
+                            )}
+                            {h.newStatus ? (
+                              <Badge 
+                                variant="outline"
+                                className={
+                                  h.newStatus === 'CONNECTION_ACTIVE'
+                                    ? 'bg-emerald-100 text-emerald-900 border-emerald-300 font-bold text-[11px]'
+                                    : h.newStatus === 'PERMANENT_DISCONNECTION' || h.newStatus === 'TERMINATED'
+                                    ? 'bg-rose-100 text-rose-900 border-rose-300 font-bold text-[11px]'
+                                    : 'bg-amber-100 text-amber-900 border-amber-300 font-semibold text-[11px]'
+                                }
+                              >
+                                {h.newStatus.replace(/_/g, ' ')}
+                              </Badge>
+                            ) : (
+                              <span className="text-slate-400">—</span>
+                            )}
+                          </div>
+                        </TableCell>
+
+                        <TableCell className="border-r text-slate-800">
+                          {h.oldPackage || h.newPackage ? (
+                            <div className="text-[11px]">
+                              {h.oldPackage && <span className="text-slate-500 line-through mr-1">{h.oldPackage}</span>}
+                              {h.newPackage && <span className="font-semibold text-[#002868]">{h.newPackage}</span>}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
+                        </TableCell>
+
+                        <TableCell className="border-r text-slate-700 max-w-[280px]">
+                          {h.notes || 'Status transition recorded'}
+                        </TableCell>
+
+                        <TableCell className="text-right font-medium text-slate-600">
+                          {h.performedBy || 'System Executive'}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  })()}
                 </TableBody>
               </Table>
             </CardContent>

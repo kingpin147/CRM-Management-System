@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Search, Loader2, CheckCircle2, AlertTriangle, User, Phone, MapPin, DollarSign, CreditCard, Check, Trash2, ShieldCheck } from 'lucide-react'
+import { Search, Loader2, CheckCircle2, AlertTriangle, User, Phone, MapPin, DollarSign, CreditCard, Check, Trash2, ShieldCheck, Calendar } from 'lucide-react'
 import { searchCustomerForBilling, createPaymentEntry, postTransaction, deleteTransaction } from '../actions'
+import { CustomerBillingProfileCard } from './CustomerBillingProfileCard'
 
 type UnpostedPayment = {
   id: string
@@ -36,10 +37,11 @@ export function PaymentEntryTab({
   const [searchError, setSearchError] = React.useState<string | null>(null)
 
   // Payment Form
+  const [paymentDate, setPaymentDate] = React.useState(new Date().toISOString().split('T')[0])
   const [amount, setAmount] = React.useState('')
   const [description, setDescription] = React.useState('')
-  const [paymentMode, setPaymentMode] = React.useState('Bank Transfer')
-  const [accountExecutive, setAccountExecutive] = React.useState(users[0]?.fullName || 'Billing & Sales')
+  const [paymentMode, setPaymentMode] = React.useState('')
+  const [accountExecutive, setAccountExecutive] = React.useState('')
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [feedback, setFeedback] = React.useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
@@ -71,12 +73,22 @@ export function PaymentEntryTab({
     e.preventDefault()
     if (!customer) return
 
+    if (!paymentMode) {
+      setFeedback({ type: 'error', message: 'Please select a Payment Mode.' })
+      return
+    }
+    if (!accountExecutive) {
+      setFeedback({ type: 'error', message: 'Please select an Account Executive Name.' })
+      return
+    }
+
     setIsSubmitting(true)
     setFeedback(null)
 
     try {
       const formData = new FormData()
       formData.append('customerId', customer.id)
+      formData.append('date', paymentDate)
       formData.append('amount', amount)
       formData.append('description', description)
       formData.append('paymentMode', paymentMode)
@@ -89,6 +101,8 @@ export function PaymentEntryTab({
         setFeedback({ type: 'success', message: res.message || 'Payment entry logged as Unposted.' })
         setAmount('')
         setDescription('')
+        setPaymentMode('')
+        setAccountExecutive('')
       }
     } finally {
       setIsSubmitting(false)
@@ -153,44 +167,8 @@ export function PaymentEntryTab({
         </CardContent>
       </Card>
 
-      {/* Customer Info Card (Shown Above Section as specified in Excel) */}
-      {customer && (
-        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 transition-all animate-in fade-in-50">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-[var(--color-amber)] text-white flex items-center justify-center font-bold text-sm">
-                <User className="h-5 w-5" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h4 className="font-bold text-sm text-[var(--color-graphite)]">{customer.fullName}</h4>
-                  <Badge variant="outline" className="font-mono text-[10px] bg-white text-slate-800">
-                    ID: {customer.customerCode}
-                  </Badge>
-                  {customer.crfNumber && (
-                    <Badge variant="outline" className="font-mono text-[10px] bg-white text-slate-700">
-                      {customer.crfNumber}
-                    </Badge>
-                  )}
-                </div>
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[var(--color-slate-custom)] mt-0.5">
-                  <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {customer.contactNumber}</span>
-                  <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {customer.address}, {customer.city}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 bg-white px-4 py-2 rounded-lg border border-line shadow-2xs">
-              <div>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Current Balance Due</p>
-                <p className={`text-sm font-mono font-bold ${customer.currentBalance > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
-                  Rs. {Math.abs(customer.currentBalance).toLocaleString()} {customer.currentBalance > 0 ? 'Dr' : 'Cr'}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Customer Profile & Ledger Card */}
+      {customer && <CustomerBillingProfileCard customer={customer} />}
 
       {/* 2. Payment Entry Form */}
       {customer && (
@@ -206,20 +184,36 @@ export function PaymentEntryTab({
           </CardHeader>
           <CardContent className="pt-6">
             <form onSubmit={handleCreatePayment} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 
+                {/* Payment Date */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
+                    <Calendar className="h-3.5 w-3.5 text-slate-500" />
+                    Payment Date
+                  </Label>
+                  <Input
+                    type="date"
+                    value={paymentDate}
+                    onChange={(e) => setPaymentDate(e.target.value)}
+                    className="h-10 text-xs font-medium bg-slate-50/50"
+                    required
+                  />
+                </div>
+
                 {/* Payment Mode */}
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold text-slate-700">Payment Mode</Label>
-                  <Select value={paymentMode} onValueChange={(val) => val && setPaymentMode(val)}>
+                  <Select value={paymentMode} onValueChange={(val) => { if (val) setPaymentMode(val) }}>
                     <SelectTrigger className="h-10 text-xs font-medium bg-slate-50/50">
-                      <SelectValue />
+                      <SelectValue placeholder="Select Payment Mode..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Bank Transfer" className="text-xs">Bank Transfer / Online</SelectItem>
-                      <SelectItem value="Cash Deposit" className="text-xs">Cash Deposit</SelectItem>
-                      <SelectItem value="Cheque" className="text-xs">Cheque / Pay Order</SelectItem>
-                      <SelectItem value="Direct Debit" className="text-xs">Direct Debit</SelectItem>
+                      <SelectItem value="IBFT" className="text-xs font-medium">IBFT (Interbank Funds Transfer)</SelectItem>
+                      <SelectItem value="Cash" className="text-xs font-medium">Cash / Cash Deposit</SelectItem>
+                      <SelectItem value="Cheque" className="text-xs font-medium">Cheque / Pay Order</SelectItem>
+                      <SelectItem value="Credit Card" className="text-xs font-medium">Credit Card</SelectItem>
+                      <SelectItem value="Debit Card" className="text-xs font-medium">Debit Card</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -256,13 +250,28 @@ export function PaymentEntryTab({
                 {/* Account Executive Name */}
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold text-slate-700">Account Executive Name</Label>
-                  <Input
-                    placeholder="Executive Name"
-                    value={accountExecutive}
-                    onChange={(e) => setAccountExecutive(e.target.value)}
-                    className="h-10 text-xs bg-slate-50/50"
-                    required
-                  />
+                  <Select value={accountExecutive} onValueChange={(val) => { if (val) setAccountExecutive(val) }}>
+                    <SelectTrigger className="h-10 text-xs font-semibold bg-slate-50/50">
+                      <SelectValue placeholder="Select Account Executive..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {users && users.length > 0 ? (
+                        users.map((u) => (
+                          <SelectItem key={u.id} value={u.fullName} className="text-xs font-medium">
+                            {u.fullName}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <>
+                          <SelectItem value="Muhammad Nouman (Admin)" className="text-xs font-medium">Muhammad Nouman (Admin)</SelectItem>
+                          <SelectItem value="Hamza Tariq (Sales Lead)" className="text-xs font-medium">Hamza Tariq (Sales Lead)</SelectItem>
+                          <SelectItem value="Engr. Bilal Ahmed (O&M Manager)" className="text-xs font-medium">Engr. Bilal Ahmed (O&M Manager)</SelectItem>
+                          <SelectItem value="EnergyGurus Finance" className="text-xs font-medium">EnergyGurus Finance</SelectItem>
+                          <SelectItem value="Operations Team" className="text-xs font-medium">Operations Team</SelectItem>
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
                 </div>
 
               </div>
@@ -307,10 +316,11 @@ export function PaymentEntryTab({
             <Table>
               <TableHeader className="bg-[var(--color-paper)]">
                 <TableRow className="border-b border-line text-xs">
+                  <TableHead className="font-bold">Date</TableHead>
                   <TableHead className="font-bold">Customer ID</TableHead>
                   <TableHead className="font-bold">Customer Name</TableHead>
                   <TableHead className="font-bold">Payment Mode</TableHead>
-                  <TableHead className="font-bold">Reference / Narration</TableHead>
+                  <TableHead className="font-bold">Reference / Description</TableHead>
                   <TableHead className="font-bold text-right">Amount</TableHead>
                   <TableHead className="font-bold">Account Executive</TableHead>
                   <TableHead className="font-bold text-center">Status</TableHead>
@@ -327,6 +337,9 @@ export function PaymentEntryTab({
                 ) : (
                   unpostedPayments.map((p) => (
                     <TableRow key={p.id} className="hover:bg-slate-50/50 text-xs">
+                      <TableCell className="font-mono text-slate-600">
+                        {p.createdAt ? new Date(p.createdAt).toLocaleDateString() : '—'}
+                      </TableCell>
                       <TableCell className="font-mono font-bold text-[var(--color-ink)]">
                         {p.customerCode}
                       </TableCell>

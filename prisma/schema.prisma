@@ -58,6 +58,7 @@ model Customer {
   transactions   Transaction[]
   invoices       Invoice[]
   ledgerEntries  LedgerEntry[]
+  customerHistory CustomerHistory[]
 
   accountExecutiveId String?
   accountExecutive   User?   @relation("CustomerAccountExecutive", fields: [accountExecutiveId], references: [id])
@@ -256,72 +257,26 @@ model LedgerEntry {
   @@index([createdAt])
 }
 
-model InventoryItem {
-  id                String            @id @default(uuid())
-  sku               String            @unique
-  name              String
-  category          InventoryCategory
-  brand             String
-  model             String?
-  specifications    String?
-  unit              String            @default("Units")
-  quantityInStock   Int               @default(0)
-  quantityAllocated Int               @default(0)
-  minStockAlert     Int               @default(5)
-  unitCost          Decimal?          @default(0)
-  unitSellingPrice  Decimal?          @default(0)
-  warehouseLocation String?
-  status            InventoryStatus   @default(ACTIVE)
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-  stockLogs         InventoryStockLog[]
+model CustomerHistory {
+  id           String          @id @default(uuid())
+  customerId   String?
+  customer     Customer?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  customerCode String
+  customerName String
+  actionType   String          // STATUS_CHANGE, PACKAGE_CHANGE, SIGNUP, DISCONNECTION, REINSTATED, DELETED
+  oldStatus    CustomerStatus?
+  newStatus    CustomerStatus?
+  oldPackage   String?
+  newPackage   String?
+  notes        String?
+  performedBy  String?
+  createdAt    DateTime        @default(now())
 
-  @@index([category])
-  @@index([brand])
-  @@index([status])
-}
-
-model InventoryBrand {
-  id        String   @id @default(uuid())
-  name      String   @unique
-  category  String?
-  country   String?
-  createdAt DateTime @default(now())
-}
-
-model InventoryStockLog {
-  id          String        @id @default(uuid())
-  itemId      String
-  item        InventoryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
-  changeType  String        // STOCK_IN, STOCK_OUT, ALLOCATED, DAMAGED, ADJUSTMENT
-  quantity    Int
-  previousQty Int
-  newQty      Int
-  reference   String?       // PO#, Invoice#, CRF#
-  notes       String?
-  performedBy String?
-  createdAt   DateTime      @default(now())
-
-  @@index([itemId])
+  @@index([customerId])
   @@index([createdAt])
+  @@index([customerCode])
 }
 
-enum InventoryCategory {
-  INVERTER
-  SOLAR_PANEL
-  BATTERY
-  STRUCTURE
-  BREAKER_PROTECTION
-  CABLE_WIRE
-  METER
-  ACCESSORY
-  OTHER
-}
 
-enum InventoryStatus {
-  ACTIVE
-  LOW_STOCK
-  OUT_OF_STOCK
-  DISCONTINUED
-}
+
 
