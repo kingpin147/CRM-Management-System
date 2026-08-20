@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Search, Loader2, CheckCircle2, AlertTriangle, User, Phone, MapPin, DollarSign, CreditCard, Check, Trash2, ShieldCheck, Calendar } from 'lucide-react'
+import { Search, Loader2, CheckCircle2, AlertTriangle, User, Phone, MapPin, CreditCard, Check, Trash2, ShieldCheck, Calendar } from 'lucide-react'
 import { searchCustomerForBilling, createPaymentEntry, postTransaction, deleteTransaction } from '../actions'
 import { CustomerBillingProfileCard } from './CustomerBillingProfileCard'
 import { CustomerSearchAutoSuggest } from './CustomerSearchAutoSuggest'
@@ -136,7 +136,7 @@ export function PaymentEntryTab({
     <div className="space-y-6">
       
       {/* 1. Customer Search */}
-      <Card className="border-line shadow-xs">
+      <Card className="border-line shadow-xs overflow-visible relative z-30">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-bold text-[var(--color-graphite)] flex items-center gap-2">
             <Search className="h-4 w-4 text-[var(--color-amber)]" />
@@ -217,13 +217,13 @@ export function PaymentEntryTab({
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold text-slate-700">Amount Received (Rs.)</Label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500 pointer-events-none">Rs.</span>
                     <Input
                       type="number"
                       placeholder="0.00"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
-                      className="pl-9 h-10 text-sm font-mono font-bold bg-slate-50/50 text-emerald-700"
+                      className="pl-10 h-10 text-sm font-mono font-bold bg-slate-50/50 text-emerald-700"
                       required
                       min={1}
                     />

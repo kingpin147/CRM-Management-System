@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Search, Loader2, CheckCircle2, AlertTriangle, ArrowRight, User, Phone, MapPin, DollarSign, Zap } from 'lucide-react'
+import { Search, Loader2, CheckCircle2, AlertTriangle, ArrowRight, User, Phone, MapPin, Zap } from 'lucide-react'
 import { searchCustomerForBilling, updateCustomerPackageAndStatus } from '../actions'
 import { CustomerBillingProfileCard } from './CustomerBillingProfileCard'
 import { CustomerSearchAutoSuggest } from './CustomerSearchAutoSuggest'
@@ -94,12 +94,7 @@ export function PackageStatusChangeTab() {
     }
   }
 
-  // Recalculate estimated amount on dropdown change if user hasn't typed custom
-  const handleDropdownChange = (size: string, tier: string, billing: string) => {
-    const est = estimatePlanPrice(size, tier, billing)
-    setCustomAmount(est)
-  }
-
+  const TIER_MULTIPLIERS: Record<string, number> = { Basic: 1.0, Moderate: 1.25, Comprehensive: 1.5 }
   const TIER_RANKS: Record<string, number> = { Basic: 1, Moderate: 2, Comprehensive: 3 }
   const oldTier = customer?.packagePlan?.packageTier || 'Basic'
   const oldRank = TIER_RANKS[oldTier] || 1
@@ -114,17 +109,54 @@ export function PackageStatusChangeTab() {
   // Rule: Customer CANNOT downgrade package on initial Signup / Sales Invoice!
   const isDowngradeBlocked = isDowngrade && !hasRecurringInvoices
 
-  // Calculate base comparison rate for target period (apples to apples comparison)
-  const oldRateForTargetPeriod = customer?.packagePlan
-    ? estimatePlanPrice(systemSize, oldTier, billingType)
-    : (customer?.packagePlan?.totalAmount || 0)
-
-  const baseComparisonRate = (lastRecurringInvoice && oldTier === packageTier && customer?.packagePlan?.billingType === billingType)
+  // Previous base rate stored for this customer (from last recurring invoice or current package plan)
+  const currentCustomerBaseRate = (lastRecurringInvoice && hasRecurringInvoices)
     ? Number(lastRecurringInvoice.totalAmount)
-    : oldRateForTargetPeriod
+    : (customer?.packagePlan?.totalAmount ? Number(customer.packagePlan.totalAmount) : 0)
 
-  // Calculate difference relative to normalized base rate
-  const diff = customAmount - baseComparisonRate
+  // Smart Recalculation on dropdown change (scale relative to customer's actual plan rate when available)
+  const handleDropdownChange = (size: string, tier: string, billing: string) => {
+    if (currentCustomerBaseRate > 0 && customer?.packagePlan?.billingType === billing && size === (customer?.packagePlan?.systemSizeKw || size)) {
+      const oldMult = TIER_MULTIPLIERS[oldTier] || 1.0
+      const newMult = TIER_MULTIPLIERS[tier] || 1.0
+      const scaledAmount = Math.round(currentCustomerBaseRate * (newMult / oldMult))
+      setCustomAmount(scaledAmount)
+    } else {
+      const est = estimatePlanPrice(size, tier, billing)
+      setCustomAmount(est)
+    }
+  }
+
+  const baseComparisonRate = currentCustomerBaseRate > 0 
+    ? currentCustomerBaseRate 
+    : estimatePlanPrice(systemSize, oldTier, billingType)
+
+  let diff = customAmount - baseComparisonRate
+
+  // Business Rules:
+  // 1. Downgrade MUST ALWAYS result in a Credit Note Adjustment (-diff)
+  if (isDowngrade) {
+    if (diff >= 0) {
+      const oldMult = TIER_MULTIPLIERS[oldTier] || 1.5
+      const newMult = TIER_MULTIPLIERS[packageTier] || 1.25
+      const expectedRate = Math.round(baseComparisonRate * (newMult / oldMult))
+      diff = expectedRate - baseComparisonRate
+      if (diff >= 0) {
+        diff = -Math.abs(diff || (baseComparisonRate * 0.15))
+      }
+    }
+  } else if (isUpgrade) {
+    // 2. Upgrade MUST ALWAYS result in a Debit Adjustment (+diff)
+    if (diff <= 0) {
+      const oldMult = TIER_MULTIPLIERS[oldTier] || 1.0
+      const newMult = TIER_MULTIPLIERS[packageTier] || 1.25
+      const expectedRate = Math.round(baseComparisonRate * (newMult / oldMult))
+      diff = expectedRate - baseComparisonRate
+      if (diff <= 0) {
+        diff = Math.abs(diff || (baseComparisonRate * 0.15))
+      }
+    }
+  }
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -168,7 +200,7 @@ export function PackageStatusChangeTab() {
   return (
     <div className="space-y-6">
       {/* 1. Search Box */}
-      <Card className="border-line shadow-xs">
+      <Card className="border-line shadow-xs overflow-visible relative z-30">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-bold text-[var(--color-graphite)] flex items-center gap-2">
             <Search className="h-4 w-4 text-[var(--color-amber)]" />
@@ -343,12 +375,12 @@ export function PackageStatusChangeTab() {
                     <span className="text-[10px] text-slate-400 font-normal">Auto-calculated</span>
                   </Label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500 pointer-events-none">Rs.</span>
                     <Input
                       type="number"
                       value={customAmount}
                       onChange={(e) => setCustomAmount(parseFloat(e.target.value) || 0)}
-                      className="pl-9 h-10 text-sm font-mono font-bold bg-slate-50/50"
+                      className="pl-10 h-10 text-sm font-mono font-bold bg-slate-50/50"
                       required
                     />
                   </div>
@@ -383,6 +415,13 @@ export function PackageStatusChangeTab() {
                   />
                 </div>
               </div>
+
+              {isDowngradeBlocked && (
+                <div className="p-3 bg-amber-50 border border-amber-300 rounded-lg text-amber-900 text-xs font-semibold flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+                  <span>Downgrade Blocked: Customer cannot downgrade package on Signup / Sales Invoice. Package downgrades are only permitted after recurring invoices have started.</span>
+                </div>
+              )}
 
               {feedback && (
                 <div className={`p-3 rounded-lg text-xs font-medium flex items-center gap-2 ${feedback.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>

@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { CheckCircle2, Clock, DollarSign, Wrench, Search, Layers, ArrowRight, UserCheck, Edit3, FileText } from 'lucide-react'
+import { CheckCircle2, Clock, Receipt, Wrench, Search, Layers, ArrowRight, UserCheck, Edit3, FileText } from 'lucide-react'
 import { EditCrfModal } from './components/EditCrfModal'
 
 type CustomerRecord = {
@@ -176,7 +176,7 @@ export function ManagerApprovalView({
           <CardContent className="p-4.5 flex items-center justify-between">
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-blue-900 font-bold text-sm">
-                <DollarSign className="h-4 w-4 text-blue-600" />
+                <Receipt className="h-4 w-4 text-blue-600" />
                 Stage 2: Pending for Payment Verification
               </div>
               <p className="text-xs text-blue-800/80">Sales Manager Approved → Pending Billing Manager Verification</p>
