@@ -78,15 +78,13 @@ export function PackageStatusChangeTab() {
       } else if (res.customer) {
         setCustomer(res.customer)
         setSearchId(targetQuery)
-        setStatus(res.customer.status || 'CONNECTION_ACTIVE')
+        setStatus(res.customer.status)
         if (res.customer.packagePlan) {
-          setSystemSize(res.customer.packagePlan.systemSizeKw || '10-20 kW')
-          setPackageTier(res.customer.packagePlan.packageTier || 'Basic')
-          setBillingType(res.customer.packagePlan.billingType || 'Monthly')
-          setMonitoringTime(res.customer.packagePlan.monitoringTime || '12 Hours')
-          setCustomAmount(res.customer.packagePlan.totalAmount || 0)
-        } else {
-          setCustomAmount(estimatePlanPrice('10-20 kW', 'Basic', 'Monthly'))
+          setSystemSize(res.customer.packagePlan.systemSizeKw)
+          setPackageTier(res.customer.packagePlan.packageTier)
+          setBillingType(res.customer.packagePlan.billingType)
+          setMonitoringTime(res.customer.packagePlan.monitoringTime)
+          setCustomAmount(Number(res.customer.packagePlan.totalAmount))
         }
       }
     } finally {

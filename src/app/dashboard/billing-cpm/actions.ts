@@ -178,10 +178,10 @@ export async function updateCustomerPackageAndStatus(formData: FormData) {
     if (!customer) return { error: 'Customer record not found.' }
 
     const TIER_RANKS: Record<string, number> = { Basic: 1, Moderate: 2, Comprehensive: 3 }
-    const oldTier = customer.packagePlan?.packageTier || 'Basic'
-    const oldRank = TIER_RANKS[oldTier] || 1
-    const newRank = TIER_RANKS[packageTier] || 1
-    const isDowngrade = newRank < oldRank
+    const oldTier = customer.packagePlan?.packageTier
+    const oldRank = oldTier ? TIER_RANKS[oldTier] : undefined
+    const newRank = packageTier ? TIER_RANKS[packageTier] : undefined
+    const isDowngrade = (oldRank !== undefined && newRank !== undefined) ? newRank < oldRank : false
 
     const hasRecurringInvoices = (customer.invoices || []).length > 1
 
