@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { createTicket } from './actions'
 import { uploadFile } from '@/utils/supabase/storage'
+import { CustomerSearchAutoSuggest } from '@/app/dashboard/billing-cpm/components/CustomerSearchAutoSuggest'
+import { Check } from 'lucide-react'
 
 const TicketType = {
   TECHNICAL_COMPLAINT: 'TECHNICAL_COMPLAINT',
@@ -122,19 +124,20 @@ export function TicketForm({ customers }: { customers: { id: string, fullName: s
             name="customerId"
             render={({ field }) => (
               <FormItem className="md:col-span-2">
-                <FormLabel>Select Customer</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger><SelectValue placeholder="Search and select a customer..." /></SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {customers.map(c => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.customerCode} - {c.fullName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <FormLabel className="font-semibold text-slate-800">Select Customer</FormLabel>
+                <FormControl>
+                  <CustomerSearchAutoSuggest
+                    onSelectCustomer={(selectedId) => {
+                      field.onChange(selectedId)
+                    }}
+                    placeholder="Search and select customer by Name, ID (9484), Phone, CRF #, CNIC..."
+                  />
+                </FormControl>
+                {field.value && (
+                  <div className="mt-1 text-xs text-emerald-700 font-semibold flex items-center gap-1">
+                    <Check className="h-3.5 w-3.5" /> Customer Selected Successfully
+                  </div>
+                )}
                 <FormMessage />
               </FormItem>
             )}

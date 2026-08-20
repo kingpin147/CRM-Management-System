@@ -4,11 +4,11 @@ import prisma from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { CustomerStatus } from '@prisma/client'
 
-// 1. Search Customer by ID or Code
+// 1. Search Customer by ID, Code, Name, Phone, CNIC, or CRF
 export async function searchCustomerForBilling(query: string) {
   try {
     if (!query || !query.trim()) {
-      return { error: 'Please provide a Customer ID.' }
+      return { error: 'Please provide a Customer ID or Name.' }
     }
 
     const trimmed = query.trim()
@@ -17,11 +17,16 @@ export async function searchCustomerForBilling(query: string) {
     const customer = await prisma.customer.findFirst({
       where: {
         OR: [
-          { customerCode: trimmed },
-          ...(digitsOnly ? [{ customerCode: digitsOnly }] : []),
           { id: trimmed },
+          { customerCode: trimmed },
+          ...(digitsOnly ? [
+            { customerCode: digitsOnly },
+            { contactNumber: { contains: digitsOnly } },
+          ] : []),
           { crfNumber: trimmed },
           { cnic: trimmed },
+          { fullName: { contains: trimmed, mode: 'insensitive' } },
+          { contactNumber: { contains: trimmed, mode: 'insensitive' } },
         ]
       },
       include: {
@@ -94,6 +99,50 @@ export async function searchCustomerForBilling(query: string) {
   } catch (error: any) {
     console.error('Error searching customer:', error)
     return { error: error?.message || 'Failed to search customer.' }
+  }
+}
+
+// 1b. Real-time Customer Auto-Suggest Search
+export async function searchCustomersAutoSuggest(query: string) {
+  try {
+    const trimmed = (query || '').trim()
+    if (!trimmed || trimmed.length < 1) return { customers: [] }
+
+    const digitsOnly = trimmed.replace(/\D/g, '')
+
+    const customers = await prisma.customer.findMany({
+      where: {
+        OR: [
+          { fullName: { contains: trimmed, mode: 'insensitive' } },
+          { customerCode: { contains: trimmed, mode: 'insensitive' } },
+          { crfNumber: { contains: trimmed, mode: 'insensitive' } },
+          { contactNumber: { contains: trimmed, mode: 'insensitive' } },
+          { cnic: { contains: trimmed, mode: 'insensitive' } },
+          ...(digitsOnly ? [
+            { customerCode: { contains: digitsOnly } },
+            { contactNumber: { contains: digitsOnly } },
+          ] : []),
+        ]
+      },
+      select: {
+        id: true,
+        customerCode: true,
+        fullName: true,
+        contactNumber: true,
+        cnic: true,
+        crfNumber: true,
+        status: true,
+        city: true,
+        address: true,
+      },
+      take: 12,
+      orderBy: { fullName: 'asc' }
+    })
+
+    return { customers }
+  } catch (error: any) {
+    console.error('Error in customer auto-suggest:', error)
+    return { customers: [] }
   }
 }
 

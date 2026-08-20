@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Search, Loader2, CheckCircle2, AlertTriangle, ArrowRight, User, Phone, MapPin, DollarSign, Zap } from 'lucide-react'
 import { searchCustomerForBilling, updateCustomerPackageAndStatus } from '../actions'
 import { CustomerBillingProfileCard } from './CustomerBillingProfileCard'
+import { CustomerSearchAutoSuggest } from './CustomerSearchAutoSuggest'
 
 const SYSTEM_SIZES = ['1-10 kW', '10-20 kW', '20-30 kW', '30+ kW']
 const PACKAGES = ['Basic', 'Moderate', 'Comprehensive']
@@ -60,21 +61,22 @@ export function PackageStatusChangeTab() {
   const [isSaving, setIsSaving] = React.useState(false)
   const [feedback, setFeedback] = React.useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
-  const handleSearch = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault()
-    if (!searchId.trim()) return
+  const handleSearch = async (queryToSearch?: string) => {
+    const targetQuery = typeof queryToSearch === 'string' ? queryToSearch : searchId
+    if (!targetQuery || !targetQuery.trim()) return
 
     setIsSearching(true)
     setSearchError(null)
     setFeedback(null)
 
     try {
-      const res = await searchCustomerForBilling(searchId)
+      const res = await searchCustomerForBilling(targetQuery)
       if (res.error) {
         setSearchError(res.error)
         setCustomer(null)
       } else if (res.customer) {
         setCustomer(res.customer)
+        setSearchId(targetQuery)
         setStatus(res.customer.status || 'CONNECTION_ACTIVE')
         if (res.customer.packagePlan) {
           setSystemSize(res.customer.packagePlan.systemSizeKw || '10-20 kW')
@@ -145,20 +147,11 @@ export function PackageStatusChangeTab() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSearch} className="flex gap-2 max-w-lg">
-            <div className="relative flex-1">
-              <Input
-                placeholder="Enter Customer ID (e.g. 9484)"
-                value={searchId}
-                onChange={(e) => setSearchId(e.target.value)}
-                className="h-10 text-sm font-mono pl-3"
-                required
-              />
-            </div>
-            <Button type="submit" disabled={isSearching} className="h-10 px-5 bg-[var(--color-amber)] text-white font-semibold">
-              {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Search Customer'}
-            </Button>
-          </form>
+          <CustomerSearchAutoSuggest
+            onSelectCustomer={(id) => handleSearch(id)}
+            isSearchingCustomer={isSearching}
+            placeholder="Search and select customer by Name, ID (9484), Phone, CRF #, CNIC..."
+          />
 
           {searchError && (
             <div className="mt-3 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-xs font-medium flex items-center gap-2">
