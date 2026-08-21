@@ -18,6 +18,7 @@ import { TicketClosedSetupDialog } from './TicketClosedSetupDialog'
 import { Sun, Battery, ShieldCheck, Zap, Receipt, MessageSquare, Mail, History as HistoryIcon, Download } from 'lucide-react'
 import { formatDate, formatDateTime } from '@/lib/utils'
 import { createClient } from '@/utils/supabase/server'
+import { SectionHeader } from '@/components/ui/section-header'
 
 
 export default async function CustomerDetailPage({ 
@@ -179,9 +180,7 @@ export default async function CustomerDetailPage({
           <div className="space-y-6">
             {/* Customer Details Card - 2 Column Side by Side */}
             <Card className="shadow-sm border-slate-200 overflow-hidden bg-white">
-              <div className="bg-[#002868] text-white px-4 py-2.5 font-bold text-sm border-b border-[#001d4a] tracking-wide">
-                Customer Profile
-              </div>
+              <SectionHeader>Customer Profile</SectionHeader>
               <CardContent className="p-0">
                 <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-slate-200">
                   {/* Left Column: Personal & Contact Information */}
@@ -287,9 +286,7 @@ export default async function CustomerDetailPage({
 
             {/* Package Details Section - 2 Column Side by Side */}
             <Card className="shadow-sm border-slate-200 overflow-hidden bg-white">
-              <div className="bg-[#002868] text-white px-4 py-2.5 font-bold text-sm text-center border-b border-[#001d4a] tracking-wide">
-                Package Details
-              </div>
+              <SectionHeader>Package Details</SectionHeader>
               <CardContent className="p-0">
                 <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-slate-200">
                   {/* Left Column: System & Package Spec */}
@@ -381,21 +378,22 @@ export default async function CustomerDetailPage({
 
           return (
             <Card className="shadow-sm border-slate-200 overflow-hidden bg-white">
-              <div className="bg-[#002868] text-white px-4 py-2.5 font-bold text-sm text-center border-b border-[#001d4a] flex justify-between items-center tracking-wide">
-                <span className="flex-1 text-center font-bold">Solar System Details</span>
-                {canEditSolarSpecs && (
-                  <div className="shrink-0">
+              <SectionHeader
+                action={
+                  canEditSolarSpecs && (
                     <SolarSystemDialog customerId={customer.id} solarSystem={customer.solarSystem} />
-                  </div>
-                )}
-              </div>
+                  )
+                }
+              >
+                Solar System Details
+              </SectionHeader>
               <CardContent className="p-0">
                 <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-slate-200">
                   {/* Left Column: Grid Connection, Inverters, Grounding & Installation */}
                   <div className="w-full">
-                    <div className="bg-slate-100/80 px-4 py-2 text-xs font-bold text-[#002868] border-b border-slate-200 uppercase tracking-wider">
+                    <SectionHeader>
                       Grid Connection & Inverter System
-                    </div>
+                    </SectionHeader>
                     <Table>
                       <TableBody>
                         <TableRow className="border-b hover:bg-transparent">
@@ -614,9 +612,9 @@ export default async function CustomerDetailPage({
 
                   {/* Right Column: Solar Array, Battery Storage */}
                   <div className="w-full">
-                    <div className="bg-slate-100/80 px-4 py-2 text-xs font-bold text-[#002868] border-b border-slate-200 uppercase tracking-wider">
+                    <SectionHeader>
                       PV Panels & Battery Energy Storage
-                    </div>
+                    </SectionHeader>
                     <Table>
                       <TableBody>
                         {/* Panel Technology */}
@@ -765,9 +763,7 @@ export default async function CustomerDetailPage({
           <div className="space-y-6">
             {/* Customer Details Card (2-Column Side by Side) */}
             <Card className="shadow-sm border-slate-200 overflow-hidden bg-white">
-              <div className="bg-[#002868] text-white px-4 py-2.5 font-bold text-sm border-b border-[#001d4a] tracking-wide text-center">
-                CUSTOMER DETAILS
-              </div>
+              <SectionHeader>Customer Details</SectionHeader>
               <CardContent className="p-0">
                 <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-slate-200">
                   {/* Left Column: Personal Information */}
@@ -845,20 +841,23 @@ export default async function CustomerDetailPage({
 
             {/* Customer Ledger Table */}
             <Card className="shadow-sm border-slate-200 overflow-hidden bg-white">
-              <div className="bg-[#002868] text-white px-4 py-2.5 font-bold text-sm border-b border-[#001d4a] flex justify-between items-center tracking-wide">
-                <span className="flex-1 text-center font-bold">Customer Ledger</span>
-                <div className="flex gap-2">
-                  <a 
-                    href={`/api/ledger/${customer.id}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded text-xs font-bold shadow-xs transition-all"
-                  >
-                    <Receipt className="w-3.5 h-3.5 text-white" />
-                    View Ledger PDF
-                  </a>
-                </div>
-              </div>
+              <SectionHeader
+                action={
+                  <div className="flex gap-2">
+                    <a 
+                      href={`/api/ledger/${customer.id}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded text-xs font-bold shadow-xs transition-all"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      Download PDF
+                    </a>
+                  </div>
+                }
+              >
+                Customer Ledger
+              </SectionHeader>
               <CardContent className="p-0">
                 <Table>
                   <TableHeader className="bg-slate-100/90 border-b border-slate-200">
@@ -1006,20 +1005,18 @@ export default async function CustomerDetailPage({
         {/* 5. Complaints Details Tab (Image 2 Layout) */}
         {activeTab === 'complaints' && (
           <Card className="shadow-sm border-slate-200 overflow-hidden bg-white">
-            <div className="bg-[#002868] text-white px-4 py-2.5 font-bold text-sm text-center border-b border-[#001d4a] tracking-wide">
-              Complaint History
-            </div>
+            <SectionHeader>Complaint History</SectionHeader>
             <CardContent className="p-0">
               <Table>
                 <TableHeader className="bg-slate-100/90 border-b border-slate-200">
                   <TableRow>
                     <TableHead className="font-bold text-xs text-[#002868] border-r">Department</TableHead>
                     <TableHead className="font-bold text-xs text-[#002868] border-r">Ticket Number</TableHead>
-                    <TableHead className="font-bold text-xs text-[#002868] border-r">DateTime</TableHead>
-                    <TableHead className="font-bold text-xs text-[#002868] border-r">Service/Category</TableHead>
-                    <TableHead className="font-bold text-xs text-[#002868] border-r">Complain</TableHead>
+                    <TableHead className="font-bold text-xs text-[#002868] border-r">Date & Time</TableHead>
+                    <TableHead className="font-bold text-xs text-[#002868] border-r">Service / Category</TableHead>
+                    <TableHead className="font-bold text-xs text-[#002868] border-r">Complaint</TableHead>
                     <TableHead className="font-bold text-xs text-[#002868] border-r">Escalation</TableHead>
-                    <TableHead className="font-bold text-xs text-[#002868] border-r">Priorty</TableHead>
+                    <TableHead className="font-bold text-xs text-[#002868] border-r">Priority</TableHead>
                     <TableHead className="font-bold text-xs text-[#002868] border-r">Status</TableHead>
                     <TableHead className="text-right font-bold text-xs text-[#002868]">Action</TableHead>
                   </TableRow>
@@ -1075,15 +1072,18 @@ export default async function CustomerDetailPage({
         {/* 6. Customer History Tab */}
         {activeTab === 'history' && (
           <Card className="shadow-sm border-slate-200 overflow-hidden bg-white">
-            <div className="bg-[#002868] text-white px-4 py-3 font-bold text-sm border-b border-[#001d4a] flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <HistoryIcon className="h-4 w-4 text-amber-400" />
-                <span>Customer Status & Subscription History</span>
-              </div>
-              <Badge variant="outline" className="bg-white/10 text-white border-white/20 text-xs">
-                Permanent Retention Record
-              </Badge>
-            </div>
+            <SectionHeader
+              leftAction={
+                <HistoryIcon className="h-4 w-4 text-amber-500 shrink-0" />
+              }
+              action={
+                <Badge variant="outline" className="bg-[#f26522]/10 text-[#f26522] border-[#f26522]/30 text-xs font-medium">
+                  Permanent Retention Record
+                </Badge>
+              }
+            >
+              Customer Status & Subscription History
+            </SectionHeader>
 
             <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2.5 text-xs text-amber-950 font-medium flex items-center gap-2">
               <ShieldCheck className="h-4 w-4 text-amber-600 shrink-0" />
@@ -1204,9 +1204,7 @@ export default async function CustomerDetailPage({
         {/* 6. Create Plan Tab */}
         {activeTab === 'plan' && (
           <Card className="shadow-sm border-slate-200 bg-white max-w-4xl mx-auto overflow-hidden">
-            <div className="bg-[#002868] text-white px-6 py-3 font-bold text-sm border-b border-[#001d4a]">
-              Create / Update Solar Plan & Package
-            </div>
+            <SectionHeader>Create / Update Solar Plan & Package</SectionHeader>
             <CardContent className="p-6">
               <PackageFormDialog customerId={customer.id} initialData={customer.packagePlan} inline={true} />
             </CardContent>

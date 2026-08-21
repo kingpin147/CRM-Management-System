@@ -15,6 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { SectionHeader } from '@/components/ui/section-header'
 import { Badge } from '@/components/ui/badge'
 import { updateTicket } from './actions'
 import type { TicketWithCustomer } from './columns'
@@ -60,20 +61,16 @@ export function TicketUpdateDialog({ ticket }: { ticket: TicketWithCustomer }) {
       <DialogTrigger render={<Button variant="outline" size="sm" className="hover:bg-[var(--color-paper)]" />}>
         Update
       </DialogTrigger>
-      <DialogContent className="sm:max-w-2xl md:max-w-3xl lg:max-w-4xl bg-white border border-[var(--color-line)] shadow-premium rounded-2xl p-6">
-        <DialogHeader className="space-y-1 text-left">
-          <div className="flex items-center justify-between gap-2">
-            <DialogTitle className="text-xl font-display font-bold text-[var(--color-graphite)]">
-              Update Ticket {ticket.ticketNumber}
-            </DialogTitle>
-            <Badge variant="outline" className="text-xs bg-[var(--color-paper)]">
+      <DialogContent className="sm:max-w-2xl md:max-w-3xl lg:max-w-4xl bg-white border border-[var(--color-line)] shadow-premium rounded-2xl p-0 overflow-hidden">
+        <SectionHeader
+          action={
+            <Badge variant="outline" className="text-xs bg-orange-100 text-orange-800 border-orange-300">
               {ticket.ticketType}
             </Badge>
-          </div>
-          <DialogDescription className="text-sm text-[var(--color-slate-custom)]">
-            Customer: <strong className="text-[var(--color-graphite)]">{ticket.customer?.fullName}</strong> ({ticket.customer?.customerCode})
-          </DialogDescription>
-        </DialogHeader>
+          }
+        >
+          Update Ticket {ticket.ticketNumber}
+        </SectionHeader>
 
         {/* Ticket Summary Box */}
         <div className="bg-[var(--color-paper)] p-3.5 rounded-xl border border-[var(--color-line)] space-y-1 text-xs text-[var(--color-slate-custom)]">

@@ -43,7 +43,7 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
-  expandable = false,
+  expandable = true,
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
@@ -57,25 +57,34 @@ function DialogContent({
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid -translate-x-1/2 -translate-y-1/2 gap-4 rounded-2xl bg-white dark:bg-slate-900 text-sm text-foreground shadow-2xl ring-1 ring-black/10 transition-all duration-200 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 p-6",
+          "fixed top-1/2 left-1/2 z-50 grid -translate-x-1/2 -translate-y-1/2 gap-4 rounded-2xl bg-white dark:bg-slate-900 text-sm text-foreground shadow-2xl ring-1 ring-black/10 transition-all duration-300 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 p-6 max-h-[92vh] overflow-y-auto",
           isExpanded
-            ? "!w-[95vw] !max-w-[95vw] !h-[92vh] !max-h-[92vh] overflow-y-auto"
-            : "w-full max-w-[calc(100%-2rem)] sm:max-w-lg",
+            ? "!w-[96vw] !max-w-[96vw] !h-[94vh] !max-h-[94vh] !p-8"
+            : "w-full max-w-[95vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl",
           className
         )}
         {...props}
       >
         {children}
-        <div className="absolute top-4 right-4 flex items-center gap-1.5 z-50">
+        <div className="absolute top-3.5 right-3.5 flex items-center gap-2 z-50">
           {expandable && (
             <button
               type="button"
               onClick={() => setIsExpanded(!isExpanded)}
-              className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer bg-white/80 dark:bg-slate-900/80 backdrop-blur-xs border border-slate-200/60 dark:border-slate-800 shadow-xs"
-              title={isExpanded ? "Restore standard size" : "Expand to widescreen"}
+              className="p-1.5 text-slate-600 hover:text-slate-950 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs border border-slate-300 dark:border-slate-700 shadow-xs flex items-center gap-1 text-xs font-semibold"
+              title={isExpanded ? "Restore standard size" : "Expand to full widescreen"}
             >
-              {isExpanded ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
-              <span className="sr-only">{isExpanded ? "Restore" : "Maximize"}</span>
+              {isExpanded ? (
+                <>
+                  <Minimize2 className="h-4 w-4 text-orange-600" />
+                  <span className="hidden sm:inline text-[11px] text-slate-700">Contract</span>
+                </>
+              ) : (
+                <>
+                  <Maximize2 className="h-4 w-4 text-[#002868]" />
+                  <span className="hidden sm:inline text-[11px] text-slate-700">Expand</span>
+                </>
+              )}
             </button>
           )}
           {showCloseButton && (
@@ -84,11 +93,11 @@ function DialogContent({
               render={
                 <button
                   type="button"
-                  className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer bg-white/80 dark:bg-slate-900/80 backdrop-blur-xs border border-slate-200/60 dark:border-slate-800 shadow-xs"
+                  className="p-1.5 text-slate-600 hover:text-slate-950 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs border border-slate-300 dark:border-slate-700 shadow-xs"
                 />
               }
             >
-              <XIcon className="h-3.5 w-3.5" />
+              <XIcon className="h-4 w-4" />
               <span className="sr-only">Close</span>
             </DialogPrimitive.Close>
           )}

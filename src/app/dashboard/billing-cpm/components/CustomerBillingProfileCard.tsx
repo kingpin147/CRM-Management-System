@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { User, ExternalLink, ChevronDown, ChevronUp, History } from 'lucide-react'
 
+import { SectionHeader } from '@/components/ui/section-header'
+
 type CustomerBillingData = {
   id: string
   customerCode: string
@@ -56,52 +58,39 @@ export function CustomerBillingProfileCard({ customer }: { customer: CustomerBil
       
       {/* 1. Header Summary Card (Navy Header matching Customer Profile) */}
       <Card className="shadow-sm border-slate-200 overflow-hidden bg-white">
-        <div className="bg-[#002868] text-white px-4 py-3 font-bold text-sm border-b border-[#001d4a] flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-sm shrink-0">
-              <User className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-base font-bold tracking-wide">{customer.fullName}</span>
-                <Badge variant="outline" className="font-mono text-[10px] bg-white/10 text-white border-white/20">
-                  ID: {customer.customerCode}
-                </Badge>
-                {customer.crfNumber && (
-                  <Badge variant="outline" className="font-mono text-[10px] bg-amber-400/20 text-amber-300 border-amber-400/30">
-                    CRF: {customer.crfNumber}
-                  </Badge>
-                )}
-                {customer.customerType && (
-                  <Badge variant="outline" className="text-[10px] bg-white/10 text-white border-white/20">
-                    {customer.customerType}
-                  </Badge>
-                )}
+        <SectionHeader
+          leftAction={
+            <div className="flex items-center gap-2">
+              <div className="h-7 w-7 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                <User className="h-4 w-4" />
               </div>
-              <p className="text-xs text-slate-300 font-normal mt-0.5">
-                {customer.contactNumber} &bull; {customer.address}, {customer.city}
-              </p>
+              <Badge variant="outline" className="font-mono text-[10px] bg-slate-100 text-slate-700 border-slate-200">
+                ID: {customer.customerCode}
+              </Badge>
             </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <Badge 
-              variant="outline"
-              className={
-                customer.status === 'CONNECTION_ACTIVE'
-                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40 text-xs font-semibold px-2.5 py-1'
-                  : 'bg-amber-500/20 text-amber-300 border-amber-400/40 text-xs font-semibold px-2.5 py-1'
-              }
-            >
-              {customer.status?.replace(/_/g, ' ')}
-            </Badge>
-            <Link href={`/dashboard/customers/${customer.id}`} target="_blank">
-              <Button size="sm" variant="secondary" className="h-8 px-2.5 text-xs font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/20 gap-1 cursor-pointer">
-                Full Profile <ExternalLink className="h-3 w-3" />
-              </Button>
-            </Link>
-          </div>
-        </div>
+          }
+          action={
+            <div className="flex items-center gap-2 shrink-0">
+              <Badge 
+                variant="outline"
+                className={
+                  customer.status === 'CONNECTION_ACTIVE'
+                    ? 'bg-emerald-100 text-emerald-800 border-emerald-300 text-xs font-semibold px-2 py-0.5'
+                    : 'bg-amber-100 text-amber-800 border-amber-300 text-xs font-semibold px-2 py-0.5'
+                }
+              >
+                {customer.status?.replace(/_/g, ' ')}
+              </Badge>
+              <Link href={`/dashboard/customers/${customer.id}`} target="_blank">
+                <Button size="sm" variant="outline" className="h-7 px-2 text-xs font-semibold border-slate-300 text-[#f26522] gap-1 cursor-pointer hover:bg-orange-50">
+                  Full Profile <ExternalLink className="h-3 w-3" />
+                </Button>
+              </Link>
+            </div>
+          }
+        >
+          {customer.fullName}
+        </SectionHeader>
 
         {/* 2. Customer Profile Details Grid (Matching Customer Profile & Ledger View) */}
         <CardContent className="p-0">

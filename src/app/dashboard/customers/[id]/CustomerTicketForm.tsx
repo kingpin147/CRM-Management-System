@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
+import { SectionHeader } from '@/components/ui/section-header'
 
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table'
 import { createCustomerTicket } from './actions'
@@ -105,10 +106,7 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
 
   return (
     <Card className="shadow-sm border-line overflow-hidden bg-white">
-      {/* Navy Top Banner matching Invoice theme */}
-      <div className="bg-[#002868] text-white px-4 py-2.5 font-bold text-sm text-center border-b border-[#001d4a] tracking-wide">
-        Create Ticket
-      </div>
+      <SectionHeader>Create Ticket</SectionHeader>
       <CardContent className="p-4">
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (

@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge'
 import { AutoSuggestInput } from '@/components/ui/auto-suggest-input'
 import { SYSTEM_SIZES, INVERTER_SIZES, INVERTER_BRANDS, PANEL_BRANDS, BATTERY_BRANDS } from '@/lib/solar-constants'
 import { CheckCircle2, Edit3, Loader2, Save, FileText, User, Zap, Wrench } from 'lucide-react'
+import { SectionHeader } from '@/components/ui/section-header'
 
 const PACKAGES = ['Basic', 'Moderate', 'Comprehensive']
 const BILLING_TYPES = ['Monthly', 'Quarterly', 'Half Yearly', 'Yearly']
@@ -156,7 +157,7 @@ export function EditCrfModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-6 bg-white border-line shadow-xl rounded-2xl">
+      <DialogContent className="w-full sm:max-w-4xl md:max-w-5xl lg:max-w-6xl xl:max-w-7xl max-h-[92vh] overflow-y-auto p-6 bg-white border-line shadow-2xl rounded-2xl">
         <DialogHeader className="border-b border-line pb-4">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
@@ -184,10 +185,9 @@ export function EditCrfModal({
         <div className="space-y-6 py-4">
           {/* Section 1: Customer Personal & Contact Details */}
           <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm font-bold text-[#002868] border-b pb-1.5">
-              <User className="h-4 w-4 text-amber-600" />
+            <SectionHeader leftAction={<User className="h-4 w-4 text-amber-600" />}>
               1. Customer Personal & Address Details
-            </div>
+            </SectionHeader>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs font-semibold text-slate-700">Full Name *</Label>
@@ -253,10 +253,9 @@ export function EditCrfModal({
 
           {/* Section 2: Package & Subscription Configuration */}
           <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm font-bold text-[#002868] border-b pb-1.5">
-              <Zap className="h-4 w-4 text-amber-600" />
+            <SectionHeader leftAction={<Zap className="h-4 w-4 text-amber-600" />}>
               2. Subscription Package & Billing Configuration
-            </div>
+            </SectionHeader>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs font-semibold text-slate-700">System Size (kW)</Label>
@@ -318,10 +317,9 @@ export function EditCrfModal({
 
           {/* Section 3: Solar Equipment & Technical Specifications */}
           <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm font-bold text-[#002868] border-b pb-1.5">
-              <Wrench className="h-4 w-4 text-amber-600" />
+            <SectionHeader leftAction={<Wrench className="h-4 w-4 text-amber-600" />}>
               3. Solar Hardware & Technical Specifications
-            </div>
+            </SectionHeader>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs font-semibold text-slate-700">Inverter Brand</Label>

@@ -4,6 +4,7 @@ import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { SectionHeader } from '@/components/ui/section-header'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -62,12 +63,9 @@ export function TicketClosedSetupDialog({ ticket }: { ticket: any }) {
       <DialogTrigger render={<Button size="sm" className="h-8 text-xs font-bold text-white bg-[#002868] hover:bg-[#001d4a] shadow-xs">Update / Close Ticket</Button>} />
 
       <DialogContent className="sm:max-w-3xl md:max-w-4xl lg:max-w-5xl p-0 border-line max-h-[90vh] overflow-y-auto bg-white">
-        {/* Navy Top Banner matching Invoice theme */}
-        <DialogHeader className="bg-[#002868] px-6 py-3 border-b border-[#001d4a]">
-          <DialogTitle className="text-white font-bold text-base text-center tracking-wide">
-            Ticket Closed Set up ({ticket.ticketNumber})
-          </DialogTitle>
-        </DialogHeader>
+        <SectionHeader>
+          Ticket Closed Set up ({ticket.ticketNumber})
+        </SectionHeader>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {error && (

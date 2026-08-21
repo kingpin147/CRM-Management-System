@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
+import { SectionHeader } from '@/components/ui/section-header'
+
 export default async function NewTicketPage() {
   const customers = await prisma.customer.findMany({
     select: { id: true, fullName: true, customerCode: true },
@@ -24,12 +26,9 @@ export default async function NewTicketPage() {
         </div>
       </div>
 
-      <Card className="shadow-sm border-line">
-        <CardHeader>
-          <CardTitle>Ticket Details</CardTitle>
-          <CardDescription>Select a customer and describe the issue they are facing.</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <Card className="shadow-sm border-line overflow-hidden">
+        <SectionHeader>Ticket Details</SectionHeader>
+        <CardContent className="pt-6">
           <TicketForm customers={customers} />
         </CardContent>
       </Card>

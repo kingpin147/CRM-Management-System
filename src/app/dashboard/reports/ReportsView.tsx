@@ -91,6 +91,7 @@ export function ReportsView({
     }
   }, [viewParam])
 
+  const [hasSearched, setHasSearched] = React.useState(false)
   const [selectedStatuses, setSelectedStatuses] = React.useState<string[]>([])
   const [selectedCity, setSelectedCity] = React.useState<string>('ALL')
   const [selectedArea, setSelectedArea] = React.useState<string>('ALL')
@@ -98,6 +99,24 @@ export function ReportsView({
   const [dateFrom, setDateFrom] = React.useState<string>('')
   const [dateTo, setDateTo] = React.useState<string>('')
   const [searchQuery, setSearchQuery] = React.useState<string>('')
+
+  const [appliedFilters, setAppliedFilters] = React.useState<{
+    statuses: string[]
+    city: string
+    area: string
+    subArea: string
+    dateFrom: string
+    dateTo: string
+    searchQuery: string
+  }>({
+    statuses: [],
+    city: 'ALL',
+    area: 'ALL',
+    subArea: 'ALL',
+    dateFrom: '',
+    dateTo: '',
+    searchQuery: '',
+  })
 
   // Unique Lists for Dropdowns
   const cities = React.useMemo(() => {
@@ -135,8 +154,10 @@ export function ReportsView({
     }
   }, [customers])
 
-  // Filtered dataset
+  // Filtered dataset - only computed after user clicks search
   const filteredCustomers = React.useMemo(() => {
+    if (!hasSearched) return []
+
     return customers.filter((c) => {
       // Category-specific base conditions
       if (activeCategory === 'SALES' && !c.packagePlan) return false
@@ -163,26 +184,26 @@ export function ReportsView({
       }
 
       // Status Checkboxes (Multi-select)
-      if (selectedStatuses.length > 0 && !selectedStatuses.includes(c.status)) return false
+      if (appliedFilters.statuses.length > 0 && !appliedFilters.statuses.includes(c.status)) return false
 
       // Location filters
-      if (selectedCity !== 'ALL' && c.city?.toLowerCase() !== selectedCity.toLowerCase()) return false
-      if (selectedArea !== 'ALL' && c.area?.toLowerCase() !== selectedArea.toLowerCase()) return false
-      if (selectedSubArea !== 'ALL' && c.subArea?.toLowerCase() !== selectedSubArea.toLowerCase()) return false
+      if (appliedFilters.city !== 'ALL' && c.city?.toLowerCase() !== appliedFilters.city.toLowerCase()) return false
+      if (appliedFilters.area !== 'ALL' && c.area?.toLowerCase() !== appliedFilters.area.toLowerCase()) return false
+      if (appliedFilters.subArea !== 'ALL' && c.subArea?.toLowerCase() !== appliedFilters.subArea.toLowerCase()) return false
 
       // Date filter
-      if (dateFrom && c.signupDate) {
-        if (new Date(c.signupDate) < new Date(dateFrom)) return false
+      if (appliedFilters.dateFrom && c.signupDate) {
+        if (new Date(c.signupDate) < new Date(appliedFilters.dateFrom)) return false
       }
-      if (dateTo && c.signupDate) {
-        const to = new Date(dateTo)
+      if (appliedFilters.dateTo && c.signupDate) {
+        const to = new Date(appliedFilters.dateTo)
         to.setHours(23, 59, 59, 999)
         if (new Date(c.signupDate) > to) return false
       }
 
       // Search query
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim()
+      if (appliedFilters.searchQuery.trim()) {
+        const q = appliedFilters.searchQuery.toLowerCase().trim()
         const match =
           c.fullName?.toLowerCase().includes(q) ||
           c.customerCode?.toLowerCase().includes(q) ||
@@ -198,12 +219,26 @@ export function ReportsView({
 
       return true
     })
-  }, [customers, activeCategory, selectedStatuses, selectedCity, selectedArea, selectedSubArea, dateFrom, dateTo, searchQuery])
+  }, [customers, activeCategory, hasSearched, appliedFilters])
 
   function toggleStatus(key: string) {
     setSelectedStatuses((prev) =>
       prev.includes(key) ? prev.filter((s) => s !== key) : [...prev, key]
     )
+  }
+
+  function handleSearch(e?: React.FormEvent) {
+    if (e) e.preventDefault()
+    setAppliedFilters({
+      statuses: [...selectedStatuses],
+      city: selectedCity,
+      area: selectedArea,
+      subArea: selectedSubArea,
+      dateFrom,
+      dateTo,
+      searchQuery,
+    })
+    setHasSearched(true)
   }
 
   function handleReset() {
@@ -214,6 +249,16 @@ export function ReportsView({
     setDateFrom('')
     setDateTo('')
     setSearchQuery('')
+    setAppliedFilters({
+      statuses: [],
+      city: 'ALL',
+      area: 'ALL',
+      subArea: 'ALL',
+      dateFrom: '',
+      dateTo: '',
+      searchQuery: '',
+    })
+    setHasSearched(false)
   }
 
   const categoryTabs = [
@@ -228,13 +273,18 @@ export function ReportsView({
   const currentTabObj = categoryTabs.find(t => t.id === activeCategory) || categoryTabs[0]
 
   const handleTabChange = (categoryId: string) => {
+    setHasSearched(false)
     router.push(`/dashboard/reports?view=${categoryId.toLowerCase()}`, { scroll: false })
   }
 
   // Export to Excel / CSV matching the active category columns
   function handleExportExcel() {
+    if (!hasSearched) {
+      alert('Please select your filters and click "Search / Apply Filters" before exporting.')
+      return
+    }
     if (filteredCustomers.length === 0) {
-      alert('No records available to export.')
+      alert('No records found matching the selected filters to export.')
       return
     }
 
@@ -401,11 +451,11 @@ export function ReportsView({
             >
               <Icon className={`h-4 w-4 ${isActive ? 'text-[var(--color-amber)]' : 'text-[var(--color-slate-custom)]'}`} />
               <span>{cat.label}</span>
-              <span className={`px-2 py-0.5 text-xs rounded-full font-bold ${
-                isActive ? 'bg-amber-100 text-amber-900' : 'bg-black/5 text-[var(--color-slate-custom)]'
-              }`}>
-                {cat.count}
-              </span>
+              {hasSearched && isActive && (
+                <span className="px-2 py-0.5 text-xs rounded-full font-bold bg-amber-100 text-amber-900 animate-in fade-in-50">
+                  {filteredCustomers.length}
+                </span>
+              )}
             </button>
           )
         })}
@@ -519,26 +569,65 @@ export function ReportsView({
             </div>
           </div>
 
-          {/* Search bar & Record counter */}
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-2">
-            <div className="relative w-full sm:w-80">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-[var(--color-slate-custom)]" />
+          {/* Search bar & Action Buttons */}
+          <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3 pt-4 border-t border-gray-100">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-[var(--color-slate-custom)]" />
               <Input
                 placeholder="Search Customer ID, Name, Contact, CNIC..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 text-xs h-9 border-[var(--color-line)]"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSearch()
+                }}
+                className="pl-9 text-xs h-10 border-[var(--color-line)] bg-slate-50/60 focus:bg-white"
               />
             </div>
-            <div className="text-xs text-gray-600 bg-gray-50 px-4 py-2 rounded-lg border border-gray-200 font-medium">
-              Showing <strong className="text-[var(--color-ink)]">{filteredCustomers.length}</strong> matching records in {currentTabObj.label}
+            
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                onClick={handleReset}
+                variant="outline"
+                className="h-10 text-xs font-semibold text-slate-700 hover:text-slate-950 border-slate-300 gap-1.5 cursor-pointer px-4"
+              >
+                <RotateCcw className="h-3.5 w-3.5" /> Reset
+              </Button>
+              <Button
+                type="button"
+                onClick={() => handleSearch()}
+                className="h-10 text-xs font-bold bg-[#002868] hover:bg-[#001d4a] text-white shadow-md gap-2 cursor-pointer px-6"
+              >
+                <Search className="h-4 w-4 text-amber-400" /> Search / Apply Filters
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-1 text-xs">
+            <div className="text-slate-500 font-medium">
+              {hasSearched ? (
+                <span className="text-emerald-700 font-semibold flex items-center gap-1.5">
+                  <CheckCircle2 className="h-3.5 w-3.5" /> Filter criteria applied
+                </span>
+              ) : (
+                <span className="text-amber-700 font-medium flex items-center gap-1.5">
+                  <Filter className="h-3.5 w-3.5" /> Select filters above and click Search to load data
+                </span>
+              )}
+            </div>
+            <div className="text-xs text-gray-600 bg-gray-50 px-3.5 py-1.5 rounded-lg border border-gray-200 font-medium">
+              {hasSearched ? (
+                <>Showing <strong className="text-[var(--color-ink)]">{filteredCustomers.length}</strong> matching records in {currentTabObj.label}</>
+              ) : (
+                <span className="text-slate-500">No data loaded (click &quot;Search / Apply Filters&quot;)</span>
+              )}
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Dynamic Report Table */}
-      <Card className="shadow-sm border-line overflow-hidden">
+      <Card className="shadow-sm border-line overflow-hidden bg-white">
         <CardContent className="p-0">
           <Table>
             {/* 1. CUSTOMER STATUS REPORT TABLE */}
@@ -562,7 +651,13 @@ export function ReportsView({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredCustomers.length === 0 ? (
+                  {!hasSearched ? (
+                    <TableRow>
+                      <TableCell colSpan={13} className="h-32 text-center text-xs text-[var(--color-slate-custom)] font-medium">
+                        Select filters and click &quot;Search / Apply Filters&quot; to load report data.
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredCustomers.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={13} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">
                         No customers found matching the selected filters.
@@ -626,7 +721,13 @@ export function ReportsView({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredCustomers.length === 0 ? (
+                  {!hasSearched ? (
+                    <TableRow>
+                      <TableCell colSpan={13} className="h-32 text-center text-xs text-[var(--color-slate-custom)] font-medium">
+                        Select filters and click &quot;Search / Apply Filters&quot; to load report data.
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredCustomers.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={13} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">
                         No sales records found matching the selected filters.
@@ -683,7 +784,13 @@ export function ReportsView({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredCustomers.length === 0 ? (
+                  {!hasSearched ? (
+                    <TableRow>
+                      <TableCell colSpan={10} className="h-32 text-center text-xs text-[var(--color-slate-custom)] font-medium">
+                        Select filters and click &quot;Search / Apply Filters&quot; to load report data.
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredCustomers.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={10} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">
                         No outstanding receivables found.
@@ -742,7 +849,13 @@ export function ReportsView({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredCustomers.length === 0 ? (
+                  {!hasSearched ? (
+                    <TableRow>
+                      <TableCell colSpan={10} className="h-32 text-center text-xs text-[var(--color-slate-custom)] font-medium">
+                        Select filters and click &quot;Search / Apply Filters&quot; to load report data.
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredCustomers.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={10} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">
                         No adjustment / discounted records found.
@@ -802,7 +915,13 @@ export function ReportsView({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredCustomers.length === 0 ? (
+                  {!hasSearched ? (
+                    <TableRow>
+                      <TableCell colSpan={10} className="h-32 text-center text-xs text-[var(--color-slate-custom)] font-medium">
+                        Select filters and click &quot;Search / Apply Filters&quot; to load report data.
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredCustomers.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={10} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">
                         No payment records found matching the selected filters.
@@ -860,7 +979,13 @@ export function ReportsView({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredCustomers.length === 0 ? (
+                  {!hasSearched ? (
+                    <TableRow>
+                      <TableCell colSpan={10} className="h-32 text-center text-xs text-[var(--color-slate-custom)] font-medium">
+                        Select filters and click &quot;Search / Apply Filters&quot; to load report data.
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredCustomers.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={10} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">
                         No customer records found in the register.

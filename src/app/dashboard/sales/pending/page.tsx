@@ -3,6 +3,7 @@ import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { ManagerApprovalView } from './ManagerApprovalView'
 
+// Re-evaluated Prisma schema
 export default async function PendingSalesPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -25,7 +26,6 @@ export default async function PendingSalesPage() {
         packagePlan: true,
         solarSystem: true,
         accountExecutive: true,
-        assignedInstaller: true,
       },
       orderBy: { signupDate: 'desc' }
     }),
@@ -39,8 +39,12 @@ export default async function PendingSalesPage() {
     })
   ])
 
-  // Sanitize Prisma types to plain JSON objects
-  const pendingCustomers = JSON.parse(JSON.stringify(rawPendingCustomers))
+  // Sanitize Prisma types and map assigned installer details
+  const installerMap = new Map(rawInstallers.map(i => [i.id, i]))
+  const pendingCustomers = JSON.parse(JSON.stringify(rawPendingCustomers)).map((c: any) => ({
+    ...c,
+    assignedInstaller: c.assignedInstallerId ? installerMap.get(c.assignedInstallerId) || null : null
+  }))
   const installers = JSON.parse(JSON.stringify(rawInstallers))
 
   // Action for advancing workflow status across stages
