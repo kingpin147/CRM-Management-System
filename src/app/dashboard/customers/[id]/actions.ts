@@ -509,4 +509,86 @@ export async function deleteCustomer(customerId: string) {
   }
 }
 
+export async function uploadEquipmentPhotos(formData: FormData) {
+  const customerId = formData.get('customerId') as string
+  const inverterImagesRaw = formData.get('inverterImages') as string
+  const batteryImagesRaw = formData.get('batteryImages') as string
+
+  if (!customerId) return { error: 'Customer ID is required' }
+
+  try {
+    let inverterImages: string[] | undefined
+    if (inverterImagesRaw) {
+      try {
+        inverterImages = JSON.parse(inverterImagesRaw)
+      } catch {
+        inverterImages = [inverterImagesRaw]
+      }
+    }
+
+    let batteryImages: string[] | undefined
+    if (batteryImagesRaw) {
+      try {
+        batteryImages = JSON.parse(batteryImagesRaw)
+      } catch {
+        batteryImages = [batteryImagesRaw]
+      }
+    }
+
+    const currentSystem = await prisma.solarSystem.findUnique({
+      where: { customerId }
+    })
+
+    const newInverterImages = inverterImages !== undefined
+      ? Array.from(new Set([...(currentSystem?.inverterImages || []), ...inverterImages]))
+      : undefined
+
+    const newBatteryImages = batteryImages !== undefined
+      ? Array.from(new Set([...(currentSystem?.batteryImages || []), ...batteryImages]))
+      : undefined
+
+    await prisma.solarSystem.upsert({
+      where: { customerId },
+      update: {
+        ...(newInverterImages ? { inverterImages: newInverterImages } : {}),
+        ...(newBatteryImages ? { batteryImages: newBatteryImages } : {}),
+      },
+      create: {
+        customerId,
+        inverterBrand: 'General',
+        inverterType: 'Hybrid',
+        inverterPhase: 'Three Phase',
+        inverterCategory: 'Low Voltage',
+        noOfInverters: 1,
+        inverterSerial: 'SN-INV-' + Date.now().toString().slice(-6),
+        panelBrand: 'General',
+        panelType: 'Monofacial',
+        panelTechnology: 'TOPCON',
+        panelWattage: 585,
+        noOfPanels: 10,
+        totalWattage: 5850,
+        batteryBrand: 'General',
+        batteryType: 'Lithium',
+        batteryCategory: 'Low Voltage',
+        noOfBatteries: 1,
+        batterySerial: 'SN-BAT-' + Date.now().toString().slice(-6),
+        earthing: 'AC',
+        lightningProtection: false,
+        breakerName: 'MCB',
+        meterType: 'Green Meter',
+        zeroExportDevice: false,
+        inverterImages: newInverterImages || [],
+        batteryImages: newBatteryImages || [],
+      }
+    })
+
+    revalidatePath(`/dashboard/customers/${customerId}`)
+    return { success: true }
+  } catch (error: any) {
+    console.error('Failed to upload equipment photos:', error)
+    return { error: error.message || 'Failed to update equipment photos.' }
+  }
+}
+
+
 

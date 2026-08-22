@@ -613,11 +613,11 @@ export function EditCrfModal({
                     {installers && installers.length > 0 ? (
                       installers.map((inst) => (
                         <SelectItem key={inst.id} value={inst.id} className="text-xs font-medium">
-                          {inst.fullName} ({inst.role.replace('_', ' ')})
+                          {inst.fullName} ({inst.role === 'OM_MANAGER' ? 'O & M Manager' : 'Installer'})
                         </SelectItem>
                       ))
                     ) : (
-                      <SelectItem value="none" disabled className="text-xs">No installers found</SelectItem>
+                      <SelectItem value="none" disabled className="text-xs">No active O&M Manager or Installers found</SelectItem>
                     )}
                   </SelectContent>
                 </Select>

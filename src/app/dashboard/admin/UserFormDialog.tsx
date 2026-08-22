@@ -138,13 +138,10 @@ export function UserFormDialog() {
                 </SelectTrigger>
                 <SelectContent className="rounded-xl shadow-lg border-line">
                   <SelectItem value="SUPER_ADMIN" className="text-xs font-medium py-2">Super Admin (Full Access)</SelectItem>
-                  <SelectItem value="ADMIN" className="text-xs font-medium py-2">Admin (System Operations)</SelectItem>
-                  <SelectItem value="SALES_MANAGER" className="text-xs font-medium py-2">Sales Manager</SelectItem>
-                  <SelectItem value="BILLING_MANAGER" className="text-xs font-medium py-2">Billing Manager</SelectItem>
-                  <SelectItem value="OM_MANAGER" className="text-xs font-medium py-2">O&M Manager</SelectItem>
-                  <SelectItem value="MANAGER" className="text-xs font-medium py-2">Manager (General)</SelectItem>
-                  <SelectItem value="INSTALLATION" className="text-xs font-medium py-2">Installation / Technician</SelectItem>
-                  <SelectItem value="CUSTOMER_SUPPORT" className="text-xs font-medium py-2">Customer Support</SelectItem>
+                  <SelectItem value="SALES_MANAGER" className="text-xs font-medium py-2">Account Sales Manager (Sales & Billing Operations)</SelectItem>
+                  <SelectItem value="SALES" className="text-xs font-medium py-2">Executive Manager (Sales)</SelectItem>
+                  <SelectItem value="OM_MANAGER" className="text-xs font-medium py-2">O & M Manager</SelectItem>
+                  <SelectItem value="INSTALLATION" className="text-xs font-medium py-2">Installer (O&M Team)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

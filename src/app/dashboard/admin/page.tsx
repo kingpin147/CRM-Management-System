@@ -52,8 +52,13 @@ export default async function AdminPage() {
                       <TableCell className="font-medium">{user.fullName}</TableCell>
                       <TableCell>{user.email}</TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="bg-[var(--color-paper)] text-[var(--color-ink)] border-[var(--color-line)]">
-                          {user.role}
+                        <Badge variant="outline" className="bg-[var(--color-paper)] text-[var(--color-ink)] border-[var(--color-line)] font-semibold text-xs">
+                          {user.role === 'SUPER_ADMIN' ? 'Super Admin' :
+                           user.role === 'SALES_MANAGER' ? 'Account Sales Manager' :
+                           user.role === 'SALES' ? 'Executive Manager (Sales)' :
+                           user.role === 'OM_MANAGER' ? 'O & M Manager' :
+                           user.role === 'INSTALLATION' ? 'Installer' :
+                           user.role.replace(/_/g, ' ')}
                         </Badge>
                       </TableCell>
                       <TableCell>

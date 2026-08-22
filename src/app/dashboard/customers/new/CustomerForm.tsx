@@ -14,12 +14,12 @@ import { Badge } from '@/components/ui/badge'
 import { createCustomer } from './actions'
 import { uploadFile } from '@/utils/supabase/storage'
 import { CustomerType } from '@prisma/client'
-import { ChevronRight, ChevronLeft, CheckCircle2, Check, Sparkles, Loader2, AlertCircle, Download, FileText } from 'lucide-react'
+import { ChevronRight, ChevronLeft, CheckCircle2, Check, Sparkles, Loader2, AlertCircle, Download, FileText, Camera, UploadCloud, Image as ImageIcon, X } from 'lucide-react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { AutoSuggestInput } from '@/components/ui/auto-suggest-input'
 import { CITIES_LIST, getAreasForCity, getDefaultDiscoForCity } from '@/lib/pakistan-cities-areas'
 import { formatDiscoRefNo } from '@/lib/utils'
-import { SYSTEM_SIZES, INVERTER_SIZES, INVERTER_BRANDS, PANEL_BRANDS, BATTERY_BRANDS, IP_LIST } from '@/lib/solar-constants'
+import { SYSTEM_SIZES, INVERTER_SIZES, INVERTER_BRANDS, PANEL_BRANDS, BATTERY_BRANDS, IP_LIST, DISCO_LIST, STRUCTURE_TYPES, STRUCTURE_MATERIALS } from '@/lib/solar-constants'
 
 
 const customerSchema = z.object({
@@ -283,12 +283,14 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
 
   const grandTotal = billingType === 'FOC' ? 0 : (priceAfterDiscount + salesTax + onboardingFee)
 
-  const noOfInvertersValue = form.watch('noOfInverters') ?? 0
-  const [inverterList, setInverterList] = useState<Array<{ brand: string; serial: string; warrantyExpiry: string }>>([])
+  const noOfInvertersValue = form.watch('noOfInverters') ?? 1
+  const [inverterList, setInverterList] = useState<Array<{ brand: string; serial: string; warrantyExpiry: string }>>([
+    { brand: '', serial: '', warrantyExpiry: '' }
+  ])
 
   // Sync inverter list with noOfInverters count
   useEffect(() => {
-    const count = Math.max(0, Number(noOfInvertersValue) || 0)
+    const count = Math.max(1, Number(noOfInvertersValue) || 1)
     setInverterList(prev => {
       if (prev.length === count) return prev
       if (prev.length < count) {
@@ -304,6 +306,20 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
     })
   }, [noOfInvertersValue, form])
 
+  const handleInverterChange = (index: number, key: 'brand' | 'serial' | 'warrantyExpiry', value: string) => {
+    const updated = [...inverterList]
+    if (!updated[index]) return
+    updated[index] = { ...updated[index], [key]: value }
+    setInverterList(updated)
+
+    // Sync back to form
+    const allBrands = Array.from(new Set(updated.map(i => i.brand).filter(Boolean))).join(', ')
+    const allSerials = updated.map(i => i.serial).filter(Boolean).join(', ')
+    form.setValue('inverterBrand', allBrands || updated[0]?.brand || '')
+    form.setValue('inverterSerial', allSerials || updated[0]?.serial || '')
+    form.setValue('inverterWarrantyExpiry', updated[0]?.warrantyExpiry || '')
+  }
+
   // Multi-battery dynamic warranty state
   const noOfBatteriesValue = form.watch('noOfBatteries') ?? 0
   const [batteryWarrantyList, setBatteryWarrantyList] = useState<string[]>([])
@@ -315,6 +331,41 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
       if (prev.length === count) return prev
       if (prev.length < count) {
         return [...prev, ...Array(count - prev.length).fill('')]
+      }
+      return prev.slice(0, count)
+    })
+  }, [noOfBatteriesValue])
+
+  const handleBatteryWarrantyChange = (index: number, value: string) => {
+    const updated = [...batteryWarrantyList]
+    updated[index] = value
+    setBatteryWarrantyList(updated)
+    form.setValue('batteryWarrantyExpiry', updated[0] || '')
+  }
+
+  // Photos per inverter and battery unit
+  const [inverterPhotos, setInverterPhotos] = useState<Array<File | null>>([null])
+  const [batteryPhotos, setBatteryPhotos] = useState<Array<File | null>>([])
+
+  // Keep inverterPhotos aligned with inverter count
+  useEffect(() => {
+    const count = Math.max(1, Number(noOfInvertersValue) || 1)
+    setInverterPhotos(prev => {
+      if (prev.length === count) return prev
+      if (prev.length < count) {
+        return [...prev, ...Array(count - prev.length).fill(null)]
+      }
+      return prev.slice(0, count)
+    })
+  }, [noOfInvertersValue])
+
+  // Keep batteryPhotos aligned with battery count
+  useEffect(() => {
+    const count = Math.max(0, Number(noOfBatteriesValue) || 0)
+    setBatteryPhotos(prev => {
+      if (prev.length === count) return prev
+      if (prev.length < count) {
+        return [...prev, ...Array(count - prev.length).fill(null)]
       }
       return prev.slice(0, count)
     })
@@ -443,6 +494,39 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
       // Multi-battery warranty data
       const primaryBatteryWarranty = batteryWarrantyList[0] || values.batteryWarrantyExpiry
       if (primaryBatteryWarranty) formData.set('batteryWarrantyExpiry', primaryBatteryWarranty)
+
+      // Upload inverter photos
+      const inverterImageUrls: string[] = []
+      for (let i = 0; i < inverterPhotos.length; i++) {
+        const file = inverterPhotos[i]
+        if (file) {
+          const ext = file.name.split('.').pop() || 'jpg'
+          const safeCnic = (values.cnic || 'inv').replace(/[^a-zA-Z0-9]/g, '')
+          const path = `equipment/inverters/${safeCnic}-inv-${i + 1}-${Date.now()}.${ext}`
+          const url = await uploadFile(file, 'crm-uploads', path)
+          if (url) inverterImageUrls.push(url)
+        }
+      }
+
+      // Upload battery photos
+      const batteryImageUrls: string[] = []
+      for (let i = 0; i < batteryPhotos.length; i++) {
+        const file = batteryPhotos[i]
+        if (file) {
+          const ext = file.name.split('.').pop() || 'jpg'
+          const safeCnic = (values.cnic || 'bat').replace(/[^a-zA-Z0-9]/g, '')
+          const path = `equipment/batteries/${safeCnic}-bat-${i + 1}-${Date.now()}.${ext}`
+          const url = await uploadFile(file, 'crm-uploads', path)
+          if (url) batteryImageUrls.push(url)
+        }
+      }
+
+      if (inverterImageUrls.length > 0) {
+        formData.append('inverterImages', JSON.stringify(inverterImageUrls))
+      }
+      if (batteryImageUrls.length > 0) {
+        formData.append('batteryImages', JSON.stringify(batteryImageUrls))
+      }
 
       formData.append('appliedDiscount', Math.round(discountAmount).toString())
       formData.append('salesTaxAmount',  Math.round(salesTax).toString())
@@ -1063,12 +1147,13 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
           ═══════════════════════════════════════════════════════════ */}
           {activeTab === 2 && (
             <Card className="shadow-sm border-line bg-white animate-reveal">
-              <CardContent className="p-6 space-y-6">
+              <CardContent className="p-6 space-y-7">
                 <div className="border-b border-line pb-3">
                   <h2 className="text-lg font-bold text-[var(--color-graphite)]">2. Solar System Details</h2>
                   <p className="text-xs text-[var(--color-slate-custom)]">Comprehensive hardware specs, warranties, and protection parameters.</p>
                 </div>
 
+                {/* 1. Meter & Utility Details */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                   {/* Meter Type */}
                   <FormField control={form.control} name="meterType" render={({ field, fieldState }) => (
@@ -1083,6 +1168,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                         <SelectContent>
                           <SelectItem value="Green Meter">Green Meter</SelectItem>
                           <SelectItem value="Non Green">Non Green</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -1108,7 +1194,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                     </FormItem>
                   )} />
 
-                  {/* DISCO */}
+                  {/* DISCO Utility Company */}
                   <FormField control={form.control} name="disco" render={({ field, fieldState }) => (
                     <FormItem>
                       <FormLabel className="text-xs font-semibold">DISCO Utility Company *</FormLabel>
@@ -1129,8 +1215,8 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                   <FormField control={form.control} name="discoRefNo" render={({ field }) => {
                     const currentDisco = form.watch('disco') || 'LESCO'
                     return (
-                      <FormItem>
-                        <FormLabel className="text-xs font-semibold">{currentDisco} Customer ID #</FormLabel>
+                      <FormItem className="md:col-span-3">
+                        <FormLabel className="text-xs font-bold text-[#002868]">{currentDisco} Customer ID #</FormLabel>
                         <FormControl>
                           <Input
                             placeholder="e.g. 04-11515-0469701 U"
@@ -1139,102 +1225,524 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                               const formatted = formatDiscoRefNo(e.target.value)
                               field.onChange(formatted)
                             }}
-                            className="h-10 text-xs font-mono font-bold tracking-wider"
+                            className="h-10 text-xs font-mono font-bold tracking-wider max-w-md"
                           />
                         </FormControl>
                       </FormItem>
                     )
                   }} />
+                </div>
 
-                  {/* Inverter Category */}
-                  <FormField control={form.control} name="inverterCategory" render={({ field, fieldState }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-semibold">Inverter Category *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ''}>
+                {/* 2. Inverter Configuration Section */}
+                <div className="space-y-4 pt-2 border-t border-line/60">
+                  <h3 className="text-xs font-bold text-[#002868] uppercase tracking-wider">Inverter Configuration &amp; Specifications</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+                    {/* Inverter Type */}
+                    <FormField control={form.control} name="inverterType" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold">Inverter Type *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                          <FormControl>
+                            <SelectTrigger className="h-10 text-xs">
+                              <SelectValue placeholder="Select Inverter Type..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Hybrid">Hybrid</SelectItem>
+                            <SelectItem value="OnGrid">On-Grid</SelectItem>
+                            <SelectItem value="OffGrid">Off-Grid</SelectItem>
+                            <SelectItem value="Hybrid+OnGrid">Hybrid + On-Grid</SelectItem>
+                            <SelectItem value="Other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )} />
+
+                    {/* Inverter Phase Type */}
+                    <FormField control={form.control} name="inverterPhase" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold">Inverter Phase Type *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                          <FormControl>
+                            <SelectTrigger className="h-10 text-xs">
+                              <SelectValue placeholder="Select Phase..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Single Phase">Single Phase</SelectItem>
+                            <SelectItem value="Three Phase">Three Phase</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )} />
+
+                    {/* Inverter Category */}
+                    <FormField control={form.control} name="inverterCategory" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold">Inverter Category *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                          <FormControl>
+                            <SelectTrigger className="h-10 text-xs">
+                              <SelectValue placeholder="Select Category..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Low Voltage">Low Voltage</SelectItem>
+                            <SelectItem value="High Voltage">High Voltage</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )} />
+
+                    {/* Inverter Size */}
+                    <FormField control={form.control} name="inverterSize" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold">Inverter Size *</FormLabel>
                         <FormControl>
-                          <SelectTrigger className={`h-10 text-xs ${fieldState.error ? 'border-red-500 ring-2 ring-red-200 bg-red-50/20' : ''}`}>
-                            <SelectValue placeholder="Select Category..." />
-                          </SelectTrigger>
+                          <AutoSuggestInput
+                            value={field.value || ''}
+                            onChange={field.onChange}
+                            options={INVERTER_SIZES}
+                            placeholder="Type or select size (e.g. 6kW)..."
+                            className="h-10 text-xs bg-white"
+                          />
                         </FormControl>
-                        <SelectContent>
-                          <SelectItem value="High Voltage">High Voltage</SelectItem>
-                          <SelectItem value="Low Voltage">Low Voltage</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
+                      </FormItem>
+                    )} />
 
-                  {/* Inverter Size */}
-                  <FormField control={form.control} name="inverterSize" render={({ field, fieldState }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-semibold">Inverter Size *</FormLabel>
-                      <FormControl>
-                        <AutoSuggestInput
-                          value={field.value || ''}
-                          onChange={field.onChange}
-                          options={INVERTER_SIZES}
-                          placeholder="Type or select size..."
-                          className={`h-10 text-xs bg-white ${fieldState.error ? 'border-red-500 ring-2 ring-red-200 bg-red-50/20' : ''}`}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
+                    {/* Meter Phase */}
+                    <FormField control={form.control} name="meterPhase" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold">Meter Phase</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                          <FormControl>
+                            <SelectTrigger className="h-10 text-xs">
+                              <SelectValue placeholder="Select Meter Phase..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Single Phase">Single Phase</SelectItem>
+                            <SelectItem value="Three Phase">Three Phase</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )} />
 
-                  {/* Panel Technology */}
-                  <FormField control={form.control} name="panelTechnology" render={({ field, fieldState }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-semibold">Panel Technology *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ''}>
+                    {/* No. of Inverters */}
+                    <FormField control={form.control} name="noOfInverters" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold">No. of Inverters *</FormLabel>
                         <FormControl>
-                          <SelectTrigger className={`h-10 text-xs ${fieldState.error ? 'border-red-500 ring-2 ring-red-200 bg-red-50/20' : ''}`}>
-                            <SelectValue placeholder="Select Panel Technology..." />
-                          </SelectTrigger>
+                          <Input
+                            type="number"
+                            min={1}
+                            max={20}
+                            value={field.value || 1}
+                            onChange={(e) => {
+                              const val = Number(e.target.value) || 1
+                              field.onChange(val)
+                            }}
+                            className="h-10 text-xs font-bold"
+                          />
                         </FormControl>
-                        <SelectContent>
-                          {['TOPCON', 'ABC', 'HJT', 'HIBC', 'TBC', 'PERC', 'Other'].map(t => (
-                            <SelectItem key={t} value={t}>{t}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
+                      </FormItem>
+                    )} />
+                  </div>
 
-                  {/* Panel Brand */}
-                  <FormField control={form.control} name="panelBrand" render={({ field, fieldState }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-semibold">Panel Brand *</FormLabel>
-                      <FormControl>
-                        <AutoSuggestInput
-                          value={field.value || ''}
-                          onChange={field.onChange}
-                          options={PANEL_BRANDS}
-                          placeholder="Type or select panel brand..."
-                          className={`h-10 text-xs bg-white ${fieldState.error ? 'border-red-500 ring-2 ring-red-200 bg-red-50/20' : ''}`}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
+                  {/* Dynamic Multi-Inverter Brand, Serial & Warranty List */}
+                  <div className="space-y-3 p-4 bg-slate-50/70 rounded-xl border border-slate-200">
+                    <p className="text-xs font-bold text-slate-700">
+                      Inverter Unit Details ({inverterList.length || 1} {inverterList.length === 1 ? 'Unit' : 'Units'})
+                    </p>
+                    <div className="space-y-3">
+                      {(inverterList.length > 0 ? inverterList : [{ brand: form.watch('inverterBrand') || '', serial: form.watch('inverterSerial') || '', warrantyExpiry: form.watch('inverterWarrantyExpiry') || '' }]).map((inv, idx) => (
+                        <div key={idx} className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 bg-white rounded-lg border border-slate-200 shadow-2xs">
+                          <div>
+                            <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                              Inverter #{idx + 1} Brand (41+ Brands) *
+                            </label>
+                            <AutoSuggestInput
+                              value={inv.brand || ''}
+                              onChange={(val) => handleInverterChange(idx, 'brand', val)}
+                              options={INVERTER_BRANDS}
+                              placeholder="Type or select brand..."
+                              className="h-9 text-xs bg-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                              Inverter #{idx + 1} Serial # *
+                            </label>
+                            <Input
+                              placeholder="Serial number..."
+                              value={inv.serial || ''}
+                              onChange={(e) => handleInverterChange(idx, 'serial', e.target.value)}
+                              className="h-9 text-xs font-mono"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                              Inverter #{idx + 1} Warranty End Date
+                            </label>
+                            <Input
+                              type="date"
+                              value={inv.warrantyExpiry || ''}
+                              onChange={(e) => handleInverterChange(idx, 'warrantyExpiry', e.target.value)}
+                              className="h-9 text-xs font-semibold"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
 
-                  {/* Battery Brand */}
-                  <FormField control={form.control} name="batteryBrand" render={({ field, fieldState }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-semibold">Battery Brand *</FormLabel>
-                      <FormControl>
-                        <AutoSuggestInput
-                          value={field.value || ''}
-                          onChange={field.onChange}
-                          options={BATTERY_BRANDS}
-                          placeholder="Type or select battery brand..."
-                          className={`h-10 text-xs bg-white ${fieldState.error ? 'border-red-500 ring-2 ring-red-200 bg-red-50/20' : ''}`}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
+                {/* 3. Solar Panels Section */}
+                <div className="space-y-4 pt-2 border-t border-line/60">
+                  <h3 className="text-xs font-bold text-[#002868] uppercase tracking-wider">Solar Panel Specifications</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+                    {/* Panel Technology */}
+                    <FormField control={form.control} name="panelTechnology" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold">Panel Technology *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                          <FormControl>
+                            <SelectTrigger className="h-10 text-xs">
+                              <SelectValue placeholder="Select Technology..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {['TOPCON', 'ABC', 'HJT', 'HIBC', 'TBC', 'PERC', 'Monocrystalline', 'Polycrystalline', 'Other'].map(t => (
+                              <SelectItem key={t} value={t}>{t}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )} />
+
+                    {/* Panel Brand (39+ Brands) */}
+                    <FormField control={form.control} name="panelBrand" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold">Panel Brand (39+ Brands) *</FormLabel>
+                        <FormControl>
+                          <AutoSuggestInput
+                            value={field.value || ''}
+                            onChange={field.onChange}
+                            options={PANEL_BRANDS}
+                            placeholder="Type or select panel brand..."
+                            className="h-10 text-xs bg-white"
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )} />
+
+                    {/* Panel Wattage (W) */}
+                    <FormField control={form.control} name="panelWattage" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold">Panel Wattage (W) *</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="e.g. 585"
+                            value={field.value || ''}
+                            onChange={(e) => field.onChange(Number(e.target.value) || 0)}
+                            className="h-10 text-xs font-bold"
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )} />
+
+                    {/* No of Panels */}
+                    <FormField control={form.control} name="noOfPanels" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold">No of Panels *</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="e.g. 10"
+                            value={field.value || ''}
+                            onChange={(e) => field.onChange(Number(e.target.value) || 0)}
+                            className="h-10 text-xs font-bold"
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )} />
+
+                    {/* Total Wattage (Calculated) */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-slate-700 block">Total Wattage (Calculated)</label>
+                      <div className="h-10 px-3 bg-amber-50/70 border border-amber-300/80 rounded-md flex items-center justify-between">
+                        <span className="text-xs font-mono font-bold text-amber-950">
+                          {((form.watch('panelWattage') || 0) * (form.watch('noOfPanels') || 0)).toLocaleString()} W
+                        </span>
+                        <span className="text-[11px] font-semibold text-amber-700">
+                          ({(((form.watch('panelWattage') || 0) * (form.watch('noOfPanels') || 0)) / 1000).toFixed(2)} kW)
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Panel Type */}
+                    <FormField control={form.control} name="panelType" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold">Panel Type</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || 'Monofacial'}>
+                          <FormControl>
+                            <SelectTrigger className="h-10 text-xs">
+                              <SelectValue placeholder="Select Panel Type..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Monofacial">Monofacial</SelectItem>
+                            <SelectItem value="Bifacial">Bifacial</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )} />
+
+                    {/* Panel Warranty End Date */}
+                    <FormField control={form.control} name="panelWarrantyExpiry" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold">Panel Warranty End Date</FormLabel>
+                        <FormControl>
+                          <Input type="date" value={field.value || ''} onChange={field.onChange} className="h-10 text-xs font-semibold" />
+                        </FormControl>
+                      </FormItem>
+                    )} />
+                  </div>
+                </div>
+
+                {/* 4. Battery Storage Section */}
+                <div className="space-y-4 pt-2 border-t border-line/60">
+                  <h3 className="text-xs font-bold text-[#002868] uppercase tracking-wider">Battery Storage Specifications</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+                    {/* Battery Category */}
+                    <FormField control={form.control} name="batteryCategory" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold">Battery Category</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                          <FormControl>
+                            <SelectTrigger className="h-10 text-xs">
+                              <SelectValue placeholder="Select Category..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="High Voltage">High Voltage</SelectItem>
+                            <SelectItem value="Low Voltage">Low Voltage</SelectItem>
+                            <SelectItem value="Not Installed">Not Installed</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )} />
+
+                    {/* Battery Type */}
+                    <FormField control={form.control} name="batteryType" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold">Battery Type</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                          <FormControl>
+                            <SelectTrigger className="h-10 text-xs">
+                              <SelectValue placeholder="Select Battery Type..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Lithium">Lithium</SelectItem>
+                            <SelectItem value="Tubular">Tubular</SelectItem>
+                            <SelectItem value="Lead Acid">Lead Acid</SelectItem>
+                            <SelectItem value="Gel">Gel</SelectItem>
+                            <SelectItem value="Not Installed">Not Installed</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )} />
+
+                    {/* Battery Brand */}
+                    <FormField control={form.control} name="batteryBrand" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold">Battery Brand</FormLabel>
+                        <FormControl>
+                          <AutoSuggestInput
+                            value={field.value || ''}
+                            onChange={field.onChange}
+                            options={BATTERY_BRANDS}
+                            placeholder="Type or select battery brand..."
+                            className="h-10 text-xs bg-white"
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )} />
+
+                    {/* No. of Batteries */}
+                    <FormField control={form.control} name="noOfBatteries" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold">No. of Batteries</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min={0}
+                            max={20}
+                            value={field.value || 0}
+                            onChange={(e) => {
+                              const val = Number(e.target.value) || 0
+                              field.onChange(val)
+                            }}
+                            className="h-10 text-xs font-bold"
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )} />
+                  </div>
+
+                  {/* Dynamic Multi-Battery Warranty End Dates */}
+                  {Number(form.watch('noOfBatteries') || 0) > 0 && (
+                    <div className="space-y-3 p-4 bg-slate-50/70 rounded-xl border border-slate-200">
+                      <p className="text-xs font-bold text-slate-700">
+                        Battery Warranty End Dates ({batteryWarrantyList.length || 1} {batteryWarrantyList.length === 1 ? 'Unit' : 'Units'})
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                        {batteryWarrantyList.map((expiry, idx) => (
+                          <div key={idx} className="p-3 bg-white rounded-lg border border-slate-200 shadow-2xs">
+                            <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                              Battery #{idx + 1} Warranty End Date
+                            </label>
+                            <Input
+                              type="date"
+                              value={expiry || ''}
+                              onChange={(e) => handleBatteryWarrantyChange(idx, e.target.value)}
+                              className="h-9 text-xs font-semibold"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 5. Earthing, Protection & Structure */}
+                <div className="space-y-4 pt-2 border-t border-line/60">
+                  <h3 className="text-xs font-bold text-[#002868] uppercase tracking-wider">Earthing, Protection &amp; Structure</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+                    {/* Earthing Type */}
+                    <FormField control={form.control} name="earthingType" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold">Earthing</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || 'AC'}>
+                          <FormControl>
+                            <SelectTrigger className="h-10 text-xs">
+                              <SelectValue placeholder="Select Earthing..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="AC">AC</SelectItem>
+                            <SelectItem value="DC">DC</SelectItem>
+                            <SelectItem value="Dual">AC &amp; DC / Dual</SelectItem>
+                            <SelectItem value="None">None</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )} />
+
+                    {/* OHMs */}
+                    <FormField control={form.control} name="earthingOhms" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold">OHMs</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g. 0.5"
+                            value={field.value || ''}
+                            onChange={field.onChange}
+                            className="h-10 text-xs font-mono font-bold"
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )} />
+
+                    {/* Earthing Last Check Date */}
+                    <FormField control={form.control} name="lastCheckDate" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-bold text-[#002868]">Last Check Date</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="date"
+                            value={field.value || ''}
+                            onChange={field.onChange}
+                            className="h-10 text-xs font-semibold"
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )} />
+
+                    {/* Ingress Protection (IP) */}
+                    <FormField control={form.control} name="ingressProtection" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold">Ingress Protection (IP)</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || 'IP54'}>
+                          <FormControl>
+                            <SelectTrigger className="h-10 text-xs">
+                              <SelectValue placeholder="Select IP Rating..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {IP_LIST.map((ip) => (
+                              <SelectItem key={ip} value={ip}>{ip}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )} />
+
+                    {/* Structure Type */}
+                    <FormField control={form.control} name="structureType" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold">Structure Type</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || 'Standard'}>
+                          <FormControl>
+                            <SelectTrigger className="h-10 text-xs">
+                              <SelectValue placeholder="Select Structure..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {STRUCTURE_TYPES.map((st) => (
+                              <SelectItem key={st} value={st}>{st}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )} />
+
+                    {/* Structure Coating / Material */}
+                    <FormField control={form.control} name="structureMaterial" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold">Structure Coating / Material</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || 'Pre Galvanized'}>
+                          <FormControl>
+                            <SelectTrigger className="h-10 text-xs">
+                              <SelectValue placeholder="Select Material..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {STRUCTURE_MATERIALS.map((sm) => (
+                              <SelectItem key={sm} value={sm}>{sm}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )} />
+
+                    {/* System Installation Date */}
+                    <FormField control={form.control} name="installationDate" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold">System Installation Date</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="date"
+                            value={field.value || ''}
+                            onChange={field.onChange}
+                            className="h-10 text-xs font-semibold"
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )} />
+                  </div>
                 </div>
 
                 <div className="flex justify-between pt-4 border-t border-line">

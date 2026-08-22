@@ -141,6 +141,8 @@ model SolarSystem {
   cableStatus            String?
   earthingStatus         String?
   breakerStatus          String?
+  inverterImages         String[]  @default([])
+  batteryImages          String[]  @default([])
 }
 
 model PackagePlan {

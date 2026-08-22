@@ -118,6 +118,26 @@ export async function createCustomer(formData: FormData) {
   const earthingStatus = (formData.get('earthingAuditStatus') as string) || null
   const breakerStatus = (formData.get('breakersAuditStatus') as string) || null
 
+  let inverterImages: string[] = []
+  const inverterImagesRaw = formData.get('inverterImages')
+  if (inverterImagesRaw && typeof inverterImagesRaw === 'string') {
+    try {
+      inverterImages = JSON.parse(inverterImagesRaw)
+    } catch {
+      inverterImages = [inverterImagesRaw]
+    }
+  }
+
+  let batteryImages: string[] = []
+  const batteryImagesRaw = formData.get('batteryImages')
+  if (batteryImagesRaw && typeof batteryImagesRaw === 'string') {
+    try {
+      batteryImages = JSON.parse(batteryImagesRaw)
+    } catch {
+      batteryImages = [batteryImagesRaw]
+    }
+  }
+
   try {
     const customerCode = await generateCustomerCode()
     const crfNumber = `CRF-${Math.floor(100000 + Math.random() * 900000)}`
@@ -215,6 +235,8 @@ export async function createCustomer(formData: FormData) {
             breakerStatus,
             breakerName: (formData.get('breakerName') as string) || '',
             lightningProtection: formData.get('lightningProtection') === 'true' || formData.get('lightningProtection') === 'Installed',
+            inverterImages,
+            batteryImages,
           }
         },
         invoices: totalAmount > 0 ? {

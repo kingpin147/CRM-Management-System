@@ -54,7 +54,16 @@ export function MainNav({
     return `${base} ${layout} text-[var(--color-slate-custom)] hover:bg-black/5 hover:text-[var(--color-ink)]`
   }
 
-  const canViewAdmin = ['SUPER_ADMIN', 'ADMIN'].includes(role)
+  const isSuperAdmin = ['SUPER_ADMIN', 'ADMIN'].includes(role)
+  const isSalesManager = ['SALES_MANAGER', 'BILLING_MANAGER', 'MANAGER'].includes(role)
+  const isOMManager = role === 'OM_MANAGER'
+  const isInstaller = role === 'INSTALLATION'
+  const isSalesExec = role === 'SALES'
+
+  const canViewAdmin = isSuperAdmin
+  const canViewApproval = isSuperAdmin || isSalesManager || isOMManager
+  const canViewBilling = isSuperAdmin || isSalesManager
+  const canViewReports = isSuperAdmin || isSalesManager || isOMManager
 
   if (orientation === 'horizontal') {
     return (
@@ -71,60 +80,74 @@ export function MainNav({
         </Link>
 
         {/* 1. Sales Tab with Sub-menu */}
-        <DropdownMenu>
-          <DropdownMenuTrigger className={triggerClass(pathname.startsWith('/dashboard/sales') || pathname === '/dashboard/customers/new')}>
-            <span className="flex items-center gap-1 xl:gap-1.5">
+        {canViewApproval ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger className={triggerClass(pathname.startsWith('/dashboard/sales') || pathname === '/dashboard/customers/new')}>
+              <span className="flex items-center gap-1 xl:gap-1.5">
+                <ShoppingBag className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
+                <span>Sales</span>
+              </span>
+              <ChevronDown className="h-3 w-3 xl:h-3.5 xl:w-3.5 opacity-70 shrink-0 ml-0.5" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48 bg-white p-1.5 shadow-lg border-line rounded-xl animate-in fade-in-50 zoom-in-95">
+              <DropdownMenuItem>
+                <Link href="/dashboard/customers/new" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
+                  Create Sale
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="/dashboard/sales/pending" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
+                  Manager Approval
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Link 
+            href="/dashboard/customers/new" 
+            className={linkClass('/dashboard/customers/new')}
+          >
+            <span className="flex items-center gap-1 xl:gap-1.5 font-semibold">
               <ShoppingBag className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
-              <span>Sales</span>
+              <span>Create Sale</span>
             </span>
-            <ChevronDown className="h-3 w-3 xl:h-3.5 xl:w-3.5 opacity-70 shrink-0 ml-0.5" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-48 bg-white p-1.5 shadow-lg border-line rounded-xl animate-in fade-in-50 zoom-in-95">
-            <DropdownMenuItem>
-              <Link href="/dashboard/customers/new" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
-                Create Sale
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Link href="/dashboard/sales/pending" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
-                Manager Approval
-              </Link>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+          </Link>
+        )}
 
-        {/* 2. Billing & CPM Tab with Sub-menu */}
-        <DropdownMenu>
-          <DropdownMenuTrigger className={triggerClass(pathname.startsWith('/dashboard/billing-cpm'))}>
-            <span className="flex items-center gap-1 xl:gap-1.5">
-              <CreditCard className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
-              <span>Billing & CPM</span>
-            </span>
-            <ChevronDown className="h-3 w-3 xl:h-3.5 xl:w-3.5 opacity-70 shrink-0 ml-0.5" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56 bg-white p-1.5 shadow-lg border-line rounded-xl animate-in fade-in-50 zoom-in-95">
-            <DropdownMenuItem>
-              <Link href="/dashboard/billing-cpm?tab=package-status" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
-                Package & Status Change
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Link href="/dashboard/billing-cpm?tab=debit-credit" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
-                Debit / Credit Notes
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Link href="/dashboard/billing-cpm?tab=payments" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
-                Payment Entry & Approval
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Link href="/dashboard/billing-cpm?tab=bulk-status" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
-                Bulk Status Change
-              </Link>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* 2. Billing & CPM Tab with Sub-menu (Visible to Sales & Billing Operations & Super Admin) */}
+        {canViewBilling && (
+          <DropdownMenu>
+            <DropdownMenuTrigger className={triggerClass(pathname.startsWith('/dashboard/billing-cpm'))}>
+              <span className="flex items-center gap-1 xl:gap-1.5">
+                <CreditCard className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
+                <span>Billing & CPM</span>
+              </span>
+              <ChevronDown className="h-3 w-3 xl:h-3.5 xl:w-3.5 opacity-70 shrink-0 ml-0.5" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56 bg-white p-1.5 shadow-lg border-line rounded-xl animate-in fade-in-50 zoom-in-95">
+              <DropdownMenuItem>
+                <Link href="/dashboard/billing-cpm?tab=package-status" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
+                  Package & Status Change
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="/dashboard/billing-cpm?tab=debit-credit" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
+                  Debit / Credit Notes
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="/dashboard/billing-cpm?tab=payments" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
+                  Payment Entry & Approval
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="/dashboard/billing-cpm?tab=bulk-status" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
+                  Bulk Status Change
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
 
         {/* 3. Complaint Management Tab with Sub-menu */}
         <DropdownMenu>
@@ -150,48 +173,49 @@ export function MainNav({
         </DropdownMenu>
 
         {/* 4. Reports Tab with Sub-menu */}
-        <DropdownMenu>
-          <DropdownMenuTrigger className={triggerClass(pathname.startsWith('/dashboard/reports'))}>
-            <span className="flex items-center gap-1 xl:gap-1.5">
-              <BarChart3 className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
-              <span>Reports</span>
-            </span>
-            <ChevronDown className="h-3 w-3 xl:h-3.5 xl:w-3.5 opacity-70 shrink-0 ml-0.5" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56 bg-white p-1.5 shadow-lg border-line rounded-xl animate-in fade-in-50 zoom-in-95">
-            <DropdownMenuItem>
-              <Link href="/dashboard/reports?view=status" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
-                Customer Status Report
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Link href="/dashboard/reports?view=sales" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
-                Sales Report
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Link href="/dashboard/reports?view=receivable" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
-                Customer Receivable
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Link href="/dashboard/reports?view=adjustment" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
-                Adjustment Report
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Link href="/dashboard/reports?view=payments" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
-                Payments Report
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Link href="/dashboard/reports?view=register" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
-                Customer Register
-              </Link>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
+        {canViewReports && (
+          <DropdownMenu>
+            <DropdownMenuTrigger className={triggerClass(pathname.startsWith('/dashboard/reports'))}>
+              <span className="flex items-center gap-1 xl:gap-1.5">
+                <BarChart3 className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
+                <span>Reports</span>
+              </span>
+              <ChevronDown className="h-3 w-3 xl:h-3.5 xl:w-3.5 opacity-70 shrink-0 ml-0.5" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56 bg-white p-1.5 shadow-lg border-line rounded-xl animate-in fade-in-50 zoom-in-95">
+              <DropdownMenuItem>
+                <Link href="/dashboard/reports?view=status" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
+                  Customer Status Report
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="/dashboard/reports?view=sales" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
+                  Sales Report
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="/dashboard/reports?view=receivable" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
+                  Customer Receivable
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="/dashboard/reports?view=adjustment" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
+                  Adjustment Report
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="/dashboard/reports?view=payments" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
+                  Payments Report
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="/dashboard/reports?view=register" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
+                  Customer Register
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
 
         {/* Admin Management if Authorized */}
         {canViewAdmin && (
@@ -227,29 +251,33 @@ export function MainNav({
           <Link href="/dashboard/customers/new" className={linkClass('/dashboard/customers/new')}>
             Create Sale
           </Link>
-          <Link href="/dashboard/sales/pending" className={linkClass('/dashboard/sales/pending')}>
-            Manager Approval
-          </Link>
+          {canViewApproval && (
+            <Link href="/dashboard/sales/pending" className={linkClass('/dashboard/sales/pending')}>
+              Manager Approval
+            </Link>
+          )}
         </div>
       </div>
 
-      <div>
-        <p className="px-3 text-xs font-bold text-[var(--color-slate-custom)] uppercase tracking-wider mb-1">Billing & CPM</p>
-        <div className="space-y-0.5">
-          <Link href="/dashboard/billing-cpm?tab=package-status" className={linkClass('/dashboard/billing-cpm?tab=package-status')}>
-            Package & Status Change
-          </Link>
-          <Link href="/dashboard/billing-cpm?tab=debit-credit" className={linkClass('/dashboard/billing-cpm?tab=debit-credit')}>
-            Debit / Credit Notes
-          </Link>
-          <Link href="/dashboard/billing-cpm?tab=payments" className={linkClass('/dashboard/billing-cpm?tab=payments')}>
-            Payment Entry & Approval
-          </Link>
-          <Link href="/dashboard/billing-cpm?tab=bulk-status" className={linkClass('/dashboard/billing-cpm?tab=bulk-status')}>
-            Bulk Status Change
-          </Link>
+      {canViewBilling && (
+        <div>
+          <p className="px-3 text-xs font-bold text-[var(--color-slate-custom)] uppercase tracking-wider mb-1">Billing & CPM</p>
+          <div className="space-y-0.5">
+            <Link href="/dashboard/billing-cpm?tab=package-status" className={linkClass('/dashboard/billing-cpm?tab=package-status')}>
+              Package & Status Change
+            </Link>
+            <Link href="/dashboard/billing-cpm?tab=debit-credit" className={linkClass('/dashboard/billing-cpm?tab=debit-credit')}>
+              Debit / Credit Notes
+            </Link>
+            <Link href="/dashboard/billing-cpm?tab=payments" className={linkClass('/dashboard/billing-cpm?tab=payments')}>
+              Payment Entry & Approval
+            </Link>
+            <Link href="/dashboard/billing-cpm?tab=bulk-status" className={linkClass('/dashboard/billing-cpm?tab=bulk-status')}>
+              Bulk Status Change
+            </Link>
+          </div>
         </div>
-      </div>
+      )}
 
       <div>
         <p className="px-3 text-xs font-bold text-[var(--color-slate-custom)] uppercase tracking-wider mb-1">Complaint Management</p>
@@ -263,30 +291,31 @@ export function MainNav({
         </div>
       </div>
 
-      <div>
-        <p className="px-3 text-xs font-bold text-[var(--color-slate-custom)] uppercase tracking-wider mb-1">Reports</p>
-        <div className="space-y-0.5">
-          <Link href="/dashboard/reports?view=status" className={linkClass('/dashboard/reports?view=status')}>
-            Customer Status Report
-          </Link>
-          <Link href="/dashboard/reports?view=sales" className={linkClass('/dashboard/reports?view=sales')}>
-            Sales Report
-          </Link>
-          <Link href="/dashboard/reports?view=receivable" className={linkClass('/dashboard/reports?view=receivable')}>
-            Customer Receivable
-          </Link>
-          <Link href="/dashboard/reports?view=adjustment" className={linkClass('/dashboard/reports?view=adjustment')}>
-            Adjustment Report
-          </Link>
-          <Link href="/dashboard/reports?view=payments" className={linkClass('/dashboard/reports?view=payments')}>
-            Payments Report
-          </Link>
-          <Link href="/dashboard/reports?view=register" className={linkClass('/dashboard/reports?view=register')}>
-            Customer Register
-          </Link>
+      {canViewReports && (
+        <div>
+          <p className="px-3 text-xs font-bold text-[var(--color-slate-custom)] uppercase tracking-wider mb-1">Reports</p>
+          <div className="space-y-0.5">
+            <Link href="/dashboard/reports?view=status" className={linkClass('/dashboard/reports?view=status')}>
+              Customer Status Report
+            </Link>
+            <Link href="/dashboard/reports?view=sales" className={linkClass('/dashboard/reports?view=sales')}>
+              Sales Report
+            </Link>
+            <Link href="/dashboard/reports?view=receivable" className={linkClass('/dashboard/reports?view=receivable')}>
+              Customer Receivable
+            </Link>
+            <Link href="/dashboard/reports?view=adjustment" className={linkClass('/dashboard/reports?view=adjustment')}>
+              Adjustment Report
+            </Link>
+            <Link href="/dashboard/reports?view=payments" className={linkClass('/dashboard/reports?view=payments')}>
+              Payments Report
+            </Link>
+            <Link href="/dashboard/reports?view=register" className={linkClass('/dashboard/reports?view=register')}>
+              Customer Register
+            </Link>
+          </div>
         </div>
-      </div>
-
+      )}
 
       {canViewAdmin && (
         <div>
