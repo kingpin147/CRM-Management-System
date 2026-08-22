@@ -25,7 +25,7 @@ export function SectionHeader({
     >
       {/* Absolute Dead-Center Heading Title */}
       <div className="absolute inset-x-0 top-0 bottom-0 flex items-center justify-center text-center pointer-events-none px-12">
-        <div className="font-sans font-bold text-sm sm:text-base text-[#f26522] tracking-wide flex items-center justify-center gap-2 pointer-events-auto">
+        <div className="font-sans font-bold text-sm sm:text-base text-white tracking-wide flex items-center justify-center gap-2 pointer-events-auto drop-shadow-xs">
           {children}
         </div>
       </div>
