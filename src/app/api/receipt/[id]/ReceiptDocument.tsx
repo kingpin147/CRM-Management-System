@@ -357,11 +357,7 @@ export function ReceiptDocument({
                   </View>
                   <View style={styles.row}>
                     <Text style={styles.label}>Address:</Text>
-                    <Text style={styles.value}>
-                      {customer?.address || '—'}
-                      {customer?.block ? `, ${customer.block}` : ''}
-                      {customer?.city ? `, ${customer.city}` : ''}
-                    </Text>
+                    <Text style={styles.value}>{customer?.address || '—'}</Text>
                   </View>
                 </View>
               </View>

@@ -219,7 +219,7 @@ export default async function CustomerDetailPage({
                       <TableBody>
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs w-44 bg-slate-50 border-r border-slate-200 text-[#002868]">Installation Address:</TableCell>
-                          <TableCell className="text-xs text-[var(--color-ink)]">{customer.address}{customer.block ? `, ${customer.block}` : ''}, {customer.city}, Pakistan</TableCell>
+                          <TableCell className="text-xs text-[var(--color-ink)]">{customer.address || '—'}</TableCell>
                         </TableRow>
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Customer Type</TableCell>
@@ -274,7 +274,11 @@ export default async function CustomerDetailPage({
                         <TableRow className="hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Activation Date:</TableCell>
                           <TableCell className="text-xs text-[var(--color-ink)] font-semibold font-mono">
-                            {customer.activationDate ? formatDate(customer.activationDate) : (customer.signupDate ? formatDate(customer.signupDate) : 'Pending Activation')}
+                            {customer.status === 'CONNECTION_ACTIVE' && customer.activationDate ? (
+                              formatDate(customer.activationDate)
+                            ) : (
+                              <span className="text-slate-400 font-normal">Pending O&M Approval</span>
+                            )}
                           </TableCell>
                         </TableRow>
                       </TableBody>
@@ -336,7 +340,11 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Next Billing date</TableCell>
                           <TableCell className="text-xs text-[var(--color-ink)] font-semibold font-mono">
-                            {formatDate(customer.packagePlan?.nextBillingDate)}
+                            {customer.status === 'CONNECTION_ACTIVE' && customer.packagePlan?.nextBillingDate ? (
+                              formatDate(customer.packagePlan.nextBillingDate)
+                            ) : (
+                              <span className="text-slate-400 font-normal">Pending Activation</span>
+                            )}
                           </TableCell>
                         </TableRow>
                         <TableRow className="hover:bg-transparent">
@@ -364,17 +372,23 @@ export default async function CustomerDetailPage({
         {activeTab === 'system' && (() => {
           const invBrands = customer.solarSystem?.inverterBrand 
             ? customer.solarSystem.inverterBrand.split(',').map((s: string) => s.trim()).filter(Boolean)
-            : ['Huawei']
+            : []
           const invSerials = customer.solarSystem?.inverterSerial 
             ? customer.solarSystem.inverterSerial.split(',').map((s: string) => s.trim()).filter(Boolean)
             : []
-          const noOfInverters = Math.max(1, Number(customer.solarSystem?.noOfInverters) || 1, invBrands.length, invSerials.length)
+          const noOfInverters = customer.solarSystem?.noOfInverters != null 
+            ? Number(customer.solarSystem.noOfInverters) 
+            : Math.max(invBrands.length, invSerials.length)
 
           const batSerials = customer.solarSystem?.batterySerial 
             ? customer.solarSystem.batterySerial.split(',').map((s: string) => s.trim()).filter(Boolean)
             : []
-          const noOfBatteries = Math.max(1, Number(customer.solarSystem?.noOfBatteries) || 1, batSerials.length)
-          const catBadge = (c: string) => c.toLowerCase() === 'high voltage' ? 'High' : 'Low'
+          const noOfBatteries = customer.solarSystem?.noOfBatteries != null 
+            ? Number(customer.solarSystem.noOfBatteries) 
+            : batSerials.length
+
+          const totalWattageVal = Number(customer.solarSystem?.totalWattage || 0)
+          const structureDisplay = [customer.solarSystem?.structureType, customer.solarSystem?.structureMaterial ? `(${customer.solarSystem.structureMaterial})` : null].filter(Boolean).join(' ') || '—'
 
           return (
             <Card className="shadow-sm border-slate-200 overflow-hidden bg-white">
@@ -399,27 +413,43 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs w-44 bg-slate-50 border-r border-slate-200 text-[#002868]">Meter Type</TableCell>
                           <TableCell className="text-xs">
-                            <Badge variant="outline" className="bg-amber-100 text-amber-950 border-amber-400 font-bold shadow-xs">
-                              {customer.solarSystem?.meterType || 'Green Meter'}
-                            </Badge>
+                            {customer.solarSystem?.meterType ? (
+                              <Badge variant="outline" className="bg-amber-100 text-amber-950 border-amber-400 font-bold shadow-xs">
+                                {customer.solarSystem.meterType}
+                              </Badge>
+                            ) : (
+                              <span className="text-slate-400 font-medium">—</span>
+                            )}
                           </TableCell>
                         </TableRow>
 
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Zero Export Device</TableCell>
                           <TableCell className="text-xs">
-                            <Badge variant="outline" className="bg-amber-100 text-amber-950 border-amber-400 font-bold shadow-xs">
-                              {customer.solarSystem?.zeroExportDevice ? 'Installed' : 'Not Installed'}
-                            </Badge>
+                            {customer.solarSystem?.zeroExportDevice ? (
+                              <Badge variant="outline" className="bg-amber-100 text-amber-950 border-amber-400 font-bold shadow-xs">
+                                Installed
+                              </Badge>
+                            ) : (customer.solarSystem?.inverterBrand || customer.solarSystem?.meterType) ? (
+                              <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 font-medium">
+                                Not Installed
+                              </Badge>
+                            ) : (
+                              <span className="text-slate-400 font-medium">—</span>
+                            )}
                           </TableCell>
                         </TableRow>
 
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">DISCO</TableCell>
                           <TableCell className="text-xs font-semibold text-[var(--color-ink)] bg-sky-50/60 w-fit">
-                            <span className="px-2 py-0.5 rounded bg-sky-100 text-sky-900 border border-sky-200 font-bold">
-                              {customer.solarSystem?.disco || 'LESCO'}
-                            </span>
+                            {customer.solarSystem?.disco ? (
+                              <span className="px-2 py-0.5 rounded bg-sky-100 text-sky-900 border border-sky-200 font-bold">
+                                {customer.solarSystem.disco}
+                              </span>
+                            ) : (
+                              <span className="text-slate-400 font-medium">—</span>
+                            )}
                           </TableCell>
                         </TableRow>
 
@@ -437,9 +467,13 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Brand</TableCell>
                           <TableCell className="text-xs">
-                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
-                              {invBrands.join(', ') || customer.solarSystem?.inverterBrand || 'Huawei'}
-                            </Badge>
+                            {invBrands.length > 0 || customer.solarSystem?.inverterBrand ? (
+                              <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                                {invBrands.join(', ') || customer.solarSystem?.inverterBrand}
+                              </Badge>
+                            ) : (
+                              <span className="text-slate-400 font-medium">—</span>
+                            )}
                           </TableCell>
                         </TableRow>
 
@@ -447,9 +481,13 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Type</TableCell>
                           <TableCell className="text-xs">
-                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
-                              {customer.solarSystem?.inverterType || 'Hybrid'}
-                            </Badge>
+                            {customer.solarSystem?.inverterType ? (
+                              <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                                {customer.solarSystem.inverterType}
+                              </Badge>
+                            ) : (
+                              <span className="text-slate-400 font-medium">—</span>
+                            )}
                           </TableCell>
                         </TableRow>
 
@@ -457,9 +495,13 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Phase Type</TableCell>
                           <TableCell className="text-xs">
-                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
-                              {customer.solarSystem?.inverterPhase || 'Three Phase'}
-                            </Badge>
+                            {customer.solarSystem?.inverterPhase ? (
+                              <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                                {customer.solarSystem.inverterPhase}
+                              </Badge>
+                            ) : (
+                              <span className="text-slate-400 font-medium">—</span>
+                            )}
                           </TableCell>
                         </TableRow>
 
@@ -467,9 +509,13 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Category</TableCell>
                           <TableCell className="text-xs">
-                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
-                              {customer.solarSystem?.inverterCategory || 'Low Voltage'}
-                            </Badge>
+                            {customer.solarSystem?.inverterCategory ? (
+                              <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                                {customer.solarSystem.inverterCategory}
+                              </Badge>
+                            ) : (
+                              <span className="text-slate-400 font-medium">—</span>
+                            )}
                           </TableCell>
                         </TableRow>
 
@@ -477,7 +523,7 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Size</TableCell>
                           <TableCell className="text-xs font-semibold text-[var(--color-ink)]">
-                            {customer.solarSystem?.inverterSize || '10 kW'}
+                            {customer.solarSystem?.inverterSize || '—'}
                           </TableCell>
                         </TableRow>
 
@@ -485,9 +531,13 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Meter Phase</TableCell>
                           <TableCell className="text-xs">
-                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
-                              {customer.solarSystem?.meterPhase || 'Three Phase'}
-                            </Badge>
+                            {customer.solarSystem?.meterPhase ? (
+                              <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                                {customer.solarSystem.meterPhase}
+                              </Badge>
+                            ) : (
+                              <span className="text-slate-400 font-medium">—</span>
+                            )}
                           </TableCell>
                         </TableRow>
 
@@ -495,7 +545,7 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">No. of Inverters</TableCell>
                           <TableCell className="text-xs font-semibold text-[var(--color-ink)]">
-                            {noOfInverters}
+                            {noOfInverters > 0 ? noOfInverters : '—'}
                           </TableCell>
                         </TableRow>
 
@@ -509,7 +559,7 @@ export default async function CustomerDetailPage({
                             <TableCell className="text-xs p-2.5">
                               <div className="space-y-2">
                                 {Array.from({ length: noOfInverters }).map((_, idx) => {
-                                  const brand = invBrands[idx] || invBrands[0] || customer.solarSystem?.inverterBrand || 'Huawei'
+                                  const brand = invBrands[idx] || invBrands[0] || customer.solarSystem?.inverterBrand || '—'
                                   const serial = invSerials[idx] || (idx === 0 ? (customer.solarSystem?.inverterSerial || '—') : `${customer.solarSystem?.inverterSerial || 'INV'}-${idx + 1}`)
                                   return (
                                     <div key={idx} className="p-2.5 rounded-lg border border-amber-200/80 bg-white shadow-2xs space-y-1">
@@ -557,16 +607,20 @@ export default async function CustomerDetailPage({
                             <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x border-t-0">
                               <div className="p-2.5">
                                 <span className="font-bold text-slate-600 mr-2">AC:</span>
-                                <span className="font-semibold text-[#002868]">{Number(customer.solarSystem?.earthingAcOhms) || 0.5} Ω</span>
+                                <span className="font-semibold text-[#002868]">
+                                  {customer.solarSystem?.earthingAcOhms != null && Number(customer.solarSystem?.earthingAcOhms) > 0 ? `${customer.solarSystem.earthingAcOhms} Ω` : '—'}
+                                </span>
                               </div>
                               <div className="p-2.5">
                                 <span className="font-bold text-slate-600 mr-2">DC:</span>
-                                <span className="font-semibold text-[#002868]">{Number(customer.solarSystem?.earthingDcOhms) || 0.5} Ω</span>
+                                <span className="font-semibold text-[#002868]">
+                                  {customer.solarSystem?.earthingDcOhms != null && Number(customer.solarSystem?.earthingDcOhms) > 0 ? `${customer.solarSystem.earthingDcOhms} Ω` : '—'}
+                                </span>
                               </div>
                               <div className="p-2.5 bg-slate-50/50">
                                 <span className="font-bold text-slate-600 mr-2">Last Check:</span>
                                 <span className="text-slate-700 font-medium">
-                                  {formatDate(customer.solarSystem?.earthingLastCheck || '2021-06-20')}
+                                  {formatDate(customer.solarSystem?.earthingLastCheck)}
                                 </span>
                               </div>
                             </div>
@@ -577,9 +631,13 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Ingress Protection (IP)</TableCell>
                           <TableCell className="text-xs">
-                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
-                              IP {customer.solarSystem?.ingressProtection || '20'}
-                            </Badge>
+                            {customer.solarSystem?.ingressProtection ? (
+                              <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                                {customer.solarSystem.ingressProtection.startsWith('IP') ? customer.solarSystem.ingressProtection : `IP ${customer.solarSystem.ingressProtection}`}
+                              </Badge>
+                            ) : (
+                              <span className="text-slate-400 font-medium">—</span>
+                            )}
                           </TableCell>
                         </TableRow>
 
@@ -587,14 +645,22 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Structure Type & Material</TableCell>
                           <TableCell className="text-xs">
-                            <div className="flex gap-2 items-center flex-wrap">
-                              <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
-                                {customer.solarSystem?.structureType || 'Elevated'}
-                              </Badge>
-                              <Badge variant="outline" className="bg-amber-100 text-amber-950 border-amber-400 font-semibold">
-                                {customer.solarSystem?.structureMaterial || 'Pre Galvanized'}
-                              </Badge>
-                            </div>
+                            {structureDisplay !== '—' ? (
+                              <div className="flex gap-2 items-center flex-wrap">
+                                {customer.solarSystem?.structureType && (
+                                  <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                                    {customer.solarSystem.structureType}
+                                  </Badge>
+                                )}
+                                {customer.solarSystem?.structureMaterial && (
+                                  <Badge variant="outline" className="bg-amber-100 text-amber-950 border-amber-400 font-semibold">
+                                    {customer.solarSystem.structureMaterial}
+                                  </Badge>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-slate-400 font-medium">—</span>
+                            )}
                           </TableCell>
                         </TableRow>
 
@@ -603,7 +669,7 @@ export default async function CustomerDetailPage({
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">System Installation Date</TableCell>
                           <TableCell className="text-xs font-semibold text-[var(--color-ink)] flex items-center gap-2 font-mono">
                             <span className="text-slate-500">📅</span>
-                            {formatDate(customer.solarSystem?.systemInstallationDate || customer.activationDate || customer.signupDate)}
+                            {formatDate(customer.solarSystem?.systemInstallationDate)}
                           </TableCell>
                         </TableRow>
                       </TableBody>
@@ -621,9 +687,13 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs w-44 bg-slate-50 border-r border-slate-200 text-[#002868]">Panel Technology</TableCell>
                           <TableCell className="text-xs">
-                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
-                              {customer.solarSystem?.panelTechnology || 'TOPCON'}
-                            </Badge>
+                            {customer.solarSystem?.panelTechnology ? (
+                              <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                                {customer.solarSystem.panelTechnology}
+                              </Badge>
+                            ) : (
+                              <span className="text-slate-400 font-medium">—</span>
+                            )}
                           </TableCell>
                         </TableRow>
 
@@ -631,9 +701,13 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Panel Brand</TableCell>
                           <TableCell className="text-xs">
-                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
-                              {customer.solarSystem?.panelBrand || 'LONGi'}
-                            </Badge>
+                            {customer.solarSystem?.panelBrand ? (
+                              <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                                {customer.solarSystem.panelBrand}
+                              </Badge>
+                            ) : (
+                              <span className="text-slate-400 font-medium">—</span>
+                            )}
                           </TableCell>
                         </TableRow>
 
@@ -641,14 +715,14 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Panel Wattage</TableCell>
                           <TableCell className="text-xs font-semibold text-[var(--color-ink)]">
-                            {customer.solarSystem?.panelWattage || 585} W
+                            {customer.solarSystem?.panelWattage && Number(customer.solarSystem.panelWattage) > 0 ? `${customer.solarSystem.panelWattage} W` : '—'}
                           </TableCell>
                         </TableRow>
 
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">No of Panels</TableCell>
                           <TableCell className="text-xs font-semibold text-[var(--color-ink)]">
-                            {customer.solarSystem?.noOfPanels || 10}
+                            {customer.solarSystem?.noOfPanels && Number(customer.solarSystem.noOfPanels) > 0 ? customer.solarSystem.noOfPanels : '—'}
                           </TableCell>
                         </TableRow>
 
@@ -659,7 +733,7 @@ export default async function CustomerDetailPage({
                             <span className="text-[10px] text-slate-500 font-normal">(Wattage x Panels)</span>
                           </TableCell>
                           <TableCell className="text-xs font-bold text-[#002868] bg-sky-50/50">
-                            {customer.solarSystem?.totalWattage || ((customer.solarSystem?.panelWattage || 585) * (customer.solarSystem?.noOfPanels || 10))} W ({(((customer.solarSystem?.totalWattage || ((customer.solarSystem?.panelWattage || 585) * (customer.solarSystem?.noOfPanels || 10)))) / 1000).toFixed(2)} kW)
+                            {totalWattageVal > 0 ? `${totalWattageVal} W (${(totalWattageVal / 1000).toFixed(2)} kW)` : '—'}
                           </TableCell>
                         </TableRow>
 
@@ -675,9 +749,13 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Battery Category</TableCell>
                           <TableCell className="text-xs">
-                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
-                              {customer.solarSystem?.batteryCategory || 'Low Voltage'}
-                            </Badge>
+                            {customer.solarSystem?.batteryCategory ? (
+                              <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                                {customer.solarSystem.batteryCategory}
+                              </Badge>
+                            ) : (
+                              <span className="text-slate-400 font-medium">—</span>
+                            )}
                           </TableCell>
                         </TableRow>
 
@@ -685,9 +763,17 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Battery Brand</TableCell>
                           <TableCell className="text-xs">
-                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
-                              {customer.solarSystem?.batteryBrand || 'N/A'}
-                            </Badge>
+                            {customer.solarSystem?.batteryBrand && customer.solarSystem.batteryBrand !== 'N/A' ? (
+                              <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                                {customer.solarSystem.batteryBrand}
+                              </Badge>
+                            ) : (customer.solarSystem?.batteryBrand === 'N/A' && Number(customer.solarSystem?.noOfBatteries) > 0) ? (
+                              <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                                N/A
+                              </Badge>
+                            ) : (
+                              <span className="text-slate-400 font-medium">—</span>
+                            )}
                           </TableCell>
                         </TableRow>
 
@@ -695,7 +781,7 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">No. of Batteries</TableCell>
                           <TableCell className="text-xs font-semibold text-[var(--color-ink)]">
-                            {noOfBatteries}
+                            {noOfBatteries > 0 ? noOfBatteries : '—'}
                           </TableCell>
                         </TableRow>
 
@@ -709,7 +795,7 @@ export default async function CustomerDetailPage({
                             <TableCell className="text-xs p-2.5">
                               <div className="space-y-2">
                                 {Array.from({ length: noOfBatteries }).map((_, idx) => {
-                                  const brand = customer.solarSystem?.batteryBrand || 'Dyness'
+                                  const brand = customer.solarSystem?.batteryBrand || '—'
                                   const serial = batSerials[idx] || (idx === 0 ? (customer.solarSystem?.batterySerial || '—') : `${customer.solarSystem?.batterySerial || 'BAT'}-${idx + 1}`)
                                   return (
                                     <div key={idx} className="p-2.5 rounded-lg border border-amber-200/80 bg-white shadow-2xs space-y-1">
@@ -795,9 +881,7 @@ export default async function CustomerDetailPage({
                         <TableRow className="hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Address:</TableCell>
                           <TableCell className="text-xs text-[var(--color-ink)]">
-                            {customer.address}
-                            {customer.block ? `, ${customer.block}` : ''}
-                            {customer.city ? `, ${customer.city}` : ''}
+                            {customer.address || '—'}
                           </TableCell>
                         </TableRow>
                       </TableBody>

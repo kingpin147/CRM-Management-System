@@ -26,6 +26,14 @@ export default async function PendingSalesPage() {
         packagePlan: true,
         solarSystem: true,
         accountExecutive: true,
+        invoices: {
+          orderBy: { createdAt: 'desc' },
+          take: 3
+        },
+        ledgerEntries: {
+          orderBy: { createdAt: 'desc' },
+          take: 1
+        }
       },
       orderBy: { signupDate: 'desc' }
     }),
@@ -62,11 +70,36 @@ export default async function PendingSalesPage() {
       nextStatus = 'CONNECTION_ACTIVE' // Approved by O&M Manager -> Active Connection
     }
 
+    const isActivating = nextStatus === 'CONNECTION_ACTIVE'
+    const activationDate = isActivating ? new Date() : undefined
+
+    const customer = await prisma.customer.findUnique({
+      where: { id: customerId },
+      include: { packagePlan: true }
+    })
+
+    let nextBillingDate: Date | undefined
+    if (isActivating && customer?.packagePlan) {
+      const bType = customer.packagePlan.billingType || 'Monthly'
+      nextBillingDate = new Date(activationDate!)
+      if (bType === 'Quarterly') nextBillingDate.setMonth(nextBillingDate.getMonth() + 3)
+      else if (bType === 'Half Yearly') nextBillingDate.setMonth(nextBillingDate.getMonth() + 6)
+      else if (bType === 'Yearly') nextBillingDate.setMonth(nextBillingDate.getMonth() + 12)
+      else nextBillingDate.setMonth(nextBillingDate.getMonth() + 1)
+    }
+
     await prisma.customer.update({
       where: { id: customerId },
       data: { 
         status: nextStatus as any,
-        ...(nextStatus === 'CONNECTION_ACTIVE' ? { activationDate: new Date() } : {})
+        ...(isActivating ? { activationDate } : {}),
+        ...(isActivating && nextBillingDate ? {
+          packagePlan: {
+            update: {
+              nextBillingDate
+            }
+          }
+        } : {})
       }
     })
 
@@ -96,6 +129,10 @@ export default async function PendingSalesPage() {
     const packageTier = (formData.get('packageTier') as string) || undefined
     const billingType = (formData.get('billingType') as string) || undefined
     const monitoringTime = (formData.get('monitoringTime') as string) || undefined
+    const monthlyBasePrice = formData.get('monthlyBasePrice') ? Number(formData.get('monthlyBasePrice')) : undefined
+    const appliedDiscount = formData.get('appliedDiscount') ? Number(formData.get('appliedDiscount')) : undefined
+    const salesTaxAmount = formData.get('salesTaxAmount') ? Number(formData.get('salesTaxAmount')) : undefined
+    const totalAmount = formData.get('totalAmount') ? Number(formData.get('totalAmount')) : undefined
 
     // Solar system fields
     const inverterBrand = (formData.get('inverterBrand') as string) || undefined
@@ -119,6 +156,18 @@ export default async function PendingSalesPage() {
     }
 
     const assignedInstallerId = (formData.get('assignedInstallerId') as string) || undefined
+    const isActivating = nextStatus === 'CONNECTION_ACTIVE'
+    const activationDate = isActivating ? new Date() : undefined
+
+    let calculatedNextBillingDate: Date | undefined
+    if (isActivating) {
+      const bType = billingType || 'Monthly'
+      calculatedNextBillingDate = new Date(activationDate!)
+      if (bType === 'Quarterly') calculatedNextBillingDate.setMonth(calculatedNextBillingDate.getMonth() + 3)
+      else if (bType === 'Half Yearly') calculatedNextBillingDate.setMonth(calculatedNextBillingDate.getMonth() + 6)
+      else if (bType === 'Yearly') calculatedNextBillingDate.setMonth(calculatedNextBillingDate.getMonth() + 12)
+      else calculatedNextBillingDate.setMonth(calculatedNextBillingDate.getMonth() + 1)
+    }
 
     // 1. Update Customer
     await prisma.customer.update({
@@ -134,12 +183,12 @@ export default async function PendingSalesPage() {
         city,
         assignedInstallerId,
         status: nextStatus as any,
-        ...(nextStatus === 'CONNECTION_ACTIVE' ? { activationDate: new Date() } : {})
+        ...(isActivating ? { activationDate } : {})
       }
     })
 
     // 2. Upsert Package Plan
-    if (systemSizeKw || packageTier || billingType || monitoringTime) {
+    if (systemSizeKw || packageTier || billingType || monitoringTime || calculatedNextBillingDate || totalAmount !== undefined) {
       await prisma.packagePlan.upsert({
         where: { customerId },
         create: {
@@ -148,16 +197,22 @@ export default async function PendingSalesPage() {
           packageTier: packageTier || 'Basic',
           billingType: billingType || 'Monthly',
           monitoringTime: monitoringTime || '12 Hours',
-          monthlyBasePrice: 0,
-          appliedDiscount: 0,
-          salesTaxAmount: 0,
-          totalAmount: 0,
+          monthlyBasePrice: monthlyBasePrice ?? 0,
+          appliedDiscount: appliedDiscount ?? 0,
+          salesTaxAmount: salesTaxAmount ?? 0,
+          totalAmount: totalAmount ?? 0,
+          nextBillingDate: calculatedNextBillingDate,
         },
         update: {
           systemSizeKw,
           packageTier,
           billingType,
           monitoringTime,
+          ...(monthlyBasePrice !== undefined ? { monthlyBasePrice } : {}),
+          ...(appliedDiscount !== undefined ? { appliedDiscount } : {}),
+          ...(salesTaxAmount !== undefined ? { salesTaxAmount } : {}),
+          ...(totalAmount !== undefined ? { totalAmount } : {}),
+          ...(calculatedNextBillingDate ? { nextBillingDate: calculatedNextBillingDate } : {})
         }
       })
     }

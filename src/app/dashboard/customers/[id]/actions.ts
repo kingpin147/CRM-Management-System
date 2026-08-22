@@ -27,8 +27,21 @@ export async function updateCustomer(formData: FormData) {
   try {
     const currentCustomer = await prisma.customer.findUnique({
       where: { id: customerId },
-      select: { status: true, customerCode: true, fullName: true }
+      include: { packagePlan: true }
     })
+
+    const isNowActive = status === CustomerStatus.CONNECTION_ACTIVE && currentCustomer?.status !== CustomerStatus.CONNECTION_ACTIVE
+    const activationDate = isNowActive ? (currentCustomer?.activationDate || new Date()) : undefined
+
+    let calculatedNextBillingDate: Date | undefined
+    if (isNowActive && currentCustomer?.packagePlan) {
+      const bType = currentCustomer.packagePlan.billingType || 'Monthly'
+      calculatedNextBillingDate = new Date(activationDate!)
+      if (bType === 'Quarterly') calculatedNextBillingDate.setMonth(calculatedNextBillingDate.getMonth() + 3)
+      else if (bType === 'Half Yearly') calculatedNextBillingDate.setMonth(calculatedNextBillingDate.getMonth() + 6)
+      else if (bType === 'Yearly') calculatedNextBillingDate.setMonth(calculatedNextBillingDate.getMonth() + 12)
+      else calculatedNextBillingDate.setMonth(calculatedNextBillingDate.getMonth() + 1)
+    }
 
     if (currentCustomer && currentCustomer.status !== status) {
       await prisma.customerHistory.create({
@@ -54,12 +67,20 @@ export async function updateCustomer(formData: FormData) {
         cnic,
         customerType,
         status,
+        ...(isNowActive ? { activationDate } : {}),
         address,
         city,
         houseNumber,
         streetNumber,
         block,
         area,
+        ...(calculatedNextBillingDate ? {
+          packagePlan: {
+            update: {
+              nextBillingDate: calculatedNextBillingDate
+            }
+          }
+        } : {})
       },
     })
 

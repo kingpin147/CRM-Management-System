@@ -278,8 +278,26 @@ export function SignupDocument({ customer, logoSrc }: { customer: any; logoSrc?:
     : (typeof customer?.accountExecutive === 'string' ? customer.accountExecutive : 'EnergyGurus Finance')
     
   const totalAmountVal = Number(plan?.totalAmount || 0)
-  const earthingAcStr = solar?.earthingAcOhms != null ? String(solar.earthingAcOhms) : '0.5'
-  const earthingDcStr = solar?.earthingDcOhms != null ? String(solar.earthingDcOhms) : '0.5'
+
+  // Earthing calculation
+  const hasAc = solar?.earthingAcOhms != null && Number(solar.earthingAcOhms) > 0
+  const hasDc = solar?.earthingDcOhms != null && Number(solar.earthingDcOhms) > 0
+  let earthingDisplay = '—'
+  if (hasAc || hasDc) {
+    earthingDisplay = `AC: ${hasAc ? String(solar.earthingAcOhms) : '—'} Ohm | DC: ${hasDc ? String(solar.earthingDcOhms) : '—'} Ohm`
+  } else if (solar?.earthing && solar.earthing.trim() !== '') {
+    earthingDisplay = solar.earthing
+  }
+
+  // Structure calculation
+  const structureDisplay = [solar?.structureType, solar?.structureMaterial ? `(${solar.structureMaterial})` : null].filter(Boolean).join(' ') || '—'
+
+  // Total wattage calculation
+  const totalW = Number(solar?.totalWattage || 0)
+  const totalWattageDisplay = totalW > 0 ? `${totalW} W (${(totalW / 1000).toFixed(2)} kW)` : '—'
+
+  // Zero export calculation
+  const zeroExportDisplay = solar?.zeroExportDevice ? 'Installed' : ((solar?.inverterBrand || solar?.meterType || solar?.disco) ? 'Not Installed' : '—')
 
   return (
     <Document>
@@ -319,7 +337,7 @@ export function SignupDocument({ customer, logoSrc }: { customer: any; logoSrc?:
                 <View style={styles.divider} />
                 <View style={styles.gridColRight}>
                   <Text style={styles.label}>Installation Address:</Text>
-                  <Text style={styles.value}>{customer?.address || '—'}, {customer?.city || 'Pakistan'}</Text>
+                  <Text style={styles.value}>{customer?.address || (customer?.city ? `${customer.city}, Pakistan` : '—')}</Text>
                 </View>
               </View>
 
@@ -379,8 +397,12 @@ export function SignupDocument({ customer, logoSrc }: { customer: any; logoSrc?:
 
               <View style={styles.gridRowLast}>
                 <View style={styles.gridColLeft}>
-                  <Text style={styles.label}>Activation / Signup:</Text>
-                  <Text style={styles.value}>{formatDateStr(customer?.activationDate || customer?.signupDate || customer?.createdAt)}</Text>
+                  <Text style={styles.label}>Activation Date:</Text>
+                  <Text style={styles.value}>
+                    {customer?.status === 'CONNECTION_ACTIVE' && customer?.activationDate 
+                      ? formatDateStr(customer.activationDate) 
+                      : 'Pending O&M Approval'}
+                  </Text>
                 </View>
                 <View style={styles.divider} />
                 <View style={styles.gridColRight}>
@@ -401,14 +423,14 @@ export function SignupDocument({ customer, logoSrc }: { customer: any; logoSrc?:
                 <View style={styles.gridColLeft}>
                   <Text style={styles.label}>System Type:</Text>
                   <View style={{ width: '58%' }}>
-                    <Text style={styles.badgePill}>{plan?.systemSizeKw || '10-20 kW'}</Text>
+                    <Text style={styles.badgePill}>{plan?.systemSizeKw || '—'}</Text>
                   </View>
                 </View>
                 <View style={styles.divider} />
                 <View style={styles.gridColRight}>
                   <Text style={styles.label}>Billing Type:</Text>
                   <View style={{ width: '58%' }}>
-                    <Text style={styles.badgePill}>{plan?.billingType || 'Yearly'}</Text>
+                    <Text style={styles.badgePill}>{plan?.billingType || '—'}</Text>
                   </View>
                 </View>
               </View>
@@ -417,13 +439,17 @@ export function SignupDocument({ customer, logoSrc }: { customer: any; logoSrc?:
                 <View style={styles.gridColLeft}>
                   <Text style={styles.label}>Package:</Text>
                   <View style={{ width: '58%' }}>
-                    <Text style={styles.badgePill}>{plan?.packageTier || 'Comprehensive'}</Text>
+                    <Text style={styles.badgePill}>{plan?.packageTier || '—'}</Text>
                   </View>
                 </View>
                 <View style={styles.divider} />
                 <View style={styles.gridColRight}>
                   <Text style={styles.label}>Next Billing Date:</Text>
-                  <Text style={styles.value}>{formatDateStr(plan?.nextBillingDate)}</Text>
+                  <Text style={styles.value}>
+                    {customer?.status === 'CONNECTION_ACTIVE' && plan?.nextBillingDate
+                      ? formatDateStr(plan.nextBillingDate)
+                      : 'Pending Activation'}
+                  </Text>
                 </View>
               </View>
 
@@ -431,7 +457,7 @@ export function SignupDocument({ customer, logoSrc }: { customer: any; logoSrc?:
                 <View style={styles.gridColLeft}>
                   <Text style={styles.label}>Monitoring Time:</Text>
                   <View style={{ width: '58%' }}>
-                    <Text style={styles.badgePill}>{plan?.monitoringTime || '12 Hours'}</Text>
+                    <Text style={styles.badgePill}>{plan?.monitoringTime || '—'}</Text>
                   </View>
                 </View>
                 <View style={styles.divider} />
@@ -459,15 +485,15 @@ export function SignupDocument({ customer, logoSrc }: { customer: any; logoSrc?:
                   <View style={{ paddingHorizontal: 4, paddingVertical: 2 }}>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>Meter Type:</Text>
-                      <Text style={styles.value}>{solar?.meterType || 'Green Meter'}</Text>
+                      <Text style={styles.value}>{solar?.meterType || '—'}</Text>
                     </View>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>Zero Export Device:</Text>
-                      <Text style={styles.value}>{solar?.zeroExportDevice ? 'Installed' : 'Not Installed'}</Text>
+                      <Text style={styles.value}>{zeroExportDisplay}</Text>
                     </View>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>DISCO:</Text>
-                      <Text style={styles.value}>{solar?.disco || 'LESCO'}</Text>
+                      <Text style={styles.value}>{solar?.disco || '—'}</Text>
                     </View>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>Consumer ID:</Text>
@@ -475,31 +501,31 @@ export function SignupDocument({ customer, logoSrc }: { customer: any; logoSrc?:
                     </View>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>Inverter Brand:</Text>
-                      <Text style={[styles.value, { fontWeight: 'bold' }]}>{solar?.inverterBrand || 'GoodWe'}</Text>
+                      <Text style={[styles.value, { fontWeight: 'bold' }]}>{solar?.inverterBrand || '—'}</Text>
                     </View>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>Inverter Type:</Text>
-                      <Text style={styles.value}>{solar?.inverterType || 'Hybrid'}</Text>
+                      <Text style={styles.value}>{solar?.inverterType || '—'}</Text>
                     </View>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>Inverter Phase:</Text>
-                      <Text style={styles.value}>{solar?.inverterPhase || 'Single Phase'}</Text>
+                      <Text style={styles.value}>{solar?.inverterPhase || '—'}</Text>
                     </View>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>Inverter Category:</Text>
-                      <Text style={styles.value}>{solar?.inverterCategory || 'High Voltage'}</Text>
+                      <Text style={styles.value}>{solar?.inverterCategory || '—'}</Text>
                     </View>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>Inverter Size:</Text>
-                      <Text style={styles.value}>{solar?.inverterSize || '6kW'}</Text>
+                      <Text style={styles.value}>{solar?.inverterSize || '—'}</Text>
                     </View>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>No. of Inverters:</Text>
-                      <Text style={styles.value}>{solar?.noOfInverters || 1}</Text>
+                      <Text style={styles.value}>{solar?.noOfInverters && Number(solar.noOfInverters) > 0 ? String(solar.noOfInverters) : '—'}</Text>
                     </View>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>Inverter Serial #:</Text>
-                      <Text style={styles.value}>{solar?.inverterSerial || '1234457945'}</Text>
+                      <Text style={styles.value}>{solar?.inverterSerial || '—'}</Text>
                     </View>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>Inverter Warranty:</Text>
@@ -507,15 +533,15 @@ export function SignupDocument({ customer, logoSrc }: { customer: any; logoSrc?:
                     </View>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>Earthing & OHMs:</Text>
-                      <Text style={styles.value}>AC: {earthingAcStr} Ω | DC: {earthingDcStr} Ω</Text>
+                      <Text style={styles.value}>{earthingDisplay}</Text>
                     </View>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>Ingress Protection:</Text>
-                      <Text style={styles.value}>{solar?.ingressProtection || 'IP21 / IP65'}</Text>
+                      <Text style={styles.value}>{solar?.ingressProtection ? (solar.ingressProtection.startsWith('IP') ? solar.ingressProtection : `IP${solar.ingressProtection}`) : '—'}</Text>
                     </View>
                     <View style={styles.gridRowLast}>
                       <Text style={styles.label}>Structure:</Text>
-                      <Text style={styles.value}>{solar?.structureType || 'Standard'} ({solar?.structureMaterial || 'Painted'})</Text>
+                      <Text style={styles.value}>{structureDisplay}</Text>
                     </View>
                   </View>
                 </View>
@@ -526,24 +552,24 @@ export function SignupDocument({ customer, logoSrc }: { customer: any; logoSrc?:
                   <View style={{ paddingHorizontal: 4, paddingVertical: 2 }}>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>Panel Tech:</Text>
-                      <Text style={styles.value}>{solar?.panelTechnology || 'TOPCON'}</Text>
+                      <Text style={styles.value}>{solar?.panelTechnology || '—'}</Text>
                     </View>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>Panel Brand:</Text>
-                      <Text style={[styles.value, { fontWeight: 'bold' }]}>{solar?.panelBrand || 'LONGI'}</Text>
+                      <Text style={[styles.value, { fontWeight: 'bold' }]}>{solar?.panelBrand || '—'}</Text>
                     </View>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>Panel Wattage:</Text>
-                      <Text style={styles.value}>{solar?.panelWattage || 585} W</Text>
+                      <Text style={styles.value}>{solar?.panelWattage && Number(solar.panelWattage) > 0 ? `${solar.panelWattage} W` : '—'}</Text>
                     </View>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>No of Panels:</Text>
-                      <Text style={styles.value}>{solar?.noOfPanels || 10}</Text>
+                      <Text style={styles.value}>{solar?.noOfPanels && Number(solar.noOfPanels) > 0 ? String(solar.noOfPanels) : '—'}</Text>
                     </View>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>Total Wattage:</Text>
                       <Text style={[styles.value, { fontWeight: 'bold' }]}>
-                        {solar?.totalWattage || 5850} W ({((solar?.totalWattage || 5850)/1000).toFixed(2)} kW)
+                        {totalWattageDisplay}
                       </Text>
                     </View>
                     <View style={styles.gridRow}>
@@ -552,19 +578,19 @@ export function SignupDocument({ customer, logoSrc }: { customer: any; logoSrc?:
                     </View>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>Battery Category:</Text>
-                      <Text style={styles.value}>{solar?.batteryCategory || 'Low Voltage'}</Text>
+                      <Text style={styles.value}>{solar?.batteryCategory || '—'}</Text>
                     </View>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>Battery Brand:</Text>
-                      <Text style={[styles.value, { fontWeight: 'bold' }]}>{solar?.batteryBrand || 'Pylontech'}</Text>
+                      <Text style={[styles.value, { fontWeight: 'bold' }]}>{solar?.batteryBrand && solar.batteryBrand !== 'N/A' ? solar.batteryBrand : (solar?.batteryBrand === 'N/A' && Number(solar?.noOfBatteries) > 0 ? 'N/A' : '—')}</Text>
                     </View>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>No. of Batteries:</Text>
-                      <Text style={styles.value}>{solar?.noOfBatteries || 1}</Text>
+                      <Text style={styles.value}>{solar?.noOfBatteries && Number(solar.noOfBatteries) > 0 ? String(solar.noOfBatteries) : '—'}</Text>
                     </View>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>Battery Serial #:</Text>
-                      <Text style={styles.value}>{solar?.batterySerial || 'BAT-SERIAL'}</Text>
+                      <Text style={styles.value}>{solar?.batterySerial || '—'}</Text>
                     </View>
                     <View style={styles.gridRowLast}>
                       <Text style={styles.label}>Battery Warranty:</Text>

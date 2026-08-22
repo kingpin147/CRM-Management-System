@@ -23,6 +23,95 @@ const PACKAGES = ['Basic', 'Moderate', 'Comprehensive']
 const BILLING_TYPES = ['Monthly', 'Quarterly', 'Half Yearly', 'Yearly']
 const MONITORING_TIMES = ['12 Hours', '24 Hours']
 
+function calculatePackageBreakdown(
+  systemSizeKw: string,
+  packageTier: string,
+  billingType: string,
+  monitoringTime: string
+) {
+  let baseMonthlyRate = 1200
+  if (monitoringTime === '12 Hours') {
+    if (systemSizeKw === '1-10 kW') {
+      if (packageTier === 'Basic') baseMonthlyRate = 1200
+      if (packageTier === 'Moderate') baseMonthlyRate = 1800
+      if (packageTier === 'Comprehensive') baseMonthlyRate = 3000
+    } else if (systemSizeKw === '10-20 kW') {
+      if (packageTier === 'Basic') baseMonthlyRate = 1350
+      if (packageTier === 'Moderate') baseMonthlyRate = 2250
+      if (packageTier === 'Comprehensive') baseMonthlyRate = 3750
+    } else if (systemSizeKw === '20-30 kW') {
+      if (packageTier === 'Basic') baseMonthlyRate = 1500
+      if (packageTier === 'Moderate') baseMonthlyRate = 2700
+      if (packageTier === 'Comprehensive') baseMonthlyRate = 4500
+    }
+  } else {
+    // 24 Hours
+    if (systemSizeKw === '1-10 kW') {
+      if (packageTier === 'Basic') baseMonthlyRate = 2000
+      if (packageTier === 'Moderate') baseMonthlyRate = 3600
+      if (packageTier === 'Comprehensive') baseMonthlyRate = 6000
+    } else if (systemSizeKw === '10-20 kW') {
+      if (packageTier === 'Basic') baseMonthlyRate = 2500
+      if (packageTier === 'Moderate') baseMonthlyRate = 4500
+      if (packageTier === 'Comprehensive') baseMonthlyRate = 7500
+    } else if (systemSizeKw === '20-30 kW') {
+      if (packageTier === 'Basic') baseMonthlyRate = 3000
+      if (packageTier === 'Moderate') baseMonthlyRate = 5400
+      if (packageTier === 'Comprehensive') baseMonthlyRate = 9000
+    }
+  }
+
+  let months = 1
+  let discountPct = 0
+  if (billingType === 'Quarterly') { months = 3; discountPct = 10 }
+  else if (billingType === 'Half Yearly') { months = 6; discountPct = 20 }
+  else if (billingType === 'Yearly') { months = 12; discountPct = 40 }
+  else if (billingType === 'FOC') { months = 12; discountPct = 100 }
+
+  const subtotalBeforeDiscount = baseMonthlyRate * months
+  const discountAmount = subtotalBeforeDiscount * (discountPct / 100)
+  const priceAfterDiscount = subtotalBeforeDiscount - discountAmount
+  const salesTax = Math.round(priceAfterDiscount * 0.05)
+
+  let onboardingFee = 0
+  let isOnboardingWaived = false
+
+  if (billingType === 'FOC') {
+    onboardingFee = 0
+    isOnboardingWaived = true
+  } else if (packageTier === 'Basic') {
+    if (billingType === 'Yearly') {
+      onboardingFee = 0
+      isOnboardingWaived = true
+    } else {
+      onboardingFee = 3000
+      isOnboardingWaived = false
+    }
+  } else if (packageTier === 'Moderate' || packageTier === 'Comprehensive') {
+    if (billingType === 'Half Yearly' || billingType === 'Yearly') {
+      onboardingFee = 0
+      isOnboardingWaived = true
+    } else {
+      onboardingFee = 3000
+      isOnboardingWaived = false
+    }
+  }
+
+  const grandTotal = billingType === 'FOC' ? 0 : (priceAfterDiscount + salesTax + onboardingFee)
+
+  return {
+    baseMonthlyRate,
+    months,
+    discountPct,
+    discountAmount,
+    priceAfterDiscount,
+    salesTax,
+    onboardingFee,
+    isOnboardingWaived,
+    grandTotal
+  }
+}
+
 interface EditCrfModalProps {
   customer: any | null
   installers?: Array<{ id: string; fullName: string; role: string; email: string }>
@@ -67,6 +156,11 @@ export function EditCrfModal({
   const [batteryQty, setBatteryQty] = React.useState('')
   const [earthingAcOhms, setEarthingAcOhms] = React.useState('')
   const [earthingDcOhms, setEarthingDcOhms] = React.useState('')
+
+  // Dynamic pricing breakdown
+  const breakdown = React.useMemo(() => {
+    return calculatePackageBreakdown(systemSizeKw, packageTier, billingType, monitoringTime)
+  }, [systemSizeKw, packageTier, billingType, monitoringTime])
 
   // Populate form state whenever selected customer changes
   React.useEffect(() => {
@@ -138,6 +232,12 @@ export function EditCrfModal({
       formData.append('packageTier', packageTier)
       formData.append('billingType', billingType)
       formData.append('monitoringTime', monitoringTime)
+
+      // Calculated pricing fields
+      formData.append('monthlyBasePrice', String(breakdown.priceAfterDiscount))
+      formData.append('appliedDiscount', String(breakdown.discountPct))
+      formData.append('salesTaxAmount', String(breakdown.salesTax))
+      formData.append('totalAmount', String(breakdown.grandTotal))
 
       formData.append('inverterBrand', inverterBrand)
       formData.append('inverterSize', inverterSize)
@@ -311,6 +411,93 @@ export function EditCrfModal({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+
+            {/* Live Pricing Breakdown & Sales Manager Review Box */}
+            <div className="mt-2 rounded-xl border border-blue-200 bg-gradient-to-br from-blue-50/70 via-indigo-50/30 to-slate-50 p-3.5 space-y-3 shadow-2xs">
+              <div className="flex items-center justify-between border-b border-blue-200/80 pb-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold text-[11px] shadow-2xs">
+                    Package Pricing Breakdown
+                  </Badge>
+                  <span className="text-xs text-slate-600 font-medium">
+                    {systemSizeKw} • {packageTier} ({monitoringTime}) • {billingType}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-semibold text-slate-500">Payable Status:</span>
+                  <Badge 
+                    variant="outline" 
+                    className={
+                      customer.status === 'SIGNUP_GENERATED' 
+                        ? 'bg-amber-100 text-amber-950 border-amber-300 font-bold text-[11px]'
+                        : customer.status === 'PENDING_PAYMENT_VERIFICATION'
+                        ? 'bg-blue-100 text-blue-950 border-blue-300 font-bold text-[11px]'
+                        : 'bg-emerald-100 text-emerald-950 border-emerald-300 font-bold text-[11px]'
+                    }
+                  >
+                    {customer.status === 'SIGNUP_GENERATED' ? 'Pending Sales Review' : customer.status.replace(/_/g, ' ')}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5 pt-0.5">
+                {/* 1. Base Monthly Rate */}
+                <div className="bg-white/90 p-2 rounded-lg border border-slate-200 shadow-2xs">
+                  <span className="text-[10px] text-slate-500 font-medium block">Base Monthly Rate</span>
+                  <span className="text-xs font-bold text-slate-900">PKR {breakdown.baseMonthlyRate.toLocaleString()}</span>
+                </div>
+
+                {/* 2. Billing Cycle & Discount */}
+                <div className="bg-white/90 p-2 rounded-lg border border-slate-200 shadow-2xs">
+                  <span className="text-[10px] text-slate-500 font-medium block">Cycle & Discount</span>
+                  <span className="text-xs font-bold text-indigo-700">
+                    {breakdown.months} Mo {breakdown.discountPct > 0 ? `(-${breakdown.discountPct}%)` : '(0%)'}
+                  </span>
+                </div>
+
+                {/* 3. Subtotal (After Discount) */}
+                <div className="bg-white/90 p-2 rounded-lg border border-slate-200 shadow-2xs">
+                  <span className="text-[10px] text-slate-500 font-medium block">Price after Discount</span>
+                  <span className="text-xs font-bold text-slate-900">PKR {breakdown.priceAfterDiscount.toLocaleString()}</span>
+                </div>
+
+                {/* 4. Sales Tax (5%) */}
+                <div className="bg-white/90 p-2 rounded-lg border border-slate-200 shadow-2xs">
+                  <span className="text-[10px] text-slate-500 font-medium block">Sales Tax (5%)</span>
+                  <span className="text-xs font-bold text-slate-700">PKR {breakdown.salesTax.toLocaleString()}</span>
+                </div>
+
+                {/* 5. Onboarding Fee */}
+                <div className="bg-white/90 p-2 rounded-lg border border-slate-200 shadow-2xs">
+                  <span className="text-[10px] text-slate-500 font-medium block">On-Boarding Fee</span>
+                  <span className={`text-xs font-bold ${breakdown.isOnboardingWaived ? 'text-emerald-600' : 'text-amber-700'}`}>
+                    {breakdown.isOnboardingWaived ? 'Waived (0)' : `PKR ${breakdown.onboardingFee.toLocaleString()}`}
+                  </span>
+                </div>
+
+                {/* 6. Total Amount */}
+                <div className="bg-[#002868] text-white p-2 rounded-lg border border-[#002868] shadow-xs">
+                  <span className="text-[10px] text-sky-200 font-medium block">Total Amount</span>
+                  <span className="text-xs font-extrabold text-white">PKR {breakdown.grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                </div>
+              </div>
+
+              {/* Sales Manager Review Banner */}
+              <div className="bg-amber-50/90 border border-amber-200 rounded-lg px-3 py-2 flex items-center justify-between flex-wrap gap-2 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">💳</span>
+                  <div>
+                    <span className="font-bold text-amber-950">Current Payable to Review:</span>{' '}
+                    <span className="font-mono font-bold text-[#002868] text-sm">
+                      PKR {breakdown.grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                </div>
+                <div className="text-slate-600 text-[11px]">
+                  <span>Amount automatically calculates as per selected package and cycle.</span>
+                </div>
               </div>
             </div>
           </div>

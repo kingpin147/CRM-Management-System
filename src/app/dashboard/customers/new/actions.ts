@@ -67,38 +67,40 @@ export async function createCustomer(formData: FormData) {
   const totalAmount = Number(formData.get('totalAmount') || 0)
   const paidAmount = Number(formData.get('paidAmount') || 0)
 
-  // Solar System fields
-  const disco = (formData.get('disco') as string) || 'LESCO'
+  // Solar System fields (Blank/null when not provided)
+  const disco = (formData.get('disco') as string) || null
   const discoRefNo = (formData.get('discoRefNo') as string) || null
-  const meterType = (formData.get('meterType') as string) || 'Green Meter'
-  const meterPhase = (formData.get('meterPhase') as string) || 'Three Phase'
+  const meterType = (formData.get('meterType') as string) || ''
+  const meterPhase = (formData.get('meterPhase') as string) || null
   const zeroExportDevice = formData.get('zeroExportDevice') === 'Installed' || formData.get('zeroExportDevice') === 'true'
-  const inverterBrand = (formData.get('inverterBrand') as string) || 'Solis'
-  const inverterType = (formData.get('inverterType') as string) || 'Hybrid'
-  const inverterPhase = (formData.get('inverterPhase') as string) || 'Three Phase'
-  const inverterCategory = (formData.get('inverterCategory') as string) || 'Low Voltage'
-  const inverterSize = (formData.get('inverterSize') as string) || '6kW'
-  const noOfInverters = Number(formData.get('noOfInverters') || 1)
-  const inverterSerial = (formData.get('inverterSerial') as string) || 'INV-GENERIC'
+  const inverterBrand = (formData.get('inverterBrand') as string) || ''
+  const inverterType = (formData.get('inverterType') as string) || ''
+  const inverterPhase = (formData.get('inverterPhase') as string) || ''
+  const inverterCategory = (formData.get('inverterCategory') as string) || ''
+  const inverterSize = (formData.get('inverterSize') as string) || null
+  const noOfInverters = Number(formData.get('noOfInverters') || 0)
+  const inverterSerial = (formData.get('inverterSerial') as string) || ''
   const inverterWarrantyEnd = parseDate(formData.get('inverterWarrantyExpiry'))
-  const panelBrand = (formData.get('panelBrand') as string) || 'LONGi'
-  const panelType = (formData.get('panelType') as string) || 'Monofacial'
-  const panelTechnology = (formData.get('panelTechnology') as string) || 'TOPCON'
-  const panelWattage = Number(formData.get('panelWattage') || 585)
-  const noOfPanels = Number(formData.get('noOfPanels') || 10)
+  const panelBrand = (formData.get('panelBrand') as string) || ''
+  const panelType = (formData.get('panelType') as string) || ''
+  const panelTechnology = (formData.get('panelTechnology') as string) || ''
+  const panelWattage = Number(formData.get('panelWattage') || 0)
+  const noOfPanels = Number(formData.get('noOfPanels') || 0)
   const totalWattage = panelWattage * noOfPanels
   const panelWarrantyEnd = parseDate(formData.get('panelWarrantyExpiry'))
-  const batteryCategory = (formData.get('batteryCategory') as string) || 'Low Voltage'
-  const batteryType = (formData.get('batteryType') as string) || 'Lithium'
-  const batteryBrand = (formData.get('batteryBrand') as string) || 'N/A'
+  const batteryCategory = (formData.get('batteryCategory') as string) || ''
+  const batteryType = (formData.get('batteryType') as string) || ''
+  const batteryBrand = (formData.get('batteryBrand') as string) || ''
   const noOfBatteries = Number(formData.get('noOfBatteries') || 0)
+  const batterySerial = (formData.get('batterySerial') as string) || ''
   const batteryWarrantyEnd = parseDate(formData.get('batteryWarrantyExpiry'))
-  const earthing = (formData.get('earthingType') as string) || 'AC'
-  const earthingOhms = (formData.get('earthingOhms') as string) || '0.5'
+  const earthing = (formData.get('earthingType') as string) || ''
+  const earthingOhmsRaw = formData.get('earthingOhms') ? String(formData.get('earthingOhms')) : null
+  const earthingAcOhms = earthingOhmsRaw && Number(earthingOhmsRaw) > 0 ? Number(earthingOhmsRaw) : null
   const earthingLastCheck = parseDate(formData.get('lastCheckDate'))
-  const ingressProtection = (formData.get('ingressProtection') as string) || 'IP54'
-  const structureType = (formData.get('structureType') as string) || 'Standard'
-  const structureMaterial = (formData.get('structureMaterial') as string) || 'Pre Galvanized'
+  const ingressProtection = (formData.get('ingressProtection') as string) || null
+  const structureType = (formData.get('structureType') as string) || null
+  const structureMaterial = (formData.get('structureMaterial') as string) || null
   const systemInstallationDate = parseDate(formData.get('installationDate'))
 
   // Installer & Audit fields
@@ -108,13 +110,13 @@ export async function createCustomer(formData: FormData) {
   const installerContact = (formData.get('installerContact') as string) || null
   const installerEmail = (formData.get('installerEmail') as string) || null
   const lastAuditDate = parseDate(formData.get('lastAuditDate'))
-  const inverterStatus = (formData.get('inverterAuditStatus') as string) || 'Excellent'
-  const panelStatus = (formData.get('panelAuditStatus') as string) || 'Excellent'
-  const batteryStatus = (formData.get('batteryAuditStatus') as string) || 'Excellent'
-  const structureStatus = (formData.get('structureAuditStatus') as string) || 'Excellent'
-  const cableStatus = (formData.get('cableAuditStatus') as string) || 'Excellent'
-  const earthingStatus = (formData.get('earthingAuditStatus') as string) || 'Excellent'
-  const breakerStatus = (formData.get('breakersAuditStatus') as string) || 'Excellent'
+  const inverterStatus = (formData.get('inverterAuditStatus') as string) || null
+  const panelStatus = (formData.get('panelAuditStatus') as string) || null
+  const batteryStatus = (formData.get('batteryAuditStatus') as string) || null
+  const structureStatus = (formData.get('structureAuditStatus') as string) || null
+  const cableStatus = (formData.get('cableAuditStatus') as string) || null
+  const earthingStatus = (formData.get('earthingAuditStatus') as string) || null
+  const breakerStatus = (formData.get('breakersAuditStatus') as string) || null
 
   try {
     const customerCode = await generateCustomerCode()
@@ -148,7 +150,7 @@ export async function createCustomer(formData: FormData) {
         country,
         status: CustomerStatus.SIGNUP_GENERATED,
         signupDate: signUpDate,
-        activationDate: activationDate,
+        activationDate: null,
         accountExecutiveId,
         packagePlan: {
           create: {
@@ -160,7 +162,7 @@ export async function createCustomer(formData: FormData) {
             appliedDiscount,
             salesTaxAmount,
             totalAmount,
-            nextBillingDate,
+            nextBillingDate: null,
           }
         },
         solarSystem: {
@@ -189,11 +191,11 @@ export async function createCustomer(formData: FormData) {
             batteryType,
             batteryBrand,
             noOfBatteries,
-            batterySerial: 'BAT-SERIAL',
+            batterySerial,
             batteryWarrantyEnd,
             earthing,
             earthingLastCheck,
-            earthingAcOhms: Number(earthingOhms) || 0.5,
+            earthingAcOhms,
             ingressProtection,
             structureType,
             structureMaterial,
@@ -211,8 +213,8 @@ export async function createCustomer(formData: FormData) {
             cableStatus,
             earthingStatus,
             breakerStatus,
-            breakerName: 'Standard Breaker',
-            lightningProtection: true,
+            breakerName: (formData.get('breakerName') as string) || '',
+            lightningProtection: formData.get('lightningProtection') === 'true' || formData.get('lightningProtection') === 'Installed',
           }
         },
         invoices: totalAmount > 0 ? {

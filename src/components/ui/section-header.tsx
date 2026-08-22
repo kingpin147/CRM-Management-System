@@ -18,7 +18,7 @@ export function SectionHeader({
   return (
     <div
       className={cn(
-        "relative w-full overflow-hidden bg-gradient-to-b from-[#002868] via-[#004080] via-[48%] via-slate-50 to-white px-4 py-2 border-t-2 border-b-2 border-[#f26522] shadow-xs transition-all flex items-center min-h-[38px]",
+        "relative w-full overflow-hidden bg-gradient-to-b from-white via-slate-50 via-[50%] via-[#004080] to-[#002868] px-4 py-2 border-t-2 border-b-2 border-[#f26522] shadow-xs transition-all flex items-center min-h-[38px]",
         className
       )}
       {...props}
