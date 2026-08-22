@@ -425,40 +425,14 @@ export function ReportsView({
       {/* Header & Export to Excel */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-display font-bold text-[var(--color-graphite)] tracking-tight">Reports</h1>
+          <h1 className="text-3xl font-display font-bold text-[var(--color-graphite)] tracking-tight">
+            {currentTabObj.label}
+          </h1>
           <p className="text-[var(--color-slate-custom)] mt-1">Real-time status reports, sales summaries, and export capabilities.</p>
         </div>
         <Button onClick={handleExportExcel} className="bg-[var(--color-amber)] hover:bg-[#d69333] text-white font-bold shadow-md gap-2 cursor-pointer">
           <FileSpreadsheet className="h-4 w-4" /> Export to Excel
         </Button>
-      </div>
-
-      {/* Report Tabs Navigation (Synchronized with URL query) */}
-      <div className="flex space-x-2 border-b border-line overflow-x-auto pb-px">
-        {categoryTabs.map((cat) => {
-          const Icon = cat.icon
-          const isActive = activeCategory === cat.id
-          return (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => handleTabChange(cat.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-t-xl border-b-2 transition-all whitespace-nowrap cursor-pointer ${
-                isActive
-                  ? 'border-[var(--color-amber)] text-[var(--color-graphite)] bg-white shadow-xs font-bold'
-                  : 'border-transparent text-[var(--color-slate-custom)] hover:text-[var(--color-ink)] hover:bg-black/5'
-              }`}
-            >
-              <Icon className={`h-4 w-4 ${isActive ? 'text-[var(--color-amber)]' : 'text-[var(--color-slate-custom)]'}`} />
-              <span>{cat.label}</span>
-              {hasSearched && isActive && (
-                <span className="px-2 py-0.5 text-xs rounded-full font-bold bg-amber-100 text-amber-900 animate-in fade-in-50">
-                  {filteredCustomers.length}
-                </span>
-              )}
-            </button>
-          )
-        })}
       </div>
 
       {/* Dynamic Filter Card */}
