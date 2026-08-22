@@ -1086,20 +1086,20 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                       )}
                     />
 
-                    {/* Account Executive */}
+                    {/* Account Executive Sales */}
                     <FormField
                       control={form.control}
                       name="accountExecutiveId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-xs font-semibold">Account Executive Name</FormLabel>
+                          <FormLabel className="text-xs font-semibold">Account Executive Sales Name</FormLabel>
                           <Select onValueChange={(val) => {
                             field.onChange(val)
                             const sel = users?.find(u => u.id === val)
                             if (sel) form.setValue('accountExecutiveName', sel.fullName)
                           }} value={field.value}>
                             <FormControl>
-                              <SelectTrigger className="h-10 text-xs"><SelectValue placeholder="Select Account Executive" /></SelectTrigger>
+                              <SelectTrigger className="h-10 text-xs"><SelectValue placeholder="Select Account Executive Sales" /></SelectTrigger>
                             </FormControl>
                             <SelectContent>
                               <SelectItem value="none">Unassigned / Direct</SelectItem>
@@ -1749,7 +1749,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                     <FormField control={form.control} name="earthingType" render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs font-semibold">Earthing</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || 'AC'}>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
                           <FormControl>
                             <SelectTrigger className="h-10 text-xs">
                               <SelectValue placeholder="Select Earthing..." />
@@ -1799,7 +1799,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                     <FormField control={form.control} name="ingressProtection" render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs font-semibold">Ingress Protection (IP)</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || 'IP54'}>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
                           <FormControl>
                             <SelectTrigger className="h-10 text-xs">
                               <SelectValue placeholder="Select IP Rating..." />
@@ -1818,7 +1818,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                     <FormField control={form.control} name="structureType" render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs font-semibold">Structure Type</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || 'Standard'}>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
                           <FormControl>
                             <SelectTrigger className="h-10 text-xs">
                               <SelectValue placeholder="Select Structure..." />
@@ -1837,7 +1837,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                     <FormField control={form.control} name="structureMaterial" render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs font-semibold">Structure Coating / Material</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || 'Pre Galvanized'}>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
                           <FormControl>
                             <SelectTrigger className="h-10 text-xs">
                               <SelectValue placeholder="Select Material..." />

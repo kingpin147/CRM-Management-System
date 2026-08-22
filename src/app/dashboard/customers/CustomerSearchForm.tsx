@@ -100,7 +100,7 @@ export function CustomerSearchForm({
         <SectionHeader>
           <span className="flex items-center gap-2">
             <Search className="h-4 w-4 text-[#F58220]" />
-            Customer Search Page
+            Customer Search
           </span>
         </SectionHeader>
         <CardContent className="pt-6">

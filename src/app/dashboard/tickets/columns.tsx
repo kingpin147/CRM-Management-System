@@ -132,7 +132,7 @@ export const columns: ColumnDef<any, TicketWithCustomer, any>[] = [
   },
   {
     accessorKey: 'customer.accountExecutive.fullName',
-    header: 'Account Executive',
+    header: 'Account Executive Sales',
     cell: ({ row }) => {
       const execName = row.original.customer?.accountExecutive?.fullName || row.original.assignedTo || 'Unassigned'
       return <span className="text-xs font-semibold text-slate-700 whitespace-nowrap">{execName}</span>

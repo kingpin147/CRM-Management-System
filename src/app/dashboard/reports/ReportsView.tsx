@@ -430,7 +430,7 @@ export function ReportsView({
       headers = [
         'Customer ID', 'Customer Name', 'Customer Type', 'Customer Address', 'Contact #',
         'House #', 'Block', 'Street #', 'Sub Area', 'Area', 'City',
-        'Account Executive Name', 'Installer Name', 'System Type:', 'Monitoring Time',
+        'Account Executive Sales Name', 'Installer Name', 'System Type:', 'Monitoring Time',
         'Customer Package', 'Activation', 'New Status', 'Status'
       ]
       rows = filteredCustomers.map((c) => [
@@ -581,18 +581,19 @@ export function ReportsView({
       </Card>
 
       {/* Dynamic Filter Card */}
-      <Card className="shadow-sm border-line bg-white">
-        <CardHeader className="pb-3 flex flex-row items-center justify-between border-b border-gray-100">
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-[var(--color-amber)]" />
-            <CardTitle className="text-sm font-bold uppercase tracking-wider text-[var(--color-graphite)]">
-              {currentTabObj.label} Filters
-            </CardTitle>
-          </div>
-          <Button onClick={handleReset} variant="ghost" size="sm" className="h-8 text-xs text-[var(--color-slate-custom)] hover:text-[var(--color-ink)] cursor-pointer">
-            <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Reset Filters
-          </Button>
-        </CardHeader>
+      <Card className="shadow-sm border-line bg-white overflow-hidden">
+        <SectionHeader
+          action={
+            <Button onClick={handleReset} variant="ghost" size="sm" className="h-7 text-xs text-white hover:bg-white/20 font-semibold gap-1 px-2 cursor-pointer">
+              <RotateCcw className="h-3.5 w-3.5" /> Reset Filters
+            </Button>
+          }
+        >
+          <span className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-[#F58220]" />
+            {currentTabObj.label} Filters
+          </span>
+        </SectionHeader>
 
         <CardContent className="p-6 space-y-6">
           {/* Top Filter Bar: Country, City, Area, Sub Area, Customer Type, Select Status, Date Range */}
@@ -645,13 +646,13 @@ export function ReportsView({
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs font-semibold text-[var(--color-ink)]">Account Executive</Label>
+              <Label className="text-xs font-semibold text-[var(--color-ink)]">Account Executive Sales</Label>
               <select
                 value={selectedAccountExecutive}
                 onChange={(e) => setSelectedAccountExecutive(e.target.value)}
                 className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white"
               >
-                <option value="ALL">All Account Executives</option>
+                <option value="ALL">All Account Executive Sales</option>
                 {aeOptions.map((ae) => (
                   <option key={ae} value={ae}>{ae}</option>
                 ))}
@@ -682,7 +683,7 @@ export function ReportsView({
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
-                className="w-full h-9 px-2.5 rounded-lg border border-amber-300 bg-amber-50/40 text-xs font-bold text-slate-900 focus:ring-amber-500 focus:border-amber-500"
+                className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white"
               >
                 <option value="ALL">All Statuses</option>
                 {STATUS_OPTIONS.map((st) => (
@@ -746,18 +747,7 @@ export function ReportsView({
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-1 text-xs">
-            <div className="text-slate-500 font-medium">
-              {hasSearched ? (
-                <span className="text-emerald-700 font-semibold flex items-center gap-1.5">
-                  <CheckCircle2 className="h-3.5 w-3.5" /> Filter criteria applied
-                </span>
-              ) : (
-                <span className="text-amber-700 font-medium flex items-center gap-1.5">
-                  <Filter className="h-3.5 w-3.5" /> Select filters above and click Search to load data
-                </span>
-              )}
-            </div>
+          <div className="flex items-center justify-end pt-1 text-xs">
             <div className="text-xs text-gray-600 bg-gray-50 px-3.5 py-1.5 rounded-lg border border-gray-200 font-medium">
               {hasSearched ? (
                 <>Showing <strong className="text-[var(--color-ink)]">{filteredCustomers.length}</strong> matching records in {currentTabObj.label}</>
@@ -789,7 +779,7 @@ export function ReportsView({
                       <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Sub Area</TableHead>
                       <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Area</TableHead>
                       <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">City</TableHead>
-                      <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Account Executive Name</TableHead>
+                      <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Account Executive Sales Name</TableHead>
                       <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Installer Name</TableHead>
                       <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">System Type:</TableHead>
                       <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Monitoring Time</TableHead>
@@ -860,41 +850,41 @@ export function ReportsView({
             {activeCategory === 'SALES' && (
               <>
                 {/* Top Section: Account Executive Performance & Target Summary */}
-                <TableHeader className="bg-yellow-400/90 text-slate-900 border-b border-amber-300">
-                  <TableRow className="border-b border-amber-300 font-bold text-xs">
-                    <TableHead className="font-extrabold text-xs text-slate-950 whitespace-nowrap">Account Executive Sales</TableHead>
-                    <TableHead className="font-extrabold text-xs text-slate-950 whitespace-nowrap">Sales Target</TableHead>
-                    <TableHead className="font-extrabold text-xs text-slate-950 whitespace-nowrap">New Sale (Active)</TableHead>
-                    <TableHead className="font-extrabold text-xs text-slate-950 whitespace-nowrap">Number Of Temp blocked</TableHead>
-                    <TableHead className="font-extrabold text-xs text-slate-950 whitespace-nowrap">Number Of Perm Blocked</TableHead>
-                    <TableHead className="font-extrabold text-xs text-slate-950 whitespace-nowrap">Non Payment Blocked</TableHead>
-                    <TableHead className="font-extrabold text-xs text-slate-950 whitespace-nowrap">Total Blocked</TableHead>
-                    <TableHead className="font-extrabold text-xs text-slate-950 whitespace-nowrap">Balance Target</TableHead>
-                    <TableHead className="font-extrabold text-xs text-slate-950 whitespace-nowrap">Achieved in % Age</TableHead>
-                    <TableHead className="font-extrabold text-xs text-slate-950 whitespace-nowrap text-right">Amount Payable</TableHead>
-                    <TableHead className="font-extrabold text-xs text-slate-950 whitespace-nowrap text-right">Paid Amount</TableHead>
+                <TableHeader className="bg-[#002868] text-white border-b-2 border-[#f26522]">
+                  <TableRow className="border-b border-[#001d4a] font-bold text-xs">
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Account Executive Sales</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Sales Target</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">New Sale (Active)</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Number Of Temp blocked</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Number Of Perm Blocked</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Non Payment Blocked</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Total Blocked</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Balance Target</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Achieved in % Age</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap text-right">Amount Payable</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap text-right">Paid Amount</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody className="bg-yellow-50/40 divide-y divide-amber-200/60">
+                <TableBody className="bg-white divide-y divide-slate-200">
                   {/* Total Highlight Row */}
-                  <TableRow className="bg-yellow-300/80 font-bold text-xs text-slate-950">
-                    <TableCell className="font-extrabold uppercase tracking-wider">Total Summary</TableCell>
+                  <TableRow className="bg-amber-50/80 font-bold text-xs text-slate-900 border-b-2 border-amber-200">
+                    <TableCell className="font-extrabold uppercase tracking-wider text-[#002868]">Total Summary</TableCell>
                     <TableCell className="font-bold">{aeTotals.salesTarget}</TableCell>
-                    <TableCell className="font-bold text-emerald-800">{aeTotals.newSaleActive}</TableCell>
+                    <TableCell className="font-bold text-emerald-700">{aeTotals.newSaleActive}</TableCell>
                     <TableCell>{aeTotals.tempBlocked}</TableCell>
                     <TableCell>{aeTotals.permBlocked}</TableCell>
                     <TableCell>{aeTotals.nonPaymentBlocked}</TableCell>
-                    <TableCell className="font-bold text-rose-800">{aeTotals.totalBlocked}</TableCell>
+                    <TableCell className="font-bold text-rose-700">{aeTotals.totalBlocked}</TableCell>
                     <TableCell className="font-bold text-amber-900">{aeTotals.balanceTarget}</TableCell>
                     <TableCell className="font-bold text-blue-900">{aeTotals.salesTarget > 0 ? ((aeTotals.newSaleActive / aeTotals.salesTarget) * 100).toFixed(1) : 0}%</TableCell>
-                    <TableCell className="font-mono text-right font-bold">PKR {Math.round(aeTotals.amountPayable).toLocaleString()}</TableCell>
-                    <TableCell className="font-mono text-right font-bold text-emerald-900">PKR {Math.round(aeTotals.paidAmount).toLocaleString()}</TableCell>
+                    <TableCell className="font-mono text-right font-bold text-slate-900">PKR {Math.round(aeTotals.amountPayable).toLocaleString()}</TableCell>
+                    <TableCell className="font-mono text-right font-bold text-emerald-800">PKR {Math.round(aeTotals.paidAmount).toLocaleString()}</TableCell>
                   </TableRow>
 
                   {/* Account Executive Rows */}
                   {aeSummaryList.map((ae) => (
-                    <TableRow key={ae.name} className="hover:bg-yellow-100/60 text-xs font-semibold text-slate-800">
-                      <TableCell className="font-bold text-slate-950 whitespace-nowrap">{ae.name}</TableCell>
+                    <TableRow key={ae.name} className="hover:bg-slate-50 text-xs font-semibold text-slate-800">
+                      <TableCell className="font-bold text-[#002868] whitespace-nowrap">{ae.name}</TableCell>
                       <TableCell className="font-semibold">{ae.salesTarget}</TableCell>
                       <TableCell className="font-semibold text-emerald-700">{ae.newSaleActive}</TableCell>
                       <TableCell>{ae.tempBlocked}</TableCell>

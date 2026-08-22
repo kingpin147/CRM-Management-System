@@ -51,6 +51,7 @@ model Customer {
   area           String?
   city           String
   country        String         @default("Pakistan")
+  coordinates    String?
   cnicFrontUrl   String?
   cnicBackUrl    String?
   solarSystem    SolarSystem?

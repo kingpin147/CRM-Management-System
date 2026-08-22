@@ -15,7 +15,7 @@ import { toggleInvoiceStatus } from './actions'
 import { CustomerTicketForm } from './CustomerTicketForm'
 import { TicketUpdateDialog } from '@/app/dashboard/tickets/TicketUpdateDialog'
 import { TicketClosedSetupDialog } from './TicketClosedSetupDialog'
-import { EquipmentPhotosCard } from './EquipmentPhotosCard'
+import { EquipmentPhotoViewer } from './EquipmentPhotoViewer'
 import { Sun, Battery, ShieldCheck, Zap, Receipt, MessageSquare, Mail, History as HistoryIcon, Download } from 'lucide-react'
 import { formatDate, formatDateTime } from '@/lib/utils'
 import { createClient } from '@/utils/supabase/server'
@@ -367,8 +367,6 @@ export default async function CustomerDetailPage({
               </CardContent>
             </Card>
 
-            {/* System Equipment Photos Card (R2 Cloud Images) */}
-            <EquipmentPhotosCard customerId={customer.id} solarSystem={customer.solarSystem} canEdit={canEditSolarSpecs} />
           </div>
         )}
 
@@ -605,6 +603,18 @@ export default async function CustomerDetailPage({
                             </>
                           )}
 
+                          {/* Inverter Photo Small Pop-up Button */}
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Photo</TableCell>
+                            <TableCell className="text-xs">
+                              <EquipmentPhotoViewer
+                                imageUrl={customer.solarSystem?.inverterImages?.[0]}
+                                title={`${customer.solarSystem?.inverterBrand || 'Inverter'} Hardware Photo`}
+                                buttonLabel="View Inverter Photo"
+                              />
+                            </TableCell>
+                          </TableRow>
+
                           {/* Earthing / OHMs */}
                           <TableRow className="border-b hover:bg-transparent">
                             <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Earthing & OHMs</TableCell>
@@ -840,6 +850,19 @@ export default async function CustomerDetailPage({
                               </TableRow>
                             </>
                           )}
+
+                          {/* Battery Photo Small Pop-up Button */}
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Battery Photo</TableCell>
+                            <TableCell className="text-xs">
+                              <EquipmentPhotoViewer
+                                imageUrl={customer.solarSystem?.batteryImages?.[0]}
+                                title={`${customer.solarSystem?.batteryBrand || 'Battery'} Hardware Photo`}
+                                buttonLabel="View Battery Photo"
+                                className="h-7 text-xs bg-slate-50 text-slate-900 border-slate-300 hover:bg-slate-100 font-bold gap-1 px-2.5 shadow-2xs cursor-pointer"
+                              />
+                            </TableCell>
+                          </TableRow>
                         </TableBody>
                       </Table>
                     </div>
@@ -847,9 +870,7 @@ export default async function CustomerDetailPage({
                 </CardContent>
               </Card>
 
-              {/* System Equipment Photos Card (R2 Cloud Images) */}
-              <EquipmentPhotosCard customerId={customer.id} solarSystem={customer.solarSystem} canEdit={canEditSolarSpecs} />
-            </div>
+          </div>
           )
         })()}
 

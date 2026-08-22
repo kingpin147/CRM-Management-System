@@ -80,7 +80,7 @@ export function DebitCreditNoteTab({
       return
     }
     if (!accountExecutive) {
-      setFeedback({ type: 'error', message: 'Please select an Account Executive Name.' })
+      setFeedback({ type: 'error', message: 'Please select an Account Executive Sales Name.' })
       return
     }
 
@@ -239,12 +239,12 @@ export function DebitCreditNoteTab({
                   />
                 </div>
 
-                {/* Account Executive Name */}
+                {/* Account Executive Sales Name */}
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-slate-700">Account Executive Name</Label>
+                  <Label className="text-xs font-semibold text-slate-700">Account Executive Sales Name</Label>
                   <Select value={accountExecutive} onValueChange={(val) => { if (val) setAccountExecutive(val) }}>
                     <SelectTrigger className="h-10 text-xs font-semibold bg-slate-50/50">
-                      <SelectValue placeholder="Select Account Executive..." />
+                      <SelectValue placeholder="Select Account Executive Sales..." />
                     </SelectTrigger>
                     <SelectContent>
                       {users && users.length > 0 ? (
@@ -314,7 +314,7 @@ export function DebitCreditNoteTab({
                   <TableHead className="font-bold">Note Type</TableHead>
                   <TableHead className="font-bold">Description</TableHead>
                   <TableHead className="font-bold text-right">Amount</TableHead>
-                  <TableHead className="font-bold">Account Executive</TableHead>
+                  <TableHead className="font-bold">Account Executive Sales</TableHead>
                   <TableHead className="font-bold text-center">Status</TableHead>
                   <TableHead className="font-bold text-right">Actions</TableHead>
                 </TableRow>

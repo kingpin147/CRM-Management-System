@@ -18,7 +18,7 @@ import { saveSolarSystem } from './actions'
 import { AutoSuggestInput } from '@/components/ui/auto-suggest-input'
 import { formatDiscoRefNo } from '@/lib/utils'
 import { INVERTER_SIZES, INVERTER_BRANDS, PANEL_BRANDS, BATTERY_BRANDS } from '@/lib/solar-constants'
-import { Camera, UploadCloud, Loader2, Image as ImageIcon, CheckCircle2 } from 'lucide-react'
+import { Camera, UploadCloud, Loader2, Image as ImageIcon, CheckCircle2, Trash2 } from 'lucide-react'
 
 const DISCO_LIST = ['LESCO', 'IESCO', 'K-Electric', 'FESCO', 'MEPCO', 'PESCO', 'GEPCO', 'QESCO', 'HESCO', 'SEPCO', 'TESCO', 'Other']
 
@@ -217,11 +217,8 @@ export function SolarSystemDialog({
       </DialogTrigger>
       <DialogContent className="sm:max-w-3xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl bg-white border border-[var(--color-line)] shadow-premium rounded-2xl p-6 max-h-[90vh] overflow-y-auto">
         <DialogHeader className="space-y-1 text-left pb-2 border-b border-[var(--color-line)]">
-          <DialogTitle className="text-xl font-display font-bold text-[var(--color-graphite)] flex items-center justify-between">
-            <span>{solarSystem ? 'Edit Solar System Specifications' : 'Configure Solar System Specs'}</span>
-              <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
-                📷 Equipment Photo Upload Enabled
-              </span>
+          <DialogTitle className="text-xl font-display font-bold text-[var(--color-graphite)]">
+            {solarSystem ? 'Edit Solar System Specifications' : 'Configure Solar System Specs'}
           </DialogTitle>
           <DialogDescription className="text-sm text-[var(--color-slate-custom)]">
             Configure inverter hardware, solar panels array, battery energy storage, net metering specs, and upload R2 equipment photos.
@@ -386,11 +383,20 @@ export function SolarSystemDialog({
                 </div>
 
                   {inverterImageUrl && (
-                    <div className="relative w-full h-32 rounded-lg border border-amber-200 overflow-hidden bg-slate-900 flex items-center justify-center group">
+                    <div className="relative w-full h-36 rounded-lg border border-amber-200 overflow-hidden bg-slate-900 flex items-center justify-center group">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={inverterImageUrl} alt="Inverter Photo" className="w-full h-full object-contain" />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-medium gap-1">
-                        <ImageIcon className="w-4 h-4" /> Inverter Photo
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-between p-3 text-white text-xs font-medium backdrop-blur-xs">
+                        <span className="flex items-center gap-1"><ImageIcon className="w-4 h-4 text-amber-400" /> Inverter Photo</span>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => setInverterImageUrl('')}
+                          className="h-7 text-xs px-2 shadow-xs cursor-pointer gap-1"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Remove
+                        </Button>
                       </div>
                     </div>
                   )}
@@ -583,11 +589,20 @@ export function SolarSystemDialog({
                 </div>
 
                   {batteryImageUrl && (
-                    <div className="relative w-full h-32 rounded-lg border border-slate-200 overflow-hidden bg-slate-900 flex items-center justify-center group">
+                    <div className="relative w-full h-36 rounded-lg border border-slate-200 overflow-hidden bg-slate-900 flex items-center justify-center group">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={batteryImageUrl} alt="Battery Photo" className="w-full h-full object-contain" />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-medium gap-1">
-                        <ImageIcon className="w-4 h-4" /> Battery Photo
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-between p-3 text-white text-xs font-medium backdrop-blur-xs">
+                        <span className="flex items-center gap-1"><ImageIcon className="w-4 h-4 text-sky-400" /> Battery Photo</span>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => setBatteryImageUrl('')}
+                          className="h-7 text-xs px-2 shadow-xs cursor-pointer gap-1"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Remove
+                        </Button>
                       </div>
                     </div>
                   )}
