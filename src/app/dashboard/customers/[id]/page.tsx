@@ -15,6 +15,7 @@ import { toggleInvoiceStatus } from './actions'
 import { CustomerTicketForm } from './CustomerTicketForm'
 import { TicketUpdateDialog } from '@/app/dashboard/tickets/TicketUpdateDialog'
 import { TicketClosedSetupDialog } from './TicketClosedSetupDialog'
+import { EquipmentPhotosCard } from './EquipmentPhotosCard'
 import { Sun, Battery, ShieldCheck, Zap, Receipt, MessageSquare, Mail, History as HistoryIcon, Download } from 'lucide-react'
 import { formatDate, formatDateTime } from '@/lib/utils'
 import { createClient } from '@/utils/supabase/server'
@@ -365,6 +366,9 @@ export default async function CustomerDetailPage({
                 </div>
               </CardContent>
             </Card>
+
+            {/* System Equipment Photos Card (R2 Cloud Images) */}
+            <EquipmentPhotosCard customerId={customer.id} solarSystem={customer.solarSystem} canEdit={canEditSolarSpecs} />
           </div>
         )}
 
@@ -391,456 +395,461 @@ export default async function CustomerDetailPage({
           const structureDisplay = [customer.solarSystem?.structureType, customer.solarSystem?.structureMaterial ? `(${customer.solarSystem.structureMaterial})` : null].filter(Boolean).join(' ') || '—'
 
           return (
-            <Card className="shadow-sm border-slate-200 overflow-hidden bg-white">
-              <SectionHeader
-                action={
-                  canEditSolarSpecs && (
-                    <SolarSystemDialog customerId={customer.id} solarSystem={customer.solarSystem} />
-                  )
-                }
-              >
-                Solar System Details
-              </SectionHeader>
-              <CardContent className="p-0">
-                <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-slate-200">
-                  {/* Left Column: Grid Connection, Inverters, Grounding & Installation */}
-                  <div className="w-full">
-                    <SectionHeader>
-                      Grid Connection & Inverter System
-                    </SectionHeader>
-                    <Table>
-                      <TableBody>
-                        <TableRow className="border-b hover:bg-transparent">
-                          <TableCell className="font-bold text-xs w-44 bg-slate-50 border-r border-slate-200 text-[#002868]">Meter Type</TableCell>
-                          <TableCell className="text-xs">
-                            {customer.solarSystem?.meterType ? (
-                              <Badge variant="outline" className="bg-amber-100 text-amber-950 border-amber-400 font-bold shadow-xs">
-                                {customer.solarSystem.meterType}
-                              </Badge>
-                            ) : (
-                              <span className="text-slate-400 font-medium">—</span>
-                            )}
-                          </TableCell>
-                        </TableRow>
-
-                        <TableRow className="border-b hover:bg-transparent">
-                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Zero Export Device</TableCell>
-                          <TableCell className="text-xs">
-                            {customer.solarSystem?.zeroExportDevice ? (
-                              <Badge variant="outline" className="bg-amber-100 text-amber-950 border-amber-400 font-bold shadow-xs">
-                                Installed
-                              </Badge>
-                            ) : (customer.solarSystem?.inverterBrand || customer.solarSystem?.meterType) ? (
-                              <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 font-medium">
-                                Not Installed
-                              </Badge>
-                            ) : (
-                              <span className="text-slate-400 font-medium">—</span>
-                            )}
-                          </TableCell>
-                        </TableRow>
-
-                        <TableRow className="border-b hover:bg-transparent">
-                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">DISCO</TableCell>
-                          <TableCell className="text-xs font-semibold text-[var(--color-ink)] bg-sky-50/60 w-fit">
-                            {customer.solarSystem?.disco ? (
-                              <span className="px-2 py-0.5 rounded bg-sky-100 text-sky-900 border border-sky-200 font-bold">
-                                {customer.solarSystem.disco}
-                              </span>
-                            ) : (
-                              <span className="text-slate-400 font-medium">—</span>
-                            )}
-                          </TableCell>
-                        </TableRow>
-
-                        {/* DISCO Consumer ID */}
-                        <TableRow className="border-b hover:bg-transparent">
-                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">
-                            {customer.solarSystem?.disco || 'DISCO'} Consumer ID
-                          </TableCell>
-                          <TableCell className="font-mono text-xs font-semibold text-[var(--color-ink)]">
-                            {customer.solarSystem?.discoRefNo || '—'}
-                          </TableCell>
-                        </TableRow>
-
-                        {/* Inverter Brand */}
-                        <TableRow className="border-b hover:bg-transparent">
-                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Brand</TableCell>
-                          <TableCell className="text-xs">
-                            {invBrands.length > 0 || customer.solarSystem?.inverterBrand ? (
-                              <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
-                                {invBrands.join(', ') || customer.solarSystem?.inverterBrand}
-                              </Badge>
-                            ) : (
-                              <span className="text-slate-400 font-medium">—</span>
-                            )}
-                          </TableCell>
-                        </TableRow>
-
-                        {/* Inverter Type */}
-                        <TableRow className="border-b hover:bg-transparent">
-                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Type</TableCell>
-                          <TableCell className="text-xs">
-                            {customer.solarSystem?.inverterType ? (
-                              <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
-                                {customer.solarSystem.inverterType}
-                              </Badge>
-                            ) : (
-                              <span className="text-slate-400 font-medium">—</span>
-                            )}
-                          </TableCell>
-                        </TableRow>
-
-                        {/* Inverter Phase */}
-                        <TableRow className="border-b hover:bg-transparent">
-                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Phase Type</TableCell>
-                          <TableCell className="text-xs">
-                            {customer.solarSystem?.inverterPhase ? (
-                              <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
-                                {customer.solarSystem.inverterPhase}
-                              </Badge>
-                            ) : (
-                              <span className="text-slate-400 font-medium">—</span>
-                            )}
-                          </TableCell>
-                        </TableRow>
-
-                        {/* Inverter Category */}
-                        <TableRow className="border-b hover:bg-transparent">
-                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Category</TableCell>
-                          <TableCell className="text-xs">
-                            {customer.solarSystem?.inverterCategory ? (
-                              <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
-                                {customer.solarSystem.inverterCategory}
-                              </Badge>
-                            ) : (
-                              <span className="text-slate-400 font-medium">—</span>
-                            )}
-                          </TableCell>
-                        </TableRow>
-
-                        {/* Inverter Size */}
-                        <TableRow className="border-b hover:bg-transparent">
-                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Size</TableCell>
-                          <TableCell className="text-xs font-semibold text-[var(--color-ink)]">
-                            {customer.solarSystem?.inverterSize || '—'}
-                          </TableCell>
-                        </TableRow>
-
-                        {/* Meter Phase */}
-                        <TableRow className="border-b hover:bg-transparent">
-                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Meter Phase</TableCell>
-                          <TableCell className="text-xs">
-                            {customer.solarSystem?.meterPhase ? (
-                              <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
-                                {customer.solarSystem.meterPhase}
-                              </Badge>
-                            ) : (
-                              <span className="text-slate-400 font-medium">—</span>
-                            )}
-                          </TableCell>
-                        </TableRow>
-
-                        {/* No. of Inverters */}
-                        <TableRow className="border-b hover:bg-transparent">
-                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">No. of Inverters</TableCell>
-                          <TableCell className="text-xs font-semibold text-[var(--color-ink)]">
-                            {noOfInverters > 0 ? noOfInverters : '—'}
-                          </TableCell>
-                        </TableRow>
-
-                        {/* Inverter Units Breakdown & Warranty */}
-                        {noOfInverters > 1 ? (
-                          <TableRow className="border-b hover:bg-transparent bg-amber-50/20">
-                            <TableCell className="font-bold text-xs bg-amber-50/60 border-r border-slate-200 text-[#002868]">
-                              <div>Inverters Units</div>
-                              <span className="text-[10px] text-amber-800 font-normal">All {noOfInverters} units</span>
+            <div className="space-y-6">
+              <Card className="shadow-sm border-slate-200 overflow-hidden bg-white">
+                <SectionHeader
+                  action={
+                    canEditSolarSpecs && (
+                      <SolarSystemDialog customerId={customer.id} solarSystem={customer.solarSystem} />
+                    )
+                  }
+                >
+                  Solar System Details
+                </SectionHeader>
+                <CardContent className="p-0">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-slate-200">
+                    {/* Left Column: Grid Connection, Inverters, Grounding & Installation */}
+                    <div className="w-full">
+                      <SectionHeader>
+                        Grid Connection & Inverter System
+                      </SectionHeader>
+                      <Table>
+                        <TableBody>
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs w-44 bg-slate-50 border-r border-slate-200 text-[#002868]">Meter Type</TableCell>
+                            <TableCell className="text-xs">
+                              {customer.solarSystem?.meterType ? (
+                                <Badge variant="outline" className="bg-amber-100 text-amber-950 border-amber-400 font-bold shadow-xs">
+                                  {customer.solarSystem.meterType}
+                                </Badge>
+                              ) : (
+                                <span className="text-slate-400 font-medium">—</span>
+                              )}
                             </TableCell>
-                            <TableCell className="text-xs p-2.5">
-                              <div className="space-y-2">
-                                {Array.from({ length: noOfInverters }).map((_, idx) => {
-                                  const brand = invBrands[idx] || invBrands[0] || customer.solarSystem?.inverterBrand || '—'
-                                  const serial = invSerials[idx] || (idx === 0 ? (customer.solarSystem?.inverterSerial || '—') : `${customer.solarSystem?.inverterSerial || 'INV'}-${idx + 1}`)
-                                  return (
-                                    <div key={idx} className="p-2.5 rounded-lg border border-amber-200/80 bg-white shadow-2xs space-y-1">
-                                      <div className="font-bold text-[#002868] text-xs flex items-center justify-between border-b border-slate-100 pb-1">
-                                        <span>Inverter #{idx + 1}</span>
-                                        <Badge variant="outline" className="bg-amber-100 text-amber-950 border-amber-300 font-bold text-[10px]">{brand}</Badge>
+                          </TableRow>
+
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Zero Export Device</TableCell>
+                            <TableCell className="text-xs">
+                              {customer.solarSystem?.zeroExportDevice ? (
+                                <Badge variant="outline" className="bg-amber-100 text-amber-950 border-amber-400 font-bold shadow-xs">
+                                  Installed
+                                </Badge>
+                              ) : (customer.solarSystem?.inverterBrand || customer.solarSystem?.meterType) ? (
+                                <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 font-medium">
+                                  Not Installed
+                                </Badge>
+                              ) : (
+                                <span className="text-slate-400 font-medium">—</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">DISCO</TableCell>
+                            <TableCell className="text-xs font-semibold text-[var(--color-ink)] bg-sky-50/60 w-fit">
+                              {customer.solarSystem?.disco ? (
+                                <span className="px-2 py-0.5 rounded bg-sky-100 text-sky-900 border border-sky-200 font-bold">
+                                  {customer.solarSystem.disco}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 font-medium">—</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+
+                          {/* DISCO Consumer ID */}
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">
+                              {customer.solarSystem?.disco || 'DISCO'} Consumer ID
+                            </TableCell>
+                            <TableCell className="font-mono text-xs font-semibold text-[var(--color-ink)]">
+                              {customer.solarSystem?.discoRefNo || '—'}
+                            </TableCell>
+                          </TableRow>
+
+                          {/* Inverter Brand */}
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Brand</TableCell>
+                            <TableCell className="text-xs">
+                              {invBrands.length > 0 || customer.solarSystem?.inverterBrand ? (
+                                <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                                  {invBrands.join(', ') || customer.solarSystem?.inverterBrand}
+                                </Badge>
+                              ) : (
+                                <span className="text-slate-400 font-medium">—</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+
+                          {/* Inverter Type */}
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Type</TableCell>
+                            <TableCell className="text-xs">
+                              {customer.solarSystem?.inverterType ? (
+                                <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                                  {customer.solarSystem.inverterType}
+                                </Badge>
+                              ) : (
+                                <span className="text-slate-400 font-medium">—</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+
+                          {/* Inverter Phase */}
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Phase Type</TableCell>
+                            <TableCell className="text-xs">
+                              {customer.solarSystem?.inverterPhase ? (
+                                <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                                  {customer.solarSystem.inverterPhase}
+                                </Badge>
+                              ) : (
+                                <span className="text-slate-400 font-medium">—</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+
+                          {/* Inverter Category */}
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Category</TableCell>
+                            <TableCell className="text-xs">
+                              {customer.solarSystem?.inverterCategory ? (
+                                <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                                  {customer.solarSystem.inverterCategory}
+                                </Badge>
+                              ) : (
+                                <span className="text-slate-400 font-medium">—</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+
+                          {/* Inverter Size */}
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Size</TableCell>
+                            <TableCell className="text-xs font-semibold text-[var(--color-ink)]">
+                              {customer.solarSystem?.inverterSize || '—'}
+                            </TableCell>
+                          </TableRow>
+
+                          {/* Meter Phase */}
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Meter Phase</TableCell>
+                            <TableCell className="text-xs">
+                              {customer.solarSystem?.meterPhase ? (
+                                <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                                  {customer.solarSystem.meterPhase}
+                                </Badge>
+                              ) : (
+                                <span className="text-slate-400 font-medium">—</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+
+                          {/* No. of Inverters */}
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">No. of Inverters</TableCell>
+                            <TableCell className="text-xs font-semibold text-[var(--color-ink)]">
+                              {noOfInverters > 0 ? noOfInverters : '—'}
+                            </TableCell>
+                          </TableRow>
+
+                          {/* Inverter Units Breakdown & Warranty */}
+                          {noOfInverters > 1 ? (
+                            <TableRow className="border-b hover:bg-transparent bg-amber-50/20">
+                              <TableCell className="font-bold text-xs bg-amber-50/60 border-r border-slate-200 text-[#002868]">
+                                <div>Inverters Units</div>
+                                <span className="text-[10px] text-amber-800 font-normal">All {noOfInverters} units</span>
+                              </TableCell>
+                              <TableCell className="text-xs p-2.5">
+                                <div className="space-y-2">
+                                  {Array.from({ length: noOfInverters }).map((_, idx) => {
+                                    const brand = invBrands[idx] || invBrands[0] || customer.solarSystem?.inverterBrand || '—'
+                                    const serial = invSerials[idx] || (idx === 0 ? (customer.solarSystem?.inverterSerial || '—') : `${customer.solarSystem?.inverterSerial || 'INV'}-${idx + 1}`)
+                                    return (
+                                      <div key={idx} className="p-2.5 rounded-lg border border-amber-200/80 bg-white shadow-2xs space-y-1">
+                                        <div className="font-bold text-[#002868] text-xs flex items-center justify-between border-b border-slate-100 pb-1">
+                                          <span>Inverter #{idx + 1}</span>
+                                          <Badge variant="outline" className="bg-amber-100 text-amber-950 border-amber-300 font-bold text-[10px]">{brand}</Badge>
+                                        </div>
+                                        <div className="text-[11px] text-slate-700 flex justify-between">
+                                          <span className="font-semibold text-slate-500">Serial #:</span> 
+                                          <span className="font-mono font-bold text-[#002868]">{serial}</span>
+                                        </div>
+                                        <div className="text-[11px] text-slate-700 flex justify-between items-center">
+                                          <span className="font-semibold text-slate-500">Warranty End:</span> 
+                                          <span className="font-mono font-semibold text-amber-900 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                                            {formatDate(customer.solarSystem?.inverterWarrantyEnd)}
+                                          </span>
+                                        </div>
                                       </div>
-                                      <div className="text-[11px] text-slate-700 flex justify-between">
-                                        <span className="font-semibold text-slate-500">Serial #:</span> 
-                                        <span className="font-mono font-bold text-[#002868]">{serial}</span>
-                                      </div>
-                                      <div className="text-[11px] text-slate-700 flex justify-between items-center">
-                                        <span className="font-semibold text-slate-500">Warranty End:</span> 
-                                        <span className="font-mono font-semibold text-amber-900 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
-                                          {formatDate(customer.solarSystem?.inverterWarrantyEnd)}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  )
-                                })}
+                                    )
+                                  })}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            <>
+                              <TableRow className="border-b hover:bg-transparent">
+                                <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Serial #</TableCell>
+                                <TableCell className="font-mono text-xs font-semibold text-[var(--color-ink)]">
+                                  {customer.solarSystem?.inverterSerial || '—'}
+                                </TableCell>
+                              </TableRow>
+                              <TableRow className="border-b hover:bg-transparent">
+                                <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Warranty End Date</TableCell>
+                                <TableCell className="font-mono text-xs font-semibold text-amber-900">
+                                  {formatDate(customer.solarSystem?.inverterWarrantyEnd)}
+                                </TableCell>
+                              </TableRow>
+                            </>
+                          )}
+
+                          {/* Earthing / OHMs */}
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Earthing & OHMs</TableCell>
+                            <TableCell className="text-xs p-0">
+                              <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x border-t-0">
+                                <div className="p-2.5">
+                                  <span className="font-bold text-slate-600 mr-2">AC:</span>
+                                  <span className="font-semibold text-[#002868]">
+                                    {customer.solarSystem?.earthingAcOhms != null && Number(customer.solarSystem?.earthingAcOhms) > 0 ? `${customer.solarSystem.earthingAcOhms} Ω` : '—'}
+                                  </span>
+                                </div>
+                                <div className="p-2.5">
+                                  <span className="font-bold text-slate-600 mr-2">DC:</span>
+                                  <span className="font-semibold text-[#002868]">
+                                    {customer.solarSystem?.earthingDcOhms != null && Number(customer.solarSystem?.earthingDcOhms) > 0 ? `${customer.solarSystem.earthingDcOhms} Ω` : '—'}
+                                  </span>
+                                </div>
+                                <div className="p-2.5 bg-slate-50/50">
+                                  <span className="font-bold text-slate-600 mr-2">Last Check:</span>
+                                  <span className="text-slate-700 font-medium">
+                                    {formatDate(customer.solarSystem?.earthingLastCheck)}
+                                  </span>
+                                </div>
                               </div>
                             </TableCell>
                           </TableRow>
-                        ) : (
-                          <>
-                            <TableRow className="border-b hover:bg-transparent">
-                              <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Serial #</TableCell>
-                              <TableCell className="font-mono text-xs font-semibold text-[var(--color-ink)]">
-                                {customer.solarSystem?.inverterSerial || '—'}
-                              </TableCell>
-                            </TableRow>
-                            <TableRow className="border-b hover:bg-transparent">
-                              <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Warranty End Date</TableCell>
-                              <TableCell className="font-mono text-xs font-semibold text-amber-900">
-                                {formatDate(customer.solarSystem?.inverterWarrantyEnd)}
-                              </TableCell>
-                            </TableRow>
-                          </>
-                        )}
 
-                        {/* Earthing / OHMs */}
-                        <TableRow className="border-b hover:bg-transparent">
-                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Earthing & OHMs</TableCell>
-                          <TableCell className="text-xs p-0">
-                            <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x border-t-0">
-                              <div className="p-2.5">
-                                <span className="font-bold text-slate-600 mr-2">AC:</span>
-                                <span className="font-semibold text-[#002868]">
-                                  {customer.solarSystem?.earthingAcOhms != null && Number(customer.solarSystem?.earthingAcOhms) > 0 ? `${customer.solarSystem.earthingAcOhms} Ω` : '—'}
-                                </span>
-                              </div>
-                              <div className="p-2.5">
-                                <span className="font-bold text-slate-600 mr-2">DC:</span>
-                                <span className="font-semibold text-[#002868]">
-                                  {customer.solarSystem?.earthingDcOhms != null && Number(customer.solarSystem?.earthingDcOhms) > 0 ? `${customer.solarSystem.earthingDcOhms} Ω` : '—'}
-                                </span>
-                              </div>
-                              <div className="p-2.5 bg-slate-50/50">
-                                <span className="font-bold text-slate-600 mr-2">Last Check:</span>
-                                <span className="text-slate-700 font-medium">
-                                  {formatDate(customer.solarSystem?.earthingLastCheck)}
-                                </span>
-                              </div>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-
-                        {/* Ingress Protection (IP) */}
-                        <TableRow className="border-b hover:bg-transparent">
-                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Ingress Protection (IP)</TableCell>
-                          <TableCell className="text-xs">
-                            {customer.solarSystem?.ingressProtection ? (
-                              <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
-                                {customer.solarSystem.ingressProtection.startsWith('IP') ? customer.solarSystem.ingressProtection : `IP ${customer.solarSystem.ingressProtection}`}
-                              </Badge>
-                            ) : (
-                              <span className="text-slate-400 font-medium">—</span>
-                            )}
-                          </TableCell>
-                        </TableRow>
-
-                        {/* Structure Type */}
-                        <TableRow className="border-b hover:bg-transparent">
-                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Structure Type & Material</TableCell>
-                          <TableCell className="text-xs">
-                            {structureDisplay !== '—' ? (
-                              <div className="flex gap-2 items-center flex-wrap">
-                                {customer.solarSystem?.structureType && (
-                                  <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
-                                    {customer.solarSystem.structureType}
-                                  </Badge>
-                                )}
-                                {customer.solarSystem?.structureMaterial && (
-                                  <Badge variant="outline" className="bg-amber-100 text-amber-950 border-amber-400 font-semibold">
-                                    {customer.solarSystem.structureMaterial}
-                                  </Badge>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-slate-400 font-medium">—</span>
-                            )}
-                          </TableCell>
-                        </TableRow>
-
-                        {/* System Installation Date */}
-                        <TableRow className="hover:bg-transparent">
-                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">System Installation Date</TableCell>
-                          <TableCell className="text-xs font-semibold text-[var(--color-ink)] flex items-center gap-2 font-mono">
-                            <span className="text-slate-500">📅</span>
-                            {formatDate(customer.solarSystem?.systemInstallationDate)}
-                          </TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                  </div>
-
-                  {/* Right Column: Solar Array, Battery Storage */}
-                  <div className="w-full">
-                    <SectionHeader>
-                      PV Panels & Battery Energy Storage
-                    </SectionHeader>
-                    <Table>
-                      <TableBody>
-                        {/* Panel Technology */}
-                        <TableRow className="border-b hover:bg-transparent">
-                          <TableCell className="font-bold text-xs w-44 bg-slate-50 border-r border-slate-200 text-[#002868]">Panel Technology</TableCell>
-                          <TableCell className="text-xs">
-                            {customer.solarSystem?.panelTechnology ? (
-                              <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
-                                {customer.solarSystem.panelTechnology}
-                              </Badge>
-                            ) : (
-                              <span className="text-slate-400 font-medium">—</span>
-                            )}
-                          </TableCell>
-                        </TableRow>
-
-                        {/* Panel Brand */}
-                        <TableRow className="border-b hover:bg-transparent">
-                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Panel Brand</TableCell>
-                          <TableCell className="text-xs">
-                            {customer.solarSystem?.panelBrand ? (
-                              <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
-                                {customer.solarSystem.panelBrand}
-                              </Badge>
-                            ) : (
-                              <span className="text-slate-400 font-medium">—</span>
-                            )}
-                          </TableCell>
-                        </TableRow>
-
-                        {/* Panel Wattage & No of Panels */}
-                        <TableRow className="border-b hover:bg-transparent">
-                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Panel Wattage</TableCell>
-                          <TableCell className="text-xs font-semibold text-[var(--color-ink)]">
-                            {customer.solarSystem?.panelWattage && Number(customer.solarSystem.panelWattage) > 0 ? `${customer.solarSystem.panelWattage} W` : '—'}
-                          </TableCell>
-                        </TableRow>
-
-                        <TableRow className="border-b hover:bg-transparent">
-                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">No of Panels</TableCell>
-                          <TableCell className="text-xs font-semibold text-[var(--color-ink)]">
-                            {customer.solarSystem?.noOfPanels && Number(customer.solarSystem.noOfPanels) > 0 ? customer.solarSystem.noOfPanels : '—'}
-                          </TableCell>
-                        </TableRow>
-
-                        {/* Total Wattage */}
-                        <TableRow className="border-b hover:bg-transparent">
-                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">
-                            <div>Total Wattage</div>
-                            <span className="text-[10px] text-slate-500 font-normal">(Wattage x Panels)</span>
-                          </TableCell>
-                          <TableCell className="text-xs font-bold text-[#002868] bg-sky-50/50">
-                            {totalWattageVal > 0 ? `${totalWattageVal} W (${(totalWattageVal / 1000).toFixed(2)} kW)` : '—'}
-                          </TableCell>
-                        </TableRow>
-
-                        {/* Panel Warranty End Date */}
-                        <TableRow className="border-b hover:bg-transparent">
-                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Panel Warranty End Date</TableCell>
-                          <TableCell className="font-mono text-xs font-semibold text-amber-900">
-                            {formatDate(customer.solarSystem?.panelWarrantyEnd)}
-                          </TableCell>
-                        </TableRow>
-
-                        {/* Battery Category */}
-                        <TableRow className="border-b hover:bg-transparent">
-                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Battery Category</TableCell>
-                          <TableCell className="text-xs">
-                            {customer.solarSystem?.batteryCategory ? (
-                              <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
-                                {customer.solarSystem.batteryCategory}
-                              </Badge>
-                            ) : (
-                              <span className="text-slate-400 font-medium">—</span>
-                            )}
-                          </TableCell>
-                        </TableRow>
-
-                        {/* Battery Brand */}
-                        <TableRow className="border-b hover:bg-transparent">
-                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Battery Brand</TableCell>
-                          <TableCell className="text-xs">
-                            {customer.solarSystem?.batteryBrand && customer.solarSystem.batteryBrand !== 'N/A' ? (
-                              <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
-                                {customer.solarSystem.batteryBrand}
-                              </Badge>
-                            ) : (customer.solarSystem?.batteryBrand === 'N/A' && Number(customer.solarSystem?.noOfBatteries) > 0) ? (
-                              <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
-                                N/A
-                              </Badge>
-                            ) : (
-                              <span className="text-slate-400 font-medium">—</span>
-                            )}
-                          </TableCell>
-                        </TableRow>
-
-                        {/* No. of Batteries */}
-                        <TableRow className="border-b hover:bg-transparent">
-                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">No. of Batteries</TableCell>
-                          <TableCell className="text-xs font-semibold text-[var(--color-ink)]">
-                            {noOfBatteries > 0 ? noOfBatteries : '—'}
-                          </TableCell>
-                        </TableRow>
-
-                        {/* Battery Units Breakdown & Warranty */}
-                        {noOfBatteries > 1 ? (
-                          <TableRow className="border-b hover:bg-transparent bg-amber-50/20">
-                            <TableCell className="font-bold text-xs bg-amber-50/60 border-r border-slate-200 text-[#002868]">
-                              <div>Batteries Units</div>
-                              <span className="text-[10px] text-amber-800 font-normal">All {noOfBatteries} units</span>
-                            </TableCell>
-                            <TableCell className="text-xs p-2.5">
-                              <div className="space-y-2">
-                                {Array.from({ length: noOfBatteries }).map((_, idx) => {
-                                  const brand = customer.solarSystem?.batteryBrand || '—'
-                                  const serial = batSerials[idx] || (idx === 0 ? (customer.solarSystem?.batterySerial || '—') : `${customer.solarSystem?.batterySerial || 'BAT'}-${idx + 1}`)
-                                  return (
-                                    <div key={idx} className="p-2.5 rounded-lg border border-amber-200/80 bg-white shadow-2xs space-y-1">
-                                      <div className="font-bold text-[#002868] text-xs flex items-center justify-between border-b border-slate-100 pb-1">
-                                        <span>Battery #{idx + 1}</span>
-                                        <Badge variant="outline" className="bg-amber-100 text-amber-950 border-amber-300 font-bold text-[10px]">{brand}</Badge>
-                                      </div>
-                                      <div className="text-[11px] text-slate-700 flex justify-between">
-                                        <span className="font-semibold text-slate-500">Serial #:</span> 
-                                        <span className="font-mono font-bold text-[#002868]">{serial}</span>
-                                      </div>
-                                      <div className="text-[11px] text-slate-700 flex justify-between items-center">
-                                        <span className="font-semibold text-slate-500">Warranty End:</span> 
-                                        <span className="font-mono font-semibold text-amber-900 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
-                                          {formatDate(customer.solarSystem?.batteryWarrantyEnd)}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  )
-                                })}
-                              </div>
+                          {/* Ingress Protection (IP) */}
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Ingress Protection (IP)</TableCell>
+                            <TableCell className="text-xs">
+                              {customer.solarSystem?.ingressProtection ? (
+                                <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                                  {customer.solarSystem.ingressProtection.startsWith('IP') ? customer.solarSystem.ingressProtection : `IP ${customer.solarSystem.ingressProtection}`}
+                                </Badge>
+                              ) : (
+                                <span className="text-slate-400 font-medium">—</span>
+                              )}
                             </TableCell>
                           </TableRow>
-                        ) : (
-                          <>
-                            <TableRow className="border-b hover:bg-transparent">
-                              <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Battery Serial #</TableCell>
-                              <TableCell className="font-mono text-xs font-semibold text-[var(--color-ink)]">
-                                {customer.solarSystem?.batterySerial || '—'}
+
+                          {/* Structure Type */}
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Structure Type & Material</TableCell>
+                            <TableCell className="text-xs">
+                              {structureDisplay !== '—' ? (
+                                <div className="flex gap-2 items-center flex-wrap">
+                                  {customer.solarSystem?.structureType && (
+                                    <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                                      {customer.solarSystem.structureType}
+                                    </Badge>
+                                  )}
+                                  {customer.solarSystem?.structureMaterial && (
+                                    <Badge variant="outline" className="bg-amber-100 text-amber-950 border-amber-400 font-semibold">
+                                      {customer.solarSystem.structureMaterial}
+                                    </Badge>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-slate-400 font-medium">—</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+
+                          {/* System Installation Date */}
+                          <TableRow className="hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">System Installation Date</TableCell>
+                            <TableCell className="text-xs font-semibold text-[var(--color-ink)] flex items-center gap-2 font-mono">
+                              <span className="text-slate-500">📅</span>
+                              {formatDate(customer.solarSystem?.systemInstallationDate)}
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </div>
+
+                    {/* Right Column: Solar Array, Battery Storage */}
+                    <div className="w-full">
+                      <SectionHeader>
+                        PV Panels & Battery Energy Storage
+                      </SectionHeader>
+                      <Table>
+                        <TableBody>
+                          {/* Panel Technology */}
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs w-44 bg-slate-50 border-r border-slate-200 text-[#002868]">Panel Technology</TableCell>
+                            <TableCell className="text-xs">
+                              {customer.solarSystem?.panelTechnology ? (
+                                <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                                  {customer.solarSystem.panelTechnology}
+                                </Badge>
+                              ) : (
+                                <span className="text-slate-400 font-medium">—</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+
+                          {/* Panel Brand */}
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Panel Brand</TableCell>
+                            <TableCell className="text-xs">
+                              {customer.solarSystem?.panelBrand ? (
+                                <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                                  {customer.solarSystem.panelBrand}
+                                </Badge>
+                              ) : (
+                                <span className="text-slate-400 font-medium">—</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+
+                          {/* Panel Wattage & No of Panels */}
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Panel Wattage</TableCell>
+                            <TableCell className="text-xs font-semibold text-[var(--color-ink)]">
+                              {customer.solarSystem?.panelWattage && Number(customer.solarSystem.panelWattage) > 0 ? `${customer.solarSystem.panelWattage} W` : '—'}
+                            </TableCell>
+                          </TableRow>
+
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">No of Panels</TableCell>
+                            <TableCell className="text-xs font-semibold text-[var(--color-ink)]">
+                              {customer.solarSystem?.noOfPanels && Number(customer.solarSystem.noOfPanels) > 0 ? customer.solarSystem.noOfPanels : '—'}
+                            </TableCell>
+                          </TableRow>
+
+                          {/* Total Wattage */}
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">
+                              <div>Total Wattage</div>
+                              <span className="text-[10px] text-slate-500 font-normal">(Wattage x Panels)</span>
+                            </TableCell>
+                            <TableCell className="text-xs font-bold text-[#002868] bg-sky-50/50">
+                              {totalWattageVal > 0 ? `${totalWattageVal} W (${(totalWattageVal / 1000).toFixed(2)} kW)` : '—'}
+                            </TableCell>
+                          </TableRow>
+
+                          {/* Panel Warranty End Date */}
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Panel Warranty End Date</TableCell>
+                            <TableCell className="font-mono text-xs font-semibold text-amber-900">
+                              {formatDate(customer.solarSystem?.panelWarrantyEnd)}
+                            </TableCell>
+                          </TableRow>
+
+                          {/* Battery Category */}
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Battery Category</TableCell>
+                            <TableCell className="text-xs">
+                              {customer.solarSystem?.batteryCategory ? (
+                                <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                                  {customer.solarSystem.batteryCategory}
+                                </Badge>
+                              ) : (
+                                <span className="text-slate-400 font-medium">—</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+
+                          {/* Battery Brand */}
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Battery Brand</TableCell>
+                            <TableCell className="text-xs">
+                              {customer.solarSystem?.batteryBrand && customer.solarSystem.batteryBrand !== 'N/A' ? (
+                                <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                                  {customer.solarSystem.batteryBrand}
+                                </Badge>
+                              ) : (customer.solarSystem?.batteryBrand === 'N/A' && Number(customer.solarSystem?.noOfBatteries) > 0) ? (
+                                <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                                  N/A
+                                </Badge>
+                              ) : (
+                                <span className="text-slate-400 font-medium">—</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+
+                          {/* No. of Batteries */}
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">No. of Batteries</TableCell>
+                            <TableCell className="text-xs font-semibold text-[var(--color-ink)]">
+                              {noOfBatteries > 0 ? noOfBatteries : '—'}
+                            </TableCell>
+                          </TableRow>
+
+                          {/* Battery Units Breakdown & Warranty */}
+                          {noOfBatteries > 1 ? (
+                            <TableRow className="border-b hover:bg-transparent bg-amber-50/20">
+                              <TableCell className="font-bold text-xs bg-amber-50/60 border-r border-slate-200 text-[#002868]">
+                                <div>Batteries Units</div>
+                                <span className="text-[10px] text-amber-800 font-normal">All {noOfBatteries} units</span>
+                              </TableCell>
+                              <TableCell className="text-xs p-2.5">
+                                <div className="space-y-2">
+                                  {Array.from({ length: noOfBatteries }).map((_, idx) => {
+                                    const brand = customer.solarSystem?.batteryBrand || '—'
+                                    const serial = batSerials[idx] || (idx === 0 ? (customer.solarSystem?.batterySerial || '—') : `${customer.solarSystem?.batterySerial || 'BAT'}-${idx + 1}`)
+                                    return (
+                                      <div key={idx} className="p-2.5 rounded-lg border border-amber-200/80 bg-white shadow-2xs space-y-1">
+                                        <div className="font-bold text-[#002868] text-xs flex items-center justify-between border-b border-slate-100 pb-1">
+                                          <span>Battery #{idx + 1}</span>
+                                          <Badge variant="outline" className="bg-amber-100 text-amber-950 border-amber-300 font-bold text-[10px]">{brand}</Badge>
+                                        </div>
+                                        <div className="text-[11px] text-slate-700 flex justify-between">
+                                          <span className="font-semibold text-slate-500">Serial #:</span> 
+                                          <span className="font-mono font-bold text-[#002868]">{serial}</span>
+                                        </div>
+                                        <div className="text-[11px] text-slate-700 flex justify-between items-center">
+                                          <span className="font-semibold text-slate-500">Warranty End:</span> 
+                                          <span className="font-mono font-semibold text-amber-900 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                                            {formatDate(customer.solarSystem?.batteryWarrantyEnd)}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
                               </TableCell>
                             </TableRow>
-                            <TableRow className="hover:bg-transparent">
-                              <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Battery Warranty End Date</TableCell>
-                              <TableCell className="font-mono text-xs font-semibold text-amber-900">
-                                {formatDate(customer.solarSystem?.batteryWarrantyEnd)}
-                              </TableCell>
-                            </TableRow>
-                          </>
-                        )}
-                      </TableBody>
-                    </Table>
+                          ) : (
+                            <>
+                              <TableRow className="border-b hover:bg-transparent">
+                                <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Battery Serial #</TableCell>
+                                <TableCell className="font-mono text-xs font-semibold text-[var(--color-ink)]">
+                                  {customer.solarSystem?.batterySerial || '—'}
+                                </TableCell>
+                              </TableRow>
+                              <TableRow className="hover:bg-transparent">
+                                <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Battery Warranty End Date</TableCell>
+                                <TableCell className="font-mono text-xs font-semibold text-amber-900">
+                                  {formatDate(customer.solarSystem?.batteryWarrantyEnd)}
+                                </TableCell>
+                              </TableRow>
+                            </>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+
+              {/* System Equipment Photos Card (R2 Cloud Images) */}
+              <EquipmentPhotosCard customerId={customer.id} solarSystem={customer.solarSystem} canEdit={canEditSolarSpecs} />
+            </div>
           )
         })()}
 

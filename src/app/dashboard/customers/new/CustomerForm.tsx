@@ -472,10 +472,24 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
     setUploading(true)
 
     try {
+      async function uploadFileToR2(file: File, folder: string): Promise<string | null> {
+        try {
+          const data = new FormData()
+          data.append('file', file)
+          data.append('folder', folder)
+          const res = await fetch('/api/upload/r2', { method: 'POST', body: data })
+          if (!res.ok) return null
+          const result = await res.json()
+          return result.url || null
+        } catch (err) {
+          console.error('R2 Upload error:', err)
+          return null
+        }
+      }
+
       let cnicFrontUrl = null
       if (cnicFrontFile) {
-        const ext = cnicFrontFile.name.split('.').pop()
-        cnicFrontUrl = await uploadFile(cnicFrontFile, 'crm-uploads', `cnics/${values.cnic}-front-${Date.now()}.${ext}`)
+        cnicFrontUrl = await uploadFileToR2(cnicFrontFile, 'cnics')
       }
 
       const formData = new FormData()
@@ -495,28 +509,22 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
       const primaryBatteryWarranty = batteryWarrantyList[0] || values.batteryWarrantyExpiry
       if (primaryBatteryWarranty) formData.set('batteryWarrantyExpiry', primaryBatteryWarranty)
 
-      // Upload inverter photos
+      // Upload inverter photos to Cloudflare R2 Cloud
       const inverterImageUrls: string[] = []
       for (let i = 0; i < inverterPhotos.length; i++) {
         const file = inverterPhotos[i]
         if (file) {
-          const ext = file.name.split('.').pop() || 'jpg'
-          const safeCnic = (values.cnic || 'inv').replace(/[^a-zA-Z0-9]/g, '')
-          const path = `equipment/inverters/${safeCnic}-inv-${i + 1}-${Date.now()}.${ext}`
-          const url = await uploadFile(file, 'crm-uploads', path)
+          const url = await uploadFileToR2(file, 'equipment/inverters')
           if (url) inverterImageUrls.push(url)
         }
       }
 
-      // Upload battery photos
+      // Upload battery photos to Cloudflare R2 Cloud
       const batteryImageUrls: string[] = []
       for (let i = 0; i < batteryPhotos.length; i++) {
         const file = batteryPhotos[i]
         if (file) {
-          const ext = file.name.split('.').pop() || 'jpg'
-          const safeCnic = (values.cnic || 'bat').replace(/[^a-zA-Z0-9]/g, '')
-          const path = `equipment/batteries/${safeCnic}-bat-${i + 1}-${Date.now()}.${ext}`
-          const url = await uploadFile(file, 'crm-uploads', path)
+          const url = await uploadFileToR2(file, 'equipment/batteries')
           if (url) batteryImageUrls.push(url)
         }
       }
@@ -670,7 +678,6 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                 <CardContent className="p-6 space-y-6">
                   <div className="border-b border-line pb-3">
                     <h2 className="text-lg font-bold text-[var(--color-graphite)]">1. Customer Details</h2>
-                    <p className="text-xs text-[var(--color-slate-custom)]">Enter customer contact details, address, and CNIC credentials.</p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -914,7 +921,6 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                       <div className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs bg-amber-100 text-amber-900">2</div>
                       <div>
                         <h2 className="text-lg font-bold text-[var(--color-graphite)]">Package Details</h2>
-                        <p className="text-xs text-[var(--color-slate-custom)]">Choose system capacity size, package tier, billing cycle, and monitoring coverage.</p>
                       </div>
                     </div>
                   </div>
@@ -1150,7 +1156,6 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
               <CardContent className="p-6 space-y-7">
                 <div className="border-b border-line pb-3">
                   <h2 className="text-lg font-bold text-[var(--color-graphite)]">2. Solar System Details</h2>
-                  <p className="text-xs text-[var(--color-slate-custom)]">Comprehensive hardware specs, warranties, and protection parameters.</p>
                 </div>
 
                 {/* 1. Meter & Utility Details */}
@@ -1331,65 +1336,124 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                     {/* No. of Inverters */}
                     <FormField control={form.control} name="noOfInverters" render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-xs font-semibold">No. of Inverters *</FormLabel>
+                        <FormLabel className="text-xs font-bold text-[#002868]">No. of Inverters *</FormLabel>
                         <FormControl>
-                          <Input
-                            type="number"
-                            min={1}
-                            max={20}
-                            value={field.value || 1}
-                            onChange={(e) => {
-                              const val = Number(e.target.value) || 1
-                              field.onChange(val)
-                            }}
-                            className="h-10 text-xs font-bold"
-                          />
+                          <div className="flex items-center gap-1.5">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const current = Math.max(1, (Number(field.value) || 1) - 1)
+                                field.onChange(current)
+                              }}
+                              className="h-10 w-10 text-base font-bold bg-slate-100 hover:bg-slate-200 border-slate-300 cursor-pointer"
+                            >
+                              -
+                            </Button>
+                            <Input
+                              type="number"
+                              min={1}
+                              max={20}
+                              value={field.value || 1}
+                              onChange={(e) => {
+                                const val = Math.max(1, Number(e.target.value) || 1)
+                                field.onChange(val)
+                              }}
+                              className="h-10 text-xs font-bold text-center font-mono bg-white"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const current = Math.min(20, (Number(field.value) || 1) + 1)
+                                field.onChange(current)
+                              }}
+                              className="h-10 w-10 text-base font-bold bg-slate-100 hover:bg-slate-200 border-slate-300 cursor-pointer"
+                            >
+                              +
+                            </Button>
+                          </div>
                         </FormControl>
+                        <FormMessage />
                       </FormItem>
                     )} />
                   </div>
 
-                  {/* Dynamic Multi-Inverter Brand, Serial & Warranty List */}
+                  {/* Dynamic Multi-Inverter Brand, Serial, Warranty & Photo Upload List */}
                   <div className="space-y-3 p-4 bg-slate-50/70 rounded-xl border border-slate-200">
-                    <p className="text-xs font-bold text-slate-700">
-                      Inverter Unit Details ({inverterList.length || 1} {inverterList.length === 1 ? 'Unit' : 'Units'})
-                    </p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-bold text-slate-800">
+                        Inverter Unit Details ({inverterList.length || 1} {inverterList.length === 1 ? 'Unit' : 'Units'})
+                      </p>
+                      
+                    </div>
+
                     <div className="space-y-3">
                       {(inverterList.length > 0 ? inverterList : [{ brand: form.watch('inverterBrand') || '', serial: form.watch('inverterSerial') || '', warrantyExpiry: form.watch('inverterWarrantyExpiry') || '' }]).map((inv, idx) => (
-                        <div key={idx} className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 bg-white rounded-lg border border-slate-200 shadow-2xs">
-                          <div>
-                            <label className="text-[11px] font-bold text-slate-600 block mb-1">
-                              Inverter #{idx + 1} Brand (41+ Brands) *
-                            </label>
-                            <AutoSuggestInput
-                              value={inv.brand || ''}
-                              onChange={(val) => handleInverterChange(idx, 'brand', val)}
-                              options={INVERTER_BRANDS}
-                              placeholder="Type or select brand..."
-                              className="h-9 text-xs bg-white"
-                            />
+                        <div key={idx} className="p-4 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-3">
+                          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                            <span className="text-xs font-bold text-slate-800">Inverter #{idx + 1} Configuration &amp; Photo</span>
+                            {inverterPhotos[idx] && (
+                              <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded flex items-center gap-1">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Photo Selected
+                              </span>
+                            )}
                           </div>
-                          <div>
-                            <label className="text-[11px] font-bold text-slate-600 block mb-1">
-                              Inverter #{idx + 1} Serial # *
-                            </label>
-                            <Input
-                              placeholder="Serial number..."
-                              value={inv.serial || ''}
-                              onChange={(e) => handleInverterChange(idx, 'serial', e.target.value)}
-                              className="h-9 text-xs font-mono"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-[11px] font-bold text-slate-600 block mb-1">
-                              Inverter #{idx + 1} Warranty End Date
-                            </label>
-                            <Input
-                              type="date"
-                              value={inv.warrantyExpiry || ''}
-                              onChange={(e) => handleInverterChange(idx, 'warrantyExpiry', e.target.value)}
-                              className="h-9 text-xs font-semibold"
-                            />
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+                            <div>
+                              <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                                Inverter #{idx + 1} Brand *
+                              </label>
+                              <AutoSuggestInput
+                                value={inv.brand || ''}
+                                onChange={(val) => handleInverterChange(idx, 'brand', val)}
+                                options={INVERTER_BRANDS}
+                                placeholder="Type or select brand..."
+                                className="h-9 text-xs bg-white"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                                Inverter #{idx + 1} Serial # *
+                              </label>
+                              <Input
+                                placeholder="Serial number..."
+                                value={inv.serial || ''}
+                                onChange={(e) => handleInverterChange(idx, 'serial', e.target.value)}
+                                className="h-9 text-xs font-mono"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                                Inverter #{idx + 1} Warranty End Date
+                              </label>
+                              <Input
+                                type="date"
+                                value={inv.warrantyExpiry || ''}
+                                onChange={(e) => handleInverterChange(idx, 'warrantyExpiry', e.target.value)}
+                                className="h-9 text-xs font-semibold bg-white"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[11px] font-bold text-amber-900 block mb-1">
+                                📷 Upload Inverter #{idx + 1} Photo
+                              </label>
+                              <Input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0] || null
+                                  setInverterPhotos(prev => {
+                                    const updated = [...prev]
+                                    updated[idx] = file
+                                    return updated
+                                  })
+                                }}
+                                className="h-9 text-xs border-amber-300 bg-amber-50/20 file:bg-amber-100 file:text-amber-900 file:border-0 file:rounded file:px-2 file:py-1 file:text-xs file:font-semibold cursor-pointer"
+                              />
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -1420,10 +1484,10 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                       </FormItem>
                     )} />
 
-                    {/* Panel Brand (39+ Brands) */}
+                    {/* Panel Brand */}
                     <FormField control={form.control} name="panelBrand" render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-xs font-semibold">Panel Brand (39+ Brands) *</FormLabel>
+                        <FormLabel className="text-xs font-semibold">Panel Brand *</FormLabel>
                         <FormControl>
                           <AutoSuggestInput
                             value={field.value || ''}
@@ -1485,7 +1549,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                     <FormField control={form.control} name="panelType" render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs font-semibold">Panel Type</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || 'Monofacial'}>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
                           <FormControl>
                             <SelectTrigger className="h-10 text-xs">
                               <SelectValue placeholder="Select Panel Type..." />
@@ -1574,42 +1638,102 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                     {/* No. of Batteries */}
                     <FormField control={form.control} name="noOfBatteries" render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-xs font-semibold">No. of Batteries</FormLabel>
+                        <FormLabel className="text-xs font-bold text-[#002868]">No. of Batteries</FormLabel>
                         <FormControl>
-                          <Input
-                            type="number"
-                            min={0}
-                            max={20}
-                            value={field.value || 0}
-                            onChange={(e) => {
-                              const val = Number(e.target.value) || 0
-                              field.onChange(val)
-                            }}
-                            className="h-10 text-xs font-bold"
-                          />
+                          <div className="flex items-center gap-1.5">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const current = Math.max(0, (Number(field.value) || 0) - 1)
+                                field.onChange(current)
+                              }}
+                              className="h-10 w-10 text-base font-bold bg-slate-100 hover:bg-slate-200 border-slate-300 cursor-pointer"
+                            >
+                              -
+                            </Button>
+                            <Input
+                              type="number"
+                              min={0}
+                              max={20}
+                              value={field.value ?? 0}
+                              onChange={(e) => {
+                                const val = Math.max(0, Number(e.target.value) || 0)
+                                field.onChange(val)
+                              }}
+                              className="h-10 text-xs font-bold text-center font-mono bg-white"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const current = Math.min(20, (Number(field.value) || 0) + 1)
+                                field.onChange(current)
+                              }}
+                              className="h-10 w-10 text-base font-bold bg-slate-100 hover:bg-slate-200 border-slate-300 cursor-pointer"
+                            >
+                              +
+                            </Button>
+                          </div>
                         </FormControl>
+                        <FormMessage />
                       </FormItem>
                     )} />
                   </div>
 
-                  {/* Dynamic Multi-Battery Warranty End Dates */}
+                  {/* Dynamic Multi-Battery Details & Photo Upload */}
                   {Number(form.watch('noOfBatteries') || 0) > 0 && (
                     <div className="space-y-3 p-4 bg-slate-50/70 rounded-xl border border-slate-200">
-                      <p className="text-xs font-bold text-slate-700">
-                        Battery Warranty End Dates ({batteryWarrantyList.length || 1} {batteryWarrantyList.length === 1 ? 'Unit' : 'Units'})
-                      </p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-bold text-slate-800">
+                          Battery Unit Details ({batteryWarrantyList.length || 1} {batteryWarrantyList.length === 1 ? 'Unit' : 'Units'})
+                        </p>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {batteryWarrantyList.map((expiry, idx) => (
-                          <div key={idx} className="p-3 bg-white rounded-lg border border-slate-200 shadow-2xs">
-                            <label className="text-[11px] font-bold text-slate-600 block mb-1">
-                              Battery #{idx + 1} Warranty End Date
-                            </label>
-                            <Input
-                              type="date"
-                              value={expiry || ''}
-                              onChange={(e) => handleBatteryWarrantyChange(idx, e.target.value)}
-                              className="h-9 text-xs font-semibold"
-                            />
+                          <div key={idx} className="p-4 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-3">
+                            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                              <span className="text-xs font-bold text-slate-800">Battery #{idx + 1} Warranty &amp; Photo</span>
+                              {batteryPhotos[idx] && (
+                                <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded flex items-center gap-1">
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Photo Selected
+                                </span>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+                              <div>
+                                <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                                  Battery #{idx + 1} Warranty End Date
+                                </label>
+                                <Input
+                                  type="date"
+                                  value={expiry || ''}
+                                  onChange={(e) => handleBatteryWarrantyChange(idx, e.target.value)}
+                                  className="h-9 text-xs font-semibold bg-white"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="text-[11px] font-bold text-amber-900 block mb-1">
+                                  📷 Upload Battery #{idx + 1} Photo
+                                </label>
+                                <Input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0] || null
+                                    setBatteryPhotos(prev => {
+                                      const updated = [...prev]
+                                      updated[idx] = file
+                                      return updated
+                                    })
+                                  }}
+                                  className="h-9 text-xs border-amber-300 bg-amber-50/20 file:bg-amber-100 file:text-amber-900 file:border-0 file:rounded file:px-2 file:py-1 file:text-xs file:font-semibold cursor-pointer"
+                                />
+                              </div>
+                            </div>
                           </div>
                         ))}
                       </div>

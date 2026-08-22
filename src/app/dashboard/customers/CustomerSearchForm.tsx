@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Search, RotateCcw, Eye, SearchX, Loader2 } from 'lucide-react'
 
+import { SectionHeader } from '@/components/ui/section-header'
+
 type CustomerRecord = {
   id: string
   customerCode: string
@@ -94,17 +96,13 @@ export function CustomerSearchForm({
   return (
     <div className="space-y-6">
       {/* 6-Field Search Card */}
-      <Card className="shadow-sm border-line bg-white">
-        <CardHeader className="pb-4 border-b border-line">
-          <div>
-            <CardTitle className="text-xl font-display font-bold text-[var(--color-graphite)]">
-              Customer Search Page
-            </CardTitle>
-            <CardDescription className="text-xs text-[var(--color-slate-custom)] mt-0.5">
-              Filter registered customers by customer ID, CRF #, full name, contact, CNIC, or email.
-            </CardDescription>
-          </div>
-        </CardHeader>
+      <Card className="shadow-sm border-line bg-white overflow-hidden">
+        <SectionHeader>
+          <span className="flex items-center gap-2">
+            <Search className="h-4 w-4 text-[#F58220]" />
+            Customer Search Page
+          </span>
+        </SectionHeader>
         <CardContent className="pt-6">
           <form onSubmit={(e) => { e.preventDefault(); handleSearch() }} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">

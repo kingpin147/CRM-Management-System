@@ -187,9 +187,41 @@ export async function saveSolarSystem(formData: FormData) {
   const installerName = formData.get('installerName') as string || 'EnergyGurus Technical Team'
   const installerCompany = formData.get('installerCompany') as string || 'EnergyGurus Private Limited'
 
+  // Images (R2 text URLs)
+  const inverterImagesRaw = formData.get('inverterImages') as string || formData.get('inverterImageUrl') as string
+  const batteryImagesRaw = formData.get('batteryImages') as string || formData.get('batteryImageUrl') as string
+
+  let inverterImages: string[] | undefined
+  if (inverterImagesRaw) {
+    try {
+      inverterImages = JSON.parse(inverterImagesRaw)
+    } catch {
+      inverterImages = [inverterImagesRaw]
+    }
+  }
+
+  let batteryImages: string[] | undefined
+  if (batteryImagesRaw) {
+    try {
+      batteryImages = JSON.parse(batteryImagesRaw)
+    } catch {
+      batteryImages = [batteryImagesRaw]
+    }
+  }
+
   if (!customerId) return { error: 'Customer ID is required' }
 
   try {
+    const currentSystem = await prisma.solarSystem.findUnique({ where: { customerId } })
+    
+    const finalInverterImages = inverterImages !== undefined
+      ? (inverterImages.length > 0 ? inverterImages : (currentSystem?.inverterImages || []))
+      : (currentSystem?.inverterImages || [])
+
+    const finalBatteryImages = batteryImages !== undefined
+      ? (batteryImages.length > 0 ? batteryImages : (currentSystem?.batteryImages || []))
+      : (currentSystem?.batteryImages || [])
+
     await prisma.solarSystem.upsert({
       where: { customerId },
       update: {
@@ -227,6 +259,8 @@ export async function saveSolarSystem(formData: FormData) {
         structureType,
         installerName,
         installerCompany,
+        inverterImages: finalInverterImages,
+        batteryImages: finalBatteryImages,
       },
       create: {
         customerId,
@@ -264,6 +298,8 @@ export async function saveSolarSystem(formData: FormData) {
         structureType,
         installerName,
         installerCompany,
+        inverterImages: finalInverterImages,
+        batteryImages: finalBatteryImages,
       },
     })
 

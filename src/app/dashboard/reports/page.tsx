@@ -29,6 +29,8 @@ export default async function ReportsPage({
       invoices: true,
       transactions: true,
       ledgerEntries: true,
+      accountExecutive: true,
+      assignedInstaller: true,
     },
     orderBy: {
       signupDate: 'desc',
