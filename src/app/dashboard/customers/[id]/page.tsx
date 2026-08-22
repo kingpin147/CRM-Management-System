@@ -580,6 +580,16 @@ export default async function CustomerDetailPage({
                                             {formatDate(customer.solarSystem?.inverterWarrantyEnd)}
                                           </span>
                                         </div>
+                                        {(customer.solarSystem?.inverterImages?.[idx] || customer.solarSystem?.inverterImages?.[0]) && (
+                                          <div className="text-[11px] text-slate-700 flex justify-between items-center pt-1 border-t border-slate-100">
+                                            <span className="font-semibold text-slate-500">Inverter #{idx + 1} Image:</span> 
+                                            <EquipmentPhotoViewer
+                                              imageUrl={customer.solarSystem?.inverterImages?.[idx] || customer.solarSystem?.inverterImages?.[0]}
+                                              title={`Inverter #${idx + 1} (${brand}) Hardware Photo`}
+                                              buttonLabel={`View Inverter #${idx + 1} Photo`}
+                                            />
+                                          </div>
+                                        )}
                                       </div>
                                     )
                                   })}
