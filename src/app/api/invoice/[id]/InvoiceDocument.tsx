@@ -91,6 +91,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     marginBottom: 7,
     overflow: 'hidden',
+    backgroundColor: '#F4F6F8',
   },
   cardHeader: {
     backgroundColor: '#002868',
@@ -103,6 +104,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   cardBody: {
+    backgroundColor: '#F4F6F8',
     paddingHorizontal: 8,
     paddingVertical: 5.5,
   },
@@ -225,6 +227,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     overflow: 'hidden',
     marginTop: 1,
+    backgroundColor: '#FFFFFF',
   },
   tableHeaderRow: {
     flexDirection: 'row',

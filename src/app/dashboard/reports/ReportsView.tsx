@@ -73,6 +73,86 @@ function formatCrf(crf?: string | null, code?: string | null): string {
   return ''
 }
 
+function computeCustomerFinancials(c: CustomerRecord) {
+  const invoices = Array.isArray(c.invoices) ? [...c.invoices].sort((a: any, b: any) => new Date(a.createdAt || a.dueDate || 0).getTime() - new Date(b.createdAt || b.dueDate || 0).getTime()) : []
+  
+  let arrears = 0
+  let current = 0
+  let paymentCollection = 0
+
+  if (invoices.length > 0) {
+    const latestInvoice = invoices[invoices.length - 1]
+    current = Number(latestInvoice.totalAmount || latestInvoice.amount || 0)
+    
+    // Past unpaid invoices
+    const pastInvoices = invoices.slice(0, -1)
+    arrears = pastInvoices.reduce((sum: number, inv: any) => {
+      if (inv.status !== 'PAID') {
+        const invTotal = Number(inv.totalAmount || inv.amount || 0)
+        const invPaid = Number(inv.paidAmount || 0)
+        return sum + Math.max(0, invTotal - invPaid)
+      }
+      return sum
+    }, 0)
+
+    const totalTransactions = (c.transactions || []).reduce((sum: number, t: any) => sum + Number(t.amount || 0), 0)
+    const totalInvoicePaid = invoices.reduce((sum: number, inv: any) => sum + Number(inv.paidAmount || 0), 0)
+    const packagePaid = Number(c.packagePlan?.paidAmount || 0)
+    paymentCollection = Math.max(totalTransactions, totalInvoicePaid, packagePaid)
+  } else {
+    const totalPlanAmount = Number(c.packagePlan?.totalAmount || 0)
+    const paidAmount = Number(c.packagePlan?.paidAmount || 0)
+    paymentCollection = paidAmount
+    current = totalPlanAmount
+    arrears = 0
+  }
+
+  // Calculate Adjustments (from ledger entries or discount)
+  let adjDebit = 0
+  let adjCredit = 0
+  if (c.ledgerEntries && c.ledgerEntries.length > 0) {
+    c.ledgerEntries.forEach((le: any) => {
+      const narr = (le.narration || '').toLowerCase()
+      if (narr.includes('adjustment') || narr.includes('discount') || narr.includes('credit note') || narr.includes('debit note') || narr.includes('adj') || narr.includes('reversal')) {
+        adjDebit += Number(le.debit || 0)
+        adjCredit += Number(le.credit || 0)
+      }
+    })
+  }
+
+  let adjustmentText = '0'
+  let netAdjustment = 0
+  if (adjCredit > adjDebit) {
+    netAdjustment = -(adjCredit - adjDebit)
+    adjustmentText = `-${Math.round(adjCredit - adjDebit)} Credit`
+  } else if (adjDebit > adjCredit) {
+    netAdjustment = adjDebit - adjCredit
+    adjustmentText = `${Math.round(adjDebit - adjCredit)} Debit`
+  } else if (Number(c.packagePlan?.appliedDiscount || 0) > 0) {
+    const discountVal = (Number(c.packagePlan?.monthlyBasePrice || 0) * Number(c.packagePlan?.appliedDiscount)) / 100
+    if (discountVal > 0) {
+      netAdjustment = -discountVal
+      adjustmentText = `-${Math.round(discountVal)} Credit`
+    }
+  }
+
+  const totalDue = arrears + current + (netAdjustment > 0 ? netAdjustment : 0)
+  const effectivePaid = paymentCollection + (netAdjustment < 0 ? Math.abs(netAdjustment) : 0)
+  const balanceAmount = totalDue > 0 ? (totalDue - effectivePaid) : (Number(c.packagePlan?.totalAmount || 0) - paymentCollection)
+
+  return {
+    arrears: Math.round(arrears),
+    current: Math.round(current),
+    paymentCollection: Math.round(paymentCollection),
+    adjustmentText,
+    netAdjustment: Math.round(netAdjustment),
+    balanceAmount: Math.round(balanceAmount)
+  }
+}
+
+// Alias for backward compatibility
+const computeReceivableDetails = computeCustomerFinancials
+
 export function ReportsView({ 
   customers, 
   initialView = 'status' 
@@ -107,6 +187,7 @@ export function ReportsView({
   const [dateFrom, setDateFrom] = React.useState<string>('')
   const [dateTo, setDateTo] = React.useState<string>('')
   const [searchQuery, setSearchQuery] = React.useState<string>('')
+  const [includeZeroNegative, setIncludeZeroNegative] = React.useState<boolean>(false)
 
   const [appliedFilters, setAppliedFilters] = React.useState<{
     status: string
@@ -118,6 +199,7 @@ export function ReportsView({
     dateFrom: string
     dateTo: string
     searchQuery: string
+    includeZeroNegative: boolean
   }>({
     status: 'ALL',
     customerType: 'ALL',
@@ -128,6 +210,7 @@ export function ReportsView({
     dateFrom: '',
     dateTo: '',
     searchQuery: '',
+    includeZeroNegative: false,
   })
 
   // Unique Lists for Dropdowns
@@ -163,10 +246,8 @@ export function ReportsView({
       STATUS: customers.length,
       SALES: customers.filter((c) => c.packagePlan !== null).length,
       RECEIVABLE: customers.filter((c) => {
-        const total = Number(c.packagePlan?.totalAmount) || 0
-        const paid = Number(c.packagePlan?.paidAmount) || 0
-        const hasUnpaidInvoice = c.invoices && c.invoices.some((i: any) => i.status === 'UNPAID')
-        return hasUnpaidInvoice || (total > paid)
+        const { balanceAmount } = computeReceivableDetails(c)
+        return balanceAmount > 0
       }).length,
       ADJUSTMENT: customers.filter((c) => {
         const hasDiscount = Number(c.packagePlan?.appliedDiscount) > 0
@@ -189,10 +270,8 @@ export function ReportsView({
       if (activeCategory === 'SALES' && !c.packagePlan) return false
       
       if (activeCategory === 'RECEIVABLE') {
-        const total = Number(c.packagePlan?.totalAmount) || 0
-        const paid = Number(c.packagePlan?.paidAmount) || 0
-        const hasUnpaidInvoice = c.invoices && c.invoices.some((i: any) => i.status === 'UNPAID')
-        if (!hasUnpaidInvoice && total <= paid) return false
+        const { balanceAmount } = computeReceivableDetails(c)
+        if (!appliedFilters.includeZeroNegative && balanceAmount <= 0) return false
       }
 
       if (activeCategory === 'ADJUSTMENT') {
@@ -210,13 +289,13 @@ export function ReportsView({
       }
 
       // Status Dropdown Filter
-      if (appliedFilters.status !== 'ALL' && c.status !== appliedFilters.status) return false
+      if (activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && appliedFilters.status !== 'ALL' && c.status !== appliedFilters.status) return false
 
       // Customer Type Dropdown Filter
-      if (appliedFilters.customerType !== 'ALL' && c.customerType?.toUpperCase() !== appliedFilters.customerType.toUpperCase()) return false
+      if (activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && appliedFilters.customerType !== 'ALL' && c.customerType?.toUpperCase() !== appliedFilters.customerType.toUpperCase()) return false
 
       // Account Executive Filter
-      if (appliedFilters.accountExecutive !== 'ALL') {
+      if (activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && appliedFilters.accountExecutive !== 'ALL') {
         const name = (c.accountExecutive?.fullName || c.accountExecutiveName || 'Unassigned').toLowerCase()
         if (name !== appliedFilters.accountExecutive.toLowerCase()) return false
       }
@@ -237,7 +316,7 @@ export function ReportsView({
       }
 
       // Search query
-      if (appliedFilters.searchQuery.trim()) {
+      if (activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && appliedFilters.searchQuery.trim()) {
         const q = appliedFilters.searchQuery.toLowerCase().trim()
         const match =
           c.fullName?.toLowerCase().includes(q) ||
@@ -368,6 +447,7 @@ export function ReportsView({
       dateFrom,
       dateTo,
       searchQuery,
+      includeZeroNegative,
     })
     setHasSearched(true)
   }
@@ -382,6 +462,7 @@ export function ReportsView({
     setDateFrom('')
     setDateTo('')
     setSearchQuery('')
+    setIncludeZeroNegative(false)
     setAppliedFilters({
       status: 'ALL',
       customerType: 'ALL',
@@ -392,6 +473,7 @@ export function ReportsView({
       dateFrom: '',
       dateTo: '',
       searchQuery: '',
+      includeZeroNegative: false,
     })
     setHasSearched(false)
   }
@@ -454,47 +536,40 @@ export function ReportsView({
         `"${c.status ? c.status.replace(/_/g, ' ') : ''}"`,
         `"${c.status ? c.status.replace(/_/g, ' ') : ''}"`,
       ])
-    } else if (activeCategory === 'SALES') {
+    } else if (activeCategory === 'SALES' || activeCategory === 'RECEIVABLE') {
       headers = [
-        'Customer ID', 'CRF #', 'Customer Name', 'Address', 'Contact Number',
-        'System Type', 'Package', 'Billing Type', 'Customer Type',
-        'Amount Payable (PKR)', 'Paid Amount (PKR)', 'Sign up Created Date', 'Activation Date'
-      ]
-      rows = filteredCustomers.map((c) => [
-        `"${formatCustomerId(c.customerCode || c.id)}"`,
-        `"${formatCrf(c.crfNumber, c.customerCode)}"`,
-        `"${c.fullName}"`,
-        `"${c.address}"`,
-        `"${c.contactNumber}"`,
-        `"${c.packagePlan?.systemSizeKw || c.solarSystem?.inverterSize || '-'}"`,
-        `"${c.packagePlan?.packageTier || 'Basic'}"`,
-        `"${c.packagePlan?.billingType || 'Monthly'}"`,
-        `"${c.customerType ? (c.customerType.charAt(0).toUpperCase() + c.customerType.slice(1).toLowerCase()) : 'Residential'}"`,
-        `"${Math.round(Number(c.packagePlan?.totalAmount || 0))}"`,
-        `"${Math.round(Number(c.packagePlan?.paidAmount || 0))}"`,
-        `"${formatDate(c.signupDate)}"`,
-        `"${c.activationDate ? formatDate(c.activationDate) : (c.solarSystem?.systemInstallationDate ? formatDate(c.solarSystem.systemInstallationDate) : 'Pending')}"`,
-      ])
-    } else if (activeCategory === 'RECEIVABLE') {
-      headers = [
-        'Customer ID', 'CRF #', 'Customer Name', 'Contact #', 'City', 'Package Tier',
-        'Total Amount (PKR)', 'Paid Amount (PKR)', 'Receivable Balance (PKR)', 'Status'
+        'Customer ID', 'Customer Name', 'Customer Address', 'Contact #',
+        'House #', 'Block', 'Street #', 'Sub Area', 'Area',
+        'Account Executive', 'City', 'Package', 'Customer Type',
+        'System Type:', 'Billing Type', 'Monitoring Time', 'Customer Status',
+        'Adjustment / Credit-Debit', 'Arrears (PKR)', 'Current (PKR)',
+        'Payment Collection (PKR)', 'Balance Amount (PKR)'
       ]
       rows = filteredCustomers.map((c) => {
-        const total = Math.round(Number(c.packagePlan?.totalAmount || 0))
-        const paid = Math.round(Number(c.packagePlan?.paidAmount || 0))
-        const receivable = Math.max(0, total - paid)
+        const fin = computeCustomerFinancials(c)
         return [
           `"${formatCustomerId(c.customerCode || c.id)}"`,
-          `"${formatCrf(c.crfNumber, c.customerCode)}"`,
           `"${c.fullName}"`,
+          `"${c.address}"`,
           `"${c.contactNumber}"`,
+          `"${c.houseNumber || c.houseNo || '-'}"`,
+          `"${c.block || '-'}"`,
+          `"${c.streetNumber || c.streetNo || '-'}"`,
+          `"${c.subArea || '-'}"`,
+          `"${c.area || '-'}"`,
+          `"${c.accountExecutive?.fullName || c.accountExecutiveName || '-'}"`,
           `"${c.city}"`,
           `"${c.packagePlan?.packageTier || '-'}"`,
-          `"${total}"`,
-          `"${paid}"`,
-          `"${receivable}"`,
-          `"${c.status.replace(/_/g, ' ')}"`,
+          `"${c.customerType ? (c.customerType.charAt(0).toUpperCase() + c.customerType.slice(1).toLowerCase()) : 'Residential'}"`,
+          `"${c.packagePlan?.systemSizeKw || c.solarSystem?.inverterSize || '-'}"`,
+          `"${c.packagePlan?.billingType || 'Monthly'}"`,
+          `"${c.packagePlan?.monitoringTime || '12 Hours'}"`,
+          `"${c.status ? c.status.replace(/_/g, ' ') : 'Active'}"`,
+          `"${fin.adjustmentText}"`,
+          `"${fin.arrears}"`,
+          `"${fin.current}"`,
+          `"${fin.paymentCollection}"`,
+          `"${fin.balanceAmount}"`,
         ]
       })
     } else if (activeCategory === 'ADJUSTMENT') {
@@ -645,52 +720,58 @@ export function ReportsView({
               </select>
             </div>
 
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold text-[var(--color-ink)]">Account Executive Sales</Label>
-              <select
-                value={selectedAccountExecutive}
-                onChange={(e) => setSelectedAccountExecutive(e.target.value)}
-                className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white"
-              >
-                <option value="ALL">All Account Executive Sales</option>
-                {aeOptions.map((ae) => (
-                  <option key={ae} value={ae}>{ae}</option>
-                ))}
-              </select>
-            </div>
+            {activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && (
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold text-[var(--color-ink)]">Account Executive Sales</Label>
+                <select
+                  value={selectedAccountExecutive}
+                  onChange={(e) => setSelectedAccountExecutive(e.target.value)}
+                  className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white"
+                >
+                  <option value="ALL">All Account Executive Sales</option>
+                  {aeOptions.map((ae) => (
+                    <option key={ae} value={ae}>{ae}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold text-[var(--color-ink)]">Customer Type</Label>
-              <select
-                value={selectedCustomerType}
-                onChange={(e) => setSelectedCustomerType(e.target.value)}
-                className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white"
-              >
-                <option value="ALL">All Customer Types</option>
-                <option value="RESIDENTIAL">Residential</option>
-                <option value="CORPORATE">Corporate</option>
-                <option value="INDUSTRIAL">Industrial</option>
-                {customerTypes.map((ct) => {
-                  const upper = ct.toUpperCase()
-                  if (['RESIDENTIAL', 'CORPORATE', 'INDUSTRIAL'].includes(upper)) return null
-                  return <option key={ct} value={ct}>{ct}</option>
-                })}
-              </select>
-            </div>
+            {activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && (
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold text-[var(--color-ink)]">Customer Type</Label>
+                <select
+                  value={selectedCustomerType}
+                  onChange={(e) => setSelectedCustomerType(e.target.value)}
+                  className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white"
+                >
+                  <option value="ALL">All Customer Types</option>
+                  <option value="RESIDENTIAL">Residential</option>
+                  <option value="CORPORATE">Corporate</option>
+                  <option value="INDUSTRIAL">Industrial</option>
+                  {customerTypes.map((ct) => {
+                    const upper = ct.toUpperCase()
+                    if (['RESIDENTIAL', 'CORPORATE', 'INDUSTRIAL'].includes(upper)) return null
+                    return <option key={ct} value={ct}>{ct}</option>
+                  })}
+                </select>
+              </div>
+            )}
 
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold text-[var(--color-ink)]">Select Status Filter</Label>
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white"
-              >
-                <option value="ALL">All Statuses</option>
-                {STATUS_OPTIONS.map((st) => (
-                  <option key={st.key} value={st.key}>{st.label}</option>
-                ))}
-              </select>
-            </div>
+            {activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && (
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold text-[var(--color-ink)]">Select Status Filter</Label>
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white"
+                >
+                  <option value="ALL">All Statuses</option>
+                  {STATUS_OPTIONS.map((st) => (
+                    <option key={st.key} value={st.key}>{st.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="space-y-1">
               <Label className="text-xs font-semibold text-[var(--color-ink)]">Calendar Date From</Label>
@@ -711,22 +792,38 @@ export function ReportsView({
                 className="text-xs h-9 border-[var(--color-line)]"
               />
             </div>
+
+            {activeCategory === 'RECEIVABLE' && (
+              <div className="sm:col-span-2 md:col-span-4 pt-1">
+                <label className="inline-flex items-center gap-2.5 cursor-pointer select-none text-xs font-bold text-[#002868] bg-slate-50 border border-slate-300 hover:bg-slate-100 rounded-lg px-3.5 py-2 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={includeZeroNegative}
+                    onChange={(e) => setIncludeZeroNegative(e.target.checked)}
+                    className="h-4 w-4 rounded border-slate-400 text-[#002868] focus:ring-[#002868] cursor-pointer"
+                  />
+                  <span>Zero and Negative Balances (hide/ Unhide)</span>
+                </label>
+              </div>
+            )}
           </div>
 
           {/* Search bar & Action Buttons */}
-          <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3 pt-4 border-t border-gray-100">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-[var(--color-slate-custom)]" />
-              <Input
-                placeholder="Search Customer ID, Name, Contact, CNIC..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleSearch()
-                }}
-                className="pl-9 text-xs h-10 border-[var(--color-line)] bg-slate-50/60 focus:bg-white"
-              />
-            </div>
+          <div className={`flex flex-col md:flex-row ${(activeCategory === 'SALES' || activeCategory === 'RECEIVABLE') ? 'justify-end' : 'justify-between'} items-stretch md:items-center gap-3 pt-4 border-t border-gray-100`}>
+            {activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && (
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-[var(--color-slate-custom)]" />
+                <Input
+                  placeholder="Search Customer ID, Name, Contact, CNIC..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSearch()
+                  }}
+                  className="pl-9 text-xs h-10 border-[var(--color-line)] bg-slate-50/60 focus:bg-white"
+                />
+              </div>
+            )}
             
             <div className="flex flex-wrap items-center gap-2">
               <Button
@@ -903,71 +1000,98 @@ export function ReportsView({
                 <TableHeader className="bg-[var(--color-paper)] border-t-2 border-slate-300">
                   <TableRow className="border-b border-gray-200">
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer ID</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">CRF #</TableHead>
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer Name</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Address</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Contact Number</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">System Type</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer Address</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Contact #</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">House #</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Block</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Street #</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Sub Area</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Area</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Account Executive</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">City</TableHead>
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Package</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Billing Type</TableHead>
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer Type</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] text-right whitespace-nowrap">Amount Payable</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] text-right whitespace-nowrap">Paid Amount</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Sign up Created Date</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Activation Date</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">System Type:</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Billing Type</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Monitoring Time</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer Status</TableHead>
+                    <TableHead className="font-bold text-xs text-emerald-950 bg-[#86efac]/35 whitespace-nowrap border-l border-emerald-200">Adjustment / Credit-Debit</TableHead>
+                    <TableHead className="font-bold text-xs text-emerald-950 bg-[#86efac]/35 text-right whitespace-nowrap border-r border-emerald-200">Arrears</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] text-right whitespace-nowrap">Current</TableHead>
+                    <TableHead className="font-bold text-xs text-emerald-950 bg-[#86efac]/35 text-right whitespace-nowrap border-x border-emerald-200">Payment Collection</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] text-right whitespace-nowrap">Balance Amount</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {!hasSearched ? (
                     <TableRow>
-                      <TableCell colSpan={13} className="h-32 text-center text-xs text-[var(--color-slate-custom)] font-medium">
+                      <TableCell colSpan={22} className="h-32 text-center text-xs text-[var(--color-slate-custom)] font-medium">
                         Select filters and click &quot;Search / Apply Filters&quot; to load report data.
                       </TableCell>
                     </TableRow>
                   ) : filteredCustomers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={13} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">
+                      <TableCell colSpan={22} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">
                         No sales records found matching the selected filters.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredCustomers.map((c) => (
-                      <TableRow key={c.id} className="hover:bg-[var(--color-paper)]/50 text-xs">
-                        <TableCell className="font-mono font-bold text-[var(--color-ink)] whitespace-nowrap">
-                          <Link href={`/dashboard/customers/${c.id}`} className="hover:underline text-amber-900">
-                            {formatCustomerId(c.customerCode || c.id)}
-                          </Link>
-                        </TableCell>
-                        <TableCell className="font-mono font-semibold text-gray-700 whitespace-nowrap">
-                          {formatCrf(c.crfNumber, c.customerCode)}
-                        </TableCell>
-                        <TableCell className="font-semibold text-gray-900 whitespace-nowrap">{c.fullName}</TableCell>
-                        <TableCell className="text-gray-600 max-w-xs truncate">{c.address}</TableCell>
-                        <TableCell className="font-mono whitespace-nowrap">{c.contactNumber}</TableCell>
-                        <TableCell className="whitespace-nowrap font-medium">{c.packagePlan?.systemSizeKw || c.solarSystem?.inverterSize || '-'}</TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          <Badge variant="outline" className="bg-amber-100 text-amber-900 border-amber-300 font-bold">
-                            {c.packagePlan?.packageTier || 'Basic'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">{c.packagePlan?.billingType || 'Monthly'}</TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold text-[10px]">
-                            {c.customerType ? (c.customerType.charAt(0).toUpperCase() + c.customerType.slice(1).toLowerCase()) : 'Residential'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right font-mono font-bold text-[var(--color-ink)] whitespace-nowrap">
-                          PKR {Math.round(Number(c.packagePlan?.totalAmount || 0)).toLocaleString()}
-                        </TableCell>
-                        <TableCell className="text-right font-mono font-bold text-emerald-700 whitespace-nowrap">
-                          PKR {Math.round(Number(c.packagePlan?.paidAmount || 0)).toLocaleString()}
-                        </TableCell>
-                        <TableCell className="text-gray-600 font-mono whitespace-nowrap">{formatDate(c.signupDate)}</TableCell>
-                        <TableCell className="text-gray-600 font-mono whitespace-nowrap">
-                          {c.activationDate ? formatDate(c.activationDate) : (c.solarSystem?.systemInstallationDate ? formatDate(c.solarSystem.systemInstallationDate) : 'Pending')}
-                        </TableCell>
-                      </TableRow>
-                    ))
+                    filteredCustomers.map((c) => {
+                      const fin = computeCustomerFinancials(c)
+                      return (
+                        <TableRow key={c.id} className="hover:bg-[var(--color-paper)]/50 text-xs">
+                          <TableCell className="font-mono font-bold text-[var(--color-ink)] whitespace-nowrap">
+                            <Link href={`/dashboard/customers/${c.id}`} className="hover:underline text-amber-900">
+                              {formatCustomerId(c.customerCode || c.id)}
+                            </Link>
+                          </TableCell>
+                          <TableCell className="font-semibold text-gray-900 whitespace-nowrap">{c.fullName}</TableCell>
+                          <TableCell className="text-gray-600 max-w-xs truncate">{c.address}</TableCell>
+                          <TableCell className="font-mono whitespace-nowrap">{c.contactNumber}</TableCell>
+                          <TableCell className="whitespace-nowrap">{c.houseNumber || c.houseNo || '-'}</TableCell>
+                          <TableCell className="whitespace-nowrap">{c.block || '-'}</TableCell>
+                          <TableCell className="whitespace-nowrap">{c.streetNumber || c.streetNo || '-'}</TableCell>
+                          <TableCell className="whitespace-nowrap">{c.subArea || '-'}</TableCell>
+                          <TableCell className="whitespace-nowrap">{c.area || '-'}</TableCell>
+                          <TableCell className="whitespace-nowrap text-gray-700">{c.accountExecutive?.fullName || c.accountExecutiveName || '-'}</TableCell>
+                          <TableCell className="font-semibold whitespace-nowrap">{c.city}</TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <Badge variant="outline" className="bg-amber-50 text-amber-950 border-amber-200 font-semibold">
+                              {c.packagePlan?.packageTier || 'Basic'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-semibold text-[10px]">
+                              {c.customerType ? (c.customerType.charAt(0).toUpperCase() + c.customerType.slice(1).toLowerCase()) : 'Residential'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap font-medium">{c.packagePlan?.systemSizeKw || c.solarSystem?.inverterSize || '-'}</TableCell>
+                          <TableCell className="whitespace-nowrap">{c.packagePlan?.billingType || 'Monthly'}</TableCell>
+                          <TableCell className="whitespace-nowrap text-gray-700">{c.packagePlan?.monitoringTime || '12 Hours'}</TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-semibold text-[10px]">
+                              {c.status ? c.status.replace(/_/g, ' ') : 'Active'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="font-mono text-xs font-semibold whitespace-nowrap bg-emerald-50/70 border-l border-emerald-100 text-slate-800">
+                            {fin.adjustmentText}
+                          </TableCell>
+                          <TableCell className="text-right font-mono font-medium text-slate-700 whitespace-nowrap bg-emerald-50/70 border-r border-emerald-100">
+                            PKR {fin.arrears.toLocaleString()}
+                          </TableCell>
+                          <TableCell className="text-right font-mono font-medium text-slate-900 whitespace-nowrap">
+                            PKR {fin.current.toLocaleString()}
+                          </TableCell>
+                          <TableCell className="text-right font-mono font-bold text-emerald-900 bg-emerald-50/80 whitespace-nowrap border-x border-emerald-100">
+                            PKR {fin.paymentCollection.toLocaleString()}
+                          </TableCell>
+                          <TableCell className={`text-right font-mono font-bold whitespace-nowrap ${fin.balanceAmount > 0 ? 'text-rose-700' : 'text-emerald-700'}`}>
+                            PKR {fin.balanceAmount.toLocaleString()}
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })
                   )}
                 </TableBody>
               </>
@@ -978,57 +1102,95 @@ export function ReportsView({
               <>
                 <TableHeader className="bg-[var(--color-paper)]">
                   <TableRow className="border-b border-gray-200">
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Customer ID</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">CRF #</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Customer Name</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Contact #</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">City</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Package</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] text-right">Total Package</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] text-right">Paid Amount</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] text-right">Receivable Balance</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Status</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer ID</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer Name</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer Address</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Contact #</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">House #</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Block</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Street #</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Sub Area</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Area</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Account Executive</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">City</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Package</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer Type</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">System Type:</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Billing Type</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Monitoring Time</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer Status</TableHead>
+                    <TableHead className="font-bold text-xs text-emerald-950 bg-[#86efac]/35 whitespace-nowrap border-l border-emerald-200">Adjustment / Credit-Debit</TableHead>
+                    <TableHead className="font-bold text-xs text-emerald-950 bg-[#86efac]/35 text-right whitespace-nowrap border-r border-emerald-200">Arrears</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] text-right whitespace-nowrap">Current</TableHead>
+                    <TableHead className="font-bold text-xs text-emerald-950 bg-[#86efac]/35 text-right whitespace-nowrap border-x border-emerald-200">Payment Collection</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] text-right whitespace-nowrap">Balance Amount</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {!hasSearched ? (
                     <TableRow>
-                      <TableCell colSpan={10} className="h-32 text-center text-xs text-[var(--color-slate-custom)] font-medium">
+                      <TableCell colSpan={22} className="h-32 text-center text-xs text-[var(--color-slate-custom)] font-medium">
                         Select filters and click &quot;Search / Apply Filters&quot; to load report data.
                       </TableCell>
                     </TableRow>
                   ) : filteredCustomers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={10} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">
-                        No outstanding receivables found.
+                      <TableCell colSpan={22} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">
+                        No outstanding receivables found matching the selected filters.
                       </TableCell>
                     </TableRow>
                   ) : (
                     filteredCustomers.map((c) => {
-                      const total = Math.round(Number(c.packagePlan?.totalAmount || 0))
-                      const paid = Math.round(Number(c.packagePlan?.paidAmount || 0))
-                      const balance = Math.max(0, total - paid)
+                      const fin = computeCustomerFinancials(c)
                       return (
                         <TableRow key={c.id} className="hover:bg-[var(--color-paper)]/50 text-xs">
-                          <TableCell className="font-mono font-bold text-[var(--color-ink)]">
+                          <TableCell className="font-mono font-bold text-[var(--color-ink)] whitespace-nowrap">
                             <Link href={`/dashboard/customers/${c.id}`} className="hover:underline text-amber-900">
                               {formatCustomerId(c.customerCode || c.id)}
                             </Link>
                           </TableCell>
-                          <TableCell className="font-mono font-semibold text-gray-700">
-                            {formatCrf(c.crfNumber, c.customerCode)}
-                          </TableCell>
-                          <TableCell className="font-semibold text-gray-900">{c.fullName}</TableCell>
-                          <TableCell className="font-mono">{c.contactNumber}</TableCell>
-                          <TableCell>{c.city}</TableCell>
-                          <TableCell>{c.packagePlan?.packageTier || 'Basic'}</TableCell>
-                          <TableCell className="text-right font-mono font-medium">PKR {total.toLocaleString()}</TableCell>
-                          <TableCell className="text-right font-mono text-emerald-700 font-semibold">PKR {paid.toLocaleString()}</TableCell>
-                          <TableCell className="text-right font-mono font-bold text-rose-700">PKR {balance.toLocaleString()}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className={balance > 0 ? "bg-rose-50 text-rose-800 border-rose-200 font-bold" : "bg-emerald-50 text-emerald-800 border-emerald-200"}>
-                              {balance > 0 ? 'Payment Pending' : 'Clear'}
+                          <TableCell className="font-semibold text-gray-900 whitespace-nowrap">{c.fullName}</TableCell>
+                          <TableCell className="text-gray-600 max-w-xs truncate">{c.address}</TableCell>
+                          <TableCell className="font-mono whitespace-nowrap">{c.contactNumber}</TableCell>
+                          <TableCell className="whitespace-nowrap">{c.houseNumber || c.houseNo || '-'}</TableCell>
+                          <TableCell className="whitespace-nowrap">{c.block || '-'}</TableCell>
+                          <TableCell className="whitespace-nowrap">{c.streetNumber || c.streetNo || '-'}</TableCell>
+                          <TableCell className="whitespace-nowrap">{c.subArea || '-'}</TableCell>
+                          <TableCell className="whitespace-nowrap">{c.area || '-'}</TableCell>
+                          <TableCell className="whitespace-nowrap text-gray-700">{c.accountExecutive?.fullName || c.accountExecutiveName || '-'}</TableCell>
+                          <TableCell className="font-semibold whitespace-nowrap">{c.city}</TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <Badge variant="outline" className="bg-amber-50 text-amber-950 border-amber-200 font-semibold">
+                              {c.packagePlan?.packageTier || 'Basic'}
                             </Badge>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-semibold text-[10px]">
+                              {c.customerType ? (c.customerType.charAt(0).toUpperCase() + c.customerType.slice(1).toLowerCase()) : 'Residential'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap font-medium">{c.packagePlan?.systemSizeKw || c.solarSystem?.inverterSize || '-'}</TableCell>
+                          <TableCell className="whitespace-nowrap">{c.packagePlan?.billingType || 'Monthly'}</TableCell>
+                          <TableCell className="whitespace-nowrap text-gray-700">{c.packagePlan?.monitoringTime || '12 Hours'}</TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-semibold text-[10px]">
+                              {c.status ? c.status.replace(/_/g, ' ') : 'Active'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="font-mono text-xs font-semibold whitespace-nowrap bg-emerald-50/70 border-l border-emerald-100 text-slate-800">
+                            {fin.adjustmentText}
+                          </TableCell>
+                          <TableCell className="text-right font-mono font-medium text-slate-700 whitespace-nowrap bg-emerald-50/70 border-r border-emerald-100">
+                            PKR {fin.arrears.toLocaleString()}
+                          </TableCell>
+                          <TableCell className="text-right font-mono font-medium text-slate-900 whitespace-nowrap">
+                            PKR {fin.current.toLocaleString()}
+                          </TableCell>
+                          <TableCell className="text-right font-mono font-bold text-emerald-900 bg-emerald-50/80 whitespace-nowrap border-x border-emerald-100">
+                            PKR {fin.paymentCollection.toLocaleString()}
+                          </TableCell>
+                          <TableCell className={`text-right font-mono font-bold whitespace-nowrap ${fin.balanceAmount > 0 ? 'text-rose-700' : 'text-emerald-700'}`}>
+                            PKR {fin.balanceAmount.toLocaleString()}
                           </TableCell>
                         </TableRow>
                       )
