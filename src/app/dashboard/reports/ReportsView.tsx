@@ -883,7 +883,7 @@ export function ReportsView({
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <div className="space-y-1">
               <Label className="text-xs font-semibold text-[var(--color-ink)]">Country</Label>
-              <Input readOnly value="Pakistan (Always Selected)" className="h-9 text-xs bg-gray-50 font-semibold" />
+              <Input readOnly value="Pakistan" className="h-9 text-xs bg-gray-50 font-semibold" />
             </div>
 
             <div className="space-y-1">
