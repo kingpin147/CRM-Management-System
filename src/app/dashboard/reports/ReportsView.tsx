@@ -832,20 +832,30 @@ export function ReportsView({
     } else {
       // REGISTER
       headers = [
-        'Customer ID', 'CRF #', 'Customer Name', 'Customer Type', 'Contact #',
-        'CNIC', 'City', 'Package', 'Sign Up Date', 'Status'
+        'Customer ID', 'CRF #', 'Customer Name', 'Customer Address', 'Contact #',
+        'Email Address', 'Sub Area', 'Area', 'City', 'Sign Up Date', 'Activation Date',
+        'Package', 'Customer Type', 'System Type', 'Billing Type', 'Monitoring Time',
+        'Current Status', 'Sign Up Created by'
       ]
       rows = filteredCustomers.map((c) => [
         `"${formatCustomerId(c.customerCode || c.id)}"`,
         `"${formatCrf(c.crfNumber, c.customerCode)}"`,
         `"${c.fullName}"`,
-        `"${c.customerType}"`,
+        `"${c.address}"`,
         `"${c.contactNumber}"`,
-        `"${c.cnic}"`,
+        `"${c.email || '-'}"`,
+        `"${c.subArea || '-'}"`,
+        `"${c.area || '-'}"`,
         `"${c.city}"`,
-        `"${c.packagePlan?.packageTier || '-'}"`,
         `"${formatDate(c.signupDate)}"`,
-        `"${c.status.replace(/_/g, ' ')}"`,
+        `"${c.activationDate ? formatDate(c.activationDate) : (c.solarSystem?.systemInstallationDate ? formatDate(c.solarSystem.systemInstallationDate) : 'Pending')}"`,
+        `"${c.packagePlan?.packageTier || '-'}"`,
+        `"${c.customerType || '-'}"`,
+        `"${c.packagePlan?.systemSizeKw || c.solarSystem?.inverterSize || '-'}"`,
+        `"${c.packagePlan?.billingType || '-'}"`,
+        `"${c.packagePlan?.monitoringTime || '-'}"`,
+        `"${c.status ? c.status.replace(/_/g, ' ') : '-'}"`,
+        `"${c.accountExecutive?.fullName || c.accountExecutiveName || '-'}"`,
       ])
     }
 
@@ -1044,6 +1054,7 @@ export function ReportsView({
                 </label>
               </div>
             )}
+
           </div>
 
           {/* Search bar & Action Buttons */}
@@ -1586,25 +1597,33 @@ export function ReportsView({
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Customer ID</TableHead>
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)]">CRF #</TableHead>
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Customer Name</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Customer Type</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Customer Address</TableHead>
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Contact #</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">CNIC</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Email Address</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Sub Area</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Area</TableHead>
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)]">City</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Sign up date</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Activation Date</TableHead>
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Package</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Sign Up Date</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Status</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Customer Type</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">System Type:</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Billing Type</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Monitoring Time</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Current Status</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Sign Up Created by</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {!hasSearched ? (
                     <TableRow>
-                      <TableCell colSpan={10} className="h-32 text-center text-xs text-[var(--color-slate-custom)] font-medium">
+                      <TableCell colSpan={18} className="h-32 text-center text-xs text-[var(--color-slate-custom)] font-medium">
                         Select filters and click &quot;Search / Apply Filters&quot; to load report data.
                       </TableCell>
                     </TableRow>
                   ) : filteredCustomers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={10} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">
+                      <TableCell colSpan={18} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">
                         No customer records found in the register.
                       </TableCell>
                     </TableRow>
@@ -1618,21 +1637,31 @@ export function ReportsView({
                         </TableCell>
                         <TableCell className="font-mono font-semibold text-gray-700">{formatCrf(c.crfNumber, c.customerCode) || '—'}</TableCell>
                         <TableCell className="font-semibold text-gray-900">{c.fullName}</TableCell>
+                        <TableCell className="text-gray-600 max-w-xs truncate">{c.address}</TableCell>
+                        <TableCell className="font-mono">{c.contactNumber}</TableCell>
+                        <TableCell className="text-gray-600">{c.email || '-'}</TableCell>
+                        <TableCell>{c.subArea || '-'}</TableCell>
+                        <TableCell>{c.area || '-'}</TableCell>
+                        <TableCell className="font-semibold">{c.city}</TableCell>
+                        <TableCell className="text-gray-600 font-mono">{formatDate(c.signupDate)}</TableCell>
+                        <TableCell className="text-gray-600 font-mono">
+                          {c.activationDate ? formatDate(c.activationDate) : (c.solarSystem?.systemInstallationDate ? formatDate(c.solarSystem.systemInstallationDate) : 'Pending')}
+                        </TableCell>
+                        <TableCell>{c.packagePlan?.packageTier || 'Basic'}</TableCell>
                         <TableCell>
                           <Badge variant="outline" className="bg-slate-100 text-slate-800 text-[10px]">
                             {c.customerType}
                           </Badge>
                         </TableCell>
-                        <TableCell className="font-mono">{c.contactNumber}</TableCell>
-                        <TableCell className="font-mono text-gray-600">{c.cnic}</TableCell>
-                        <TableCell className="font-semibold">{c.city}</TableCell>
-                        <TableCell>{c.packagePlan?.packageTier || 'Basic'}</TableCell>
-                        <TableCell className="text-gray-600 font-mono">{formatDate(c.signupDate)}</TableCell>
+                        <TableCell>{c.packagePlan?.systemSizeKw || c.solarSystem?.inverterSize || '-'}</TableCell>
+                        <TableCell>{c.packagePlan?.billingType || '-'}</TableCell>
+                        <TableCell>{c.packagePlan?.monitoringTime || '-'}</TableCell>
                         <TableCell>
                           <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-semibold">
                             {c.status.replace(/_/g, ' ')}
                           </Badge>
                         </TableCell>
+                        <TableCell>{c.accountExecutive?.fullName || c.accountExecutiveName || '-'}</TableCell>
                       </TableRow>
                     ))
                   )}
