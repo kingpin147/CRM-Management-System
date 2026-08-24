@@ -209,6 +209,21 @@ export function MainNav({
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
+                <Link href="/dashboard/reports?view=billing" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
+                  Billing Report
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="/dashboard/reports?view=sales-incentive" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
+                  Incentive Disbursement Report (Sales)
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="/dashboard/reports?view=om-incentive" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
+                  Incentive Disbursement Report (O &amp; M)
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
                 <Link href="/dashboard/reports?view=register" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
                   Customer Register
                 </Link>
@@ -309,6 +324,15 @@ export function MainNav({
             </Link>
             <Link href="/dashboard/reports?view=payments" className={linkClass('/dashboard/reports?view=payments')}>
               Payments Report
+            </Link>
+            <Link href="/dashboard/reports?view=billing" className={linkClass('/dashboard/reports?view=billing')}>
+              Billing Report
+            </Link>
+            <Link href="/dashboard/reports?view=sales-incentive" className={linkClass('/dashboard/reports?view=sales-incentive')}>
+              Incentive Disbursement Report (Sales)
+            </Link>
+            <Link href="/dashboard/reports?view=om-incentive" className={linkClass('/dashboard/reports?view=om-incentive')}>
+              Incentive Disbursement Report (O &amp; M)
             </Link>
             <Link href="/dashboard/reports?view=register" className={linkClass('/dashboard/reports?view=register')}>
               Customer Register
