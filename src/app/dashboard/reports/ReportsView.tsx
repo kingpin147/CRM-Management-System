@@ -885,10 +885,10 @@ export function ReportsView({
         <CardContent className="p-6 space-y-6">
           {/* Top Filter Bar: Country, City, Area, Sub Area, Customer Type, Select Status, Date Range */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="space-y-1">
+            {activeCategory !== 'REGISTER' && <div className="space-y-1">
               <Label className="text-xs font-semibold text-[var(--color-ink)]">Country</Label>
               <Input readOnly value="Pakistan" className="h-9 text-xs bg-gray-50 font-semibold" />
-            </div>
+            </div>}
 
             <div className="space-y-1">
               <Label className="text-xs font-semibold text-[var(--color-ink)]">City</Label>
@@ -904,7 +904,7 @@ export function ReportsView({
               </select>
             </div>
 
-            <div className="space-y-1">
+            {activeCategory !== 'REGISTER' && <div className="space-y-1">
               <Label className="text-xs font-semibold text-[var(--color-ink)]">Area</Label>
               <select
                 value={selectedArea}
@@ -916,9 +916,9 @@ export function ReportsView({
                   <option key={area} value={area || ''}>{area}</option>
                 ))}
               </select>
-            </div>
+            </div>}
 
-            <div className="space-y-1">
+            {activeCategory !== 'REGISTER' && <div className="space-y-1">
               <Label className="text-xs font-semibold text-[var(--color-ink)]">Sub Area</Label>
               <select
                 value={selectedSubArea}
@@ -930,7 +930,7 @@ export function ReportsView({
                   <option key={sa} value={sa || ''}>{sa}</option>
                 ))}
               </select>
-            </div>
+            </div>}
 
             {activeCategory === 'ADJUSTMENT' && (
               <div className="space-y-1">
@@ -947,7 +947,7 @@ export function ReportsView({
               </div>
             )}
 
-            {activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'PAYMENTS' && (
+            {activeCategory !== 'REGISTER' && activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'PAYMENTS' && (
               <div className="space-y-1">
                 <Label className="text-xs font-semibold text-[var(--color-ink)]">Account Executive Sales</Label>                <select
                   value={selectedAccountExecutive}
@@ -962,7 +962,7 @@ export function ReportsView({
               </div>
             )}
 
-            {activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'PAYMENTS' && (
+            {activeCategory !== 'REGISTER' && activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'PAYMENTS' && (
               <div className="space-y-1">
                 <Label className="text-xs font-semibold text-[var(--color-ink)]">Customer Type</Label>
                 <select
@@ -983,7 +983,7 @@ export function ReportsView({
               </div>
             )}
 
-            {activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'PAYMENTS' && (
+            {activeCategory !== 'REGISTER' && activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'PAYMENTS' && (
               <div className="space-y-1">
                 <Label className="text-xs font-semibold text-[var(--color-ink)]">Select Status Filter</Label>
                 <select
@@ -1048,7 +1048,7 @@ export function ReportsView({
 
           {/* Search bar & Action Buttons */}
           <div className={`flex flex-col md:flex-row ${(activeCategory === 'SALES' || activeCategory === 'RECEIVABLE') ? 'justify-end' : 'justify-between'} items-stretch md:items-center gap-3 pt-4 border-t border-gray-100`}>
-            {activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && (
+            {activeCategory !== 'REGISTER' && activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && (
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-[var(--color-slate-custom)]" />
                 <Input
