@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { SectionHeader } from '@/components/ui/section-header'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Search, RotateCcw, Zap, Receipt, Users, CheckCircle2, Clock, AlertTriangle, FileSpreadsheet } from 'lucide-react'
+import { Search, RotateCcw, Zap, Receipt, Users, CheckCircle2, Clock, AlertTriangle, FileSpreadsheet, ChevronDown } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
 type CustomerRecord = {
@@ -238,6 +238,8 @@ export function ReportsView({
     const now = new Date()
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   })
+  // SALES: expanded AE name for drill-down
+  const [expandedAE, setExpandedAE] = React.useState<string | null>(null)
 
   const [appliedFilters, setAppliedFilters] = React.useState<{
     status: string
@@ -366,13 +368,15 @@ export function ReportsView({
 
       // Date filter (only for non-RECEIVABLE categories)
       if (activeCategory !== 'RECEIVABLE') {
-        if (appliedFilters.dateFrom && c.signupDate) {
-          if (new Date(c.signupDate) < new Date(appliedFilters.dateFrom)) return false
+        // For SALES, filter by signupDate or activationDate
+        const refDate = c.signupDate || c.activationDate
+        if (appliedFilters.dateFrom && refDate) {
+          if (new Date(refDate) < new Date(appliedFilters.dateFrom)) return false
         }
-        if (appliedFilters.dateTo && c.signupDate) {
+        if (appliedFilters.dateTo && refDate) {
           const to = new Date(appliedFilters.dateTo)
           to.setHours(23, 59, 59, 999)
-          if (new Date(c.signupDate) > to) return false
+          if (new Date(refDate) > to) return false
         }
       }
 
@@ -943,7 +947,7 @@ export function ReportsView({
               </div>
             )}
 
-            {activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && (
+            {activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'PAYMENTS' && (
               <div className="space-y-1">
                 <Label className="text-xs font-semibold text-[var(--color-ink)]">Account Executive Sales</Label>                <select
                   value={selectedAccountExecutive}
@@ -958,7 +962,7 @@ export function ReportsView({
               </div>
             )}
 
-            {activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && (
+            {activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'PAYMENTS' && (
               <div className="space-y-1">
                 <Label className="text-xs font-semibold text-[var(--color-ink)]">Customer Type</Label>
                 <select
@@ -979,7 +983,7 @@ export function ReportsView({
               </div>
             )}
 
-            {activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && (
+            {activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'PAYMENTS' && (
               <div className="space-y-1">
                 <Label className="text-xs font-semibold text-[var(--color-ink)]">Select Status Filter</Label>
                 <select
@@ -1099,47 +1103,6 @@ export function ReportsView({
       {/* Dynamic Report Table */}
       <Card className="shadow-sm border-line overflow-hidden bg-white">
         <CardContent className="p-0">
-          {activeCategory === 'SALES' && hasSearched && (
-            <div className="p-4 bg-slate-50 border-b border-slate-200 animate-reveal">
-              <div className="mb-3 flex items-center justify-between">
-                <span className="font-extrabold text-sm text-[#002868] uppercase tracking-wider flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse"></span>
-                  Overall Sales Summary Totals
-                </span>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-                <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
-                  <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Sales Target</div>
-                  <div className="text-lg font-extrabold text-slate-900 mt-0.5">{aeTotals.salesTarget}</div>
-                </div>
-                <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
-                  <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">New Sale (Active)</div>
-                  <div className="text-lg font-extrabold text-emerald-700 mt-0.5">{aeTotals.newSaleActive}</div>
-                </div>
-                <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
-                  <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Total Blocked</div>
-                  <div className="text-lg font-extrabold text-rose-700 mt-0.5">{aeTotals.totalBlocked}</div>
-                  <div className="text-[9px] text-slate-400 mt-0.5">Temp: {aeTotals.tempBlocked} | Perm: {aeTotals.permBlocked} | Non-Pay: {aeTotals.nonPaymentBlocked}</div>
-                </div>
-                <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
-                  <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Balance Target</div>
-                  <div className="text-lg font-extrabold text-amber-900 mt-0.5">{aeTotals.balanceTarget}</div>
-                </div>
-                <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
-                  <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Achieved % Age</div>
-                  <div className="text-lg font-extrabold text-blue-900 mt-0.5">{aeTotals.salesTarget > 0 ? ((aeTotals.newSaleActive / aeTotals.salesTarget) * 100).toFixed(1) : 0}%</div>
-                </div>
-                <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs col-span-2 sm:col-span-3 md:col-span-2">
-                  <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Total Amount Payable</div>
-                  <div className="text-lg font-extrabold text-slate-900 mt-0.5 font-mono">PKR {Math.round(aeTotals.amountPayable).toLocaleString()}</div>
-                </div>
-                <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs col-span-2 sm:col-span-3">
-                  <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Total Paid Amount</div>
-                  <div className="text-lg font-extrabold text-emerald-800 mt-0.5 font-mono">PKR {Math.round(aeTotals.paidAmount).toLocaleString()}</div>
-                </div>
-              </div>
-            </div>
-          )}
           <div className="overflow-x-auto">
             <Table>
               {/* 1. CUSTOMER STATUS REPORT TABLE */}
@@ -1227,8 +1190,21 @@ export function ReportsView({
             {/* 2. SALES REPORT TABLES */}
             {activeCategory === 'SALES' && (
               <>
-                {/* Top Section: Account Executive Performance & Target Summary */}
+                {/* Target totals and account executive performance */}
                 <TableHeader className="bg-[#002868] text-white border-b-2 border-[#f26522]">
+                  <TableRow className="bg-slate-50 border-b border-slate-200 text-xs">
+                    <TableCell className="font-extrabold text-[#002868] whitespace-nowrap">Target Summary</TableCell>
+                    <TableCell className="font-extrabold text-slate-900">{aeTotals.salesTarget}</TableCell>
+                    <TableCell className="font-extrabold text-emerald-700">{aeTotals.newSaleActive}</TableCell>
+                    <TableCell>{aeTotals.tempBlocked}</TableCell>
+                    <TableCell>{aeTotals.permBlocked}</TableCell>
+                    <TableCell>{aeTotals.nonPaymentBlocked}</TableCell>
+                    <TableCell className="font-extrabold text-rose-700">{aeTotals.totalBlocked}</TableCell>
+                    <TableCell className="font-extrabold text-amber-800">{aeTotals.balanceTarget}</TableCell>
+                    <TableCell className="font-extrabold text-blue-800">{aeTotals.salesTarget > 0 ? ((aeTotals.newSaleActive / aeTotals.salesTarget) * 100).toFixed(1) : '0.0'}%</TableCell>
+                    <TableCell className="font-extrabold text-right text-slate-900">PKR {Math.round(aeTotals.amountPayable).toLocaleString()}</TableCell>
+                    <TableCell className="font-extrabold text-right text-emerald-800">PKR {Math.round(aeTotals.paidAmount).toLocaleString()}</TableCell>
+                  </TableRow>
                   <TableRow className="border-b border-[#001d4a] font-bold text-xs">
                     <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Account Executive Sales</TableHead>
                     <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Sales Target</TableHead>
@@ -1244,10 +1220,36 @@ export function ReportsView({
                   </TableRow>
                 </TableHeader>
                 <TableBody className="bg-white divide-y divide-slate-200">
-                  {/* Account Executive Rows */}
-                  {aeSummaryList.map((ae) => (
-                    <TableRow key={ae.name} className="hover:bg-slate-50 text-xs font-semibold text-slate-800">
-                      <TableCell className="font-bold text-[#002868] whitespace-nowrap">{ae.name}</TableCell>
+                  {!hasSearched ? (
+                    <TableRow>
+                      <TableCell colSpan={11} className="h-32 text-center text-xs text-[var(--color-slate-custom)] font-medium">
+                        Select filters and click &quot;Search / Apply Filters&quot; to load report data.
+                      </TableCell>
+                    </TableRow>
+                  ) : aeSummaryList.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={11} className="h-20 text-center text-sm text-[var(--color-slate-custom)]">
+                        No sales records found matching the selected filters.
+                      </TableCell>
+                    </TableRow>
+                  ) : aeSummaryList.map((ae) => {
+                    const aeCustomers = filteredCustomers.filter((customer) =>
+                      (customer.accountExecutive?.fullName || customer.accountExecutiveName || 'Unassigned') === ae.name
+                    )
+                    const isExpanded = expandedAE === ae.name
+
+                    return (
+                      <React.Fragment key={ae.name}>
+                        <TableRow
+                          className="hover:bg-slate-50 text-xs font-semibold text-slate-800 cursor-pointer"
+                          onClick={() => setExpandedAE(isExpanded ? null : ae.name)}
+                        >
+                          <TableCell className="font-bold text-[#002868] whitespace-nowrap">
+                            <span className="inline-flex items-center gap-2">
+                              <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                              {ae.name}
+                            </span>
+                          </TableCell>
                       <TableCell className="font-semibold">{ae.salesTarget}</TableCell>
                       <TableCell className="font-semibold text-emerald-700">{ae.newSaleActive}</TableCell>
                       <TableCell>{ae.tempBlocked}</TableCell>
@@ -1258,46 +1260,21 @@ export function ReportsView({
                       <TableCell className="font-semibold text-blue-800">{ae.achievedPct.toFixed(1)}%</TableCell>
                       <TableCell className="font-mono text-right">PKR {Math.round(ae.amountPayable).toLocaleString()}</TableCell>
                       <TableCell className="font-mono text-right text-emerald-800">PKR {Math.round(ae.paidAmount).toLocaleString()}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-
-                {/* Section Separator & Customer Details Header */}
-                <TableHeader className="bg-[var(--color-paper)] border-t-2 border-slate-300">
-                  <TableRow className="border-b border-gray-200">
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer ID</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">CRF #</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer Name</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Address</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Contact Number</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">City</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">System Type</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Package</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Billing Type</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer Type</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] text-right whitespace-nowrap">Amount Payable</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] text-right whitespace-nowrap">Paid Amount</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Sign up Created Date</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Activation Date</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {!hasSearched ? (
-                    <TableRow>
-                      <TableCell colSpan={14} className="h-32 text-center text-xs text-[var(--color-slate-custom)] font-medium">
-                        Select filters and click &quot;Search / Apply Filters&quot; to load report data.
-                      </TableCell>
-                    </TableRow>
-                  ) : filteredCustomers.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={14} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">
-                        No sales records found matching the selected filters.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredCustomers.map((c) => {
-                      return (
-                        <TableRow key={c.id} className="hover:bg-[var(--color-paper)]/50 text-xs">
+                        </TableRow>
+                        {isExpanded && (
+                          <TableRow className="bg-slate-50/70">
+                            <TableCell colSpan={11} className="p-0">
+                              <Table className="min-w-[1100px]">
+                                <TableHeader className="bg-[var(--color-paper)]">
+                                  <TableRow>
+                                    {['Customer ID', 'CRF #', 'Customer Name', 'Address', 'Contact Number', 'City', 'System Type', 'Package', 'Billing Type', 'Customer Type', 'Amount Payable', 'Paid Amount', 'Sign up Created Date', 'Activation Date'].map((heading) => (
+                                      <TableHead key={heading} className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">{heading}</TableHead>
+                                    ))}
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {aeCustomers.map((c) => (
+                                    <TableRow key={c.id} className="hover:bg-white text-xs">
                           <TableCell className="font-mono font-bold text-[var(--color-ink)] whitespace-nowrap">
                             <Link href={`/dashboard/customers/${c.id}`} className="hover:underline text-amber-900">
                               {formatCustomerId(c.customerCode || c.id)}
@@ -1330,10 +1307,16 @@ export function ReportsView({
                           <TableCell className="whitespace-nowrap font-mono text-gray-600">
                             {c.activationDate ? formatDate(c.activationDate) : (c.solarSystem?.systemInstallationDate ? formatDate(c.solarSystem.systemInstallationDate) : 'Pending')}
                           </TableCell>
-                        </TableRow>
-                      )
-                    })
-                  )}
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </React.Fragment>
+                    )
+                  })}
                 </TableBody>
               </>
             )}
