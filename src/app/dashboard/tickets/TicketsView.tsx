@@ -4,6 +4,7 @@ import * as React from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { DateInput } from '@/components/ui/date-input'
 import { Badge } from '@/components/ui/badge'
 import { DataTable } from '@/components/ui/data-table'
 import { columns, formatTicketId, type TicketWithCustomer } from './columns'
@@ -316,22 +317,20 @@ export function TicketsView({ tickets, userRole, initialStatusParam }: TicketsVi
           {/* Calendar Date From */}
           <div className="space-y-1">
             <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Calendar Date From</label>
-            <input
-              type="date"
+            <DateInput
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="w-full h-9 px-2 text-xs rounded-lg border border-slate-300 bg-white font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[var(--color-amber)]"
+              className="w-full h-9"
             />
           </div>
 
           {/* Calendar Date To */}
           <div className="space-y-1">
             <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Calendar Date To</label>
-            <input
-              type="date"
+            <DateInput
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              className="w-full h-9 px-2 text-xs rounded-lg border border-slate-300 bg-white font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[var(--color-amber)]"
+              className="w-full h-9"
             />
           </div>
         </div>

@@ -4,6 +4,7 @@ import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { DateInput } from '@/components/ui/date-input'
 import { Label } from '@/components/ui/label'
 import {
   Dialog,
@@ -355,11 +356,10 @@ export function SolarSystemDialog({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end pt-2 border-t border-slate-200/80">
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold text-amber-900">Warranty End Date</Label>
-                    <Input
-                      type="date"
+                    <DateInput
                       value={inverterWarrantyEnd}
                       onChange={(e) => setInverterWarrantyEnd(e.target.value)}
-                      className="h-9 text-xs border-amber-300 bg-white"
+                      className="h-9"
                     />
                   </div>
 
@@ -456,11 +456,10 @@ export function SolarSystemDialog({
                 </div>
                 <div className="space-y-1 pt-1">
                   <Label className="text-xs font-semibold text-amber-900">Panel Warranty End Date</Label>
-                  <Input
-                    type="date"
+                  <DateInput
                     value={panelWarrantyEnd}
                     onChange={(e) => setPanelWarrantyEnd(e.target.value)}
-                    className="h-9 text-xs border-amber-300 bg-white"
+                    className="h-9"
                   />
                 </div>
               </div>
@@ -561,11 +560,10 @@ export function SolarSystemDialog({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end pt-2 border-t border-slate-200/80">
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold text-amber-900">Battery Warranty End Date</Label>
-                    <Input
-                      type="date"
+                    <DateInput
                       value={batteryWarrantyEnd}
                       onChange={(e) => setBatteryWarrantyEnd(e.target.value)}
-                      className="h-9 text-xs border-amber-300 bg-white"
+                      className="h-9"
                     />
                   </div>
 

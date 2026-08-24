@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form'
 import * as z from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { DateInput } from '@/components/ui/date-input'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent } from '@/components/ui/card'
@@ -855,7 +856,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-xs font-semibold">Sign Up Date</FormLabel>
-                          <FormControl><Input type="date" {...field} className="h-10 text-xs" /></FormControl>
+                          <FormControl><DateInput value={field.value || ''} onChange={field.onChange} className="h-10" /></FormControl>
                         </FormItem>
                       )}
                     />
@@ -880,7 +881,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                       render={({ field }) => (
                         <FormItem className="md:col-span-2">
                           <FormLabel className="text-xs font-semibold">CNIC Expiry Date</FormLabel>
-                          <FormControl><Input type="date" {...field} className="h-10 text-xs" /></FormControl>
+                          <FormControl><DateInput value={field.value || ''} onChange={field.onChange} className="h-10" /></FormControl>
                         </FormItem>
                       )}
                     />
@@ -1429,11 +1430,10 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                               <label className="text-[11px] font-bold text-slate-600 block mb-1">
                                 Inverter #{idx + 1} Warranty End Date
                               </label>
-                              <Input
-                                type="date"
+                              <DateInput
                                 value={inv.warrantyExpiry || ''}
                                 onChange={(e) => handleInverterChange(idx, 'warrantyExpiry', e.target.value)}
-                                className="h-9 text-xs font-semibold bg-white"
+                                className="h-9"
                               />
                             </div>
                             <div>
@@ -1568,7 +1568,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                       <FormItem>
                         <FormLabel className="text-xs font-semibold">Panel Warranty End Date</FormLabel>
                         <FormControl>
-                          <Input type="date" value={field.value || ''} onChange={field.onChange} className="h-10 text-xs font-semibold" />
+                          <DateInput value={field.value || ''} onChange={field.onChange} className="h-10" />
                         </FormControl>
                       </FormItem>
                     )} />
@@ -1707,11 +1707,10 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                                 <label className="text-[11px] font-bold text-slate-600 block mb-1">
                                   Battery #{idx + 1} Warranty End Date
                                 </label>
-                                <Input
-                                  type="date"
+                                <DateInput
                                   value={expiry || ''}
                                   onChange={(e) => handleBatteryWarrantyChange(idx, e.target.value)}
-                                  className="h-9 text-xs font-semibold bg-white"
+                                  className="h-9"
                                 />
                               </div>
 
@@ -1785,11 +1784,10 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                       <FormItem>
                         <FormLabel className="text-xs font-bold text-[#002868]">Last Check Date</FormLabel>
                         <FormControl>
-                          <Input
-                            type="date"
+                          <DateInput
                             value={field.value || ''}
                             onChange={field.onChange}
-                            className="h-10 text-xs font-semibold"
+                            className="h-10"
                           />
                         </FormControl>
                       </FormItem>
@@ -1857,11 +1855,10 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                       <FormItem>
                         <FormLabel className="text-xs font-semibold">System Installation Date</FormLabel>
                         <FormControl>
-                          <Input
-                            type="date"
+                          <DateInput
                             value={field.value || ''}
                             onChange={field.onChange}
-                            className="h-10 text-xs font-semibold"
+                            className="h-10"
                           />
                         </FormControl>
                       </FormItem>
@@ -1897,7 +1894,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                   <FormField control={form.control} name="lastAuditDate" render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs font-bold text-[#002868]">Date of Audit *</FormLabel>
-                      <FormControl><Input type="date" {...field} className="h-10 text-xs font-semibold" /></FormControl>
+                      <FormControl><DateInput value={field.value || ''} onChange={field.onChange} className="h-10" /></FormControl>
                     </FormItem>
                   )} />
 

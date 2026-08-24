@@ -4,6 +4,7 @@ import * as React from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { DateInput } from '@/components/ui/date-input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
@@ -187,11 +188,10 @@ export function DebitCreditNoteTab({
                     <Calendar className="h-3.5 w-3.5 text-slate-500" />
                     Note Date
                   </Label>
-                  <Input
-                    type="date"
+                  <DateInput
                     value={noteDate}
                     onChange={(e) => setNoteDate(e.target.value)}
-                    className="h-10 text-xs font-medium bg-slate-50/50"
+                    className="h-10"
                     required
                   />
                 </div>

@@ -6,11 +6,12 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { DateInput } from '@/components/ui/date-input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { SectionHeader } from '@/components/ui/section-header'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Search, Filter, RotateCcw, Zap, Receipt, Users, CheckCircle2, Clock, AlertTriangle, FileSpreadsheet } from 'lucide-react'
+import { Search, RotateCcw, Zap, Receipt, Users, CheckCircle2, Clock, AlertTriangle, FileSpreadsheet } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
 type CustomerRecord = {
@@ -73,85 +74,113 @@ function formatCrf(crf?: string | null, code?: string | null): string {
   return ''
 }
 
-function computeCustomerFinancials(c: CustomerRecord) {
-  const invoices = Array.isArray(c.invoices) ? [...c.invoices].sort((a: any, b: any) => new Date(a.createdAt || a.dueDate || 0).getTime() - new Date(b.createdAt || b.dueDate || 0).getTime()) : []
-  
-  let arrears = 0
-  let current = 0
-  let paymentCollection = 0
+/**
+ * Compute Customer Receivable financials for a billing month (YYYY-MM string).
+ *
+ * Logic (as per business rules):
+ *  - billingMonth defaults to the current month if not provided.
+ *  - CURRENT   = the invoice whose billingPeriod falls in billingMonth (1st of that month).
+ *  - ARREARS   = sum of unpaid balances on ALL invoices from months BEFORE billingMonth.
+ *  - ADJUSTMENT = net of debit-note/credit-note LedgerEntries whose date falls within billingMonth.
+ *                 Debit notes increase the amount owed; credit notes reduce it.
+ *  - PAYMENT COLLECTION = sum of payment LedgerEntry credits (invoiceId-linked) whose date falls
+ *                         within billingMonth (Sep 1 – Sep 30 for a Sep billing run).
+ *  - BALANCE = ARREARS + CURRENT + netAdjustment − PAYMENT COLLECTION
+ */
+function computeCustomerFinancials(c: CustomerRecord, billingMonth?: string) {
+  // Determine the billing month window: default to current month
+  const now = new Date()
+  const targetMonth = billingMonth || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  const [ymYear, ymMonth] = targetMonth.split('-').map(Number)
 
-  if (invoices.length > 0) {
-    const latestInvoice = invoices[invoices.length - 1]
-    current = Number(latestInvoice.totalAmount || latestInvoice.amount || 0)
-    
-    // Past unpaid invoices
-    const pastInvoices = invoices.slice(0, -1)
-    arrears = pastInvoices.reduce((sum: number, inv: any) => {
-      if (inv.status !== 'PAID') {
-        const invTotal = Number(inv.totalAmount || inv.amount || 0)
-        const invPaid = Number(inv.paidAmount || 0)
-        return sum + Math.max(0, invTotal - invPaid)
-      }
-      return sum
-    }, 0)
+  // Start/end of billing month (inclusive)
+  const monthStart = new Date(ymYear, ymMonth - 1, 1, 0, 0, 0, 0)
+  const monthEnd   = new Date(ymYear, ymMonth, 0, 23, 59, 59, 999) // last day of month
 
-    const totalTransactions = (c.transactions || []).reduce((sum: number, t: any) => sum + Number(t.amount || 0), 0)
-    const totalInvoicePaid = invoices.reduce((sum: number, inv: any) => sum + Number(inv.paidAmount || 0), 0)
-    const packagePaid = Number(c.packagePlan?.paidAmount || 0)
-    paymentCollection = Math.max(totalTransactions, totalInvoicePaid, packagePaid)
-  } else {
-    const totalPlanAmount = Number(c.packagePlan?.totalAmount || 0)
-    const paidAmount = Number(c.packagePlan?.paidAmount || 0)
-    paymentCollection = paidAmount
-    current = totalPlanAmount
-    arrears = 0
-  }
+  const invoices = Array.isArray(c.invoices)
+    ? [...c.invoices].sort((a: any, b: any) =>
+        new Date(a.createdAt || a.dueDate || a.billingPeriod || 0).getTime() -
+        new Date(b.createdAt || b.dueDate || b.billingPeriod || 0).getTime()
+      )
+    : []
 
-  // Calculate Adjustments (from ledger entries or discount)
+  // CURRENT: invoice whose billingPeriod (or dueDate/createdAt) is within billingMonth
+  const currentInvoice = invoices.find((inv: any) => {
+    const d = new Date(inv.billingPeriod || inv.dueDate || inv.createdAt || 0)
+    return d >= monthStart && d <= monthEnd
+  }) ?? null
+  const current = currentInvoice ? Number(currentInvoice.totalAmount || currentInvoice.amount || 0) : 0
+
+  // ARREARS: unpaid balances on invoices from BEFORE billingMonth
+  const arrears = invoices.reduce((sum: number, inv: any) => {
+    const d = new Date(inv.billingPeriod || inv.dueDate || inv.createdAt || 0)
+    if (d >= monthStart) return sum // skip current month and future
+    if (inv.status === 'PAID') return sum
+    const invTotal = Number(inv.totalAmount || inv.amount || 0)
+    const invPaid  = Number(inv.paidAmount || 0)
+    return sum + Math.max(0, invTotal - invPaid)
+  }, 0)
+
+  // ADJUSTMENT: net of debit/credit notes posted within billingMonth
   let adjDebit = 0
   let adjCredit = 0
-  if (c.ledgerEntries && c.ledgerEntries.length > 0) {
-    c.ledgerEntries.forEach((le: any) => {
-      const narr = (le.narration || '').toLowerCase()
-      if (narr.includes('adjustment') || narr.includes('discount') || narr.includes('credit note') || narr.includes('debit note') || narr.includes('adj') || narr.includes('reversal')) {
-        adjDebit += Number(le.debit || 0)
-        adjCredit += Number(le.credit || 0)
-      }
-    })
-  }
+  ;(c.ledgerEntries || []).forEach((le: any) => {
+    const narr = (le.narration || '').toLowerCase()
+    const isAdj = narr.includes('debit note') || narr.includes('credit note') ||
+                  narr.includes('adjustment') || narr.includes('adj') ||
+                  narr.includes('discount') || narr.includes('reversal')
+    if (!isAdj) return
+    const leDate = new Date(le.date || le.createdAt || 0)
+    if (leDate >= monthStart && leDate <= monthEnd) {
+      adjDebit  += Number(le.debit  || 0)
+      adjCredit += Number(le.credit || 0)
+    }
+  })
 
   let adjustmentText = '0'
   let netAdjustment = 0
-  if (adjCredit > adjDebit) {
+  if (adjDebit > adjCredit) {
+    netAdjustment = adjDebit - adjCredit
+    adjustmentText = `+${Math.round(netAdjustment)} Debit`
+  } else if (adjCredit > adjDebit) {
     netAdjustment = -(adjCredit - adjDebit)
     adjustmentText = `-${Math.round(adjCredit - adjDebit)} Credit`
-  } else if (adjDebit > adjCredit) {
-    netAdjustment = adjDebit - adjCredit
-    adjustmentText = `${Math.round(adjDebit - adjCredit)} Debit`
-  } else if (Number(c.packagePlan?.appliedDiscount || 0) > 0) {
-    const discountVal = (Number(c.packagePlan?.monthlyBasePrice || 0) * Number(c.packagePlan?.appliedDiscount)) / 100
-    if (discountVal > 0) {
-      netAdjustment = -discountVal
-      adjustmentText = `-${Math.round(discountVal)} Credit`
-    }
   }
 
-  const totalDue = arrears + current + (netAdjustment > 0 ? netAdjustment : 0)
-  const effectivePaid = paymentCollection + (netAdjustment < 0 ? Math.abs(netAdjustment) : 0)
-  const balanceAmount = totalDue > 0 ? (totalDue - effectivePaid) : (Number(c.packagePlan?.totalAmount || 0) - paymentCollection)
+  // PAYMENT COLLECTION: all payment credits (invoiceId-linked) posted within billingMonth
+  const paymentCollection = (c.ledgerEntries || []).reduce((sum: number, le: any) => {
+    if (!le.invoiceId) return sum
+    const leDate = new Date(le.date || le.createdAt || 0)
+    if (leDate >= monthStart && leDate <= monthEnd) {
+      return sum + Number(le.credit || 0)
+    }
+    return sum
+  }, 0)
+
+  // BALANCE = Arrears + Current + netAdjustment (signed) − Payments
+  const balanceAmount = arrears + current + netAdjustment - paymentCollection
 
   return {
-    arrears: Math.round(arrears),
-    current: Math.round(current),
+    arrears:           Math.round(arrears),
+    current:           Math.round(current),
     paymentCollection: Math.round(paymentCollection),
     adjustmentText,
-    netAdjustment: Math.round(netAdjustment),
-    balanceAmount: Math.round(balanceAmount)
+    netAdjustment:     Math.round(netAdjustment),
+    balanceAmount:     Math.round(balanceAmount),
   }
 }
 
-// Alias for backward compatibility
-const computeReceivableDetails = computeCustomerFinancials
+type AdjustmentRow = {
+  customer: CustomerRecord
+  ledgerEntry: {
+    id: string
+    narration: string
+    debit: number
+    credit: number
+    date: string | null
+    invoiceId: string | null
+  }
+}
 
 export function ReportsView({ 
   customers, 
@@ -179,6 +208,7 @@ export function ReportsView({
 
   const [hasSearched, setHasSearched] = React.useState(false)
   const [selectedStatus, setSelectedStatus] = React.useState<string>('ALL')
+  const [selectedAdjustmentType, setSelectedAdjustmentType] = React.useState<string>('ALL')
   const [selectedCustomerType, setSelectedCustomerType] = React.useState<string>('ALL')
   const [selectedAccountExecutive, setSelectedAccountExecutive] = React.useState<string>('ALL')
   const [selectedCity, setSelectedCity] = React.useState<string>('ALL')
@@ -187,7 +217,13 @@ export function ReportsView({
   const [dateFrom, setDateFrom] = React.useState<string>('')
   const [dateTo, setDateTo] = React.useState<string>('')
   const [searchQuery, setSearchQuery] = React.useState<string>('')
+  // RECEIVABLE: false = hide zero balance (show only due), true = show all including zero
   const [includeZeroNegative, setIncludeZeroNegative] = React.useState<boolean>(false)
+  // RECEIVABLE: Invoice month filter (YYYY-MM format)
+  const [invoiceMonth, setInvoiceMonth] = React.useState<string>(() => {
+    const now = new Date()
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  })
 
   const [appliedFilters, setAppliedFilters] = React.useState<{
     status: string
@@ -200,6 +236,8 @@ export function ReportsView({
     dateTo: string
     searchQuery: string
     includeZeroNegative: boolean
+    invoiceMonth: string
+    adjustmentType: string
   }>({
     status: 'ALL',
     customerType: 'ALL',
@@ -211,6 +249,8 @@ export function ReportsView({
     dateTo: '',
     searchQuery: '',
     includeZeroNegative: false,
+    invoiceMonth: `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`,
+    adjustmentType: 'ALL',
   })
 
   // Unique Lists for Dropdowns
@@ -246,16 +286,15 @@ export function ReportsView({
       STATUS: customers.length,
       SALES: customers.filter((c) => c.packagePlan !== null).length,
       RECEIVABLE: customers.filter((c) => {
-        const { balanceAmount } = computeReceivableDetails(c)
-        return balanceAmount > 0
+        const { balanceAmount } = computeCustomerFinancials(c)
+        return (c.status || '').toUpperCase() === 'CONNECTION_ACTIVE' && c.packagePlan && balanceAmount > 0
       }).length,
-      ADJUSTMENT: customers.filter((c) => {
-        const hasDiscount = Number(c.packagePlan?.appliedDiscount) > 0
-        const hasLedgerAdj = c.ledgerEntries && c.ledgerEntries.some((l: any) => 
-          l.narration?.toLowerCase().includes('adjustment') || l.narration?.toLowerCase().includes('discount')
-        )
-        return hasDiscount || hasLedgerAdj
-      }).length,
+      ADJUSTMENT: customers.filter((c) =>
+        c.ledgerEntries && c.ledgerEntries.some((l: any) => {
+          const narr = (l.narration || '').toLowerCase()
+          return narr.includes('debit note') || narr.includes('credit note')
+        })
+      ).length,
       PAYMENTS: customers.filter((c) => (c.transactions && c.transactions.length > 0) || (Number(c.packagePlan?.paidAmount) > 0)).length,
       REGISTER: customers.length,
     }
@@ -270,8 +309,17 @@ export function ReportsView({
       if (activeCategory === 'SALES' && !c.packagePlan) return false
       
       if (activeCategory === 'RECEIVABLE') {
-        const { balanceAmount } = computeReceivableDetails(c)
-        if (!appliedFilters.includeZeroNegative && balanceAmount <= 0) return false
+        // RECEIVABLE: only CONNECTION_ACTIVE customers
+        const statusUpper = (c.status || '').toUpperCase()
+        if (statusUpper !== 'CONNECTION_ACTIVE') return false
+
+        // Must have a package plan to have a bill
+        if (!c.packagePlan) return false
+
+        const { balanceAmount } = computeCustomerFinancials(c, appliedFilters.invoiceMonth)
+        // Default (unchecked): show ALL active customers including zero balance
+        // Checked: hide zero/negative balance — show only those with outstanding due
+        if (appliedFilters.includeZeroNegative && balanceAmount <= 0) return false
       }
 
       if (activeCategory === 'ADJUSTMENT') {
@@ -305,14 +353,16 @@ export function ReportsView({
       if (appliedFilters.area !== 'ALL' && c.area?.toLowerCase() !== appliedFilters.area.toLowerCase()) return false
       if (appliedFilters.subArea !== 'ALL' && c.subArea?.toLowerCase() !== appliedFilters.subArea.toLowerCase()) return false
 
-      // Date filter
-      if (appliedFilters.dateFrom && c.signupDate) {
-        if (new Date(c.signupDate) < new Date(appliedFilters.dateFrom)) return false
-      }
-      if (appliedFilters.dateTo && c.signupDate) {
-        const to = new Date(appliedFilters.dateTo)
-        to.setHours(23, 59, 59, 999)
-        if (new Date(c.signupDate) > to) return false
+      // Date filter (only for non-RECEIVABLE categories)
+      if (activeCategory !== 'RECEIVABLE') {
+        if (appliedFilters.dateFrom && c.signupDate) {
+          if (new Date(c.signupDate) < new Date(appliedFilters.dateFrom)) return false
+        }
+        if (appliedFilters.dateTo && c.signupDate) {
+          const to = new Date(appliedFilters.dateTo)
+          to.setHours(23, 59, 59, 999)
+          if (new Date(c.signupDate) > to) return false
+        }
       }
 
       // Search query
@@ -334,6 +384,63 @@ export function ReportsView({
 
       return true
     })
+  }, [customers, activeCategory, hasSearched, appliedFilters])
+
+  const filteredAdjustmentRows = React.useMemo((): AdjustmentRow[] => {
+    if (!hasSearched || activeCategory !== 'ADJUSTMENT') return []
+
+    const rows: AdjustmentRow[] = []
+
+    for (const c of customers) {
+      if (appliedFilters.city !== 'ALL' && c.city?.toLowerCase() !== appliedFilters.city.toLowerCase()) continue
+      if (appliedFilters.area !== 'ALL' && c.area?.toLowerCase() !== appliedFilters.area.toLowerCase()) continue
+      if (appliedFilters.subArea !== 'ALL' && c.subArea?.toLowerCase() !== appliedFilters.subArea.toLowerCase()) continue
+
+      if (appliedFilters.dateFrom && c.signupDate) {
+        if (new Date(c.signupDate) < new Date(appliedFilters.dateFrom)) continue
+      }
+      if (appliedFilters.dateTo && c.signupDate) {
+        const to = new Date(appliedFilters.dateTo)
+        to.setHours(23, 59, 59, 999)
+        if (new Date(c.signupDate) > to) continue
+      }
+
+      if (appliedFilters.searchQuery.trim()) {
+        const q = appliedFilters.searchQuery.toLowerCase().trim()
+        const match =
+          c.fullName?.toLowerCase().includes(q) ||
+          c.customerCode?.toLowerCase().includes(q) ||
+          c.crfNumber?.toLowerCase().includes(q) ||
+          c.contactNumber?.toLowerCase().includes(q) ||
+          c.cnic?.toLowerCase().includes(q)
+        if (!match) continue
+      }
+
+      for (const le of c.ledgerEntries || []) {
+        const narr = (le.narration || '').toLowerCase()
+        const isDebitNote = narr.includes('debit note')
+        const isCreditNote = narr.includes('credit note')
+        if (!isDebitNote && !isCreditNote) continue
+
+        const type = appliedFilters.adjustmentType
+        if (type === 'DEBIT_NOTE' && !isDebitNote) continue
+        if (type === 'CREDIT_NOTE' && !isCreditNote) continue
+
+        rows.push({
+          customer: c,
+          ledgerEntry: {
+            id: le.id,
+            narration: le.narration,
+            debit: Number(le.debit || 0),
+            credit: Number(le.credit || 0),
+            date: le.date || le.createdAt || null,
+            invoiceId: le.invoiceId || null,
+          },
+        })
+      }
+    }
+
+    return rows
   }, [customers, activeCategory, hasSearched, appliedFilters])
 
   // Account Executive Performance Summary Computation for Sales Report
@@ -448,6 +555,8 @@ export function ReportsView({
       dateTo,
       searchQuery,
       includeZeroNegative,
+      invoiceMonth,
+      adjustmentType: selectedAdjustmentType,
     })
     setHasSearched(true)
   }
@@ -463,6 +572,7 @@ export function ReportsView({
     setDateTo('')
     setSearchQuery('')
     setIncludeZeroNegative(false)
+    setSelectedAdjustmentType('ALL')
     setAppliedFilters({
       status: 'ALL',
       customerType: 'ALL',
@@ -474,6 +584,8 @@ export function ReportsView({
       dateTo: '',
       searchQuery: '',
       includeZeroNegative: false,
+      invoiceMonth: `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`,
+      adjustmentType: 'ALL',
     })
     setHasSearched(false)
   }
@@ -500,7 +612,8 @@ export function ReportsView({
       alert('Please select your filters and click "Search / Apply Filters" before exporting.')
       return
     }
-    if (filteredCustomers.length === 0) {
+    const exportRowCount = activeCategory === 'ADJUSTMENT' ? filteredAdjustmentRows.length : filteredCustomers.length
+    if (exportRowCount === 0) {
       alert('No records found matching the selected filters to export.')
       return
     }
@@ -536,7 +649,29 @@ export function ReportsView({
         `"${c.status ? c.status.replace(/_/g, ' ') : ''}"`,
         `"${c.status ? c.status.replace(/_/g, ' ') : ''}"`,
       ])
-    } else if (activeCategory === 'SALES' || activeCategory === 'RECEIVABLE') {
+    } else if (activeCategory === 'SALES') {
+      headers = [
+        'Customer ID', 'CRF #', 'Customer Name', 'Address', 'Contact Number',
+        'City', 'System Type', 'Package', 'Billing Type', 'Customer Type',
+        'Amount Payable', 'Paid Amount', 'Sign up Created Date', 'Activation Date'
+      ]
+      rows = filteredCustomers.map((c) => [
+        `"${formatCustomerId(c.customerCode || c.id)}"`,
+        `"${c.crfNumber || '-'}"`,
+        `"${c.fullName}"`,
+        `"${c.address}"`,
+        `"${c.contactNumber}"`,
+        `"${c.city}"`,
+        `"${c.packagePlan?.systemSizeKw || c.solarSystem?.inverterSize || '-'}"`,
+        `"${c.packagePlan?.packageTier || 'Basic'}"`,
+        `"${c.packagePlan?.billingType || 'Monthly'}"`,
+        `"${c.customerType ? (c.customerType.charAt(0).toUpperCase() + c.customerType.slice(1).toLowerCase()) : 'Residential'}"`,
+        `"${Math.round(Number(c.packagePlan?.totalAmount || 0))}"`,
+        `"${Math.round(Number(c.packagePlan?.paidAmount || 0))}"`,
+        `"${formatDate(c.signupDate)}"`,
+        `"${c.activationDate ? formatDate(c.activationDate) : (c.solarSystem?.systemInstallationDate ? formatDate(c.solarSystem.systemInstallationDate) : 'Pending')}"`,
+      ])
+    } else if (activeCategory === 'RECEIVABLE') {
       headers = [
         'Customer ID', 'Customer Name', 'Customer Address', 'Contact #',
         'House #', 'Block', 'Street #', 'Sub Area', 'Area',
@@ -546,7 +681,7 @@ export function ReportsView({
         'Payment Collection (PKR)', 'Balance Amount (PKR)'
       ]
       rows = filteredCustomers.map((c) => {
-        const fin = computeCustomerFinancials(c)
+        const fin = computeCustomerFinancials(c, appliedFilters.invoiceMonth)
         return [
           `"${formatCustomerId(c.customerCode || c.id)}"`,
           `"${c.fullName}"`,
@@ -574,21 +709,32 @@ export function ReportsView({
       })
     } else if (activeCategory === 'ADJUSTMENT') {
       headers = [
-        'Customer ID', 'CRF #', 'Customer Name', 'City', 'Package Tier', 'Billing Type',
-        'Discount (%)', 'On-Boarding Fee (PKR)', 'Total Amount (PKR)', 'Sign Up Date'
+        'Customer ID', 'CRF #', 'Customer Name', 'City',
+        'Account Executive Name', 'Package Type', 'Billing Type',
+        'Adjustment Debit/Credit', 'Description', 'Activation Date'
       ]
-      rows = filteredCustomers.map((c) => [
-        `"${formatCustomerId(c.customerCode || c.id)}"`,
-        `"${formatCrf(c.crfNumber, c.customerCode)}"`,
-        `"${c.fullName}"`,
-        `"${c.city}"`,
-        `"${c.packagePlan?.packageTier || '-'}"`,
-        `"${c.packagePlan?.billingType || '-'}"`,
-        `"${Number(c.packagePlan?.appliedDiscount || 0)}%"`,
-        `"${Number(c.packagePlan?.onboardingFee || 0)}"`,
-        `"${Math.round(Number(c.packagePlan?.totalAmount || 0))}"`,
-        `"${formatDate(c.signupDate)}"`,
-      ])
+      rows = filteredAdjustmentRows.map(({ customer: c, ledgerEntry: le }) => {
+        const isDebit = le.debit > 0
+        const adjustmentDisplay = isDebit
+          ? `PKR ${Math.round(le.debit)} Debit`
+          : `PKR ${Math.round(le.credit)} Credit`
+        return [
+          `"${formatCustomerId(c.customerCode || c.id)}"`,
+          `"${formatCrf(c.crfNumber, c.customerCode)}"`,
+          `"${c.fullName}"`,
+          `"${c.city}"`,
+          `"${c.accountExecutive?.fullName || c.accountExecutiveName || '-'}"`,
+          `"${c.packagePlan?.packageTier || '-'}"`,
+          `"${c.packagePlan?.billingType || '-'}"`,
+          `"${adjustmentDisplay}"`,
+          `"${le.narration}"`,
+          `"${c.activationDate
+              ? formatDate(c.activationDate)
+              : c.solarSystem?.systemInstallationDate
+                ? formatDate(c.solarSystem.systemInstallationDate)
+                : '-'}"`,
+        ]
+      })
     } else if (activeCategory === 'PAYMENTS') {
       headers = [
         'Customer ID', 'CRF #', 'Customer Name', 'Contact #', 'City', 'Package',
@@ -639,34 +785,23 @@ export function ReportsView({
 
   return (
     <div className="space-y-6">
-      {/* Header & Export to Excel */}
+      {/* Dynamic Filter Card with Header */}
       <Card className="shadow-sm border-slate-200 overflow-hidden bg-white">
         <SectionHeader
           action={
-            <Button onClick={handleExportExcel} className="h-8 text-xs bg-[var(--color-amber)] hover:bg-[#d69333] text-white font-bold shadow-xs gap-1.5 px-3 cursor-pointer">
-              <FileSpreadsheet className="h-3.5 w-3.5" /> Export to Excel
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button onClick={handleReset} variant="ghost" size="sm" className="h-7 text-xs text-white hover:bg-white/20 font-semibold gap-1 px-2 cursor-pointer">
+                <RotateCcw className="h-3.5 w-3.5" /> Reset Filters
+              </Button>
+              <Button onClick={handleExportExcel} className="h-8 text-xs bg-[var(--color-amber)] hover:bg-[#d69333] text-white font-bold shadow-xs gap-1.5 px-3 cursor-pointer">
+                <FileSpreadsheet className="h-3.5 w-3.5" /> Export to Excel
+              </Button>
+            </div>
           }
         >
           <span className="flex items-center gap-2">
             <FileSpreadsheet className="h-4 w-4 text-[#F58220]" />
             {currentTabObj.label}
-          </span>
-        </SectionHeader>
-      </Card>
-
-      {/* Dynamic Filter Card */}
-      <Card className="shadow-sm border-line bg-white overflow-hidden">
-        <SectionHeader
-          action={
-            <Button onClick={handleReset} variant="ghost" size="sm" className="h-7 text-xs text-white hover:bg-white/20 font-semibold gap-1 px-2 cursor-pointer">
-              <RotateCcw className="h-3.5 w-3.5" /> Reset Filters
-            </Button>
-          }
-        >
-          <span className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-[#F58220]" />
-            {currentTabObj.label} Filters
           </span>
         </SectionHeader>
 
@@ -720,10 +855,24 @@ export function ReportsView({
               </select>
             </div>
 
-            {activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && (
+            {activeCategory === 'ADJUSTMENT' && (
               <div className="space-y-1">
-                <Label className="text-xs font-semibold text-[var(--color-ink)]">Account Executive Sales</Label>
+                <Label className="text-xs font-semibold text-[var(--color-ink)]">Adjustment Type</Label>
                 <select
+                  value={selectedAdjustmentType}
+                  onChange={(e) => setSelectedAdjustmentType(e.target.value)}
+                  className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white"
+                >
+                  <option value="ALL">All</option>
+                  <option value="DEBIT_NOTE">Debit Note</option>
+                  <option value="CREDIT_NOTE">Credit Note</option>
+                </select>
+              </div>
+            )}
+
+            {activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && (
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold text-[var(--color-ink)]">Account Executive Sales</Label>                <select
                   value={selectedAccountExecutive}
                   onChange={(e) => setSelectedAccountExecutive(e.target.value)}
                   className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white"
@@ -736,7 +885,7 @@ export function ReportsView({
               </div>
             )}
 
-            {activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && (
+            {activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && (
               <div className="space-y-1">
                 <Label className="text-xs font-semibold text-[var(--color-ink)]">Customer Type</Label>
                 <select
@@ -757,7 +906,7 @@ export function ReportsView({
               </div>
             )}
 
-            {activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && (
+            {activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && (
               <div className="space-y-1">
                 <Label className="text-xs font-semibold text-[var(--color-ink)]">Select Status Filter</Label>
                 <select
@@ -773,28 +922,40 @@ export function ReportsView({
               </div>
             )}
 
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold text-[var(--color-ink)]">Calendar Date From</Label>
-              <Input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="text-xs h-9 border-[var(--color-line)]"
-              />
-            </div>
+            {activeCategory !== 'RECEIVABLE' && (
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold text-[var(--color-ink)]">Calendar Date From</Label>
+                <DateInput
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="text-xs h-9 border-[var(--color-line)]"
+                />
+              </div>
+            )}
 
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold text-[var(--color-ink)]">Calendar Date To</Label>
-              <Input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="text-xs h-9 border-[var(--color-line)]"
-              />
-            </div>
+            {activeCategory !== 'RECEIVABLE' && (
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold text-[var(--color-ink)]">Calendar Date To</Label>
+                <DateInput
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="text-xs h-9 border-[var(--color-line)]"
+                />
+              </div>
+            )}
 
             {activeCategory === 'RECEIVABLE' && (
-              <div className="sm:col-span-2 md:col-span-4 pt-1">
+              <div className="sm:col-span-2 md:col-span-4 pt-1 flex flex-wrap items-center gap-4">
+                {/* Billing month selector */}
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs font-semibold text-[var(--color-ink)] whitespace-nowrap">Billing Month</Label>
+                  <Input
+                    type="month"
+                    value={invoiceMonth}
+                    onChange={(e) => setInvoiceMonth(e.target.value)}
+                    className="text-xs h-9 border-[var(--color-line)] w-40"
+                  />
+                </div>
                 <label className="inline-flex items-center gap-2.5 cursor-pointer select-none text-xs font-bold text-[#002868] bg-slate-50 border border-slate-300 hover:bg-slate-100 rounded-lg px-3.5 py-2 transition-colors">
                   <input
                     type="checkbox"
@@ -847,7 +1008,9 @@ export function ReportsView({
           <div className="flex items-center justify-end pt-1 text-xs">
             <div className="text-xs text-gray-600 bg-gray-50 px-3.5 py-1.5 rounded-lg border border-gray-200 font-medium">
               {hasSearched ? (
-                <>Showing <strong className="text-[var(--color-ink)]">{filteredCustomers.length}</strong> matching records in {currentTabObj.label}</>
+                <>Showing <strong className="text-[var(--color-ink)]">
+                  {activeCategory === 'ADJUSTMENT' ? filteredAdjustmentRows.length : filteredCustomers.length}
+                </strong> matching records in {currentTabObj.label}</>
               ) : (
                 <span className="text-slate-500">No data loaded (click &quot;Search / Apply Filters&quot;)</span>
               )}
@@ -859,6 +1022,47 @@ export function ReportsView({
       {/* Dynamic Report Table */}
       <Card className="shadow-sm border-line overflow-hidden bg-white">
         <CardContent className="p-0">
+          {activeCategory === 'SALES' && hasSearched && (
+            <div className="p-4 bg-slate-50 border-b border-slate-200 animate-reveal">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="font-extrabold text-sm text-[#002868] uppercase tracking-wider flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse"></span>
+                  Overall Sales Summary Totals
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
+                  <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Sales Target</div>
+                  <div className="text-lg font-extrabold text-slate-900 mt-0.5">{aeTotals.salesTarget}</div>
+                </div>
+                <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
+                  <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">New Sale (Active)</div>
+                  <div className="text-lg font-extrabold text-emerald-700 mt-0.5">{aeTotals.newSaleActive}</div>
+                </div>
+                <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
+                  <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Total Blocked</div>
+                  <div className="text-lg font-extrabold text-rose-700 mt-0.5">{aeTotals.totalBlocked}</div>
+                  <div className="text-[9px] text-slate-400 mt-0.5">Temp: {aeTotals.tempBlocked} | Perm: {aeTotals.permBlocked} | Non-Pay: {aeTotals.nonPaymentBlocked}</div>
+                </div>
+                <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
+                  <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Balance Target</div>
+                  <div className="text-lg font-extrabold text-amber-900 mt-0.5">{aeTotals.balanceTarget}</div>
+                </div>
+                <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
+                  <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Achieved % Age</div>
+                  <div className="text-lg font-extrabold text-blue-900 mt-0.5">{aeTotals.salesTarget > 0 ? ((aeTotals.newSaleActive / aeTotals.salesTarget) * 100).toFixed(1) : 0}%</div>
+                </div>
+                <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs col-span-2 sm:col-span-3 md:col-span-2">
+                  <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Total Amount Payable</div>
+                  <div className="text-lg font-extrabold text-slate-900 mt-0.5 font-mono">PKR {Math.round(aeTotals.amountPayable).toLocaleString()}</div>
+                </div>
+                <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs col-span-2 sm:col-span-3">
+                  <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Total Paid Amount</div>
+                  <div className="text-lg font-extrabold text-emerald-800 mt-0.5 font-mono">PKR {Math.round(aeTotals.paidAmount).toLocaleString()}</div>
+                </div>
+              </div>
+            </div>
+          )}
           <div className="overflow-x-auto">
             <Table>
               {/* 1. CUSTOMER STATUS REPORT TABLE */}
@@ -963,21 +1167,6 @@ export function ReportsView({
                   </TableRow>
                 </TableHeader>
                 <TableBody className="bg-white divide-y divide-slate-200">
-                  {/* Total Highlight Row */}
-                  <TableRow className="bg-amber-50/80 font-bold text-xs text-slate-900 border-b-2 border-amber-200">
-                    <TableCell className="font-extrabold uppercase tracking-wider text-[#002868]">Total Summary</TableCell>
-                    <TableCell className="font-bold">{aeTotals.salesTarget}</TableCell>
-                    <TableCell className="font-bold text-emerald-700">{aeTotals.newSaleActive}</TableCell>
-                    <TableCell>{aeTotals.tempBlocked}</TableCell>
-                    <TableCell>{aeTotals.permBlocked}</TableCell>
-                    <TableCell>{aeTotals.nonPaymentBlocked}</TableCell>
-                    <TableCell className="font-bold text-rose-700">{aeTotals.totalBlocked}</TableCell>
-                    <TableCell className="font-bold text-amber-900">{aeTotals.balanceTarget}</TableCell>
-                    <TableCell className="font-bold text-blue-900">{aeTotals.salesTarget > 0 ? ((aeTotals.newSaleActive / aeTotals.salesTarget) * 100).toFixed(1) : 0}%</TableCell>
-                    <TableCell className="font-mono text-right font-bold text-slate-900">PKR {Math.round(aeTotals.amountPayable).toLocaleString()}</TableCell>
-                    <TableCell className="font-mono text-right font-bold text-emerald-800">PKR {Math.round(aeTotals.paidAmount).toLocaleString()}</TableCell>
-                  </TableRow>
-
                   {/* Account Executive Rows */}
                   {aeSummaryList.map((ae) => (
                     <TableRow key={ae.name} className="hover:bg-slate-50 text-xs font-semibold text-slate-800">
@@ -1000,45 +1189,36 @@ export function ReportsView({
                 <TableHeader className="bg-[var(--color-paper)] border-t-2 border-slate-300">
                   <TableRow className="border-b border-gray-200">
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer ID</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">CRF #</TableHead>
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer Name</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer Address</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Contact #</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">House #</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Block</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Street #</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Sub Area</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Area</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Account Executive</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Address</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Contact Number</TableHead>
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">City</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">System Type</TableHead>
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Package</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer Type</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">System Type:</TableHead>
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Billing Type</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Monitoring Time</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer Status</TableHead>
-                    <TableHead className="font-bold text-xs text-emerald-950 bg-[#86efac]/35 whitespace-nowrap border-l border-emerald-200">Adjustment / Credit-Debit</TableHead>
-                    <TableHead className="font-bold text-xs text-emerald-950 bg-[#86efac]/35 text-right whitespace-nowrap border-r border-emerald-200">Arrears</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] text-right whitespace-nowrap">Current</TableHead>
-                    <TableHead className="font-bold text-xs text-emerald-950 bg-[#86efac]/35 text-right whitespace-nowrap border-x border-emerald-200">Payment Collection</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] text-right whitespace-nowrap">Balance Amount</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer Type</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] text-right whitespace-nowrap">Amount Payable</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] text-right whitespace-nowrap">Paid Amount</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Sign up Created Date</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Activation Date</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {!hasSearched ? (
                     <TableRow>
-                      <TableCell colSpan={22} className="h-32 text-center text-xs text-[var(--color-slate-custom)] font-medium">
+                      <TableCell colSpan={14} className="h-32 text-center text-xs text-[var(--color-slate-custom)] font-medium">
                         Select filters and click &quot;Search / Apply Filters&quot; to load report data.
                       </TableCell>
                     </TableRow>
                   ) : filteredCustomers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={22} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">
+                      <TableCell colSpan={14} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">
                         No sales records found matching the selected filters.
                       </TableCell>
                     </TableRow>
                   ) : (
                     filteredCustomers.map((c) => {
-                      const fin = computeCustomerFinancials(c)
                       return (
                         <TableRow key={c.id} className="hover:bg-[var(--color-paper)]/50 text-xs">
                           <TableCell className="font-mono font-bold text-[var(--color-ink)] whitespace-nowrap">
@@ -1046,48 +1226,32 @@ export function ReportsView({
                               {formatCustomerId(c.customerCode || c.id)}
                             </Link>
                           </TableCell>
+                          <TableCell className="whitespace-nowrap font-mono">{formatCrf(c.crfNumber, c.customerCode) || '—'}</TableCell>
                           <TableCell className="font-semibold text-gray-900 whitespace-nowrap">{c.fullName}</TableCell>
                           <TableCell className="text-gray-600 max-w-xs truncate">{c.address}</TableCell>
                           <TableCell className="font-mono whitespace-nowrap">{c.contactNumber}</TableCell>
-                          <TableCell className="whitespace-nowrap">{c.houseNumber || c.houseNo || '-'}</TableCell>
-                          <TableCell className="whitespace-nowrap">{c.block || '-'}</TableCell>
-                          <TableCell className="whitespace-nowrap">{c.streetNumber || c.streetNo || '-'}</TableCell>
-                          <TableCell className="whitespace-nowrap">{c.subArea || '-'}</TableCell>
-                          <TableCell className="whitespace-nowrap">{c.area || '-'}</TableCell>
-                          <TableCell className="whitespace-nowrap text-gray-700">{c.accountExecutive?.fullName || c.accountExecutiveName || '-'}</TableCell>
                           <TableCell className="font-semibold whitespace-nowrap">{c.city}</TableCell>
+                          <TableCell className="whitespace-nowrap font-medium">{c.packagePlan?.systemSizeKw || c.solarSystem?.inverterSize || '-'}</TableCell>
                           <TableCell className="whitespace-nowrap">
                             <Badge variant="outline" className="bg-amber-50 text-amber-950 border-amber-200 font-semibold">
                               {c.packagePlan?.packageTier || 'Basic'}
                             </Badge>
                           </TableCell>
+                          <TableCell className="whitespace-nowrap">{c.packagePlan?.billingType || 'Monthly'}</TableCell>
                           <TableCell className="whitespace-nowrap">
                             <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-semibold text-[10px]">
                               {c.customerType ? (c.customerType.charAt(0).toUpperCase() + c.customerType.slice(1).toLowerCase()) : 'Residential'}
                             </Badge>
                           </TableCell>
-                          <TableCell className="whitespace-nowrap font-medium">{c.packagePlan?.systemSizeKw || c.solarSystem?.inverterSize || '-'}</TableCell>
-                          <TableCell className="whitespace-nowrap">{c.packagePlan?.billingType || 'Monthly'}</TableCell>
-                          <TableCell className="whitespace-nowrap text-gray-700">{c.packagePlan?.monitoringTime || '12 Hours'}</TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-semibold text-[10px]">
-                              {c.status ? c.status.replace(/_/g, ' ') : 'Active'}
-                            </Badge>
+                          <TableCell className="text-right font-mono font-bold text-slate-900 whitespace-nowrap">
+                            PKR {Math.round(Number(c.packagePlan?.totalAmount || 0)).toLocaleString()}
                           </TableCell>
-                          <TableCell className="font-mono text-xs font-semibold whitespace-nowrap bg-emerald-50/70 border-l border-emerald-100 text-slate-800">
-                            {fin.adjustmentText}
+                          <TableCell className="text-right font-mono font-bold text-emerald-900 whitespace-nowrap">
+                            PKR {Math.round(Number(c.packagePlan?.paidAmount || 0)).toLocaleString()}
                           </TableCell>
-                          <TableCell className="text-right font-mono font-medium text-slate-700 whitespace-nowrap bg-emerald-50/70 border-r border-emerald-100">
-                            PKR {fin.arrears.toLocaleString()}
-                          </TableCell>
-                          <TableCell className="text-right font-mono font-medium text-slate-900 whitespace-nowrap">
-                            PKR {fin.current.toLocaleString()}
-                          </TableCell>
-                          <TableCell className="text-right font-mono font-bold text-emerald-900 bg-emerald-50/80 whitespace-nowrap border-x border-emerald-100">
-                            PKR {fin.paymentCollection.toLocaleString()}
-                          </TableCell>
-                          <TableCell className={`text-right font-mono font-bold whitespace-nowrap ${fin.balanceAmount > 0 ? 'text-rose-700' : 'text-emerald-700'}`}>
-                            PKR {fin.balanceAmount.toLocaleString()}
+                          <TableCell className="whitespace-nowrap font-mono text-gray-600">{formatDate(c.signupDate)}</TableCell>
+                          <TableCell className="whitespace-nowrap font-mono text-gray-600">
+                            {c.activationDate ? formatDate(c.activationDate) : (c.solarSystem?.systemInstallationDate ? formatDate(c.solarSystem.systemInstallationDate) : 'Pending')}
                           </TableCell>
                         </TableRow>
                       )
@@ -1141,7 +1305,7 @@ export function ReportsView({
                     </TableRow>
                   ) : (
                     filteredCustomers.map((c) => {
-                      const fin = computeCustomerFinancials(c)
+                      const fin = computeCustomerFinancials(c, appliedFilters.invoiceMonth)
                       return (
                         <TableRow key={c.id} className="hover:bg-[var(--color-paper)]/50 text-xs">
                           <TableCell className="font-mono font-bold text-[var(--color-ink)] whitespace-nowrap">
@@ -1205,16 +1369,16 @@ export function ReportsView({
               <>
                 <TableHeader className="bg-[var(--color-paper)]">
                   <TableRow className="border-b border-gray-200">
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Customer ID</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">CRF #</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Customer Name</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">City</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Package Tier</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Billing Type</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] text-right">Discount (%)</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] text-right">On-Boarding Fee</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] text-right">Total Package</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Sign Up Date</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer ID</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">CRF #</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer Name</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">City</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Account Executive Name</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Package Type</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Billing Type</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Adjustment Debit/Credit</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Description</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Activation Date</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1224,43 +1388,50 @@ export function ReportsView({
                         Select filters and click &quot;Search / Apply Filters&quot; to load report data.
                       </TableCell>
                     </TableRow>
-                  ) : filteredCustomers.length === 0 ? (
+                  ) : filteredAdjustmentRows.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={10} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">
-                        No adjustment / discounted records found.
+                        No debit note or credit note entries found matching the selected filters.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredCustomers.map((c) => (
-                      <TableRow key={c.id} className="hover:bg-[var(--color-paper)]/50 text-xs">
-                        <TableCell className="font-mono font-bold text-[var(--color-ink)]">
-                          <Link href={`/dashboard/customers/${c.id}`} className="hover:underline text-amber-900">
-                            {formatCustomerId(c.customerCode || c.id)}
-                          </Link>
-                        </TableCell>
-                        <TableCell className="font-mono font-semibold text-gray-700">
-                          {formatCrf(c.crfNumber, c.customerCode)}
-                        </TableCell>
-                        <TableCell className="font-semibold text-gray-900">{c.fullName}</TableCell>
-                        <TableCell>{c.city}</TableCell>
-                        <TableCell>{c.packagePlan?.packageTier || '-'}</TableCell>
-                        <TableCell>{c.packagePlan?.billingType || '-'}</TableCell>
-                        <TableCell className="text-right font-bold text-amber-800">{Number(c.packagePlan?.appliedDiscount || 0)}%</TableCell>
-                        <TableCell className="text-right">
-                          {Number(c.packagePlan?.onboardingFee || 0) === 0 ? (
-                            <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] font-bold">
-                              Waived (PKR 0)
-                            </Badge>
-                          ) : (
-                            <span className="font-mono">PKR {Number(c.packagePlan?.onboardingFee || 0).toLocaleString()}</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right font-mono font-bold text-[var(--color-ink)]">
-                          PKR {Math.round(Number(c.packagePlan?.totalAmount || 0)).toLocaleString()}
-                        </TableCell>
-                        <TableCell className="text-gray-600 font-mono">{formatDate(c.signupDate)}</TableCell>
-                      </TableRow>
-                    ))
+                    filteredAdjustmentRows.map((row) => {
+                      const { customer: c, ledgerEntry: le } = row
+                      const isDebit = le.debit > 0
+                      const adjustmentDisplay = isDebit
+                        ? `PKR ${Math.round(le.debit).toLocaleString()} Debit`
+                        : `PKR ${Math.round(le.credit).toLocaleString()} Credit`
+                      return (
+                        <TableRow key={`${c.id}-${le.id}`} className="hover:bg-[var(--color-paper)]/50 text-xs">
+                          <TableCell className="font-mono font-bold text-[var(--color-ink)] whitespace-nowrap">
+                            <Link href={`/dashboard/customers/${c.id}`} className="hover:underline text-amber-900">
+                              {formatCustomerId(c.customerCode || c.id)}
+                            </Link>
+                          </TableCell>
+                          <TableCell className="font-mono font-semibold text-gray-700 whitespace-nowrap">
+                            {formatCrf(c.crfNumber, c.customerCode)}
+                          </TableCell>
+                          <TableCell className="font-semibold text-gray-900 whitespace-nowrap">{c.fullName}</TableCell>
+                          <TableCell className="whitespace-nowrap">{c.city}</TableCell>
+                          <TableCell className="whitespace-nowrap text-gray-700">
+                            {c.accountExecutive?.fullName || c.accountExecutiveName || '-'}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">{c.packagePlan?.packageTier || '-'}</TableCell>
+                          <TableCell className="whitespace-nowrap">{c.packagePlan?.billingType || '-'}</TableCell>
+                          <TableCell className={`font-mono font-bold whitespace-nowrap ${isDebit ? 'text-rose-700' : 'text-emerald-700'}`}>
+                            {adjustmentDisplay}
+                          </TableCell>
+                          <TableCell className="text-gray-700 max-w-xs truncate">{le.narration}</TableCell>
+                          <TableCell className="font-mono text-gray-600 whitespace-nowrap">
+                            {c.activationDate
+                              ? formatDate(c.activationDate)
+                              : c.solarSystem?.systemInstallationDate
+                                ? formatDate(c.solarSystem.systemInstallationDate)
+                                : '-'}
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })
                   )}
                 </TableBody>
               </>

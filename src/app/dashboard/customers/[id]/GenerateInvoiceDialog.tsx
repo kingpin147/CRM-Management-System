@@ -4,6 +4,7 @@ import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { DateInput } from '@/components/ui/date-input'
 import { Label } from '@/components/ui/label'
 import {
   Dialog,
@@ -91,11 +92,10 @@ export function GenerateInvoiceDialog({ customerId }: { customerId: string }) {
 
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-[var(--color-ink)]">Due Date (Optional)</Label>
-              <Input
-                type="date"
+              <DateInput
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="border-[var(--color-line)] text-xs focus-visible:ring-[var(--color-amber)] bg-white"
+                className="border-[var(--color-line)] text-xs"
               />
             </div>
           </div>
