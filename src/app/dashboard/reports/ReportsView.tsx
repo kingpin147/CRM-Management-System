@@ -182,6 +182,20 @@ type AdjustmentRow = {
   }
 }
 
+type PaymentRow = {
+  customer: CustomerRecord
+  transaction: {
+    id: string
+    amount: number
+    paymentMethod: string
+    status: string
+    createdAt: string | null
+    refNumber?: string | null
+    description?: string | null
+    updatedBy?: string | null
+  }
+}
+
 export function ReportsView({ 
   customers, 
   initialView = 'status' 
@@ -295,7 +309,7 @@ export function ReportsView({
           return narr.includes('debit note') || narr.includes('credit note')
         })
       ).length,
-      PAYMENTS: customers.filter((c) => (c.transactions && c.transactions.length > 0) || (Number(c.packagePlan?.paidAmount) > 0)).length,
+      PAYMENTS: customers.reduce((sum, c) => sum + (c.transactions?.length || 0), 0),
       REGISTER: customers.length,
     }
   }, [customers])
@@ -323,17 +337,14 @@ export function ReportsView({
       }
 
       if (activeCategory === 'ADJUSTMENT') {
-        const hasDiscount = Number(c.packagePlan?.appliedDiscount) > 0
-        const hasLedgerAdj = c.ledgerEntries && c.ledgerEntries.some((l: any) => 
-          l.narration?.toLowerCase().includes('adjustment') || l.narration?.toLowerCase().includes('discount')
-        )
-        if (!hasDiscount && !hasLedgerAdj) return false
+        // ADJUSTMENT uses filteredAdjustmentRows (per-LedgerEntry expansion), not filteredCustomers.
+        // Skip this customer from filteredCustomers when ADJUSTMENT is active.
+        return false
       }
 
       if (activeCategory === 'PAYMENTS') {
-        const hasTransactions = c.transactions && c.transactions.length > 0
-        const hasPaidAmount = Number(c.packagePlan?.paidAmount) > 0
-        if (!hasTransactions && !hasPaidAmount) return false
+        // PAYMENTS uses filteredPaymentRows (per-transaction expansion), not filteredCustomers.
+        return false
       }
 
       // Status Dropdown Filter
@@ -443,7 +454,61 @@ export function ReportsView({
     return rows
   }, [customers, activeCategory, hasSearched, appliedFilters])
 
-  // Account Executive Performance Summary Computation for Sales Report
+  // Per-transaction rows for Payments Report
+  const filteredPaymentRows = React.useMemo((): PaymentRow[] => {
+    if (!hasSearched || activeCategory !== 'PAYMENTS') return []
+
+    const rows: PaymentRow[] = []
+
+    for (const c of customers) {
+      // Location filters
+      if (appliedFilters.city !== 'ALL' && c.city?.toLowerCase() !== appliedFilters.city.toLowerCase()) continue
+      if (appliedFilters.area !== 'ALL' && c.area?.toLowerCase() !== appliedFilters.area.toLowerCase()) continue
+      if (appliedFilters.subArea !== 'ALL' && c.subArea?.toLowerCase() !== appliedFilters.subArea.toLowerCase()) continue
+
+      // Search filter
+      if (appliedFilters.searchQuery.trim()) {
+        const q = appliedFilters.searchQuery.toLowerCase().trim()
+        const match =
+          c.fullName?.toLowerCase().includes(q) ||
+          c.customerCode?.toLowerCase().includes(q) ||
+          c.crfNumber?.toLowerCase().includes(q) ||
+          c.contactNumber?.toLowerCase().includes(q) ||
+          c.cnic?.toLowerCase().includes(q)
+        if (!match) continue
+      }
+
+      // Expand one row per transaction, filtered by payment date range
+      for (const t of c.transactions || []) {
+        const txDate = new Date(t.createdAt || t.date || 0)
+
+        if (appliedFilters.dateFrom) {
+          if (txDate < new Date(appliedFilters.dateFrom)) continue
+        }
+        if (appliedFilters.dateTo) {
+          const to = new Date(appliedFilters.dateTo)
+          to.setHours(23, 59, 59, 999)
+          if (txDate > to) continue
+        }
+
+        rows.push({
+          customer: c,
+          transaction: {
+            id: t.id,
+            amount: Number(t.amount || 0),
+            paymentMethod: t.paymentMethod || t.method || '-',
+            status: t.status || 'Posted',
+            createdAt: t.createdAt || t.date || null,
+            refNumber: t.refNumber || t.receiptNumber || null,
+            description: t.description || t.narration || null,
+            updatedBy: t.updatedBy || t.createdBy || c.accountExecutive?.fullName || c.accountExecutiveName || null,
+          },
+        })
+      }
+    }
+
+    return rows
+  }, [customers, activeCategory, hasSearched, appliedFilters])
   const aeSummaryList = React.useMemo(() => {
     if (!hasSearched) return []
 
@@ -612,7 +677,11 @@ export function ReportsView({
       alert('Please select your filters and click "Search / Apply Filters" before exporting.')
       return
     }
-    const exportRowCount = activeCategory === 'ADJUSTMENT' ? filteredAdjustmentRows.length : filteredCustomers.length
+    const exportRowCount = activeCategory === 'ADJUSTMENT'
+      ? filteredAdjustmentRows.length
+      : activeCategory === 'PAYMENTS'
+        ? filteredPaymentRows.length
+        : filteredCustomers.length
     if (exportRowCount === 0) {
       alert('No records found matching the selected filters to export.')
       return
@@ -737,20 +806,24 @@ export function ReportsView({
       })
     } else if (activeCategory === 'PAYMENTS') {
       headers = [
-        'Customer ID', 'CRF #', 'Customer Name', 'Contact #', 'City', 'Package',
-        'Paid Amount (PKR)', 'Total Package Amount (PKR)', 'Sign Up Date', 'Status'
+        'Customer ID', 'CRF #', 'Customer Name', 'Customer Address', 'Area', 'City',
+        'Payment Receipt #', 'Payment Amount (PKR)', 'Payment Description',
+        'Payment Mode', 'Payment Status', 'Payment Date', 'Payment Updated By'
       ]
-      rows = filteredCustomers.map((c) => [
+      rows = filteredPaymentRows.map(({ customer: c, transaction: t }) => [
         `"${formatCustomerId(c.customerCode || c.id)}"`,
         `"${formatCrf(c.crfNumber, c.customerCode)}"`,
         `"${c.fullName}"`,
-        `"${c.contactNumber}"`,
+        `"${c.address}"`,
+        `"${c.area || '-'}"`,
         `"${c.city}"`,
-        `"${c.packagePlan?.packageTier || '-'}"`,
-        `"${Math.round(Number(c.packagePlan?.paidAmount || 0))}"`,
-        `"${Math.round(Number(c.packagePlan?.totalAmount || 0))}"`,
-        `"${formatDate(c.signupDate)}"`,
-        `"${c.status.replace(/_/g, ' ')}"`,
+        `"${t.refNumber || '-'}"`,
+        `"${Math.round(t.amount)}"`,
+        `"${t.description || '-'}"`,
+        `"${t.paymentMethod}"`,
+        `"${t.status}"`,
+        `"${t.createdAt ? formatDate(t.createdAt) : '-'}"`,
+        `"${t.updatedBy || '-'}"`,
       ])
     } else {
       // REGISTER
@@ -1009,7 +1082,11 @@ export function ReportsView({
             <div className="text-xs text-gray-600 bg-gray-50 px-3.5 py-1.5 rounded-lg border border-gray-200 font-medium">
               {hasSearched ? (
                 <>Showing <strong className="text-[var(--color-ink)]">
-                  {activeCategory === 'ADJUSTMENT' ? filteredAdjustmentRows.length : filteredCustomers.length}
+                  {activeCategory === 'ADJUSTMENT'
+                    ? filteredAdjustmentRows.length
+                    : activeCategory === 'PAYMENTS'
+                      ? filteredPaymentRows.length
+                      : filteredCustomers.length}
                 </strong> matching records in {currentTabObj.label}</>
               ) : (
                 <span className="text-slate-500">No data loaded (click &quot;Search / Apply Filters&quot;)</span>
@@ -1442,58 +1519,75 @@ export function ReportsView({
               <>
                 <TableHeader className="bg-[var(--color-paper)]">
                   <TableRow className="border-b border-gray-200">
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Customer ID</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">CRF #</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Customer Name</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Contact #</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">City</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Package</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] text-right">Paid Amount</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] text-right">Total Amount</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Sign Up Date</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)]">Status</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer ID</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">CRF #</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer Name</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer Address</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Area</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">City</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Payment Receipt #</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] text-right whitespace-nowrap">Payment Amount</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Payment Description</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Payment Mode</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Payment Status</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Payment Date</TableHead>
+                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Payment Updated By</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {!hasSearched ? (
                     <TableRow>
-                      <TableCell colSpan={10} className="h-32 text-center text-xs text-[var(--color-slate-custom)] font-medium">
+                      <TableCell colSpan={13} className="h-32 text-center text-xs text-[var(--color-slate-custom)] font-medium">
                         Select filters and click &quot;Search / Apply Filters&quot; to load report data.
                       </TableCell>
                     </TableRow>
-                  ) : filteredCustomers.length === 0 ? (
+                  ) : filteredPaymentRows.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={10} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">
+                      <TableCell colSpan={13} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">
                         No payment records found matching the selected filters.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredCustomers.map((c) => (
-                      <TableRow key={c.id} className="hover:bg-[var(--color-paper)]/50 text-xs">
-                        <TableCell className="font-mono font-bold text-[var(--color-ink)]">
+                    filteredPaymentRows.map(({ customer: c, transaction: t }) => (
+                      <TableRow key={`${c.id}-${t.id}`} className="hover:bg-[var(--color-paper)]/50 text-xs">
+                        <TableCell className="font-mono font-bold text-[var(--color-ink)] whitespace-nowrap">
                           <Link href={`/dashboard/customers/${c.id}`} className="hover:underline text-amber-900">
                             {formatCustomerId(c.customerCode || c.id)}
                           </Link>
                         </TableCell>
-                        <TableCell className="font-mono font-semibold text-gray-700">
+                        <TableCell className="font-mono font-semibold text-gray-700 whitespace-nowrap">
                           {formatCrf(c.crfNumber, c.customerCode)}
                         </TableCell>
-                        <TableCell className="font-semibold text-gray-900">{c.fullName}</TableCell>
-                        <TableCell className="font-mono">{c.contactNumber}</TableCell>
-                        <TableCell>{c.city}</TableCell>
-                        <TableCell>{c.packagePlan?.packageTier || '-'}</TableCell>
-                        <TableCell className="text-right font-mono font-bold text-emerald-700">
-                          PKR {Math.round(Number(c.packagePlan?.paidAmount || 0)).toLocaleString()}
+                        <TableCell className="font-semibold text-gray-900 whitespace-nowrap">{c.fullName}</TableCell>
+                        <TableCell className="text-gray-600 max-w-xs truncate">{c.address}</TableCell>
+                        <TableCell className="whitespace-nowrap">{c.area || '-'}</TableCell>
+                        <TableCell className="font-semibold whitespace-nowrap">{c.city}</TableCell>
+                        <TableCell className="font-mono text-gray-700 whitespace-nowrap">{t.refNumber || '-'}</TableCell>
+                        <TableCell className="text-right font-mono font-bold text-emerald-700 whitespace-nowrap">
+                          PKR {Math.round(t.amount).toLocaleString()}
                         </TableCell>
-                        <TableCell className="text-right font-mono font-medium">
-                          PKR {Math.round(Number(c.packagePlan?.totalAmount || 0)).toLocaleString()}
-                        </TableCell>
-                        <TableCell className="text-gray-600 font-mono">{formatDate(c.signupDate)}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-semibold">
-                            {c.status.replace(/_/g, ' ')}
+                        <TableCell className="text-gray-600 max-w-xs truncate">{t.description || '-'}</TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <Badge variant="outline" className="bg-slate-50 text-slate-800 border-slate-300 font-semibold text-[10px]">
+                            {t.paymentMethod}
                           </Badge>
                         </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <Badge
+                            variant="outline"
+                            className={`font-semibold text-[10px] ${
+                              (t.status || '').toLowerCase() === 'posted'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                : 'bg-amber-50 text-amber-700 border-amber-200'
+                            }`}
+                          >
+                            {t.status || 'Posted'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-mono text-gray-600 whitespace-nowrap">
+                          {t.createdAt ? formatDate(t.createdAt) : '-'}
+                        </TableCell>
+                        <TableCell className="text-gray-700 whitespace-nowrap">{t.updatedBy || '-'}</TableCell>
                       </TableRow>
                     ))
                   )}
