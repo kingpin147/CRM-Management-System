@@ -1273,12 +1273,12 @@ export function ReportsView({
           </div>
 
           {/* Search bar & Action Buttons */}
-          <div className={`flex flex-col md:flex-row ${(activeCategory === 'SALES' || activeCategory === 'RECEIVABLE') ? 'justify-end' : 'justify-between'} items-stretch md:items-center gap-3 pt-4 border-t border-gray-100`}>
-            {activeCategory !== 'REGISTER' && activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && activeCategory !== 'STATUS' && (
+          <div className={`flex flex-col md:flex-row ${(activeCategory === 'SALES' || activeCategory === 'RECEIVABLE' || activeCategory === 'ADJUSTMENT' || activeCategory === 'STATUS' || activeCategory === 'REGISTER' || activeCategory === 'SALES_INCENTIVE' || activeCategory === 'OM_INCENTIVE') ? 'justify-end' : 'justify-between'} items-stretch md:items-center gap-3 pt-4 border-t border-gray-100`}>
+            {activeCategory !== 'REGISTER' && activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && activeCategory !== 'STATUS' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'SALES_INCENTIVE' && activeCategory !== 'OM_INCENTIVE' && (
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-[var(--color-slate-custom)]" />
                 <Input
-                  placeholder="Search Customer ID, Name, Contact, CNIC..."
+                  placeholder={activeCategory === 'PAYMENTS' ? 'Search by Customer ID...' : 'Search Customer ID, Name, Contact, CNIC...'}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => {
@@ -1339,10 +1339,77 @@ export function ReportsView({
               {['SALES_INCENTIVE', 'OM_INCENTIVE'].includes(activeCategory) && (
                 <React.Fragment key={activeCategory}>
                   <TableHeader className="bg-[var(--color-paper)]">
-                    <TableRow><TableHead className="font-bold text-xs">{activeCategory === 'SALES_INCENTIVE' ? 'Account Executive Sales' : 'Installer / O & M Executive'}</TableHead><TableHead className="font-bold text-xs text-right">Number of {activeCategory === 'SALES_INCENTIVE' ? 'Sales' : 'Audits'}</TableHead><TableHead className="font-bold text-xs text-right">Incentive Amount</TableHead><TableHead className="font-bold text-xs text-right">25% of 2nd Last month</TableHead><TableHead className="font-bold text-xs text-right">25% of Last month</TableHead><TableHead className="font-bold text-xs text-right">50% Incentive Of Selected Month</TableHead><TableHead className="font-bold text-xs text-right">Total Incentive</TableHead></TableRow>
+                    <TableRow>
+                      <TableHead className="font-bold text-xs">{activeCategory === 'SALES_INCENTIVE' ? 'Account Executive Sales' : 'Installer / O & M Executive'}</TableHead>
+                      <TableHead className="font-bold text-xs text-right">Number of {activeCategory === 'SALES_INCENTIVE' ? 'Sales' : 'Audits'}</TableHead>
+                      <TableHead className="font-bold text-xs text-right">Incentive Amount</TableHead>
+                      <TableHead className="font-bold text-xs text-right">25% of 2nd Last month</TableHead>
+                      <TableHead className="font-bold text-xs text-right">25% of Last month</TableHead>
+                      <TableHead className="font-bold text-xs text-right">50% Incentive Of Selected Month</TableHead>
+                      <TableHead className="font-bold text-xs text-right">Total Incentive</TableHead>
+                    </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {!hasSearched ? <TableRow><TableCell colSpan={7} className="h-24 text-center text-xs">Select filters and click &quot;Search / Apply Filters&quot; to load report data.</TableCell></TableRow> : incentiveRows.length === 0 ? <TableRow><TableCell colSpan={7} className="h-24 text-center text-xs">No incentive records found matching the selected filters.</TableCell></TableRow> : incentiveRows.map((row) => <TableRow key={row.name} className="text-xs"><TableCell className="font-semibold">{row.name}</TableCell><TableCell className="text-right">{row.numberOfSales}</TableCell><TableCell className="text-right">{row.incentiveAmount.toLocaleString()}</TableCell><TableCell className="text-right">{row.secondLastMonth.toLocaleString()}</TableCell><TableCell className="text-right">{row.lastMonth.toLocaleString()}</TableCell><TableCell className="text-right">{row.selectedMonth.toLocaleString()}</TableCell><TableCell className="text-right font-semibold">{row.totalIncentive.toLocaleString()}</TableCell></TableRow>)}
+                    {!hasSearched ? (
+                      <TableRow><TableCell colSpan={7} className="h-24 text-center text-xs">Select filters and click &quot;Search / Apply Filters&quot; to load report data.</TableCell></TableRow>
+                    ) : incentiveRows.length === 0 ? (
+                      <TableRow><TableCell colSpan={7} className="h-24 text-center text-xs">No incentive records found matching the selected filters.</TableCell></TableRow>
+                    ) : (
+                      <>
+                        {incentiveRows.map((row) => (
+                          <TableRow key={row.name} className="text-xs hover:bg-slate-50">
+                            <TableCell className="font-semibold text-slate-800">{row.name}</TableCell>
+                            <TableCell className="text-right font-medium">{row.numberOfSales}</TableCell>
+                            <TableCell className="text-right font-mono">PKR {Math.round(row.incentiveAmount).toLocaleString()}</TableCell>
+                            <TableCell className="text-right font-mono">PKR {Math.round(row.secondLastMonth).toLocaleString()}</TableCell>
+                            <TableCell className="text-right font-mono">PKR {Math.round(row.lastMonth).toLocaleString()}</TableCell>
+                            <TableCell className="text-right font-mono">PKR {Math.round(row.selectedMonth).toLocaleString()}</TableCell>
+                            <TableCell className="text-right font-mono font-bold text-[#002868]">PKR {Math.round(row.totalIncentive).toLocaleString()}</TableCell>
+                          </TableRow>
+                        ))}
+
+                        {/* Manager Summary Row */}
+                        {(() => {
+                          const totalSales = incentiveRows.reduce((acc, r) => acc + r.numberOfSales, 0)
+                          const totalBaseIncentive = incentiveRows.reduce((acc, r) => acc + r.incentiveAmount, 0)
+                          const total2ndLast = incentiveRows.reduce((acc, r) => acc + r.secondLastMonth, 0)
+                          const totalLast = incentiveRows.reduce((acc, r) => acc + r.lastMonth, 0)
+                          const totalSelected = incentiveRows.reduce((acc, r) => acc + r.selectedMonth, 0)
+                          const totalOverall = incentiveRows.reduce((acc, r) => acc + r.totalIncentive, 0)
+
+                          const managerMultiplier = activeCategory === 'SALES_INCENTIVE' ? 0.25 : 0.50
+                          const managerLabel = activeCategory === 'SALES_INCENTIVE'
+                            ? 'Account Manager Sales : 25% of total Team Incentive:'
+                            : 'O & M Manager 50% of Team Incentive:'
+
+                          return (
+                            <TableRow className="border-t-2 border-[#002868] bg-slate-50 font-bold text-xs">
+                              <TableCell className="font-extrabold text-[#002868] whitespace-nowrap">
+                                {managerLabel}
+                              </TableCell>
+                              <TableCell className="text-right font-bold text-slate-900">
+                                {totalSales}
+                              </TableCell>
+                              <TableCell className="text-right font-mono font-extrabold text-[#002868]">
+                                PKR {Math.round(totalBaseIncentive * managerMultiplier).toLocaleString()}
+                              </TableCell>
+                              <TableCell className="text-right font-mono font-extrabold text-[#002868]">
+                                PKR {Math.round(total2ndLast * managerMultiplier).toLocaleString()}
+                              </TableCell>
+                              <TableCell className="text-right font-mono font-extrabold text-[#002868]">
+                                PKR {Math.round(totalLast * managerMultiplier).toLocaleString()}
+                              </TableCell>
+                              <TableCell className="text-right font-mono font-extrabold text-[#002868]">
+                                PKR {Math.round(totalSelected * managerMultiplier).toLocaleString()}
+                              </TableCell>
+                              <TableCell className="text-right font-mono font-extrabold text-emerald-800 text-sm">
+                                PKR {Math.round(totalOverall * managerMultiplier).toLocaleString()}
+                              </TableCell>
+                            </TableRow>
+                          )
+                        })()}
+                      </>
+                    )}
                   </TableBody>
                 </React.Fragment>
               )}
@@ -1617,30 +1684,30 @@ export function ReportsView({
               <>
                 <TableHeader className="bg-[var(--color-paper)]">
                   <TableRow className="border-b border-gray-200">
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer ID</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer Name</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer Address</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Contact #</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">House #</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Block</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Street #</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Sub Area</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Area</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Account Executive</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">City</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Package</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer Type</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">System Type:</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Billing Type</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Monitoring Time</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer Status</TableHead>
+                    <TableHead rowSpan={2} className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer ID</TableHead>
+                    <TableHead rowSpan={2} className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer Name</TableHead>
+                    <TableHead rowSpan={2} className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer Address</TableHead>
+                    <TableHead rowSpan={2} className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Contact #</TableHead>
+                    <TableHead rowSpan={2} className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">House #</TableHead>
+                    <TableHead rowSpan={2} className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Block</TableHead>
+                    <TableHead rowSpan={2} className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Street #</TableHead>
+                    <TableHead rowSpan={2} className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Sub Area</TableHead>
+                    <TableHead rowSpan={2} className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Area</TableHead>
+                    <TableHead rowSpan={2} className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Account Executive</TableHead>
+                    <TableHead rowSpan={2} className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">City</TableHead>
+                    <TableHead rowSpan={2} className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Package</TableHead>
+                    <TableHead rowSpan={2} className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer Type</TableHead>
+                    <TableHead rowSpan={2} className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">System Type:</TableHead>
+                    <TableHead rowSpan={2} className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Billing Type</TableHead>
+                    <TableHead rowSpan={2} className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Monitoring Time</TableHead>
+                    <TableHead rowSpan={2} className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer Status</TableHead>
                     <TableHead rowSpan={2} className="font-bold text-xs text-emerald-950 bg-[#86efac]/35 whitespace-nowrap border-l border-emerald-200">Adjustment / Credit-Debit</TableHead>
-                    <TableHead colSpan={4} className="font-bold text-xs text-emerald-950 bg-[#86efac]/35 text-center whitespace-nowrap border-x border-emerald-200">Arrears 90 Days</TableHead>
+                    <TableHead colSpan={4} className="font-bold text-xs text-emerald-950 bg-[#86efac]/35 text-center whitespace-nowrap border-x border-emerald-200">Arrears Breakdown</TableHead>
                     <TableHead rowSpan={2} className="font-bold text-xs text-[var(--color-graphite)] text-right whitespace-nowrap">Current</TableHead>
                     <TableHead rowSpan={2} className="font-bold text-xs text-emerald-950 bg-[#86efac]/35 text-right whitespace-nowrap border-x border-emerald-200">Payment</TableHead>
                     <TableHead rowSpan={2} className="font-bold text-xs text-[var(--color-graphite)] text-right whitespace-nowrap">Balance Amount</TableHead>
                   </TableRow>
-                  <TableRow className="border-b border-gray-200">
+                  <TableRow className="border-b border-gray-200 bg-[var(--color-paper)]">
                     <TableHead className="font-bold text-xs text-emerald-950 bg-[#86efac]/35 text-right whitespace-nowrap border-l border-emerald-200">Arrears 90 Days</TableHead>
                     <TableHead className="font-bold text-xs text-emerald-950 bg-[#86efac]/35 text-right whitespace-nowrap">Arrears 60 Days</TableHead>
                     <TableHead className="font-bold text-xs text-emerald-950 bg-[#86efac]/35 text-right whitespace-nowrap">Arrears 30 Days</TableHead>

@@ -61,6 +61,7 @@ model Customer {
   invoices       Invoice[]
   ledgerEntries  LedgerEntry[]
   customerHistory CustomerHistory[]
+  communicationLogs CommunicationLog[]
 
   accountExecutiveId String?
   accountExecutive   User?   @relation("CustomerAccountExecutive", fields: [accountExecutiveId], references: [id])
@@ -284,6 +285,25 @@ model CustomerHistory {
   @@index([customerCode])
 }
 
+model CommunicationLog {
+  id           String    @id @default(uuid())
+  customerId   String
+  customer     Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  channel      String    // "SMS" | "EMAIL"
+  type         String    // "INVOICE", "DUE_REMINDER", "OVERDUE_REMINDER", "MANUAL", "INVITATION"
+  recipient    String    // phone number or email address
+  subject      String?   // email subject (null for SMS)
+  messageBody  String    // the actual message/content summary
+  status       String    @default("SENT") // SENT, DELIVERED, OPENED, FAILED, UNDELIVERED
+  externalId   String?   // SendPK message ID or Brevo message ID
+  invoiceId    String?   // linked invoice ID if applicable
+  errorDetails String?   // error details if any
+  sentAt       DateTime  @default(now())
+  deliveredAt  DateTime?
+  openedAt     DateTime?
+  createdAt    DateTime  @default(now())
 
-
-
+  @@index([customerId])
+  @@index([channel])
+  @@index([createdAt])
+}

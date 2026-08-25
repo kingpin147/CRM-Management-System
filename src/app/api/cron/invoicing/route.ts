@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
+import { sendInvoiceNotifications } from '@/utils/communication'
 
 export async function GET(request: NextRequest) {
   try {
@@ -42,6 +43,8 @@ export async function GET(request: NextRequest) {
         const invoiceNumber = `INV-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}-${customer.customerCode}`
         const dueDate = new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000)
 
+        let createdInvoice: any = null
+
         await prisma.$transaction(async (tx) => {
           const invoice = await tx.invoice.create({
             data: {
@@ -55,6 +58,8 @@ export async function GET(request: NextRequest) {
               dueDate
             }
           })
+
+          createdInvoice = invoice
 
           const lastEntry = await tx.ledgerEntry.findFirst({
             where: { customerId: customer.id },
@@ -76,6 +81,25 @@ export async function GET(request: NextRequest) {
             }
           })
         })
+
+        // Automatically dispatch Email and SMS notification to customer and log history
+        if (createdInvoice) {
+          try {
+            await sendInvoiceNotifications({
+              customer: {
+                id: customer.id,
+                fullName: customer.fullName,
+                contactNumber: customer.contactNumber,
+                email: customer.email,
+                customerCode: customer.customerCode,
+              },
+              invoice: createdInvoice,
+              planName: `${plan.packageTier} (${plan.systemSizeKw})`,
+            })
+          } catch (notifErr) {
+            console.error(`Failed to send invoice notifications for customer ${customer.id}:`, notifErr)
+          }
+        }
 
         invoicesGenerated++
       }

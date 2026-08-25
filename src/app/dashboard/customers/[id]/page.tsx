@@ -16,7 +16,7 @@ import { CustomerTicketForm } from './CustomerTicketForm'
 import { TicketUpdateDialog } from '@/app/dashboard/tickets/TicketUpdateDialog'
 import { TicketClosedSetupDialog } from './TicketClosedSetupDialog'
 import { EquipmentPhotoViewer } from './EquipmentPhotoViewer'
-import { Sun, Battery, ShieldCheck, Zap, Receipt, MessageSquare, Mail, History as HistoryIcon, Download } from 'lucide-react'
+import { Sun, Battery, ShieldCheck, Zap, Receipt, MessageSquare, Mail, History as HistoryIcon, Download, ClipboardCheck } from 'lucide-react'
 import { formatDate, formatDateTime } from '@/lib/utils'
 import { createClient } from '@/utils/supabase/server'
 import { SectionHeader } from '@/components/ui/section-header'
@@ -69,6 +69,9 @@ export default async function CustomerDetailPage({
       customerHistory: {
         orderBy: { createdAt: 'desc' }
       },
+      communicationLogs: {
+        orderBy: { createdAt: 'desc' }
+      },
     }
   })
 
@@ -84,13 +87,19 @@ export default async function CustomerDetailPage({
   const canEditSolarSpecs = userRole ? ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'OM_MANAGER', 'INSTALLATION'].includes(userRole) : false
   const canRecordPayment = userRole ? ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'BILLING_MANAGER', 'SALES_MANAGER', 'SALES'].includes(userRole) : false
 
+  const smsLogs = (customer.communicationLogs || []).filter((l: any) => l.channel === 'SMS')
+  const emailLogs = (customer.communicationLogs || []).filter((l: any) => l.channel === 'EMAIL')
+
   const allTabs = [
     { id: 'profile', label: 'Customer Profile', allowed: true },
     { id: 'system', label: 'System Details', allowed: true },
+    { id: 'audit', label: 'System Audit', allowed: true },
     { id: 'ledger', label: 'Customer Ledger', allowed: canViewLedger },
     { id: 'ticket', label: 'Create Ticket', allowed: true },
     { id: 'complaints', label: `Complaints Details (${customer.tickets?.length || 0})`, allowed: true },
     { id: 'history', label: 'Customer History', allowed: true },
+    { id: 'sms-history', label: `SMS History (${smsLogs.length})`, allowed: true },
+    { id: 'email-history', label: `Email History (${emailLogs.length})`, allowed: true },
     { id: 'plan', label: 'Create Plan', allowed: canEditProfile },
   ]
 
@@ -856,6 +865,160 @@ export default async function CustomerDetailPage({
           )
         })()}
 
+        {/* 2.5 System Audit Tab */}
+        {activeTab === 'audit' && (
+          <div className="space-y-6">
+            <Card className="shadow-sm border-slate-200 overflow-hidden bg-white">
+              <SectionHeader
+                leftAction={
+                  <ClipboardCheck className="h-4 w-4 text-amber-500 shrink-0" />
+                }
+                action={
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={`/api/audit/${customer.id}?download=true`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-lg shadow-sm transition-colors"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Download className="h-3.5 w-3.5" /> Download Audit Report PDF
+                    </a>
+                    <a
+                      href={`/api/audit/${customer.id}`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#002868] bg-white border border-[#002868] hover:bg-slate-50 rounded-lg shadow-sm transition-colors"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      View PDF
+                    </a>
+                  </div>
+                }
+              >
+                System Audit Details & Checklist
+              </SectionHeader>
+
+              {/* Recurring & Demand Notice Alert */}
+              <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 text-xs text-amber-950 font-medium flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4 text-amber-600 shrink-0" />
+                  <span>
+                    Regular system audits are repeated on a <strong>Quarterly, Half-Yearly, and Yearly</strong> basis as per the subscription plan.
+                  </span>
+                </div>
+                <div className="bg-amber-100 text-amber-900 border border-amber-300 font-bold px-2.5 py-1 rounded text-xs">
+                  On Customer On-Demand Audit Request: <span className="text-[#002868]">PKR 3,000/-</span> will be charged
+                </div>
+              </div>
+
+              <CardContent className="p-0">
+                <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-slate-200">
+                  {/* Left: Audit Info & Inspector */}
+                  <div className="w-full">
+                    <SectionHeader>
+                      Audit Information & Inspector Details
+                    </SectionHeader>
+                    <Table>
+                      <TableBody>
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs w-44 bg-slate-50 border-r border-slate-200 text-[#002868]">Date of Last Audit</TableCell>
+                          <TableCell className="text-xs font-mono font-bold text-[#002868]">
+                            {customer.solarSystem?.lastAuditDate 
+                              ? formatDate(customer.solarSystem.lastAuditDate) 
+                              : (customer.solarSystem?.systemInstallationDate ? formatDate(customer.solarSystem.systemInstallationDate) : 'Pending Schedule')}
+                          </TableCell>
+                        </TableRow>
+
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Installer / Auditor Name</TableCell>
+                          <TableCell className="text-xs font-semibold text-slate-800">
+                            {customer.solarSystem?.installerName || customer.assignedInstaller?.fullName || 'EnergyGurus Technical Team'}
+                          </TableCell>
+                        </TableRow>
+
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Auditor Company</TableCell>
+                          <TableCell className="text-xs text-slate-700">
+                            {customer.solarSystem?.installerCompany || 'EnergyGurus Private Limited'}
+                          </TableCell>
+                        </TableRow>
+
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Auditor Contact #</TableCell>
+                          <TableCell className="text-xs font-mono text-slate-700">
+                            {customer.solarSystem?.installerContact || '0300-0000000'}
+                          </TableCell>
+                        </TableRow>
+
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Auditor Email</TableCell>
+                          <TableCell className="text-xs text-slate-700">
+                            {customer.solarSystem?.installerEmail || 'om@energygurus.com'}
+                          </TableCell>
+                        </TableRow>
+
+                        <TableRow className="hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">On-Demand Audit Fee</TableCell>
+                          <TableCell className="text-xs font-bold text-emerald-800 font-mono">
+                            PKR 3,000.00
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {/* Right: 7-Point Audit Checklist Statuses */}
+                  <div className="w-full">
+                    <SectionHeader>
+                      7-Point System Components Audit Checklist
+                    </SectionHeader>
+                    <Table>
+                      <TableBody>
+                        {[
+                          { label: 'Inverter Status', value: customer.solarSystem?.inverterStatus || 'Good' },
+                          { label: 'Solar Panels Status', value: customer.solarSystem?.panelStatus || 'Good' },
+                          { label: 'Battery Storage Status', value: customer.solarSystem?.batteryStatus || 'Good' },
+                          { label: 'Mounting Structure Status', value: customer.solarSystem?.structureStatus || 'Good' },
+                          { label: 'DC/AC Cabling Status', value: customer.solarSystem?.cableStatus || 'Good' },
+                          { label: 'AC & DC Earthing Status', value: customer.solarSystem?.earthingStatus || 'Good' },
+                          { label: 'Breakers & Protection Status', value: customer.solarSystem?.breakerStatus || 'Good' },
+                        ].map((item, idx) => {
+                          const isGood = item.value === 'Good' || item.value === 'Excellent'
+                          const isFair = item.value === 'Fair'
+                          const isAlert = item.value === 'Service Required' || item.value === 'Replacement Required'
+
+                          return (
+                            <TableRow key={idx} className="border-b last:border-b-0 hover:bg-transparent">
+                              <TableCell className="font-bold text-xs w-48 bg-slate-50 border-r border-slate-200 text-[#002868]">
+                                {item.label}
+                              </TableCell>
+                              <TableCell className="text-xs">
+                                <Badge
+                                  variant="outline"
+                                  className={
+                                    isGood
+                                      ? 'bg-emerald-100 text-emerald-900 border-emerald-300 font-bold shadow-xs'
+                                      : isFair
+                                      ? 'bg-amber-100 text-amber-900 border-amber-300 font-bold'
+                                      : isAlert
+                                      ? 'bg-rose-100 text-rose-900 border-rose-300 font-bold'
+                                      : 'bg-slate-100 text-slate-800 border-slate-300 font-medium'
+                                  }
+                                >
+                                  {item.value}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          )
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* 3. Customer Ledger Tab */}
         {activeTab === 'ledger' && (
           <div className="space-y-6">
@@ -1297,7 +1460,187 @@ export default async function CustomerDetailPage({
           </Card>
         )}
 
-        {/* 6. Create Plan Tab */}
+        {/* 7. SMS History Tab */}
+        {activeTab === 'sms-history' && (
+          <Card className="shadow-sm border-slate-200 overflow-hidden bg-white">
+            <SectionHeader
+              leftAction={
+                <MessageSquare className="h-4 w-4 text-amber-500 shrink-0" />
+              }
+            >
+              SMS Communication History
+            </SectionHeader>
+
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader className="bg-slate-100/90 border-b border-slate-200">
+                  <TableRow>
+                    <TableHead className="font-bold text-xs text-[#002868] border-r w-44">Date & Time</TableHead>
+                    <TableHead className="font-bold text-xs text-[#002868] border-r w-36">Message Type</TableHead>
+                    <TableHead className="font-bold text-xs text-[#002868] border-r w-36">Recipient #</TableHead>
+                    <TableHead className="font-bold text-xs text-[#002868] border-r">Message Content</TableHead>
+                    <TableHead className="font-bold text-xs text-[#002868] border-r w-28">Status</TableHead>
+                    <TableHead className="text-right font-bold text-xs text-[#002868] w-32">Message ID</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(!smsLogs || smsLogs.length === 0) ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-10 text-xs text-slate-500">
+                        No SMS logs found for this customer. SMS notifications will be logged here automatically upon invoice creation or reminders.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    smsLogs.map((log: any) => (
+                      <TableRow key={log.id} className="hover:bg-slate-50 border-b text-xs">
+                        <TableCell className="font-mono text-slate-700 font-semibold border-r">
+                          {formatDateTime(log.sentAt || log.createdAt)}
+                        </TableCell>
+                        <TableCell className="border-r">
+                          <Badge variant="outline" className="bg-slate-100 text-slate-800 border-slate-300 font-semibold text-[10px]">
+                            {log.type === 'INVOICE'
+                              ? 'Monthly Bill'
+                              : log.type === 'DUE_REMINDER'
+                              ? 'Due Alert'
+                              : log.type === 'OVERDUE_REMINDER'
+                              ? 'Overdue Notice'
+                              : log.type?.replace(/_/g, ' ')}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-mono text-slate-800 border-r font-medium">
+                          {log.recipient}
+                        </TableCell>
+                        <TableCell className="border-r text-slate-700 max-w-[340px] leading-relaxed">
+                          {log.messageBody}
+                          {log.errorDetails && (
+                            <div className="text-[11px] text-rose-600 font-medium mt-0.5">
+                              Error: {log.errorDetails}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="border-r">
+                          {log.status === 'DELIVERED' ? (
+                            <Badge variant="outline" className="bg-emerald-100 text-emerald-900 border-emerald-300 font-bold text-[11px]">
+                              Delivered
+                            </Badge>
+                          ) : log.status === 'SENT' ? (
+                            <Badge variant="outline" className="bg-sky-100 text-sky-900 border-sky-300 font-bold text-[11px]">
+                              Sent
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-rose-100 text-rose-900 border-rose-300 font-bold text-[11px]">
+                              {log.status === 'UNDELIVERED' ? 'Undelivered' : 'Failed'}
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right font-mono text-slate-500 text-[11px]">
+                          {log.externalId || '—'}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* 8. Email History Tab */}
+        {activeTab === 'email-history' && (
+          <Card className="shadow-sm border-slate-200 overflow-hidden bg-white">
+            <SectionHeader
+              leftAction={
+                <Mail className="h-4 w-4 text-amber-500 shrink-0" />
+              }
+              
+            >
+              Email Communication History
+            </SectionHeader>
+
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader className="bg-slate-100/90 border-b border-slate-200">
+                  <TableRow>
+                    <TableHead className="font-bold text-xs text-[#002868] border-r w-44">Date & Time</TableHead>
+                    <TableHead className="font-bold text-xs text-[#002868] border-r w-36">Email Type</TableHead>
+                    <TableHead className="font-bold text-xs text-[#002868] border-r w-48">Recipient Email</TableHead>
+                    <TableHead className="font-bold text-xs text-[#002868] border-r">Subject & Details</TableHead>
+                    <TableHead className="font-bold text-xs text-[#002868] border-r w-28">Status</TableHead>
+                    <TableHead className="text-right font-bold text-xs text-[#002868] w-36">Delivery Info</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(!emailLogs || emailLogs.length === 0) ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-10 text-xs text-slate-500">
+                        No email communication logged for this customer yet.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    emailLogs.map((log: any) => (
+                      <TableRow key={log.id} className="hover:bg-slate-50 border-b text-xs">
+                        <TableCell className="font-mono text-slate-700 font-semibold border-r">
+                          {formatDateTime(log.sentAt || log.createdAt)}
+                        </TableCell>
+                        <TableCell className="border-r">
+                          <Badge variant="outline" className="bg-slate-100 text-slate-800 border-slate-300 font-semibold text-[10px]">
+                            {log.type === 'INVOICE'
+                              ? 'Invoice Dispatch'
+                              : log.type === 'INVITATION'
+                              ? 'Account Invite'
+                              : log.type?.replace(/_/g, ' ')}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-mono text-slate-800 border-r">
+                          {log.recipient}
+                        </TableCell>
+                        <TableCell className="border-r text-slate-700 max-w-[340px]">
+                          <div className="font-semibold text-[#002868]">{log.subject || 'Solar O&M Notification'}</div>
+                          <div className="text-[11px] text-slate-500 mt-0.5">{log.messageBody}</div>
+                          {log.errorDetails && (
+                            <div className="text-[11px] text-rose-600 font-medium mt-0.5">
+                              Error: {log.errorDetails}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="border-r">
+                          {log.status === 'OPENED' ? (
+                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold text-[11px]">
+                              Opened
+                            </Badge>
+                          ) : log.status === 'DELIVERED' ? (
+                            <Badge variant="outline" className="bg-emerald-100 text-emerald-900 border-emerald-300 font-bold text-[11px]">
+                              Delivered
+                            </Badge>
+                          ) : log.status === 'SENT' ? (
+                            <Badge variant="outline" className="bg-sky-100 text-sky-900 border-sky-300 font-bold text-[11px]">
+                              Sent
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-rose-100 text-rose-900 border-rose-300 font-bold text-[11px]">
+                              {log.status === 'UNDELIVERED' ? 'Undelivered' : 'Failed'}
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right font-mono text-[11px] text-slate-600">
+                          {log.deliveredAt ? (
+                            <span className="text-emerald-700">Delivered on {formatDate(log.deliveredAt)}</span>
+                          ) : log.errorDetails ? (
+                            <span className="text-rose-600">Failed / Incorrect Email</span>
+                          ) : (
+                            <span className="text-slate-400">Dispatched</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* 9. Create Plan Tab */}
         {activeTab === 'plan' && (
           <Card className="shadow-sm border-slate-200 bg-white max-w-4xl mx-auto overflow-hidden">
             <SectionHeader>Create / Update Solar Plan & Package</SectionHeader>

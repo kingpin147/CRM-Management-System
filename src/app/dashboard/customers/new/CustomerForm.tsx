@@ -1898,13 +1898,38 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                     </FormItem>
                   )} />
 
-                  {/* Installer Name */}
-                  <FormField control={form.control} name="installerName" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-semibold">Installer Name</FormLabel>
-                      <FormControl><Input placeholder="Usman Waheed..." {...field} className="h-10 text-xs" /></FormControl>
-                    </FormItem>
-                  )} />
+                  {/* Installer Name Dropdown */}
+                  <FormField control={form.control} name="installerName" render={({ field }) => {
+                    const installerUsers = (users || []).filter(u => u.role === 'INSTALLATION' || u.role === 'OM_MANAGER' || u.role === 'SUPER_ADMIN' || u.role === 'ADMIN')
+                    const installerList = installerUsers.length > 0 
+                      ? installerUsers.map(u => u.fullName) 
+                      : (users || []).map(u => u.fullName)
+
+                    return (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold">Installer Name</FormLabel>
+                        <Select
+                          value={field.value || ''}
+                          onValueChange={(val) => {
+                            field.onChange(val)
+                          }}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="h-10 text-xs bg-white">
+                              <SelectValue placeholder="Select Installer..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {installerList.map((name) => (
+                              <SelectItem key={name} value={name}>
+                                {name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )
+                  }} />
 
                   {/* Contact No */}
                   <FormField control={form.control} name="installerContact" render={({ field }) => (

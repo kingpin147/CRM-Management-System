@@ -16,7 +16,7 @@ import { AutoSuggestInput } from '@/components/ui/auto-suggest-input'
 const CATEGORY_MAP: Record<string, string[]> = {
   TECHNICAL_COMPLAINT: ['Inverter', 'Panel', 'Battery', 'Breaker'],
   BILLING_COMPLAINT: ['Wrong arrears', 'Invoice Not Received', 'Billing is not Updated', 'Billing Plan Change', 'Wrong Invoice Charged'],
-  SERVICE_REQUEST: ['Internal Shifting', 'Package Change', 'Temp. Blocked', 'Termination', 'Restoration', 'Profile Change Request'],
+  SERVICE_REQUEST: ['Solar System Audit Request', 'Internal Shifting', 'Package Change', 'Temp. Blocked', 'Termination', 'Restoration', 'Profile Change Request'],
 }
 
 const FAULT_MAP: Record<string, string[]> = {
@@ -49,6 +49,13 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
     setCategory('')
     setSubCategory('')
     setFaultCode('')
+    if (type === 'TECHNICAL_COMPLAINT') {
+      setAssignedTo('Operation & Maintenance')
+    } else if (type === 'BILLING_COMPLAINT') {
+      setAssignedTo('Billing')
+    } else if (type === 'SERVICE_REQUEST') {
+      setAssignedTo('Customer Service')
+    }
   }
 
   // When category changes, reset subCategory & fault
@@ -57,6 +64,10 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
     if (ticketType === 'TECHNICAL_COMPLAINT') {
       setSubCategory(`${cat} Brands`)
       setFaultCode('')
+    } else if (cat === 'Solar System Audit Request') {
+      setSubCategory('Audit Request')
+      setFaultCode('General Audit')
+      setAssignedTo('Operation & Maintenance')
     } else {
       setSubCategory('N/A')
       setFaultCode('General')
@@ -161,7 +172,19 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
                   >
                     <option value="">Select Sub Category...</option>
                     {ticketType === 'TECHNICAL_COMPLAINT' ? (
-                      ['Inverter Brands', 'Panel Brands', 'Battery Brands', 'Breaker Brands'].map(s => (
+                      ['Inverter Brands', 'Panel Brands', 'Battery Brands', 'Breaker Brands', 'Wiring & Earthing'].map(s => (
+                        <option key={s} value={s}>{s}</option>
+                      ))
+                    ) : category === 'Solar System Audit Request' ? (
+                      ['Comprehensive System Audit', 'Inverter Health Check', 'Solar Panel Efficiency Audit', 'Battery Capacity Test', 'Earthing & Safety Inspection'].map(s => (
+                        <option key={s} value={s}>{s}</option>
+                      ))
+                    ) : ticketType === 'SERVICE_REQUEST' ? (
+                      ['General Request', 'Urgent Request', 'Scheduled Request', 'N/A'].map(s => (
+                        <option key={s} value={s}>{s}</option>
+                      ))
+                    ) : ticketType === 'BILLING_COMPLAINT' ? (
+                      ['Invoice Discrepancy', 'Payment Update', 'Tariff Query', 'N/A'].map(s => (
                         <option key={s} value={s}>{s}</option>
                       ))
                     ) : (

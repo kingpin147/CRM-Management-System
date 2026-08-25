@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { CustomerStatus, CustomerType, TicketStatus, TicketType } from '@prisma/client'
 import prisma from '@/lib/prisma'
 import { createClient } from '@/utils/supabase/server'
+import { sendInvoiceNotifications } from '@/utils/communication'
 
 export async function updateCustomer(formData: FormData) {
   const customerId = formData.get('customerId') as string
@@ -436,6 +437,12 @@ export async function generateManualInvoice(formData: FormData) {
     const dueDate = dueDateStr ? new Date(dueDateStr) : new Date(new Date().setDate(new Date().getDate() + 7))
     const invoiceNumber = `INV-${Date.now().toString().slice(-7)}`
 
+    let generatedInvoice: any = null
+    const customer = await prisma.customer.findUnique({
+      where: { id: customerId },
+      include: { packagePlan: true }
+    })
+
     // Atomic transaction guarantees zero balance race conditions
     await prisma.$transaction(async (tx) => {
       // 1. Create Invoice
@@ -451,6 +458,8 @@ export async function generateManualInvoice(formData: FormData) {
           dueDate,
         }
       })
+
+      generatedInvoice = invoice
 
       // 2. Fetch latest balance atomically
       const lastEntry = await tx.ledgerEntry.findFirst({
@@ -474,6 +483,24 @@ export async function generateManualInvoice(formData: FormData) {
         },
       })
     })
+
+    if (customer && generatedInvoice) {
+      try {
+        await sendInvoiceNotifications({
+          customer: {
+            id: customer.id,
+            fullName: customer.fullName,
+            contactNumber: customer.contactNumber,
+            email: customer.email,
+            customerCode: customer.customerCode,
+          },
+          invoice: generatedInvoice,
+          planName: customer.packagePlan ? `${customer.packagePlan.packageTier} (${customer.packagePlan.systemSizeKw})` : undefined,
+        })
+      } catch (notifErr) {
+        console.error('Failed to send invoice notification:', notifErr)
+      }
+    }
 
     revalidatePath(`/dashboard/customers/${customerId}`)
     revalidatePath('/dashboard/ledger')
