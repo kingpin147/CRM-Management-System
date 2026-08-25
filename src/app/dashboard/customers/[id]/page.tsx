@@ -20,6 +20,7 @@ import { Sun, Battery, ShieldCheck, Zap, Receipt, MessageSquare, Mail, History a
 import { formatDate, formatDateTime } from '@/lib/utils'
 import { createClient } from '@/utils/supabase/server'
 import { SectionHeader } from '@/components/ui/section-header'
+import { CustomerIdQuickSwitch } from './CustomerIdQuickSwitch'
 
 
 export default async function CustomerDetailPage({ 
@@ -37,8 +38,14 @@ export default async function CustomerDetailPage({
   const dbUser = user ? await prisma.user.findUnique({ where: { supabaseId: user.id }, select: { role: true } }) : null
   const userRole = dbUser?.role
 
-  const rawCustomer = await prisma.customer.findUnique({
-    where: { id },
+  const rawCustomer = await prisma.customer.findFirst({
+    where: {
+      OR: [
+        { id },
+        { customerCode: { contains: id, mode: 'insensitive' } },
+        { customerCode: { contains: id.replace(/\D/g, ''), mode: 'insensitive' } },
+      ],
+    },
     include: {
       solarSystem: true,
       packagePlan: true,
@@ -112,43 +119,8 @@ export default async function CustomerDetailPage({
         </div>
         
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-          <div className="space-y-1">
-            <h1 className="text-2xl sm:text-3xl font-display font-bold text-[var(--color-graphite)] tracking-tight">
-              {customer.fullName}
-            </h1>
-            <div className="flex items-center gap-2.5 mt-1 flex-wrap">
-              <a
-                href={`/api/signup/${customer.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#002868] font-mono text-xs sm:text-sm font-bold underline hover:text-amber-600 transition-colors flex items-center gap-1 cursor-pointer"
-                title="Click to open Customer Signup PDF Form (CRF)"
-              >
-                CRF: {customer.crfNumber || (customer.customerCode ? `CRF-${customer.customerCode.replace(/\D/g, '')}` : customer.customerCode)}
-                <Download className="h-3 w-3 text-amber-600 inline" />
-              </a>
-              <Badge variant="outline" className="bg-[var(--color-paper)] text-[var(--color-ink)] border-[var(--color-line)] text-xs">
-                {customer.customerType}
-              </Badge>
-              <Badge 
-                variant="outline" 
-                className={
-                  customer.status === 'CONNECTION_ACTIVE' 
-                    ? 'bg-green-100 text-green-800 border-green-200 font-medium text-xs'
-                    : 'bg-amber-100 text-amber-800 border-amber-200 font-medium text-xs'
-                }
-              >
-                {customer.status?.replace(/_/g, ' ')}
-              </Badge>
-            </div>
-          </div>
+          <CustomerIdQuickSwitch currentCustomerCode={customer.customerCode} />
           <div className="flex gap-2 shrink-0 items-center">
-            <a href={`/api/signup/${customer.id}`} target="_blank" rel="noopener noreferrer">
-              <Button variant="outline" size="sm" className="bg-white border-slate-300 hover:bg-slate-50 text-slate-800 font-semibold text-xs gap-1.5 shadow-2xs cursor-pointer">
-                <Download className="h-3.5 w-3.5 text-[#002868]" />
-                Signup PDF (CRF)
-              </Button>
-            </a>
             {canEditProfile && (
               <EditCustomerDialog customer={customer} />
             )}

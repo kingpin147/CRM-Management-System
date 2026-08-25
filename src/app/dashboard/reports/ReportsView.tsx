@@ -1059,7 +1059,7 @@ export function ReportsView({
 
           {/* Search bar & Action Buttons */}
           <div className={`flex flex-col md:flex-row ${(activeCategory === 'SALES' || activeCategory === 'RECEIVABLE') ? 'justify-end' : 'justify-between'} items-stretch md:items-center gap-3 pt-4 border-t border-gray-100`}>
-            {activeCategory !== 'REGISTER' && activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && (
+            {activeCategory !== 'REGISTER' && activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && activeCategory !== 'STATUS' && (
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-[var(--color-slate-custom)]" />
                 <Input
