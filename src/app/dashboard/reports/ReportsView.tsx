@@ -111,15 +111,21 @@ function computeCustomerFinancials(c: CustomerRecord, billingMonth?: string) {
   }) ?? null
   const current = currentInvoice ? Number(currentInvoice.totalAmount || currentInvoice.amount || 0) : 0
 
-  // ARREARS: unpaid balances on invoices from BEFORE billingMonth
-  const arrears = invoices.reduce((sum: number, inv: any) => {
+  // ARREARS: unpaid balances on invoices from BEFORE billingMonth, grouped by age.
+  const arrearsByAge = invoices.reduce((totals: { arrears30: number; arrears60: number; arrears90: number }, inv: any) => {
     const d = new Date(inv.billingPeriod || inv.dueDate || inv.createdAt || 0)
-    if (d >= monthStart) return sum // skip current month and future
-    if (inv.status === 'PAID') return sum
+    if (d >= monthStart) return totals // skip current month and future
+    if (inv.status === 'PAID') return totals
     const invTotal = Number(inv.totalAmount || inv.amount || 0)
     const invPaid  = Number(inv.paidAmount || 0)
-    return sum + Math.max(0, invTotal - invPaid)
-  }, 0)
+    const outstanding = Math.max(0, invTotal - invPaid)
+    const ageInDays = Math.floor((monthStart.getTime() - d.getTime()) / 86400000)
+    if (ageInDays >= 90) totals.arrears90 += outstanding
+    else if (ageInDays >= 60) totals.arrears60 += outstanding
+    else if (ageInDays >= 30) totals.arrears30 += outstanding
+    return totals
+  }, { arrears30: 0, arrears60: 0, arrears90: 0 })
+  const arrears = arrearsByAge.arrears30 + arrearsByAge.arrears60 + arrearsByAge.arrears90
 
   // ADJUSTMENT: net of debit/credit notes posted within billingMonth
   let adjDebit = 0
@@ -161,7 +167,10 @@ function computeCustomerFinancials(c: CustomerRecord, billingMonth?: string) {
   const balanceAmount = arrears + current + netAdjustment - paymentCollection
 
   return {
-    arrears:           Math.round(arrears),
+    arrears30:         Math.round(arrearsByAge.arrears30),
+    arrears60:         Math.round(arrearsByAge.arrears60),
+    arrears90:         Math.round(arrearsByAge.arrears90),
+    totalArrears:      Math.round(arrears),
     current:           Math.round(current),
     paymentCollection: Math.round(paymentCollection),
     adjustmentText,
@@ -196,6 +205,56 @@ type PaymentRow = {
   }
 }
 
+type BillingMetric = { houses: number; amount: number }
+type BillingGroup = {
+  arrears90: BillingMetric
+  arrears60: BillingMetric
+  arrears30: BillingMetric
+  totalArrears: BillingMetric
+  current: BillingMetric
+  total: BillingMetric
+}
+type BillingSummary = {
+  name: string
+  target: BillingGroup
+  adjustment: BillingGroup
+  revisedTarget: BillingGroup
+  paymentCollection: BillingGroup
+  balance: BillingGroup
+}
+
+type IncentiveRow = {
+  name: string
+  numberOfSales: number
+  incentiveAmount: number
+  secondLastMonth: number
+  lastMonth: number
+  selectedMonth: number
+  totalIncentive: number
+}
+
+const emptyBillingMetric = (): BillingMetric => ({ houses: 0, amount: 0 })
+const emptyBillingGroup = (): BillingGroup => ({
+  arrears90: emptyBillingMetric(),
+  arrears60: emptyBillingMetric(),
+  arrears30: emptyBillingMetric(),
+  totalArrears: emptyBillingMetric(),
+  current: emptyBillingMetric(),
+  total: emptyBillingMetric(),
+})
+
+const billingColumns = ['House', 'Arrears 90 Days', 'Arrears 60 Days', 'Arrears 30 Days', 'Total Arrears', 'Current', 'Total'] as const
+type BillingColumn = typeof billingColumns[number]
+function billingMetric(group: BillingGroup, column: BillingColumn): BillingMetric {
+  if (column === 'House') return group.total
+  if (column === 'Arrears 90 Days') return group.arrears90
+  if (column === 'Arrears 60 Days') return group.arrears60
+  if (column === 'Arrears 30 Days') return group.arrears30
+  if (column === 'Total Arrears') return group.totalArrears
+  if (column === 'Current') return group.current
+  return group.total
+}
+
 export function ReportsView({ 
   customers, 
   initialView = 'status' 
@@ -215,6 +274,9 @@ export function ReportsView({
       case 'receivable': return 'RECEIVABLE'
       case 'adjustment': return 'ADJUSTMENT'
       case 'payments': return 'PAYMENTS'
+      case 'billing': return 'BILLING'
+      case 'sales-incentive': return 'SALES_INCENTIVE'
+      case 'om-incentive': return 'OM_INCENTIVE'
       case 'register': return 'REGISTER'
       default: return 'STATUS'
     }
@@ -312,6 +374,9 @@ export function ReportsView({
         })
       ).length,
       PAYMENTS: customers.reduce((sum, c) => sum + (c.transactions?.length || 0), 0),
+      BILLING: customers.filter((c) => Boolean(c.packagePlan)).length,
+      SALES_INCENTIVE: customers.filter((c) => Boolean(c.packagePlan)).length,
+      OM_INCENTIVE: customers.filter((c) => Boolean(c.solarSystem?.lastAuditDate)).length,
       REGISTER: customers.length,
     }
   }, [customers])
@@ -348,6 +413,8 @@ export function ReportsView({
         // PAYMENTS uses filteredPaymentRows (per-transaction expansion), not filteredCustomers.
         return false
       }
+
+      if (activeCategory === 'BILLING') return false
 
       // Status Dropdown Filter
       if (activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && appliedFilters.status !== 'ALL' && c.status !== appliedFilters.status) return false
@@ -513,6 +580,119 @@ export function ReportsView({
 
     return rows
   }, [customers, activeCategory, hasSearched, appliedFilters])
+
+  const billingSummaryRows = React.useMemo((): BillingSummary[] => {
+    if (!hasSearched || activeCategory !== 'BILLING') return []
+
+    const summaries = new Map<string, BillingSummary>()
+    for (const c of customers) {
+      if (!c.packagePlan) continue
+      if (appliedFilters.city !== 'ALL' && c.city?.toLowerCase() !== appliedFilters.city.toLowerCase()) continue
+      if (appliedFilters.area !== 'ALL' && c.area?.toLowerCase() !== appliedFilters.area.toLowerCase()) continue
+      if (appliedFilters.subArea !== 'ALL' && c.subArea?.toLowerCase() !== appliedFilters.subArea.toLowerCase()) continue
+      if (appliedFilters.dateFrom && c.signupDate && new Date(c.signupDate) < new Date(appliedFilters.dateFrom)) continue
+      if (appliedFilters.dateTo && c.signupDate) {
+        const dateTo = new Date(appliedFilters.dateTo)
+        dateTo.setHours(23, 59, 59, 999)
+        if (new Date(c.signupDate) > dateTo) continue
+      }
+      if (appliedFilters.searchQuery.trim()) {
+        const query = appliedFilters.searchQuery.toLowerCase().trim()
+        const searchable = [c.fullName, c.customerCode, c.crfNumber, c.contactNumber, c.cnic, c.address, c.city, c.area]
+        if (!searchable.some((value) => value?.toLowerCase().includes(query))) continue
+      }
+
+      const name = c.accountExecutive?.fullName || c.accountExecutiveName || 'Unassigned'
+      if (!summaries.has(name)) {
+        summaries.set(name, {
+          name,
+          target: emptyBillingGroup(),
+          adjustment: emptyBillingGroup(),
+          revisedTarget: emptyBillingGroup(),
+          paymentCollection: emptyBillingGroup(),
+          balance: emptyBillingGroup(),
+        })
+      }
+      const summary = summaries.get(name)!
+      const financials = computeCustomerFinancials(c, appliedFilters.invoiceMonth)
+      const add = (metric: BillingMetric, amount: number) => {
+        metric.houses += amount > 0 ? 1 : 0
+        metric.amount += amount
+      }
+      const target = summary.target
+      add(target.arrears90, financials.arrears90)
+      add(target.arrears60, financials.arrears60)
+      add(target.arrears30, financials.arrears30)
+      add(target.totalArrears, financials.totalArrears)
+      add(target.current, financials.current)
+      add(target.total, financials.totalArrears + financials.current)
+
+      const adjustment = financials.netAdjustment
+      add(summary.adjustment.current, adjustment)
+      add(summary.adjustment.total, adjustment)
+      add(summary.revisedTarget.arrears90, financials.arrears90)
+      add(summary.revisedTarget.arrears60, financials.arrears60)
+      add(summary.revisedTarget.arrears30, financials.arrears30)
+      add(summary.revisedTarget.totalArrears, financials.totalArrears)
+      add(summary.revisedTarget.current, financials.current + adjustment)
+      add(summary.revisedTarget.total, financials.totalArrears + financials.current + adjustment)
+      add(summary.paymentCollection.current, financials.paymentCollection)
+      add(summary.paymentCollection.total, financials.paymentCollection)
+      add(summary.balance.current, financials.balanceAmount)
+      add(summary.balance.total, financials.balanceAmount)
+    }
+    return Array.from(summaries.values()).sort((a, b) => a.name.localeCompare(b.name))
+  }, [customers, activeCategory, hasSearched, appliedFilters])
+
+  const incentiveRows = React.useMemo((): IncentiveRow[] => {
+    if (!hasSearched || !['SALES_INCENTIVE', 'OM_INCENTIVE'].includes(activeCategory)) return []
+    const selected = new Date(`${invoiceMonth}-01T00:00:00`)
+    const monthKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+    const selectedKey = monthKey(selected)
+    const last = new Date(selected.getFullYear(), selected.getMonth() - 1, 1)
+    const secondLast = new Date(selected.getFullYear(), selected.getMonth() - 2, 1)
+    const lastKey = monthKey(last)
+    const secondLastKey = monthKey(secondLast)
+    const rows = new Map<string, { current: number; last: number; secondLast: number }>()
+
+    for (const customer of customers) {
+      const dateValue = activeCategory === 'OM_INCENTIVE'
+        ? customer.solarSystem?.lastAuditDate
+        : customer.signupDate || customer.activationDate
+      if (!dateValue) continue
+      if (appliedFilters.city !== 'ALL' && customer.city?.toLowerCase() !== appliedFilters.city.toLowerCase()) continue
+      if (appliedFilters.area !== 'ALL' && customer.area?.toLowerCase() !== appliedFilters.area.toLowerCase()) continue
+      if (appliedFilters.subArea !== 'ALL' && customer.subArea?.toLowerCase() !== appliedFilters.subArea.toLowerCase()) continue
+      const name = activeCategory === 'OM_INCENTIVE'
+        ? customer.assignedInstaller?.fullName || 'Unassigned O&M'
+        : customer.accountExecutive?.fullName || customer.accountExecutiveName || 'Unassigned'
+      const key = monthKey(new Date(dateValue))
+      if (![selectedKey, lastKey, secondLastKey].includes(key)) continue
+      const item = rows.get(name) || { current: 0, last: 0, secondLast: 0 }
+      if (key === selectedKey) item.current += 1
+      if (key === lastKey) item.last += 1
+      if (key === secondLastKey) item.secondLast += 1
+      rows.set(name, item)
+    }
+
+    return Array.from(rows.entries()).map(([name, counts]) => {
+      const rate = activeCategory === 'OM_INCENTIVE'
+        ? counts.current >= 192 ? 225 : counts.current >= 144 ? 200 : counts.current >= 96 ? 150 : 100
+        : counts.current >= 96 ? 1600 : counts.current >= 48 ? 1200 : counts.current >= 36 ? 1000 : 800
+      const incentiveAmount = counts.current * rate
+      const selectedMonth = incentiveAmount * 0.5
+      return {
+        name,
+        numberOfSales: counts.current,
+        incentiveAmount,
+        secondLastMonth: counts.secondLast * rate * 0.25,
+        lastMonth: counts.last * rate * 0.25,
+        selectedMonth,
+        totalIncentive: incentiveAmount,
+      }
+    }).sort((a, b) => a.name.localeCompare(b.name))
+  }, [customers, activeCategory, hasSearched, appliedFilters, invoiceMonth])
+
   const aeSummaryList = React.useMemo(() => {
     if (!hasSearched) return []
 
@@ -665,6 +845,9 @@ export function ReportsView({
     { id: 'RECEIVABLE', label: 'Customer Receivable', icon: AlertTriangle, count: categoryCounts.RECEIVABLE },
     { id: 'ADJUSTMENT', label: 'Adjustment Report', icon: Clock, count: categoryCounts.ADJUSTMENT },
     { id: 'PAYMENTS', label: 'Payments Report', icon: Zap, count: categoryCounts.PAYMENTS },
+    { id: 'BILLING', label: 'Billing Report', icon: FileSpreadsheet, count: categoryCounts.BILLING },
+    { id: 'SALES_INCENTIVE', label: 'Incentive Disbursement Report (Sales)', icon: Receipt, count: categoryCounts.SALES_INCENTIVE },
+    { id: 'OM_INCENTIVE', label: 'Incentive Disbursement Report (O & M)', icon: CheckCircle2, count: categoryCounts.OM_INCENTIVE },
     { id: 'REGISTER', label: 'Customer Register', icon: Users, count: categoryCounts.REGISTER },
   ]
 
@@ -685,6 +868,10 @@ export function ReportsView({
       ? filteredAdjustmentRows.length
       : activeCategory === 'PAYMENTS'
         ? filteredPaymentRows.length
+        : activeCategory === 'BILLING'
+          ? billingSummaryRows.length
+          : ['SALES_INCENTIVE', 'OM_INCENTIVE'].includes(activeCategory)
+            ? incentiveRows.length
         : filteredCustomers.length
     if (exportRowCount === 0) {
       alert('No records found matching the selected filters to export.')
@@ -694,7 +881,24 @@ export function ReportsView({
     let headers: string[] = []
     let rows: string[][] = []
 
-    if (activeCategory === 'STATUS') {
+    if (['SALES_INCENTIVE', 'OM_INCENTIVE'].includes(activeCategory)) {
+      headers = ['Account Executive Sales', 'Number of Sales', 'Incentive Amount', '25% of 2nd Last month', '25% of Last month', '50% Incentive Of Selected Month', 'Total Incentive']
+      rows = incentiveRows.map((row) => [
+        `"${row.name}"`, `"${row.numberOfSales}"`, `"${row.incentiveAmount}"`,
+        `"${row.secondLastMonth}"`, `"${row.lastMonth}"`, `"${row.selectedMonth}"`, `"${row.totalIncentive}"`,
+      ])
+    } else if (activeCategory === 'BILLING') {
+      const columns = ['House', 'Arrears 90 Days', 'Arrears 60 Days', 'Arrears 30 Days', 'Total Arrears', 'Current', 'Total']
+      headers = ['Account Executive Name', ...['Target', 'Adjustment', 'Revised Target', 'Payment Collection', 'Balance', '%age'].flatMap((group) => columns.map((column) => `${group} ${column}`))]
+      rows = billingSummaryRows.map((row) => {
+        const values = [row.target, row.adjustment, row.revisedTarget, row.paymentCollection, row.balance]
+        const cells = values.flatMap((group) => columns.map((column) => {
+          const metric = column === 'House' ? { houses: group.total.houses, amount: 0 } : group[column === 'Arrears 90 Days' ? 'arrears90' : column === 'Arrears 60 Days' ? 'arrears60' : column === 'Arrears 30 Days' ? 'arrears30' : column === 'Total Arrears' ? 'totalArrears' : column.toLowerCase() as 'current' | 'total']
+          return `"${column === 'House' ? metric.houses : Math.round(metric.amount)}"`
+        }))
+        return [`"${row.name}"`, ...cells, ...columns.map(() => '"0"')]
+      })
+    } else if (activeCategory === 'STATUS') {
       headers = [
         'Customer ID', 'Customer Name', 'Customer Type', 'Customer Address', 'Contact #',
         'House #', 'Block', 'Street #', 'Sub Area', 'Area', 'City',
@@ -750,7 +954,8 @@ export function ReportsView({
         'House #', 'Block', 'Street #', 'Sub Area', 'Area',
         'Account Executive', 'City', 'Package', 'Customer Type',
         'System Type:', 'Billing Type', 'Monitoring Time', 'Customer Status',
-        'Adjustment / Credit-Debit', 'Arrears (PKR)', 'Current (PKR)',
+        'Adjustment / Credit-Debit', 'Arrears 90 Days (PKR)', 'Arrears 60 Days (PKR)',
+        'Arrears 30 Days (PKR)', 'Total Arrears (PKR)', 'Current (PKR)',
         'Payment Collection (PKR)', 'Balance Amount (PKR)'
       ]
       rows = filteredCustomers.map((c) => {
@@ -774,7 +979,10 @@ export function ReportsView({
           `"${c.packagePlan?.monitoringTime || '12 Hours'}"`,
           `"${c.status ? c.status.replace(/_/g, ' ') : 'Active'}"`,
           `"${fin.adjustmentText}"`,
-          `"${fin.arrears}"`,
+          `"${fin.arrears90}"`,
+          `"${fin.arrears60}"`,
+          `"${fin.arrears30}"`,
+          `"${fin.totalArrears}"`,
           `"${fin.current}"`,
           `"${fin.paymentCollection}"`,
           `"${fin.balanceAmount}"`,
@@ -957,7 +1165,7 @@ export function ReportsView({
               </div>
             )}
 
-            {activeCategory !== 'REGISTER' && activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'PAYMENTS' && (
+            {activeCategory !== 'REGISTER' && activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'PAYMENTS' && activeCategory !== 'BILLING' && (
               <div className="space-y-1">
                 <Label className="text-xs font-semibold text-[var(--color-ink)]">Account Executive Sales</Label>                <select
                   value={selectedAccountExecutive}
@@ -972,7 +1180,7 @@ export function ReportsView({
               </div>
             )}
 
-            {activeCategory !== 'REGISTER' && activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'PAYMENTS' && (
+            {activeCategory !== 'REGISTER' && activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'PAYMENTS' && activeCategory !== 'BILLING' && (
               <div className="space-y-1">
                 <Label className="text-xs font-semibold text-[var(--color-ink)]">Customer Type</Label>
                 <select
@@ -993,7 +1201,7 @@ export function ReportsView({
               </div>
             )}
 
-            {activeCategory !== 'REGISTER' && activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'PAYMENTS' && (
+            {activeCategory !== 'REGISTER' && activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'PAYMENTS' && activeCategory !== 'BILLING' && (
               <div className="space-y-1">
                 <Label className="text-xs font-semibold text-[var(--color-ink)]">Select Status Filter</Label>
                 <select
@@ -1055,6 +1263,13 @@ export function ReportsView({
               </div>
             )}
 
+            {['SALES_INCENTIVE', 'OM_INCENTIVE'].includes(activeCategory) && (
+              <div className="sm:col-span-2 md:col-span-4 pt-1 flex items-center gap-2">
+                <Label className="text-xs font-semibold text-[var(--color-ink)] whitespace-nowrap">Select Month</Label>
+                <Input type="month" value={invoiceMonth} onChange={(e) => setInvoiceMonth(e.target.value)} className="text-xs h-9 border-[var(--color-line)] w-40" />
+              </div>
+            )}
+
           </div>
 
           {/* Search bar & Action Buttons */}
@@ -1099,8 +1314,12 @@ export function ReportsView({
                 <>Showing <strong className="text-[var(--color-ink)]">
                   {activeCategory === 'ADJUSTMENT'
                     ? filteredAdjustmentRows.length
-                    : activeCategory === 'PAYMENTS'
-                      ? filteredPaymentRows.length
+                          : activeCategory === 'PAYMENTS'
+                            ? filteredPaymentRows.length
+                            : activeCategory === 'BILLING'
+                        ? billingSummaryRows.length
+                                    : ['SALES_INCENTIVE', 'OM_INCENTIVE'].includes(activeCategory)
+                                      ? incentiveRows.length
                       : filteredCustomers.length}
                 </strong> matching records in {currentTabObj.label}</>
               ) : (
@@ -1116,6 +1335,67 @@ export function ReportsView({
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
+              {/* INCENTIVE DISBURSEMENT REPORTS */}
+              {['SALES_INCENTIVE', 'OM_INCENTIVE'].includes(activeCategory) && (
+                <React.Fragment key={activeCategory}>
+                  <TableHeader className="bg-[var(--color-paper)]">
+                    <TableRow><TableHead className="font-bold text-xs">{activeCategory === 'SALES_INCENTIVE' ? 'Account Executive Sales' : 'Installer / O & M Executive'}</TableHead><TableHead className="font-bold text-xs text-right">Number of {activeCategory === 'SALES_INCENTIVE' ? 'Sales' : 'Audits'}</TableHead><TableHead className="font-bold text-xs text-right">Incentive Amount</TableHead><TableHead className="font-bold text-xs text-right">25% of 2nd Last month</TableHead><TableHead className="font-bold text-xs text-right">25% of Last month</TableHead><TableHead className="font-bold text-xs text-right">50% Incentive Of Selected Month</TableHead><TableHead className="font-bold text-xs text-right">Total Incentive</TableHead></TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {!hasSearched ? <TableRow><TableCell colSpan={7} className="h-24 text-center text-xs">Select filters and click &quot;Search / Apply Filters&quot; to load report data.</TableCell></TableRow> : incentiveRows.length === 0 ? <TableRow><TableCell colSpan={7} className="h-24 text-center text-xs">No incentive records found matching the selected filters.</TableCell></TableRow> : incentiveRows.map((row) => <TableRow key={row.name} className="text-xs"><TableCell className="font-semibold">{row.name}</TableCell><TableCell className="text-right">{row.numberOfSales}</TableCell><TableCell className="text-right">{row.incentiveAmount.toLocaleString()}</TableCell><TableCell className="text-right">{row.secondLastMonth.toLocaleString()}</TableCell><TableCell className="text-right">{row.lastMonth.toLocaleString()}</TableCell><TableCell className="text-right">{row.selectedMonth.toLocaleString()}</TableCell><TableCell className="text-right font-semibold">{row.totalIncentive.toLocaleString()}</TableCell></TableRow>)}
+                  </TableBody>
+                </React.Fragment>
+              )}
+
+              {/* BILLING REPORT TABLE */}
+              {activeCategory === 'BILLING' && (
+                <>
+                  <TableHeader className="bg-[var(--color-paper)]">
+                    <TableRow className="border-b border-gray-200">
+                      <TableHead rowSpan={2} className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Account Executive Name</TableHead>
+                      {['Target', 'Adjustment', 'Revised Target', 'Payment Collection', 'Balance', '%age'].map((group) => (
+                        <TableHead key={group} colSpan={7} className="font-bold text-xs text-[var(--color-graphite)] text-center whitespace-nowrap border-l border-gray-300">{group}</TableHead>
+                      ))}
+                    </TableRow>
+                    <TableRow className="border-b border-gray-200">
+                      {['Target', 'Adjustment', 'Revised Target', 'Payment Collection', 'Balance', '%age'].flatMap((group) => billingColumns.map((column) => (
+                        <TableHead key={`${group}-${column}`} className="font-bold text-[10px] text-[var(--color-graphite)] text-center whitespace-nowrap border-l border-gray-200">{column}</TableHead>
+                      )))}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {!hasSearched ? (
+                      <TableRow><TableCell colSpan={43} className="h-32 text-center text-xs text-[var(--color-slate-custom)] font-medium">Select filters and click &quot;Search / Apply Filters&quot; to load report data.</TableCell></TableRow>
+                    ) : billingSummaryRows.length === 0 ? (
+                      <TableRow><TableCell colSpan={43} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">No billing records found matching the selected filters.</TableCell></TableRow>
+                    ) : billingSummaryRows.map((row) => {
+                      const groups: Array<[string, BillingGroup]> = [
+                        ['Target', row.target],
+                        ['Adjustment', row.adjustment],
+                        ['Revised Target', row.revisedTarget],
+                        ['Payment Collection', row.paymentCollection],
+                        ['Balance', row.balance],
+                      ]
+                      return (
+                        <TableRow key={row.name} className="hover:bg-[var(--color-paper)]/50 text-xs">
+                          <TableCell className="font-semibold text-[var(--color-graphite)] whitespace-nowrap">{row.name}</TableCell>
+                          {groups.flatMap(([groupName, group]) => billingColumns.map((column) => {
+                            const metric = billingMetric(group, column)
+                            return <TableCell key={`${groupName}-${column}`} className="text-right font-mono whitespace-nowrap">{column === 'House' ? metric.houses : Math.round(metric.amount).toLocaleString()}</TableCell>
+                          }))}
+                          {billingColumns.map((column) => {
+                            const total = row.target.total.amount
+                            const balance = row.balance.total.amount
+                            const percentage = total > 0 ? (balance / total) * 100 : 0
+                            return <TableCell key={`percentage-${column}`} className="text-right font-mono whitespace-nowrap">{column === 'House' ? row.target.total.houses : `${percentage.toFixed(2)}%`}</TableCell>
+                          })}
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </>
+              )}
+
               {/* 1. CUSTOMER STATUS REPORT TABLE */}
               {activeCategory === 'STATUS' && (
                 <>
@@ -1354,11 +1634,17 @@ export function ReportsView({
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Billing Type</TableHead>
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Monitoring Time</TableHead>
                     <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Customer Status</TableHead>
-                    <TableHead className="font-bold text-xs text-emerald-950 bg-[#86efac]/35 whitespace-nowrap border-l border-emerald-200">Adjustment / Credit-Debit</TableHead>
-                    <TableHead className="font-bold text-xs text-emerald-950 bg-[#86efac]/35 text-right whitespace-nowrap border-r border-emerald-200">Arrears</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] text-right whitespace-nowrap">Current</TableHead>
-                    <TableHead className="font-bold text-xs text-emerald-950 bg-[#86efac]/35 text-right whitespace-nowrap border-x border-emerald-200">Payment Collection</TableHead>
-                    <TableHead className="font-bold text-xs text-[var(--color-graphite)] text-right whitespace-nowrap">Balance Amount</TableHead>
+                    <TableHead rowSpan={2} className="font-bold text-xs text-emerald-950 bg-[#86efac]/35 whitespace-nowrap border-l border-emerald-200">Adjustment / Credit-Debit</TableHead>
+                    <TableHead colSpan={4} className="font-bold text-xs text-emerald-950 bg-[#86efac]/35 text-center whitespace-nowrap border-x border-emerald-200">Arrears 90 Days</TableHead>
+                    <TableHead rowSpan={2} className="font-bold text-xs text-[var(--color-graphite)] text-right whitespace-nowrap">Current</TableHead>
+                    <TableHead rowSpan={2} className="font-bold text-xs text-emerald-950 bg-[#86efac]/35 text-right whitespace-nowrap border-x border-emerald-200">Payment</TableHead>
+                    <TableHead rowSpan={2} className="font-bold text-xs text-[var(--color-graphite)] text-right whitespace-nowrap">Balance Amount</TableHead>
+                  </TableRow>
+                  <TableRow className="border-b border-gray-200">
+                    <TableHead className="font-bold text-xs text-emerald-950 bg-[#86efac]/35 text-right whitespace-nowrap border-l border-emerald-200">Arrears 90 Days</TableHead>
+                    <TableHead className="font-bold text-xs text-emerald-950 bg-[#86efac]/35 text-right whitespace-nowrap">Arrears 60 Days</TableHead>
+                    <TableHead className="font-bold text-xs text-emerald-950 bg-[#86efac]/35 text-right whitespace-nowrap">Arrears 30 Days</TableHead>
+                    <TableHead className="font-bold text-xs text-emerald-950 bg-[#86efac]/35 text-right whitespace-nowrap border-r border-emerald-200">Total Arrears</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1415,8 +1701,17 @@ export function ReportsView({
                           <TableCell className="font-mono text-xs font-semibold whitespace-nowrap bg-emerald-50/70 border-l border-emerald-100 text-slate-800">
                             {fin.adjustmentText}
                           </TableCell>
+                          <TableCell className="text-right font-mono font-medium text-slate-700 whitespace-nowrap bg-emerald-50/70 border-l border-emerald-100">
+                            PKR {fin.arrears90.toLocaleString()}
+                          </TableCell>
+                          <TableCell className="text-right font-mono font-medium text-slate-700 whitespace-nowrap bg-emerald-50/70">
+                            PKR {fin.arrears60.toLocaleString()}
+                          </TableCell>
+                          <TableCell className="text-right font-mono font-medium text-slate-700 whitespace-nowrap bg-emerald-50/70">
+                            PKR {fin.arrears30.toLocaleString()}
+                          </TableCell>
                           <TableCell className="text-right font-mono font-medium text-slate-700 whitespace-nowrap bg-emerald-50/70 border-r border-emerald-100">
-                            PKR {fin.arrears.toLocaleString()}
+                            PKR {fin.totalArrears.toLocaleString()}
                           </TableCell>
                           <TableCell className="text-right font-mono font-medium text-slate-900 whitespace-nowrap">
                             PKR {fin.current.toLocaleString()}
