@@ -70,11 +70,16 @@ export function ManagerApprovalView({
 }: ManagerApprovalViewProps) {
   const [editingCustomer, setEditingCustomer] = React.useState<CustomerRecord | null>(null)
   // Determine initial stage based on logged in user role
+  const roleUpper = (userRole || '').toUpperCase()
+  const isSales = roleUpper === 'SALES_MANAGER' || roleUpper === 'SALES'
+  const isBilling = roleUpper === 'BILLING_MANAGER'
+  const isOM = roleUpper === 'OM_MANAGER' || roleUpper === 'INSTALLATION'
+  const isSpecificRole = isSales || isBilling || isOM
+
   const getInitialStage = (): 'ALL' | 'STAGE_1' | 'STAGE_2' | 'STAGE_3' => {
-    const roleUpper = (userRole || '').toUpperCase()
-    if (roleUpper === 'SALES_MANAGER' || roleUpper === 'SALES') return 'STAGE_1'
-    if (roleUpper === 'BILLING_MANAGER') return 'STAGE_2'
-    if (roleUpper === 'OM_MANAGER' || roleUpper === 'INSTALLATION') return 'STAGE_3'
+    if (isSales) return 'STAGE_1'
+    if (isBilling) return 'STAGE_2'
+    if (isOM) return 'STAGE_3'
     // Default to ALL for Admins, Super Admins, and General Managers
     return 'ALL'
   }
@@ -142,6 +147,7 @@ export function ManagerApprovalView({
       {/* 3-Stage Pipeline Cards (Interactive Filter Cards) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Stage 1: Sales Manager Approval Card */}
+        {(!isSpecificRole || isSales) && (
         <Card 
           onClick={() => setSelectedStage(selectedStage === 'STAGE_1' ? 'ALL' : 'STAGE_1')}
           className={`cursor-pointer transition-all duration-200 border-2 ${
@@ -167,8 +173,10 @@ export function ManagerApprovalView({
             )}
           </CardContent>
         </Card>
+        )}
 
         {/* Stage 2: Billing Manager Payment Verification Card */}
+        {(!isSpecificRole || isBilling) && (
         <Card 
           onClick={() => setSelectedStage(selectedStage === 'STAGE_2' ? 'ALL' : 'STAGE_2')}
           className={`cursor-pointer transition-all duration-200 border-2 ${
@@ -194,8 +202,10 @@ export function ManagerApprovalView({
             )}
           </CardContent>
         </Card>
+        )}
 
         {/* Stage 3: O&M Manager Approval Card */}
+        {(!isSpecificRole || isOM) && (
         <Card 
           onClick={() => setSelectedStage(selectedStage === 'STAGE_3' ? 'ALL' : 'STAGE_3')}
           className={`cursor-pointer transition-all duration-200 border-2 ${
@@ -221,6 +231,7 @@ export function ManagerApprovalView({
             )}
           </CardContent>
         </Card>
+        )}
       </div>
 
       {/* Pipeline Table with Filter Tabs & Search */}
@@ -229,6 +240,7 @@ export function ManagerApprovalView({
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             {/* Filter Tabs */}
             <div className="flex items-center gap-1.5 flex-wrap">
+              {!isSpecificRole && (
               <button
                 type="button"
                 onClick={() => setSelectedStage('ALL')}
@@ -240,7 +252,9 @@ export function ManagerApprovalView({
               >
                 All Stages ({customers.length})
               </button>
+              )}
 
+              {(!isSpecificRole || isSales) && (
               <button
                 type="button"
                 onClick={() => setSelectedStage('STAGE_1')}
@@ -252,7 +266,9 @@ export function ManagerApprovalView({
               >
                 Sales Manager List ({stage1Customers.length})
               </button>
+              )}
 
+              {(!isSpecificRole || isBilling) && (
               <button
                 type="button"
                 onClick={() => setSelectedStage('STAGE_2')}
@@ -264,7 +280,9 @@ export function ManagerApprovalView({
               >
                 Billing Manager List ({stage2Customers.length})
               </button>
+              )}
 
+              {(!isSpecificRole || isOM) && (
               <button
                 type="button"
                 onClick={() => setSelectedStage('STAGE_3')}
@@ -276,6 +294,7 @@ export function ManagerApprovalView({
               >
                 O&M Manager List ({stage3Customers.length})
               </button>
+              )}
             </div>
 
             {/* Search Input */}

@@ -503,6 +503,7 @@ export function EditCrfModal({
           </div>
 
           {/* Section 3: Solar Equipment & Technical Specifications */}
+          {!isStage1 && (
           <div className="space-y-3">
             <SectionHeader leftAction={<Wrench className="h-4 w-4 text-amber-600" />}>
               3. Solar Hardware & Technical Specifications
@@ -595,8 +596,10 @@ export function EditCrfModal({
               </div>
             </div>
           </div>
+          )}
 
           {/* Section 4: O&M Field Installer Allocation */}
+          {!isStage1 && (
           <div className="space-y-3 bg-amber-50/40 p-3.5 rounded-xl border border-amber-200/70">
             <div className="flex items-center gap-2 text-sm font-bold text-[#002868]">
               <User className="h-4 w-4 text-amber-700" />
@@ -624,6 +627,7 @@ export function EditCrfModal({
               </div>
             </div>
           </div>
+          )}
         </div>
 
         <DialogFooter className="border-t border-line pt-4 flex flex-col sm:flex-row justify-between items-center gap-3">
