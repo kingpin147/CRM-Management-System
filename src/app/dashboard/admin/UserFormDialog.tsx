@@ -89,6 +89,18 @@ export function UserFormDialog() {
           </div>
 
           <div className="space-y-1.5">
+            <Label htmlFor="designation" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              Designation
+            </Label>
+            <Input
+              id="designation"
+              name="designation"
+              placeholder="e.g. Senior Sales Executive"
+              className="h-10 text-sm bg-slate-50/50 focus:bg-white border-line transition-all"
+            />
+          </div>
+
+          <div className="space-y-1.5">
             <Label htmlFor="email" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
               Email Address <span className="text-destructive">*</span>
             </Label>
@@ -137,11 +149,11 @@ export function UserFormDialog() {
                   </div>
                 </SelectTrigger>
                 <SelectContent className="rounded-xl shadow-lg border-line">
-                  <SelectItem value="SUPER_ADMIN" className="text-xs font-medium py-2">Super Admin (Full Access)</SelectItem>
                   <SelectItem value="SALES_MANAGER" className="text-xs font-medium py-2">Account Sales Manager (Sales & Billing Operations)</SelectItem>
                   <SelectItem value="SALES" className="text-xs font-medium py-2">Executive Manager (Sales)</SelectItem>
                   <SelectItem value="OM_MANAGER" className="text-xs font-medium py-2">O & M Manager</SelectItem>
                   <SelectItem value="INSTALLATION" className="text-xs font-medium py-2">Installer (O&M Team)</SelectItem>
+                  <SelectItem value="CUSTOMER_SUPPORT" className="text-xs font-medium py-2">Customer Support</SelectItem>
                 </SelectContent>
               </Select>
             </div>

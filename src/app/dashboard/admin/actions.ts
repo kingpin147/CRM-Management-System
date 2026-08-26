@@ -13,6 +13,7 @@ export async function createUser(formData: FormData) {
     const password = formData.get('password') as string
     const name = formData.get('name') as string
     const role = formData.get('role') as Role
+    const designation = formData.get('designation') as string
 
     if (!email || !password || !name) {
       return { error: 'Missing required fields' }
@@ -28,6 +29,7 @@ export async function createUser(formData: FormData) {
       user_metadata: {
         full_name: name,
         role: role,
+        designation: designation || null,
       }
     })
 
@@ -44,6 +46,7 @@ export async function createUser(formData: FormData) {
           email,
           fullName: name,
           role,
+          designation: designation || null,
         }
       })
     } catch (dbError) {
