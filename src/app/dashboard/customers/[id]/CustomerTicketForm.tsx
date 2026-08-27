@@ -163,38 +163,8 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
                   </select>
                 </TableCell>
 
-                <TableCell className="font-bold text-xs bg-slate-50 w-32 border-r border-slate-200 text-[#002868]">Sub Category</TableCell>
-                <TableCell className="border-r border-slate-200">
-                  <select
-                    value={subCategory}
-                    onChange={(e) => setSubCategory(e.target.value)}
-                    className="w-full h-9 px-2 rounded border border-gray-300 text-xs font-medium bg-white"
-                  >
-                    <option value="">Select Sub Category...</option>
-                    {ticketType === 'TECHNICAL_COMPLAINT' ? (
-                      ['Inverter Brands', 'Panel Brands', 'Battery Brands', 'Breaker Brands', 'Wiring & Earthing'].map(s => (
-                        <option key={s} value={s}>{s}</option>
-                      ))
-                    ) : category === 'Solar System Audit Request' ? (
-                      ['Comprehensive System Audit', 'Inverter Health Check', 'Solar Panel Efficiency Audit', 'Battery Capacity Test', 'Earthing & Safety Inspection'].map(s => (
-                        <option key={s} value={s}>{s}</option>
-                      ))
-                    ) : ticketType === 'SERVICE_REQUEST' ? (
-                      ['General Request', 'Urgent Request', 'Scheduled Request', 'N/A'].map(s => (
-                        <option key={s} value={s}>{s}</option>
-                      ))
-                    ) : ticketType === 'BILLING_COMPLAINT' ? (
-                      ['Invoice Discrepancy', 'Payment Update', 'Tariff Query', 'N/A'].map(s => (
-                        <option key={s} value={s}>{s}</option>
-                      ))
-                    ) : (
-                      <option value="N/A">N/A</option>
-                    )}
-                  </select>
-                </TableCell>
-
                 <TableCell className="font-bold text-xs bg-slate-50 w-24 border-r border-slate-200 text-[#002868]">Fault</TableCell>
-                <TableCell>
+                <TableCell colSpan={3}>
                   <AutoSuggestInput
                     value={faultCode}
                     onChange={setFaultCode}
@@ -207,7 +177,7 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
 
               {/* Row 2: Source Of Complain, Escalation */}
               <TableRow className="hover:bg-transparent border-b border-slate-200">
-                <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Source Of Complain *</TableCell>
+                <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Source Of Complaint *</TableCell>
                 <TableCell className="border-r border-slate-200">
                   <AutoSuggestInput
                     value={sourceOfComplain}
@@ -246,7 +216,7 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
                   />
                 </TableCell>
 
-                <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Complain Status</TableCell>
+                <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Complaint Status</TableCell>
                 <TableCell className="border-r border-slate-200">
                   <Badge variant="outline" className="bg-amber-100 text-amber-900 border-amber-300 font-bold text-xs">
                     Pending
@@ -269,12 +239,12 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
 
               {/* Row 4: Complain Description */}
               <TableRow className="hover:bg-transparent">
-                <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Complain Description</TableCell>
+                <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Complaint Description</TableCell>
                 <TableCell colSpan={7}>
                   <Textarea
                     required
                     rows={3}
-                    placeholder="Enter detailed complain description..."
+                    placeholder="Enter detailed complaint description..."
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     className="border-gray-300 text-xs focus-visible:ring-[#002868] bg-white"

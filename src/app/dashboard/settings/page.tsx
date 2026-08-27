@@ -19,8 +19,6 @@ export default async function SettingsPage() {
   })
 
   const userRole = dbUser?.role
-  const isAdminOrSuperAdmin = userRole ? ['SUPER_ADMIN', 'ADMIN'].includes(userRole) : false
-
   return (
     <div className="space-y-6 animate-reveal max-w-4xl">
       <div>
@@ -75,29 +73,7 @@ export default async function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Admin / Super Admin User Roles Control Card */}
-      {isAdminOrSuperAdmin && (
-        <Card className="shadow-sm border-amber-200/80 bg-amber-50/30">
-          <CardHeader className="pb-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="space-y-1">
-                <CardTitle className="text-lg font-bold text-[#002868] flex items-center gap-2">
-                  <Users className="w-5 h-5 text-[var(--color-amber)]" />
-                  User Roles &amp; Platform Access Control
-                </CardTitle>
-                <CardDescription className="text-xs text-slate-600">
-                  As an <strong>{userRole === 'SUPER_ADMIN' ? 'Super Admin' : 'Admin'}</strong>, you have access to create users, assign roles (Super Admin, Admin, Manager, Sales, Installation, Customer Support), enable/disable accounts, and reset credentials.
-                </CardDescription>
-              </div>
-              <Link href="/dashboard/admin">
-                <Button className="bg-[#002868] hover:bg-[#001d4a] text-white text-xs font-bold gap-2 shadow-xs shrink-0 cursor-pointer">
-                  Manage User Roles <ArrowRight className="w-3.5 h-3.5" />
-                </Button>
-              </Link>
-            </div>
-          </CardHeader>
-        </Card>
-      )}
+
 
       {/* Change Password Component */}
       <ChangePasswordForm />

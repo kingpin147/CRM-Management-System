@@ -126,7 +126,7 @@ export function TicketClosedSetupDialog({ ticket }: { ticket: any }) {
               </TableRow>
 
               <TableRow className="hover:bg-transparent border-b border-slate-200">
-                <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Complain Status</TableCell>
+                <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868] p-3 w-40">Complaint Status</TableCell>
                 <TableCell colSpan={3}>
                   <select
                     value={status}
