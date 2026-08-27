@@ -1,4 +1,3 @@
-import React from 'react'
 import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer'
 import { formatDate } from '@/lib/utils'
 
@@ -431,18 +430,32 @@ export function AuditDocument({
             </View>
           </View>
 
-          {/* 7-Point Audit Checklist Table */}
-          <View style={styles.table}>
-            <View style={styles.tableHeader}>
-              <Text style={styles.tableHeaderCol1}>7-POINT SYSTEM COMPONENTS AUDIT CHECKLIST</Text>
-              <Text style={styles.tableHeaderCol3}>Inspection Status</Text>
+          {/* 7-Point Audit Checklist Card */}
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardHeaderText}>7-POINT SYSTEM COMPONENTS AUDIT CHECKLIST</Text>
+              <Text style={styles.cardHeaderText}>Inspection Status</Text>
             </View>
-            {checklist.map((item, idx) => (
-              <View key={idx} style={[styles.tableRow, idx === checklist.length - 1 ? { borderBottomWidth: 0 } : {}]}>
-                <Text style={styles.tableCol1}>{item.name}</Text>
-                <Text style={[styles.tableCol3, getStatusColor(item.val)]}>{item.val}</Text>
+            <View style={{ flexDirection: 'row', paddingHorizontal: 4, paddingVertical: 2 }}>
+              {/* Left Column (Items 1-4) */}
+              <View style={{ flex: 1, paddingRight: 4, borderRightWidth: 1, borderRightColor: '#e2e8f0' }}>
+                {checklist.slice(0, 4).map((item, idx) => (
+                  <View key={idx} style={[styles.statusRow, idx === 3 ? { borderBottomWidth: 0 } : {}]}>
+                    <Text style={styles.statusLabel}>{item.name}</Text>
+                    <Text style={getStatusStyle(item.val)}>{item.val}</Text>
+                  </View>
+                ))}
               </View>
-            ))}
+              {/* Right Column (Items 5-7) */}
+              <View style={{ flex: 1, paddingLeft: 4 }}>
+                {checklist.slice(4).map((item, idx) => (
+                  <View key={idx} style={[styles.statusRow, idx === 2 ? { borderBottomWidth: 0 } : {}]}>
+                    <Text style={styles.statusLabel}>{item.name}</Text>
+                    <Text style={getStatusStyle(item.val)}>{item.val}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
           </View>
 
           {/* Earthing Resistance & Electrical Safety Parameters */}

@@ -70,6 +70,41 @@ export function SolarSystemDialog({
   const [discoRefNo, setDiscoRefNo] = React.useState(solarSystem?.discoRefNo || '')
   const [meterType, setMeterType] = React.useState(solarSystem?.meterType || '')
 
+  React.useEffect(() => {
+    if (solarSystem) {
+      setInverterBrand(solarSystem.inverterBrand || '')
+      setInverterType(solarSystem.inverterType || '')
+      setInverterPhase(solarSystem.inverterPhase || '')
+      setInverterCategory(solarSystem.inverterCategory || '')
+      setInverterSize(solarSystem.inverterSize || '')
+      setInverterSerial(solarSystem.inverterSerial || '')
+      setNoOfInverters(solarSystem.noOfInverters ?? 1)
+      setInverterWarrantyEnd(solarSystem.inverterWarrantyEnd ? new Date(solarSystem.inverterWarrantyEnd).toISOString().split('T')[0] : '')
+
+      setPanelBrand(solarSystem.panelBrand || '')
+      setPanelType(solarSystem.panelType || '')
+      setPanelTechnology(solarSystem.panelTechnology || '')
+      setPanelWattage(solarSystem.panelWattage ?? 0)
+      setNoOfPanels(solarSystem.noOfPanels ?? 0)
+      setPanelWarrantyEnd(solarSystem.panelWarrantyEnd ? new Date(solarSystem.panelWarrantyEnd).toISOString().split('T')[0] : '')
+
+      setBatteryBrand(solarSystem.batteryBrand || '')
+      setBatteryType(solarSystem.batteryType || '')
+      setBatteryCategory(solarSystem.batteryCategory || '')
+      setNoOfBatteries(solarSystem.noOfBatteries ?? 0)
+      setBatterySerial(solarSystem.batterySerial || '')
+      setBatteryWarrantyEnd(solarSystem.batteryWarrantyEnd ? new Date(solarSystem.batteryWarrantyEnd).toISOString().split('T')[0] : '')
+
+      setDisco(solarSystem.disco || '')
+      setDiscoRefNo(solarSystem.discoRefNo || '')
+      setMeterType(solarSystem.meterType || '')
+
+      setInverterImageUrl(solarSystem.inverterImages?.[0] || '')
+      setBatteryImageUrl(solarSystem.batteryImages?.[0] || '')
+      setPanelImageUrl(solarSystem.panelImages?.[0] || '')
+    }
+  }, [solarSystem])
+
   // Equipment Photos (Uploaded to Cloudflare R2 Cloud)
   const [inverterImageFile, setInverterImageFile] = React.useState<File | null>(null)
   const [batteryImageFile, setBatteryImageFile] = React.useState<File | null>(null)

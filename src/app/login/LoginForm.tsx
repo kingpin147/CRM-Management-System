@@ -1,13 +1,13 @@
 'use client'
 
-import { useActionState, useEffect } from 'react'
+import { useActionState, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { loginAction, type LoginActionState } from './actions'
 import { CardContent, CardFooter } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react'
+import { AlertCircle, CheckCircle2, Loader2, Eye, EyeOff } from 'lucide-react'
 
 const initialState: LoginActionState = {
   error: null,
@@ -22,6 +22,7 @@ interface LoginFormProps {
 export function LoginForm({ initialError, initialSuccess }: LoginFormProps) {
   const router = useRouter()
   const [state, formAction, isPending] = useActionState(loginAction, initialState)
+  const [showPassword, setShowPassword] = useState(false)
 
   useEffect(() => {
     if (state?.success) {
@@ -65,15 +66,24 @@ export function LoginForm({ initialError, initialSuccess }: LoginFormProps) {
         
         <div className="space-y-2">
           <Label htmlFor="password" className="text-[var(--color-ink)] font-medium">Password</Label>
-          <Input 
-            id="password" 
-            name="password" 
-            type="password" 
-            placeholder="••••••••"
-            required 
-            disabled={isPending}
-            className="bg-white/50 text-[var(--color-ink)] placeholder:text-[var(--color-slate-custom)] focus-visible:ring-[var(--color-amber)] border-[var(--color-line)]"
-          />
+          <div className="relative">
+            <Input 
+              id="password" 
+              name="password" 
+              type={showPassword ? 'text' : 'password'}
+              placeholder="••••••••"
+              required 
+              disabled={isPending}
+              className="bg-white/50 text-[var(--color-ink)] placeholder:text-[var(--color-slate-custom)] focus-visible:ring-[var(--color-amber)] border-[var(--color-line)] pr-10"
+            />
+            <button
+              type="button"
+              className="absolute inset-y-0 right-0 flex items-center pr-3 text-[var(--color-slate-custom)] hover:text-[var(--color-ink)] cursor-pointer"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
         </div>
       </CardContent>
 

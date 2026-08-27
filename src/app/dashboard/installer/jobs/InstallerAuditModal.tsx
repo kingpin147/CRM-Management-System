@@ -94,12 +94,47 @@ export function InstallerAuditModal({
   React.useEffect(() => {
     if (customer?.solarSystem) {
       const s = customer.solarSystem
+      
+      // Part 2: Solar Specifications
+      if (s.meterType) setMeterType(s.meterType)
+      setZeroExportDevice(s.zeroExportDevice ? 'Installed' : 'Not Installed')
       if (s.disco) setDisco(s.disco)
       if (s.discoRefNo) setDiscoRefNo(s.discoRefNo)
+
       if (s.inverterBrand) setInverterBrand(s.inverterBrand)
+      if (s.inverterType) setInverterType(s.inverterType)
+      if (s.inverterPhase) setInverterPhase(s.inverterPhase)
+      if (s.inverterSize) setInverterSize(s.inverterSize)
+      if (s.noOfInverters !== undefined) setNoOfInverters(s.noOfInverters)
       if (s.inverterSerial) setInverterSerial(s.inverterSerial)
+      if (s.inverterWarrantyEnd) setInverterWarrantyEnd(new Date(s.inverterWarrantyEnd).toISOString().split('T')[0])
+
       if (s.panelBrand) setPanelBrand(s.panelBrand)
+      if (s.panelType) setPanelType(s.panelType)
+      if (s.panelTechnology) setPanelTechnology(s.panelTechnology)
+      if (s.panelWattage !== undefined) setPanelWattage(s.panelWattage)
+      if (s.noOfPanels !== undefined) setNoOfPanels(s.noOfPanels)
+      if (s.panelWarrantyEnd) setPanelWarrantyEnd(new Date(s.panelWarrantyEnd).toISOString().split('T')[0])
+
       if (s.batteryBrand) setBatteryBrand(s.batteryBrand)
+      if (s.batteryType) setBatteryType(s.batteryType)
+      if (s.batteryCategory) setBatteryCategory(s.batteryCategory)
+      if (s.noOfBatteries !== undefined) setNoOfBatteries(s.noOfBatteries)
+      if (s.batterySerial) setBatterySerial(s.batterySerial)
+      if (s.batteryWarrantyEnd) setBatteryWarrantyEnd(new Date(s.batteryWarrantyEnd).toISOString().split('T')[0])
+
+      // Part 3: Audit Checklist
+      if (s.inverterStatus) setInverterStatus(s.inverterStatus)
+      if (s.panelStatus) setPanelStatus(s.panelStatus)
+      if (s.batteryStatus) setBatteryStatus(s.batteryStatus)
+      if (s.structureStatus) setStructureStatus(s.structureStatus)
+      if (s.cableStatus) setCableStatus(s.cableStatus)
+      if (s.earthingStatus) setEarthingStatus(s.earthingStatus)
+      if (s.breakerStatus) setBreakerStatus(s.breakerStatus)
+
+      if (s.earthingAcOhms != null) setEarthingAcOhms(String(s.earthingAcOhms))
+      if (s.earthingDcOhms != null) setEarthingDcOhms(String(s.earthingDcOhms))
+      setLightningProtection(s.lightningProtection !== false ? 'Installed' : 'Not Installed')
     }
   }, [customer])
 

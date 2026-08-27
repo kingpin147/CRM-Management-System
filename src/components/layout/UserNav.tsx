@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { LogOut, Loader2, User, ChevronDown } from 'lucide-react'
+import { LogOut, Loader2, User, ChevronDown, Key } from 'lucide-react'
 
 export function UserNav({ 
   email,
@@ -91,6 +91,14 @@ export function UserNav({
           </DropdownMenuGroup>
 
           <DropdownMenuSeparator className="my-1 border-slate-100" />
+
+          <DropdownMenuItem
+            onClick={() => router.push('/dashboard/settings')}
+            className="cursor-pointer text-slate-700 hover:bg-slate-50 focus:bg-slate-50 rounded-lg px-3 py-2 text-xs font-semibold flex items-center gap-2 transition-colors mb-1"
+          >
+            <Key className="h-4 w-4 text-slate-500" />
+            <span>Change Password</span>
+          </DropdownMenuItem>
 
           <DropdownMenuItem
             onClick={handleLogout}
