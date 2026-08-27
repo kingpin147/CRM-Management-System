@@ -79,8 +79,18 @@ export function MainNav({
           </span>
         </Link>
 
-        {/* 1. Sales Tab with Sub-menu */}
-        {canViewApproval ? (
+        {/* 1. Sales / Assigned Jobs Tab */}
+        {isInstaller ? (
+          <Link 
+            href="/dashboard/installer/jobs" 
+            className={linkClass('/dashboard/installer/jobs')}
+          >
+            <span className="flex items-center gap-1 xl:gap-1.5 font-semibold">
+              <ShoppingBag className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
+              <span>Assigned Jobs</span>
+            </span>
+          </Link>
+        ) : canViewApproval ? (
           <DropdownMenu>
             <DropdownMenuTrigger className={triggerClass(pathname.startsWith('/dashboard/sales') || pathname === '/dashboard/customers/new')}>
               <span className="flex items-center gap-1 xl:gap-1.5">
@@ -261,15 +271,25 @@ export function MainNav({
       </div>
 
       <div>
-        <p className="px-3 text-xs font-bold text-[var(--color-slate-custom)] uppercase tracking-wider mb-1">Sales</p>
+        <p className="px-3 text-xs font-bold text-[var(--color-slate-custom)] uppercase tracking-wider mb-1">
+          {isInstaller ? 'Installer Jobs' : 'Sales'}
+        </p>
         <div className="space-y-0.5">
-          <Link href="/dashboard/customers/new" className={linkClass('/dashboard/customers/new')}>
-            Create Sale
-          </Link>
-          {canViewApproval && (
-            <Link href="/dashboard/sales/pending" className={linkClass('/dashboard/sales/pending')}>
-              Manager Approval
+          {isInstaller ? (
+            <Link href="/dashboard/installer/jobs" className={linkClass('/dashboard/installer/jobs')}>
+              Assigned Jobs
             </Link>
+          ) : (
+            <>
+              <Link href="/dashboard/customers/new" className={linkClass('/dashboard/customers/new')}>
+                Create Sale
+              </Link>
+              {canViewApproval && (
+                <Link href="/dashboard/sales/pending" className={linkClass('/dashboard/sales/pending')}>
+                  Manager Approval
+                </Link>
+              )}
+            </>
           )}
         </div>
       </div>

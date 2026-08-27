@@ -32,6 +32,7 @@ export default async function AdminPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
+                  <TableHead>Designation</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Status</TableHead>
@@ -42,7 +43,7 @@ export default async function AdminPage() {
               <TableBody>
                 {users.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-6 text-[var(--color-slate-custom)]">
+                    <TableCell colSpan={7} className="text-center py-6 text-[var(--color-slate-custom)]">
                       No users found.
                     </TableCell>
                   </TableRow>
@@ -50,7 +51,10 @@ export default async function AdminPage() {
                   users.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell className="font-medium">{user.fullName}</TableCell>
-                      <TableCell>{user.email}</TableCell>
+                      <TableCell className="text-xs font-semibold text-amber-800">
+                        {user.designation || '—'}
+                      </TableCell>
+                      <TableCell className="text-xs">{user.email}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="bg-[var(--color-paper)] text-[var(--color-ink)] border-[var(--color-line)] font-semibold text-xs">
                           {user.role === 'SUPER_ADMIN' ? 'Super Admin' :
@@ -79,6 +83,7 @@ export default async function AdminPage() {
                           fullName: user.fullName,
                           email: user.email,
                           role: user.role,
+                          designation: user.designation || '',
                           isActive: user.isActive
                         }} />
                       </TableCell>

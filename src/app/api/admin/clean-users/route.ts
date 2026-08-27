@@ -1,88 +1,160 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { createAdminClient } from '@/utils/supabase/admin'
+import { Role } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
-
-const KEEP_SUPER_ADMIN_EMAILS = [
-  'energygurusonline@gmail.com',
-  'energyguruscrm@gmail.com',
-  'nomiking0072012@gmail.com',
-]
-
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export async function GET(request: NextRequest) {
   try {
     const adminAuthClient = createAdminClient()
 
-    // 1. Fetch all users from Prisma
-    const allUsers = await prisma.user.findMany()
+    // 1. Target Super Admins to remove
+    const emailsToRemove = [
+      'energygurusonline@gmail.com',
+      'energyguruscrm@gmail.com',
+    ]
 
-    // Find our main super admin user to reassign any customer links
-    const mainSuperAdmin = allUsers.find(u => 
-      KEEP_SUPER_ADMIN_EMAILS.includes(u.email.toLowerCase())
-    )
+    // 2. Find or create the main super admin to re-link any relations
+    let nomikingUser = await prisma.user.findFirst({
+      where: { email: { equals: 'nomiking0072012@gmail.com', mode: 'insensitive' } }
+    })
 
-    const usersToDelete = allUsers.filter(u => 
-      !KEEP_SUPER_ADMIN_EMAILS.includes(u.email.toLowerCase())
-    )
-
-    const deletedEmails: string[] = []
-
-    // 2. Clear customer links & delete Prisma users
-    for (const user of usersToDelete) {
-      await prisma.customer.updateMany({
-        where: { accountExecutiveId: user.id },
-        data: { accountExecutiveId: mainSuperAdmin ? mainSuperAdmin.id : null }
+    // Update nomiking's name and designation as requested
+    if (nomikingUser) {
+      nomikingUser = await prisma.user.update({
+        where: { id: nomikingUser.id },
+        data: {
+          fullName: 'Muhammad Nouman Attique',
+          designation: 'Website Developer',
+          role: Role.SUPER_ADMIN,
+        }
       })
-
-      await prisma.customer.updateMany({
-        where: { assignedInstallerId: user.id },
-        data: { assignedInstallerId: mainSuperAdmin ? mainSuperAdmin.id : null }
-      })
-
-      await prisma.user.delete({
-        where: { id: user.id }
-      })
-
-      // If user had a valid UUID supabaseId, delete it directly
-      if (user.supabaseId && UUID_REGEX.test(user.supabaseId)) {
+      if (nomikingUser.supabaseId) {
         try {
-          await adminAuthClient.auth.admin.deleteUser(user.supabaseId)
-        } catch (e: any) {
-          // ignore
+          await adminAuthClient.auth.admin.updateUserById(nomikingUser.supabaseId, {
+            user_metadata: {
+              full_name: 'Muhammad Nouman Attique',
+              designation: 'Website Developer',
+              role: 'SUPER_ADMIN'
+            }
+          })
+        } catch (e) {
+          console.warn('Could not update metadata in supabase for nomiking:', e)
         }
       }
-
-      deletedEmails.push(user.email)
     }
 
-    // 3. Search and clean any matching demo users directly from Supabase Auth
-    try {
-      const { data: authUsers } = await adminAuthClient.auth.admin.listUsers({ perPage: 100 })
-      if (authUsers?.users) {
-        for (const authUser of authUsers.users) {
-          const email = authUser.email?.toLowerCase() || ''
-          if (email && !KEEP_SUPER_ADMIN_EMAILS.includes(email)) {
-            // Delete demo auth user
-            await adminAuthClient.auth.admin.deleteUser(authUser.id)
+    // 3. Create or update Super Admin Aafaaq Ali Khan (CEO)
+    const ceoEmail = 'ak@energygurus.online'
+    let ceoUser = await prisma.user.findFirst({
+      where: { email: { equals: ceoEmail, mode: 'insensitive' } }
+    })
+
+    if (!ceoUser) {
+      // Check if user already exists in Supabase Auth
+      let authUserId = ''
+      const { data: existingAuth } = await adminAuthClient.auth.admin.listUsers()
+      const foundAuth = existingAuth?.users?.find(u => u.email?.toLowerCase() === ceoEmail.toLowerCase())
+      
+      if (foundAuth) {
+        authUserId = foundAuth.id
+        await adminAuthClient.auth.admin.updateUserById(authUserId, {
+          user_metadata: {
+            full_name: 'Aafaaq Ali Khan',
+            designation: 'CEO',
+            role: 'SUPER_ADMIN'
+          }
+        })
+      } else {
+        const { data: newAuth, error: newAuthErr } = await adminAuthClient.auth.admin.createUser({
+          email: ceoEmail,
+          password: 'Password@123456',
+          email_confirm: true,
+          user_metadata: {
+            full_name: 'Aafaaq Ali Khan',
+            designation: 'CEO',
+            role: 'SUPER_ADMIN'
+          }
+        })
+        if (newAuthErr) throw newAuthErr
+        authUserId = newAuth.user.id
+      }
+
+      ceoUser = await prisma.user.create({
+        data: {
+          supabaseId: authUserId,
+          email: ceoEmail,
+          fullName: 'Aafaaq Ali Khan',
+          designation: 'CEO',
+          role: Role.SUPER_ADMIN,
+          isActive: true
+        }
+      })
+    } else {
+      ceoUser = await prisma.user.update({
+        where: { id: ceoUser.id },
+        data: {
+          fullName: 'Aafaaq Ali Khan',
+          designation: 'CEO',
+          role: Role.SUPER_ADMIN,
+          isActive: true
+        }
+      })
+    }
+
+    // 4. Remove energygurusonline and energyguruscrm users
+    const fallbackAdminId = ceoUser ? ceoUser.id : (nomikingUser ? nomikingUser.id : null)
+
+    for (const email of emailsToRemove) {
+      const u = await prisma.user.findFirst({
+        where: { email: { equals: email, mode: 'insensitive' } }
+      })
+
+      if (u) {
+        // Re-assign customers if any
+        if (fallbackAdminId) {
+          await prisma.customer.updateMany({
+            where: { accountExecutiveId: u.id },
+            data: { accountExecutiveId: fallbackAdminId }
+          })
+          await prisma.customer.updateMany({
+            where: { assignedInstallerId: u.id },
+            data: { assignedInstallerId: fallbackAdminId }
+          })
+        }
+
+        // Delete from Prisma
+        await prisma.user.delete({ where: { id: u.id } })
+
+        // Delete from Supabase Auth
+        if (u.supabaseId) {
+          try {
+            await adminAuthClient.auth.admin.deleteUser(u.supabaseId)
+          } catch (e) {
+            console.warn('Could not delete auth user:', e)
           }
         }
       }
-    } catch (authListErr: any) {
-      console.warn('Could not list/clean auth users:', authListErr?.message)
     }
 
-    const remainingUsers = await prisma.user.findMany()
+    const allUsers = await prisma.user.findMany({
+      orderBy: { createdAt: 'asc' }
+    })
 
     return NextResponse.json({
       success: true,
-      message: `Cleaned users. Kept ${remainingUsers.length} Super Admin users.`,
-      remainingUsers: remainingUsers.map(u => ({ id: u.id, fullName: u.fullName, email: u.email, role: u.role }))
+      message: 'Super Admin users updated successfully',
+      users: allUsers.map(u => ({
+        id: u.id,
+        name: u.fullName,
+        email: u.email,
+        designation: u.designation,
+        role: u.role
+      }))
     })
   } catch (error: any) {
-    console.error('Error cleaning users:', error)
+    console.error('Error updating users:', error)
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
 }

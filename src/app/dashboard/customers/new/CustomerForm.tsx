@@ -623,38 +623,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
 
 
 
-      {/* 3-Step Tab Navigation */}
-      <div className="grid grid-cols-3 gap-3 bg-amber-50/50 p-2 rounded-2xl border border-amber-200/60 shadow-xs">
-        {tabs.map((tab) => {
-          const isActive = activeTab === tab.id
-          const isDone   = activeTab > tab.id
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-3 px-4 py-3.5 rounded-xl text-left transition-all duration-200 cursor-pointer ${
-                isActive
-                  ? 'bg-white shadow-md border border-amber-300 font-bold text-[var(--color-ink)]'
-                  : 'bg-transparent hover:bg-white/60 text-[var(--color-slate-custom)] font-semibold'
-              }`}
-            >
-              <div
-                className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs ${
-                  isActive
-                    ? 'bg-[var(--color-amber)] text-white'
-                    : isDone
-                    ? 'bg-[var(--color-ink)] text-white'
-                    : 'bg-amber-100 text-amber-900'
-                }`}
-              >
-                {isDone ? <CheckCircle2 className="w-4 h-4" /> : tab.id}
-              </div>
-              <span className="text-xs sm:text-sm font-semibold tracking-tight">{tab.label}</span>
-            </button>
-          )
-        })}
-      </div>
+      {/* Sales Intake Form */}
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-6">
@@ -1126,24 +1095,15 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                 </CardContent>
               </Card>
 
-              {/* Navigation & Submission Options */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+              {/* Submission Option */}
+              <div className="flex items-center justify-end pt-2">
                 <Button
                   type="submit"
                   disabled={uploading || form.formState.isSubmitting}
-                  className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs gap-2 px-6 shadow-md cursor-pointer"
+                  className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs gap-2 px-8 py-3 h-11 shadow-md cursor-pointer"
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   Submit Sale for Sales Manager Approval
-                </Button>
-
-                <Button
-                  type="button"
-                  onClick={() => handleNextTab(2)}
-                  variant="outline"
-                  className="w-full sm:w-auto border-amber-300 text-amber-900 hover:bg-amber-50 font-bold text-xs gap-2 px-6 cursor-pointer"
-                >
-                  Next: Solar System Details <ChevronRight className="w-4 h-4" />
                 </Button>
               </div>
             </div>

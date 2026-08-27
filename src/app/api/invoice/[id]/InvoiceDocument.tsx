@@ -729,6 +729,10 @@ export function InvoiceDocument({
                 <Text style={styles.bullet}>•</Text>
                 <Text style={styles.noteText}>You are requested to pay your bill via our recommended payment options i.e. __________________</Text>
               </View>
+              <View style={styles.noteItem}>
+                <Text style={styles.bullet}>•</Text>
+                <Text style={styles.noteText}>This is a computer-generated invoice and does not require a signature or company stamp.</Text>
+              </View>
             </View>
           </View>
           

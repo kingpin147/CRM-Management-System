@@ -30,9 +30,12 @@ export default async function DashboardLayout({
 
   // Fetch user role from Prisma DB to determine navigation options
   const dbUser = await prisma.user.findUnique({
-    where: { supabaseId: user.id }
+    where: { supabaseId: user.id },
+    select: { role: true, fullName: true, designation: true }
   })
   const userRole = dbUser?.role || ''
+  const userDesignation = dbUser?.designation || ''
+  const userFullName = dbUser?.fullName || ''
 
   return (
     <div className="flex min-h-screen w-full bg-background">
@@ -74,7 +77,7 @@ export default async function DashboardLayout({
           </div>
 
           <div className="flex items-center justify-end shrink-0 ml-2">
-            <UserNav email={user.email} />
+            <UserNav email={user.email} fullName={userFullName} designation={userDesignation} />
           </div>
         </header>
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-background">

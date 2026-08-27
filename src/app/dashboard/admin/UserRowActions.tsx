@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { MoreHorizontal, Lock, Trash2, Ban, CheckCircle2, ShieldCheck } from 'lucide-react'
+import { MoreHorizontal, Lock, Trash2, Ban, CheckCircle2, ShieldCheck, Briefcase } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,9 +28,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { deleteUser, resetUserPassword, toggleUserStatus, updateUserRole } from './actions'
+import { deleteUser, resetUserPassword, toggleUserStatus, updateUserRole, updateUserDesignation } from './actions'
 import { Role } from '@prisma/client'
 
 type UserProps = {
@@ -38,6 +39,7 @@ type UserProps = {
   fullName: string;
   email: string;
   role: string;
+  designation?: string;
   isActive: boolean;
 }
 
@@ -47,8 +49,10 @@ export function UserRowActions({ user }: { user: UserProps }) {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [resetOpen, setResetOpen] = useState(false)
   const [roleOpen, setRoleOpen] = useState(false)
+  const [designationOpen, setDesignationOpen] = useState(false)
   
   const [selectedRole, setSelectedRole] = useState<Role>(user.role as Role)
+  const [designationInput, setDesignationInput] = useState<string>(user.designation || '')
   const [newPassword, setNewPassword] = useState<string | null>(null)
   
   const handleToggleStatus = async () => {
@@ -98,6 +102,17 @@ export function UserRowActions({ user }: { user: UserProps }) {
     }
   }
 
+  const handleUpdateDesignation = async () => {
+    setLoading(true)
+    try {
+      const res = await updateUserDesignation(user.id, designationInput)
+      if (res.error) alert(res.error)
+      else setDesignationOpen(false)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <>
       <DropdownMenu>
@@ -112,6 +127,11 @@ export function UserRowActions({ user }: { user: UserProps }) {
           <div className="px-2 py-1.5 text-sm font-semibold">Actions</div>
           <DropdownMenuSeparator />
           
+          <DropdownMenuItem onClick={() => setDesignationOpen(true)}>
+            <Briefcase className="mr-2 h-4 w-4 text-emerald-600" />
+            Change Designation
+          </DropdownMenuItem>
+
           <DropdownMenuItem onClick={() => setRoleOpen(true)}>
             <ShieldCheck className="mr-2 h-4 w-4 text-[var(--color-amber)]" />
             Change Role
@@ -144,6 +164,36 @@ export function UserRowActions({ user }: { user: UserProps }) {
           )}
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {/* Change Designation Dialog */}
+      <Dialog open={designationOpen} onOpenChange={setDesignationOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Change Designation for {user.fullName}</DialogTitle>
+            <DialogDescription>
+              Update the official company title/designation displayed on documents and the user profile.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="designation">Company Designation / Job Title</Label>
+              <Input
+                id="designation"
+                value={designationInput}
+                onChange={(e) => setDesignationInput(e.target.value)}
+                placeholder="e.g. CEO, Senior Sales Executive, Website Developer"
+                className="h-10 text-sm bg-white"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDesignationOpen(false)}>Cancel</Button>
+            <Button onClick={handleUpdateDesignation} disabled={loading} className="bg-[#002868] text-white">
+              {loading ? 'Saving...' : 'Save Designation'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Change Role Dialog */}
       <Dialog open={roleOpen} onOpenChange={setRoleOpen}>

@@ -100,7 +100,6 @@ export default async function CustomerDetailPage({
     { id: 'history', label: 'Customer History', allowed: true },
     { id: 'sms-history', label: `SMS History (${smsLogs.length})`, allowed: true },
     { id: 'email-history', label: `Email History (${emailLogs.length})`, allowed: true },
-    { id: 'plan', label: 'Create Plan', allowed: canEditProfile },
   ]
 
   const tabs = allTabs.filter(t => t.allowed)
@@ -1636,16 +1635,6 @@ export default async function CustomerDetailPage({
                   )}
                 </TableBody>
               </Table>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* 9. Create Plan Tab */}
-        {activeTab === 'plan' && (
-          <Card className="shadow-sm border-slate-200 bg-white max-w-4xl mx-auto overflow-hidden">
-            <SectionHeader>Create / Update Solar Plan & Package</SectionHeader>
-            <CardContent className="p-6">
-              <PackageFormDialog customerId={customer.id} initialData={customer.packagePlan} inline={true} />
             </CardContent>
           </Card>
         )}

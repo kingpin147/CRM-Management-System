@@ -14,7 +14,15 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { LogOut, Loader2, User, ChevronDown } from 'lucide-react'
 
-export function UserNav({ email }: { email: string | undefined }) {
+export function UserNav({ 
+  email,
+  fullName,
+  designation,
+}: { 
+  email: string | undefined
+  fullName?: string
+  designation?: string
+}) {
   const router = useRouter()
   const supabase = createClient()
 
@@ -32,8 +40,9 @@ export function UserNav({ email }: { email: string | undefined }) {
     }
   }
 
-  const initial = email?.charAt(0).toUpperCase() || 'U'
-  const displayName = email?.split('@')[0] || 'User'
+  // Display designation primarily as requested, fallback to full name or email prefix
+  const displayText = designation || fullName || email?.split('@')[0] || 'User'
+  const initial = (fullName || displayText || 'U').charAt(0).toUpperCase()
 
   return (
     <div className="flex items-center gap-2">
@@ -49,25 +58,32 @@ export function UserNav({ email }: { email: string | undefined }) {
           <div className="w-7 h-7 rounded-full bg-[#002868] flex items-center justify-center text-white font-bold text-xs shadow-xs">
             {initial}
           </div>
-          <span className="text-xs font-semibold text-slate-700 max-w-[120px] truncate hidden sm:inline-block">
-            {displayName}
+          <span className="text-xs font-bold text-slate-800 max-w-[150px] truncate hidden sm:inline-block">
+            {displayText}
           </span>
           <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
         </DropdownMenuTrigger>
 
-        <DropdownMenuContent className="w-60 bg-white p-1.5 shadow-lg border border-slate-200 rounded-xl" align="end">
+        <DropdownMenuContent className="w-64 bg-white p-1.5 shadow-lg border border-slate-200 rounded-xl" align="end">
           <DropdownMenuGroup>
             <DropdownMenuLabel className="font-normal px-3 py-2">
               <div className="flex flex-col space-y-1">
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-[#002868] flex items-center justify-center text-white font-bold text-[10px]">
+                  <div className="w-7 h-7 rounded-full bg-[#002868] flex items-center justify-center text-white font-bold text-[11px]">
                     {initial}
                   </div>
-                  <p className="text-xs font-bold text-slate-900 leading-none truncate">
-                    {displayName}
-                  </p>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-slate-900 leading-none truncate">
+                      {fullName || email?.split('@')[0]}
+                    </p>
+                    {designation && (
+                      <p className="text-[11px] font-semibold text-amber-700 leading-tight truncate mt-0.5">
+                        {designation}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <p className="text-[11px] leading-none text-slate-500 truncate pt-1 font-mono">
+                <p className="text-[11px] leading-none text-slate-500 truncate pt-1.5 font-mono">
                   {email || 'user@energygurus.pk'}
                 </p>
               </div>

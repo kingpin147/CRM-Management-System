@@ -149,7 +149,7 @@ export function ManagerApprovalView({
         {/* Stage 1: Sales Manager Approval Card */}
         {(!isSpecificRole || isSales) && (
         <Card 
-          onClick={() => setSelectedStage(selectedStage === 'STAGE_1' ? 'ALL' : 'STAGE_1')}
+          onClick={() => setSelectedStage(selectedStage === 'STAGE_1' ? (isSales ? 'STAGE_1' : 'ALL') : 'STAGE_1')}
           className={`cursor-pointer transition-all duration-200 border-2 ${
             selectedStage === 'STAGE_1' 
               ? 'border-amber-500 bg-amber-50/80 shadow-md ring-2 ring-amber-400/30' 
@@ -176,9 +176,9 @@ export function ManagerApprovalView({
         )}
 
         {/* Stage 2: Billing Manager Payment Verification Card */}
-        {(!isSpecificRole || isBilling) && (
+        {(!isSpecificRole || isBilling || isSales) && (
         <Card 
-          onClick={() => setSelectedStage(selectedStage === 'STAGE_2' ? 'ALL' : 'STAGE_2')}
+          onClick={() => setSelectedStage(selectedStage === 'STAGE_2' ? (isSales ? 'STAGE_2' : 'ALL') : 'STAGE_2')}
           className={`cursor-pointer transition-all duration-200 border-2 ${
             selectedStage === 'STAGE_2' 
               ? 'border-blue-500 bg-blue-50/80 shadow-md ring-2 ring-blue-400/30' 
@@ -268,7 +268,7 @@ export function ManagerApprovalView({
               </button>
               )}
 
-              {(!isSpecificRole || isBilling) && (
+              {(!isSpecificRole || isBilling || isSales) && (
               <button
                 type="button"
                 onClick={() => setSelectedStage('STAGE_2')}
@@ -278,7 +278,7 @@ export function ManagerApprovalView({
                     : 'bg-blue-50 text-blue-900 border border-blue-200 hover:bg-blue-100'
                 }`}
               >
-                Billing Manager List ({stage2Customers.length})
+                Payment Verification ({stage2Customers.length})
               </button>
               )}
 

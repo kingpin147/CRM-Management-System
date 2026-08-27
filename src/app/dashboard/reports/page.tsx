@@ -16,7 +16,7 @@ export default async function ReportsPage({
     where: { supabaseId: user.id },
     select: { role: true }
   })
-  if (!dbUser?.role || !['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES'].includes(dbUser.role)) {
+  if (!dbUser?.role || !['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES_MANAGER', 'BILLING_MANAGER', 'OM_MANAGER', 'SALES'].includes(dbUser.role)) {
     redirect('/dashboard/customers')
   }
   const userRole = dbUser.role

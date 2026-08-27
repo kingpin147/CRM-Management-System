@@ -14,6 +14,10 @@ export default async function NewCustomerPage() {
     where: { supabaseId: user.id },
     select: { role: true }
   })
+  if (dbUser?.role === 'INSTALLATION') {
+    redirect('/dashboard/installer/jobs')
+  }
+
   if (!dbUser?.role || !['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES_MANAGER', 'SALES'].includes(dbUser.role)) {
     redirect('/dashboard/customers')
   }

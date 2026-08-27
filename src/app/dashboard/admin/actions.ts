@@ -215,4 +215,37 @@ export async function updateUserRole(targetUserId: string, newRole: Role) {
   }
 }
 
+export async function updateUserDesignation(targetUserId: string, newDesignation: string) {
+  try {
+    const { allowed, error, target, requester } = await checkPermissions(targetUserId)
+    if (!allowed || !target || !requester) return { error }
+
+    // If target is Super Admin, only Super Admin can change their designation
+    if (target.role === 'SUPER_ADMIN' && requester.role !== 'SUPER_ADMIN') {
+      return { error: 'Only Super Admin can change designation of a Super Admin' }
+    }
+
+    const adminAuthClient = createAdminClient()
+
+    // 1. Update Prisma
+    await prisma.user.update({
+      where: { id: targetUserId },
+      data: { designation: newDesignation.trim() || null }
+    })
+
+    // 2. Update Supabase metadata
+    await adminAuthClient.auth.admin.updateUserById(target.supabaseId, {
+      user_metadata: { designation: newDesignation.trim() || null }
+    })
+
+    revalidatePath('/dashboard/admin')
+    revalidatePath('/dashboard')
+    return { success: true }
+  } catch (err: any) {
+    console.error('Update designation error:', err)
+    return { error: err.message || 'An error occurred while updating designation' }
+  }
+}
+
+
 
