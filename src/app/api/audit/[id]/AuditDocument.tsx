@@ -432,26 +432,26 @@ export function AuditDocument({
 
           {/* 7-Point Audit Checklist Card */}
           <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.cardHeaderText}>7-POINT SYSTEM COMPONENTS AUDIT CHECKLIST</Text>
-              <Text style={styles.cardHeaderText}>Inspection Status</Text>
+            <View style={[styles.cardHeader, { flexDirection: 'row', justifyContent: 'space-between' }]}>
+              <Text style={{ fontSize: 8.2, fontWeight: 'bold', color: '#FFFFFF' }}>7-POINT SYSTEM COMPONENTS AUDIT CHECKLIST</Text>
+              <Text style={{ fontSize: 8.2, fontWeight: 'bold', color: '#FFFFFF' }}>Inspection Status</Text>
             </View>
             <View style={{ flexDirection: 'row', paddingHorizontal: 4, paddingVertical: 2 }}>
               {/* Left Column (Items 1-4) */}
               <View style={{ flex: 1, paddingRight: 4, borderRightWidth: 1, borderRightColor: '#e2e8f0' }}>
                 {checklist.slice(0, 4).map((item, idx) => (
-                  <View key={idx} style={[styles.statusRow, idx === 3 ? { borderBottomWidth: 0 } : {}]}>
-                    <Text style={styles.statusLabel}>{item.name}</Text>
-                    <Text style={getStatusStyle(item.val)}>{item.val}</Text>
+                  <View key={idx} style={[styles.statusRow, { paddingVertical: 1.5 }, idx === 3 ? { borderBottomWidth: 0 } : {}]}>
+                    <Text style={{ fontSize: 7.8, color: '#555555', fontWeight: 'bold', width: '70%' }}>{item.name}</Text>
+                    <Text style={[getStatusColor(item.val), { fontSize: 7.8, width: '30%', textAlign: 'right' }]}>{item.val}</Text>
                   </View>
                 ))}
               </View>
               {/* Right Column (Items 5-7) */}
               <View style={{ flex: 1, paddingLeft: 4 }}>
                 {checklist.slice(4).map((item, idx) => (
-                  <View key={idx} style={[styles.statusRow, idx === 2 ? { borderBottomWidth: 0 } : {}]}>
-                    <Text style={styles.statusLabel}>{item.name}</Text>
-                    <Text style={getStatusStyle(item.val)}>{item.val}</Text>
+                  <View key={idx} style={[styles.statusRow, { paddingVertical: 1.5 }, idx === 2 ? { borderBottomWidth: 0 } : {}]}>
+                    <Text style={{ fontSize: 7.8, color: '#555555', fontWeight: 'bold', width: '70%' }}>{item.name}</Text>
+                    <Text style={[getStatusColor(item.val), { fontSize: 7.8, width: '30%', textAlign: 'right' }]}>{item.val}</Text>
                   </View>
                 ))}
               </View>
