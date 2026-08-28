@@ -39,10 +39,32 @@ export function CustomerSearchForm({
   const [contactNumber, setContactNumber]   = React.useState('')
   const [cnic, setCnic]                     = React.useState('')
   const [email, setEmail]                   = React.useState('')
+  const [address, setAddress]               = React.useState('')
+  const [addressSuggestions, setAddressSuggestions] = React.useState<string[]>([])
+  const [showSuggestions, setShowSuggestions] = React.useState(false)
 
   const [results, setResults]     = React.useState<CustomerRecord[]>([])
   const [searchState, setSearchState] = React.useState<SearchState>('idle')
   const [errorMsg, setErrorMsg]   = React.useState('')
+
+  const handleAddressChange = async (val: string) => {
+    setAddress(val)
+    if (val.trim().length >= 3) {
+      try {
+        const res = await fetch(`/api/customers/address-suggestions?q=${encodeURIComponent(val)}`)
+        if (res.ok) {
+          const data = await res.json()
+          setAddressSuggestions(data)
+          setShowSuggestions(true)
+        }
+      } catch (err) {
+        console.error(err)
+      }
+    } else {
+      setAddressSuggestions([])
+      setShowSuggestions(false)
+    }
+  }
 
   const handleReset = () => {
     setCustomerCode('')
@@ -51,6 +73,9 @@ export function CustomerSearchForm({
     setContactNumber('')
     setCnic('')
     setEmail('')
+    setAddress('')
+    setAddressSuggestions([])
+    setShowSuggestions(false)
     setResults([])
     setSearchState('idle')
     setErrorMsg('')
@@ -64,6 +89,7 @@ export function CustomerSearchForm({
     if (contactNumber.trim()) params.set('contactNumber', contactNumber.trim())
     if (cnic.trim())          params.set('cnic',          cnic.trim())
     if (email.trim())         params.set('email',         email.trim())
+    if (address.trim())       params.set('address',       address.trim())
 
     if (params.toString() === '') {
       setErrorMsg('Please enter at least one search criterion.')
@@ -198,6 +224,39 @@ export function CustomerSearchForm({
                   className="bg-white border-line text-sm focus-visible:ring-[var(--color-amber)] placeholder:text-gray-400"
                 />
                 <p className="text-[11px] text-gray-400">Please enter your email</p>
+              </div>
+
+              <div className="space-y-1 relative md:col-span-2">
+                <label className="text-sm font-semibold text-[var(--color-graphite)] flex items-center gap-1">
+                  Address:
+                </label>
+                <Input
+                  type="text"
+                  placeholder="Enter address"
+                  value={address}
+                  onChange={(e) => handleAddressChange(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  onFocus={() => { if (addressSuggestions.length > 0) setShowSuggestions(true) }}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                  className="bg-white border-line text-sm focus-visible:ring-[var(--color-amber)] placeholder:text-gray-400"
+                />
+                <p className="text-[11px] text-gray-400">Please enter your address</p>
+                {showSuggestions && addressSuggestions.length > 0 && (
+                  <div className="absolute z-10 w-full bg-white border border-line rounded-md shadow-lg mt-1 top-full max-h-48 overflow-y-auto">
+                    {addressSuggestions.map((sugg, idx) => (
+                      <div
+                        key={idx}
+                        className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100"
+                        onClick={() => {
+                          setAddress(sugg)
+                          setShowSuggestions(false)
+                        }}
+                      >
+                        {sugg}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
             </div>

@@ -17,9 +17,10 @@ export async function GET(request: NextRequest) {
   const contactNumber = searchParams.get('contactNumber')?.trim()|| ''
   const cnic          = searchParams.get('cnic')?.trim()         || ''
   const email         = searchParams.get('email')?.trim()        || ''
+  const address       = searchParams.get('address')?.trim()      || ''
 
   // Require at least one filter to be provided
-  const hasFilter = customerCode || crfNumber || fullName || contactNumber || cnic || email
+  const hasFilter = customerCode || crfNumber || fullName || contactNumber || cnic || email || address
   if (!hasFilter) {
     return NextResponse.json({ error: 'Please provide at least one search criterion.' }, { status: 400 })
   }
@@ -43,6 +44,9 @@ export async function GET(request: NextRequest) {
   }
   if (email) {
     where.email = { contains: email, mode: 'insensitive' }
+  }
+  if (address) {
+    where.address = { contains: address, mode: 'insensitive' }
   }
 
   const customers = await prisma.customer.findMany({
