@@ -107,7 +107,9 @@ model SolarSystem {
   inverterSize           String? // 6kW
   noOfInverters          Int
   inverterSerial         String
+  inverterSerials        String[]  @default([])
   inverterWarrantyEnd    DateTime?
+  inverterWarrantyEnds   DateTime[] @default([])
   panelBrand             String
   panelType              String // Monofacial, Bifacial
   panelTechnology        String // Mono Perc, Topcon, HJT, ABC, HIBC, etc.
@@ -120,7 +122,9 @@ model SolarSystem {
   batteryBrand           String
   noOfBatteries          Int
   batterySerial          String
+  batterySerials         String[]  @default([])
   batteryWarrantyEnd     DateTime?
+  batteryWarrantyEnds    DateTime[] @default([])
   earthing               String // AC, DC, Both
   earthingLastCheck      DateTime?
   earthingAcOhms         Decimal?

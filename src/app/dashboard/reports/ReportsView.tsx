@@ -39,6 +39,7 @@ type CustomerRecord = {
   packagePlan: any | null
   invoices: any[]
   ledgerEntries: any[]
+  customerHistory?: any[]
   transactions: any[]
   accountExecutive?: { fullName: string } | null
   assignedInstaller?: { fullName: string } | null
@@ -278,6 +279,7 @@ export function ReportsView({
       case 'sales-incentive': return 'SALES_INCENTIVE'
       case 'om-incentive': return 'OM_INCENTIVE'
       case 'register': return 'REGISTER'
+      case 'connectivity': return 'CONNECTIVITY'
       default: return 'STATUS'
     }
   }, [viewParam])
@@ -363,6 +365,7 @@ export function ReportsView({
     return {
       STATUS: customers.length,
       SALES: customers.filter((c) => c.packagePlan !== null).length,
+      CONNECTIVITY: customers.length,
       RECEIVABLE: customers.filter((c) => {
         const { balanceAmount } = computeCustomerFinancials(c)
         return (c.status || '').toUpperCase() === 'CONNECTION_ACTIVE' && c.packagePlan && balanceAmount > 0
@@ -380,6 +383,73 @@ export function ReportsView({
       REGISTER: customers.length,
     }
   }, [customers])
+
+// CONNECTIVITY REPORT COMPUTATION
+  const connectivityData = React.useMemo(() => {
+    let openingBalance = 0
+    let newSale = 0
+    let tempBlocked = 0
+    let permBlocked = 0
+    let nonPaymentBlocked = 0
+
+    const selectedDate = new Date(appliedFilters.invoiceMonth + '-01')
+    const monthStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)
+    const monthEnd = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0, 23, 59, 59, 999)
+
+    customers.forEach(c => {
+      if (appliedFilters.city !== 'ALL' && c.city?.toLowerCase() !== appliedFilters.city.toLowerCase()) return
+      if (appliedFilters.area !== 'ALL' && c.area?.toLowerCase() !== appliedFilters.area.toLowerCase()) return
+      if (appliedFilters.subArea !== 'ALL' && c.subArea?.toLowerCase() !== appliedFilters.subArea.toLowerCase()) return
+
+      let statusAtMonthStart = ''
+      const isActivatedBeforeMonth = c.activationDate && new Date(c.activationDate) < monthStart
+      const isActivatedDuringMonth = c.activationDate && new Date(c.activationDate) >= monthStart && new Date(c.activationDate) <= monthEnd
+
+      if (isActivatedBeforeMonth) {
+        statusAtMonthStart = 'CONNECTION_ACTIVE'
+        const pastHistories = (c.customerHistory || []).filter((h: any) => h.actionType === 'STATUS_CHANGE' && new Date(h.createdAt) < monthStart)
+        if (pastHistories.length > 0) {
+          const lastHistory = pastHistories[pastHistories.length - 1]
+          statusAtMonthStart = lastHistory.newStatus
+        }
+        if (['CONNECTION_ACTIVE', 'FOC_CONNECTION', 'IN_HOUSE_CONNECTION'].includes(statusAtMonthStart)) {
+          openingBalance++
+        }
+      }
+
+      if (isActivatedDuringMonth) {
+        newSale++
+      }
+
+      let statusAtMonthEnd = statusAtMonthStart
+      const monthHistories = (c.customerHistory || []).filter((h: any) => h.actionType === 'STATUS_CHANGE' && new Date(h.createdAt) >= monthStart && new Date(h.createdAt) <= monthEnd)
+      
+      if (monthHistories.length > 0) {
+        statusAtMonthEnd = monthHistories[monthHistories.length - 1].newStatus
+      } else if (isActivatedDuringMonth) {
+        statusAtMonthEnd = c.status || 'CONNECTION_ACTIVE' 
+      }
+
+      const isActiveStart = ['CONNECTION_ACTIVE', 'FOC_CONNECTION', 'IN_HOUSE_CONNECTION'].includes(statusAtMonthStart)
+      const isActiveEnd = ['CONNECTION_ACTIVE', 'FOC_CONNECTION', 'IN_HOUSE_CONNECTION'].includes(statusAtMonthEnd)
+      const wasActiveAtAnyPoint = isActiveStart || isActivatedDuringMonth
+
+      if (wasActiveAtAnyPoint && !isActiveEnd) {
+        if (statusAtMonthEnd === 'TEMPORARY_BLOCKED') tempBlocked++
+        else if (statusAtMonthEnd === 'PERMANENT_DISCONNECTION') permBlocked++
+        else if (statusAtMonthEnd === 'NON_PAYMENT_BLOCKED') nonPaymentBlocked++
+      }
+      
+      if (!isActiveStart && !isActivatedDuringMonth && isActiveEnd) {
+        tempBlocked--
+      }
+    })
+
+    const totalBlocked = tempBlocked + permBlocked + nonPaymentBlocked
+    const netActive = openingBalance + newSale - totalBlocked
+
+    return { openingBalance, newSale, tempBlocked, permBlocked, nonPaymentBlocked, totalBlocked, netActive }
+  }, [customers, appliedFilters])
 
   // Filtered dataset - only computed after user clicks search
   const filteredCustomers = React.useMemo(() => {
@@ -417,13 +487,13 @@ export function ReportsView({
       if (activeCategory === 'BILLING') return false
 
       // Status Dropdown Filter
-      if (activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && appliedFilters.status !== 'ALL' && c.status !== appliedFilters.status) return false
+      if ((activeCategory !== 'SALES' && activeCategory !== 'CONNECTIVITY') && activeCategory !== 'RECEIVABLE' && appliedFilters.status !== 'ALL' && c.status !== appliedFilters.status) return false
 
       // Customer Type Dropdown Filter
-      if (activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && appliedFilters.customerType !== 'ALL' && c.customerType?.toUpperCase() !== appliedFilters.customerType.toUpperCase()) return false
+      if ((activeCategory !== 'SALES' && activeCategory !== 'CONNECTIVITY') && activeCategory !== 'RECEIVABLE' && appliedFilters.customerType !== 'ALL' && c.customerType?.toUpperCase() !== appliedFilters.customerType.toUpperCase()) return false
 
       // Account Executive Filter
-      if (activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && appliedFilters.accountExecutive !== 'ALL') {
+      if ((activeCategory !== 'SALES' && activeCategory !== 'CONNECTIVITY') && activeCategory !== 'RECEIVABLE' && appliedFilters.accountExecutive !== 'ALL') {
         const name = (c.accountExecutive?.fullName || c.accountExecutiveName || 'Unassigned').toLowerCase()
         if (name !== appliedFilters.accountExecutive.toLowerCase()) return false
       }
@@ -448,7 +518,7 @@ export function ReportsView({
       }
 
       // Search query
-      if (activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && appliedFilters.searchQuery.trim()) {
+      if ((activeCategory !== 'SALES' && activeCategory !== 'CONNECTIVITY') && activeCategory !== 'RECEIVABLE' && appliedFilters.searchQuery.trim()) {
         const q = appliedFilters.searchQuery.toLowerCase().trim()
         const match =
           c.fullName?.toLowerCase().includes(q) ||
@@ -926,6 +996,22 @@ export function ReportsView({
         `"${c.status ? c.status.replace(/_/g, ' ') : ''}"`,
         `"${c.status ? c.status.replace(/_/g, ' ') : ''}"`,
       ])
+    } else if (activeCategory === 'CONNECTIVITY') {
+      headers = [
+        'Month', 'Opening Balance (Active Customers)', 'New Sale (Active)', 
+        'Number Of Temp blocked', 'Number Of Perm Blocked', 'Non Payment Blocked', 
+        'Total Blocked', 'Net Active Customers'
+      ]
+      rows = [[
+        `"${appliedFilters.invoiceMonth}"`,
+        `"${connectivityData.openingBalance}"`,
+        `"${connectivityData.newSale}"`,
+        `"${connectivityData.tempBlocked}"`,
+        `"${connectivityData.permBlocked}"`,
+        `"${connectivityData.nonPaymentBlocked}"`,
+        `"${connectivityData.totalBlocked}"`,
+        `"${connectivityData.netActive}"`
+      ]]
     } else if (activeCategory === 'SALES') {
       headers = [
         'Customer ID', 'CRF #', 'Customer Name', 'Address', 'Contact Number',
@@ -1165,7 +1251,7 @@ export function ReportsView({
               </div>
             )}
 
-            {activeCategory !== 'REGISTER' && activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'PAYMENTS' && activeCategory !== 'BILLING' && (
+            {activeCategory !== 'REGISTER' && (activeCategory !== 'SALES' && activeCategory !== 'CONNECTIVITY') && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'PAYMENTS' && activeCategory !== 'BILLING' && (
               <div className="space-y-1">
                 <Label className="text-xs font-semibold text-[var(--color-ink)]">Account Executive Sales</Label>                <select
                   value={selectedAccountExecutive}
@@ -1180,7 +1266,7 @@ export function ReportsView({
               </div>
             )}
 
-            {activeCategory !== 'REGISTER' && activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'PAYMENTS' && activeCategory !== 'BILLING' && (
+            {activeCategory !== 'REGISTER' && (activeCategory !== 'SALES' && activeCategory !== 'CONNECTIVITY') && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'PAYMENTS' && activeCategory !== 'BILLING' && (
               <div className="space-y-1">
                 <Label className="text-xs font-semibold text-[var(--color-ink)]">Customer Type</Label>
                 <select
@@ -1201,7 +1287,7 @@ export function ReportsView({
               </div>
             )}
 
-            {activeCategory !== 'REGISTER' && activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'PAYMENTS' && activeCategory !== 'BILLING' && (
+            {activeCategory !== 'REGISTER' && (activeCategory !== 'SALES' && activeCategory !== 'CONNECTIVITY') && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'PAYMENTS' && activeCategory !== 'BILLING' && (
               <div className="space-y-1">
                 <Label className="text-xs font-semibold text-[var(--color-ink)]">Select Status Filter</Label>
                 <select
@@ -1274,7 +1360,7 @@ export function ReportsView({
 
           {/* Search bar & Action Buttons */}
           <div className={`flex flex-col md:flex-row ${(activeCategory === 'SALES' || activeCategory === 'RECEIVABLE' || activeCategory === 'ADJUSTMENT' || activeCategory === 'STATUS' || activeCategory === 'REGISTER' || activeCategory === 'SALES_INCENTIVE' || activeCategory === 'OM_INCENTIVE') ? 'justify-end' : 'justify-between'} items-stretch md:items-center gap-3 pt-4 border-t border-gray-100`}>
-            {activeCategory !== 'REGISTER' && activeCategory !== 'SALES' && activeCategory !== 'RECEIVABLE' && activeCategory !== 'STATUS' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'SALES_INCENTIVE' && activeCategory !== 'OM_INCENTIVE' && (
+            {activeCategory !== 'REGISTER' && (activeCategory !== 'SALES' && activeCategory !== 'CONNECTIVITY') && activeCategory !== 'RECEIVABLE' && activeCategory !== 'STATUS' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'SALES_INCENTIVE' && activeCategory !== 'OM_INCENTIVE' && (
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-[var(--color-slate-custom)]" />
                 <Input
@@ -1544,6 +1630,42 @@ export function ReportsView({
                   </TableBody>
                 </>
               )}
+
+            {/* 1.5 CONNECTIVITY REPORT SUMMARY */}
+            {activeCategory === 'CONNECTIVITY' && (
+              <>
+                <TableHeader className="bg-[#002868] text-white">
+                  <TableRow className="border-b border-[#001d4a] font-bold text-xs">
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Opening Balance (Active Customers)</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">New Sale (Active)</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Number Of Temp blocked</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Number Of Perm Blocked</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Non Payment Blocked</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Total Blocked</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap text-emerald-300">Net Active Customers</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="bg-white">
+                  {!hasSearched ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="h-32 text-center text-xs text-[var(--color-slate-custom)] font-medium">
+                        Select filters and click "Search / Apply Filters" to load report data.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    <TableRow className="hover:bg-slate-50 text-sm font-bold text-slate-800">
+                      <TableCell className="font-mono">{connectivityData.openingBalance}</TableCell>
+                      <TableCell className="font-mono text-emerald-700">{connectivityData.newSale}</TableCell>
+                      <TableCell className="font-mono">{connectivityData.tempBlocked}</TableCell>
+                      <TableCell className="font-mono">{connectivityData.permBlocked}</TableCell>
+                      <TableCell className="font-mono">{connectivityData.nonPaymentBlocked}</TableCell>
+                      <TableCell className="font-mono text-rose-700">{connectivityData.totalBlocked}</TableCell>
+                      <TableCell className="font-mono text-lg text-emerald-700">{connectivityData.netActive}</TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </>
+            )}
 
             {/* 2. SALES REPORT TABLES */}
             {activeCategory === 'SALES' && (

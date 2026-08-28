@@ -566,7 +566,7 @@ export function InvoiceDocument({
                   {/* Orange Rebate Box */}
                   <View style={styles.rebateBox}>
                     <Text style={styles.rebateText}>
-                      Pay Your bill before Due Date {dueDateStr} and enjoy rebate of Rs. 100/-
+                      {' '}
                     </Text>
                   </View>
                 </View>
