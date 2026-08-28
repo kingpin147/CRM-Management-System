@@ -162,6 +162,24 @@ export function InstallerJobsView({
                           <span>{c.city || '—'} {c.area ? `(${c.area})` : ''}</span>
                         </div>
                         <span className="text-[11px] text-slate-500 line-clamp-1">{c.address}</span>
+                        <div className="mt-1">
+                          <a
+                            href={
+                              c.coordinates?.trim()
+                                ? (c.coordinates.startsWith('http')
+                                    ? c.coordinates
+                                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.coordinates)}`)
+                                : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${c.address || ''}, ${c.city || ''}, Pakistan`)}`
+                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 px-2 py-0.5 rounded border border-amber-300 transition-colors cursor-pointer w-fit shadow-2xs"
+                            title="Open exact pin in Google Maps"
+                          >
+                            <MapPin className="h-2.5 w-2.5 text-amber-600" />
+                            <span>{c.coordinates ? '📍 GPS Map Pin' : '📍 Open Map'}</span>
+                          </a>
+                        </div>
                       </TableCell>
 
                       {/* Audit Status */}

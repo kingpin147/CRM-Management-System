@@ -136,7 +136,9 @@ model SolarSystem {
   installerAddress       String?
   installerContact       String?
   installerEmail         String?
+  firstAuditDate         DateTime?
   lastAuditDate          DateTime?
+  nextAuditDate          DateTime?
   inverterStatus         String? // Excellent, Good, Fair, etc.
   panelStatus            String?
   batteryStatus          String?

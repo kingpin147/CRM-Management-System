@@ -13,36 +13,16 @@ import { CustomerBillingProfileCard } from './CustomerBillingProfileCard'
 import { CustomerSearchAutoSuggest } from './CustomerSearchAutoSuggest'
 
 import { SYSTEM_SIZES } from '@/lib/solar-constants'
+import { calculatePackageBreakdown } from '@/lib/pricing'
 
 const PACKAGES = ['Basic', 'Moderate', 'Comprehensive']
 const BILLING_TYPES = ['Monthly', 'Quarterly', 'Half Yearly', 'Yearly']
 const MONITORING_TIMES = ['12 Hours', '24 Hours']
 
-// Standard pricing matrix helper
-function estimatePlanPrice(size: string, tier: string, billing: string): number {
-  let baseMonthly = 8000
-  if (size === '10-20 kW') baseMonthly = 15000
-  else if (size === '20-30 kW') baseMonthly = 25000
-  else if (size === '30+ kW' || size === '30 kW & Above') baseMonthly = 35000
-
-  let tierMultiplier = 1.0
-  if (tier === 'Moderate') tierMultiplier = 1.25
-  else if (tier === 'Comprehensive') tierMultiplier = 1.5
-
-  let periodMultiplier = 1
-  let discount = 1.0
-  if (billing === 'Quarterly') {
-    periodMultiplier = 3
-    discount = 0.95 // 5% off
-  } else if (billing === 'Half Yearly') {
-    periodMultiplier = 6
-    discount = 0.90 // 10% off
-  } else if (billing === 'Yearly') {
-    periodMultiplier = 12
-    discount = 0.80 // 20% off
-  }
-
-  return Math.round(baseMonthly * tierMultiplier * periodMultiplier * discount * 1.16)
+// Standard pricing matrix helper using official revised rates
+function estimatePlanPrice(size: string, tier: string, billing: string, window: string = '12 Hours'): number {
+  const b = calculatePackageBreakdown(size, tier, billing, window)
+  return b.priceAfterDiscount + b.salesTax // Recurring recurring subscription amount (without one-time onboarding fee)
 }
 
 export function PackageStatusChangeTab() {

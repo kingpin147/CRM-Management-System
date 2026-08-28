@@ -25,11 +25,11 @@ export default async function InstallerJobsPage() {
         OR: [
           { assignedInstallerId: dbUser.id },
           { solarSystem: { is: { installerName: { contains: dbUser.fullName, mode: 'insensitive' } } } },
-          { status: { in: ['PENDING_ACTIVATION', 'PENDING_PAYMENT_VERIFICATION', 'CONNECTION_ACTIVE'] } }
+          { status: { in: ['SIGNUP_GENERATED', 'PENDING_ACTIVATION', 'PENDING_PAYMENT_VERIFICATION', 'CONNECTION_ACTIVE'] } }
         ]
       }
     : {
-        status: { in: ['PENDING_ACTIVATION', 'PENDING_PAYMENT_VERIFICATION', 'CONNECTION_ACTIVE', 'SIGNUP_GENERATED'] }
+        status: { in: ['SIGNUP_GENERATED', 'PENDING_ACTIVATION', 'PENDING_PAYMENT_VERIFICATION', 'CONNECTION_ACTIVE'] }
       }
 
   const rawCustomers = await prisma.customer.findMany({

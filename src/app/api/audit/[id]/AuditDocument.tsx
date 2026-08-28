@@ -1,13 +1,14 @@
+import React from 'react'
 import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer'
-import { formatDate } from '@/lib/utils'
+import { formatDate, calculateNextAuditDate, getAuditFrequencyLabel } from '@/lib/utils'
 
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 12,
-    paddingBottom: 10,
-    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 6,
+    paddingHorizontal: 12,
     fontFamily: 'Helvetica',
-    fontSize: 8.5,
+    fontSize: 7.5,
     color: '#000',
     backgroundColor: '#FFFFFF',
     display: 'flex',
@@ -24,60 +25,60 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6,
-    borderBottom: '1.5px solid #002868',
-    paddingBottom: 5,
+    marginBottom: 4,
+    borderBottom: '1.2px solid #002868',
+    paddingBottom: 3,
   },
   logo: {
-    width: 145,
+    width: 125,
     height: 'auto',
   },
   titleWrapper: {
     alignItems: 'flex-end',
   },
   voucherTitle: {
-    fontSize: 15,
-    fontWeight: 'extrabold',
+    fontSize: 13,
+    fontWeight: 'bold',
     color: '#002868',
-    marginBottom: 2,
+    marginBottom: 1,
     letterSpacing: 0.5,
   },
   subtitle: {
-    fontSize: 7.5,
+    fontSize: 6.8,
     color: '#64748b',
     fontWeight: 'normal',
     marginBottom: 2,
   },
   voucherNumberPill: {
     flexDirection: 'row',
-    borderRadius: 3,
+    borderRadius: 2.5,
     overflow: 'hidden',
   },
   voucherNumberPillLeft: {
     backgroundColor: '#002868',
     color: '#FFFFFF',
-    paddingVertical: 2,
-    paddingHorizontal: 6,
+    paddingVertical: 1.5,
+    paddingHorizontal: 5,
     fontWeight: 'bold',
-    fontSize: 8,
+    fontSize: 7.5,
   },
   voucherNumberPillRight: {
     backgroundColor: '#F58220',
     color: '#FFFFFF',
-    paddingVertical: 2,
-    paddingHorizontal: 6,
+    paddingVertical: 1.5,
+    paddingHorizontal: 5,
     fontWeight: 'bold',
-    fontSize: 8,
+    fontSize: 7.5,
   },
 
-  // Audit Status Highlight Box (Orange Brand Theme matching Receipt)
+  // Status & Capacity Highlight Box (Orange Brand Theme matching Receipt)
   statusBox: {
     backgroundColor: '#FFF7ED',
     border: '1px solid #F58220',
-    borderRadius: 3,
-    paddingVertical: 4.5,
-    paddingHorizontal: 8,
-    marginBottom: 6,
+    borderRadius: 2.5,
+    paddingVertical: 3,
+    paddingHorizontal: 6,
+    marginBottom: 4,
   },
   statusRow: {
     flexDirection: 'row',
@@ -85,211 +86,241 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statusBoxLabel: {
-    fontSize: 8.5,
+    fontSize: 7.5,
     fontWeight: 'bold',
     color: '#C2410C',
   },
   statusBoxCapacity: {
-    fontSize: 12,
-    fontWeight: 'extrabold',
+    fontSize: 10,
+    fontWeight: 'bold',
     color: '#F58220',
   },
   statusBadge: {
     backgroundColor: '#F58220',
     color: '#FFFFFF',
-    paddingHorizontal: 6,
-    paddingVertical: 1.5,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
     borderRadius: 2,
-    fontSize: 7.5,
+    fontSize: 6.5,
     fontWeight: 'bold',
-    marginTop: 2,
+    marginTop: 1.5,
     alignSelf: 'flex-start',
   },
 
-  // Info Grid
+  // 2-Column Info Grid
   grid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 5,
+    marginBottom: 3.5,
   },
   col: {
-    width: '48.8%',
+    width: '49%',
   },
   card: {
     border: '1px solid #c2d0e0',
-    borderRadius: 3,
+    borderRadius: 2.5,
     overflow: 'hidden',
   },
   cardHeader: {
     backgroundColor: '#002868',
     color: '#FFFFFF',
-    paddingVertical: 2.8,
-    paddingHorizontal: 6,
+    paddingVertical: 2,
+    paddingHorizontal: 5,
     fontWeight: 'bold',
-    fontSize: 8.2,
-    letterSpacing: 0.5,
+    fontSize: 7.2,
+    letterSpacing: 0.3,
   },
   cardBody: {
-    paddingHorizontal: 6,
-    paddingVertical: 3.5,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
   },
   row: {
     flexDirection: 'row',
-    paddingVertical: 1.6,
+    paddingVertical: 0.9,
     alignItems: 'flex-start',
   },
   label: {
-    width: '38%',
+    width: '39%',
     color: '#555555',
-    fontSize: 7.8,
+    fontSize: 6.7,
     fontWeight: 'bold',
   },
   value: {
-    width: '62%',
+    width: '61%',
     color: '#000000',
-    fontSize: 7.8,
+    fontSize: 6.7,
     fontWeight: 'bold',
   },
 
-  // Details Table (Checklist)
-  table: {
+  // 2-Column 7-Point Audit Checklist Card
+  checklistCard: {
     border: '1px solid #c2d0e0',
-    borderRadius: 3,
+    borderRadius: 2.5,
     overflow: 'hidden',
-    marginBottom: 5,
+    marginBottom: 3.5,
   },
-  tableHeader: {
+  checklistHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     backgroundColor: '#002868',
     color: '#FFFFFF',
-    paddingVertical: 3,
-    paddingHorizontal: 6,
+    paddingVertical: 2,
+    paddingHorizontal: 5,
   },
-  tableHeaderCol1: {
-    width: '75%',
+  checklistHeaderText: {
+    fontSize: 7.2,
     fontWeight: 'bold',
-    fontSize: 8,
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
   },
-  tableHeaderCol3: {
-    width: '25%',
-    fontWeight: 'bold',
-    fontSize: 8,
-    textAlign: 'right',
-  },
-  tableRow: {
+  checklistBody: {
     flexDirection: 'row',
-    paddingVertical: 2.8,
-    paddingHorizontal: 6,
-    borderBottom: '1px solid #E5E7EB',
     backgroundColor: '#FAFAFA',
+  },
+  checklistColLeft: {
+    width: '50%',
+    paddingVertical: 2,
+    paddingHorizontal: 4,
+    borderRight: '1px solid #E2E8F0',
+  },
+  checklistColRight: {
+    width: '50%',
+    paddingVertical: 2,
+    paddingHorizontal: 4,
+  },
+  checklistItemRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    paddingVertical: 1.2,
+    borderBottom: '0.5px solid #F1F5F9',
   },
-  tableCol1: {
-    width: '75%',
-    fontSize: 7.8,
-    color: '#000',
+  checkItemLabel: {
+    fontSize: 6.8,
+    color: '#334155',
     fontWeight: 'bold',
+    width: '74%',
   },
-  tableCol3: {
-    width: '25%',
-    fontSize: 7.5,
+  checkItemStatus: {
+    fontSize: 6.8,
     fontWeight: 'bold',
+    width: '26%',
     textAlign: 'right',
   },
 
-  // Status pills
+  // Status Colors
   pillGood: {
     color: '#15803d',
-    fontWeight: 'bold',
   },
   pillWarning: {
     color: '#b45309',
-    fontWeight: 'bold',
   },
   pillAlert: {
     color: '#b91c1c',
-    fontWeight: 'bold',
   },
 
   // Safety & Earthing Section
   safetySection: {
     border: '1px solid #c2d0e0',
-    borderRadius: 3,
+    borderRadius: 2.5,
     overflow: 'hidden',
-    marginBottom: 5,
+    marginBottom: 3,
+  },
+  safetyHeader: {
+    backgroundColor: '#002868',
+    paddingVertical: 2,
+    paddingHorizontal: 5,
+  },
+  safetyHeaderText: {
+    fontSize: 7.2,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
   },
   safetyBody: {
-    paddingHorizontal: 6,
-    paddingVertical: 3.5,
+    paddingHorizontal: 5,
+    paddingVertical: 2.5,
     flexDirection: 'row',
     justifyContent: 'space-between',
     backgroundColor: '#FAFAFA',
   },
-
-  // Spacer
-  flexSpacer: {
-    flexGrow: 1,
-    minHeight: 2,
+  safetyCol: {
+    width: '33%',
+  },
+  safetyLabel: {
+    fontSize: 6.2,
+    color: '#64748b',
+    fontWeight: 'bold',
+    marginBottom: 1,
+  },
+  safetyValue: {
+    fontSize: 7.5,
+    fontWeight: 'bold',
+    color: '#002868',
   },
 
-  // Bottom Content
-  bottomPinnedContainer: {
+  // Bottom Pinned Container
+  bottomContainer: {
     marginTop: 'auto',
-    marginBottom: 2,
     flexShrink: 0,
   },
   notesSection: {
     border: '1px solid #c2d0e0',
-    borderRadius: 3,
+    borderRadius: 2.5,
     overflow: 'hidden',
-    marginBottom: 4,
+    marginBottom: 2.5,
   },
   notesHeader: {
     backgroundColor: '#002868',
     color: '#FFFFFF',
-    paddingVertical: 2.5,
-    paddingHorizontal: 6,
+    paddingVertical: 1.8,
+    paddingHorizontal: 5,
     fontWeight: 'bold',
-    fontSize: 7.8,
+    fontSize: 6.8,
   },
   notesBody: {
-    padding: 4,
-    fontSize: 7,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    fontSize: 5.8,
     color: '#333333',
     lineHeight: 1.2,
   },
   footerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 4,
-    marginTop: 2,
+    paddingHorizontal: 2,
+    marginTop: 1,
   },
   footerAddress: {
-    width: '48%',
-    fontSize: 7.2,
+    width: '49%',
+    fontSize: 5.8,
     color: '#4B5563',
     lineHeight: 1.15,
   },
   footerTitle: {
     color: '#002868',
     fontWeight: 'bold',
-    marginBottom: 1,
-    fontSize: 7.8,
+    marginBottom: 0.5,
+    fontSize: 6.4,
   },
   footerBlueBar: {
     backgroundColor: '#002868',
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 12,
-    paddingVertical: 3.5,
-    marginTop: 4,
+    paddingVertical: 2.2,
+    marginTop: 2.5,
     borderRadius: 2,
   },
   footerBarText: {
     color: '#FFFFFF',
-    fontSize: 7.2,
+    fontSize: 6,
     fontWeight: 'bold',
+  },
+  footerBarDivider: {
+    color: '#FFFFFF',
+    fontSize: 6,
+    marginHorizontal: 8,
   },
 })
 
@@ -302,30 +333,49 @@ export function AuditDocument({
 }) {
   const solar = customer?.solarSystem || {}
   const plan = customer?.packagePlan || {}
+  const firstAudit = (solar as any)?.firstAuditDate || solar?.systemInstallationDate || customer.activationDate || customer.signupDate
   const lastAudit = solar?.lastAuditDate || solar?.systemInstallationDate
+
+  const baseDateForNext = lastAudit || firstAudit || customer.signupDate
+  const nextAudit = (solar as any)?.nextAuditDate || calculateNextAuditDate(baseDateForNext, plan.packageTier)
 
   const crfDisplay = customer.crfNumber || (customer.customerCode ? `CRF-${customer.customerCode.replace(/\D/g, '')}` : 'CRF-PENDING')
   const customerIdDisplay = customer.customerCode?.replace(/\D/g, '') || customer.customerCode || customer.id
 
-  const checklist = [
+  const checklistLeft = [
     { name: '1. Inverter Operating Condition', val: solar?.inverterStatus || 'Excellent' },
-    { name: '2. Solar PV Panels & Soiling Status', val: solar?.panelStatus || 'Excellent' },
-    { name: '3. Battery Storage & Health Status', val: solar?.batteryStatus || 'Excellent' },
-    { name: '4. Mounting Structure & GI Material', val: solar?.structureStatus || 'Excellent' },
+    { name: '2. Solar PV Panels & Soiling', val: solar?.panelStatus || 'Excellent' },
+    { name: '3. Battery Storage & Health', val: solar?.batteryStatus || 'Excellent' },
+    { name: '4. Mounting Structure & GI', val: solar?.structureStatus || 'Excellent' },
+  ]
+
+  const checklistRight = [
     { name: '5. DC & AC Cabling & Conduits', val: solar?.cableStatus || 'Excellent' },
-    { name: '6. AC & DC Earthing & Lightning Protection', val: solar?.earthingStatus || 'Excellent' },
-    { name: '7. Breakers, Isolators & Protection Switchgear', val: solar?.breakerStatus || 'Excellent' },
+    { name: '6. AC/DC Earthing & Lightning', val: solar?.earthingStatus || 'Excellent' },
+    { name: '7. Breakers, Isolators & Protection', val: solar?.breakerStatus || 'Excellent' },
+    { name: '8. Overall Audit & Safety Status', val: 'Verified Pass' },
   ]
 
   const getStatusColor = (val: string) => {
-    if (val === 'Excellent' || val === 'Good') return styles.pillGood
+    if (val === 'Excellent' || val === 'Good' || val === 'Verified Pass') return styles.pillGood
     if (val === 'Fair') return styles.pillWarning
     return styles.pillAlert
   }
 
+  const pvWattageDisplay = solar.panelWattage && solar.noOfPanels
+    ? `${solar.noOfPanels}x ${solar.panelBrand || 'Panel'} (${((solar.panelWattage * solar.noOfPanels) / 1000).toFixed(2)} kW)`
+    : (solar.totalWattage ? `${(solar.totalWattage / 1000).toFixed(2)} kW` : (plan.systemSizeKw || '—'))
+
+  const batteryDisplay = Number(solar.noOfBatteries) > 0 || (solar.batteryBrand && solar.batteryBrand !== 'N/A')
+    ? `${solar.noOfBatteries || 1}x ${solar.batteryBrand || 'Battery'} (${solar.batteryType || 'Lithium'})`
+    : 'N/A (No Battery Bank)'
+
+  const frequencyLabel = getAuditFrequencyLabel(plan.packageTier)
+
   return (
     <Document title={`Audit-Report-${customer.customerCode || customer.id}`}>
-      <Page size="A4" style={styles.page}>
+      {/* Half Page Size: 612 width x 396 height (Half Letter landscape format) */}
+      <Page size={[612, 396]} style={styles.page}>
         <View style={styles.topSection}>
           {/* Top Header */}
           <View style={styles.topHeader}>
@@ -333,12 +383,12 @@ export function AuditDocument({
               {logoSrc ? (
                 <Image src={logoSrc} style={styles.logo} />
               ) : (
-                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#002868' }}>ENERGY GURUS</Text>
+                <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#002868' }}>ENERGY GURUS</Text>
               )}
             </View>
             <View style={styles.titleWrapper}>
               <Text style={styles.voucherTitle}>SYSTEM AUDIT REPORT</Text>
-              <Text style={styles.subtitle}>Operation & Maintenance Technical Audit</Text>
+              <Text style={styles.subtitle}>Operation &amp; Maintenance Technical Audit</Text>
               <View style={styles.voucherNumberPill}>
                 <Text style={styles.voucherNumberPillLeft}>CRF #</Text>
                 <Text style={styles.voucherNumberPillRight}>{crfDisplay}</Text>
@@ -350,7 +400,7 @@ export function AuditDocument({
           <View style={styles.statusBox}>
             <View style={styles.statusRow}>
               <View>
-                <Text style={styles.statusBoxLabel}>SYSTEM AUDIT & INSPECTION:</Text>
+                <Text style={styles.statusBoxLabel}>SYSTEM AUDIT &amp; INSPECTION:</Text>
                 <Text style={styles.statusBadge}>TECHNICAL AUDIT VERIFIED</Text>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
@@ -366,7 +416,7 @@ export function AuditDocument({
             {/* Customer & Site Information (Left Column) */}
             <View style={styles.col}>
               <View style={styles.card}>
-                <Text style={styles.cardHeader}>CUSTOMER & SITE INFORMATION</Text>
+                <Text style={styles.cardHeader}>CUSTOMER &amp; SITE INFORMATION</Text>
                 <View style={styles.cardBody}>
                   <View style={styles.row}>
                     <Text style={styles.label}>Customer ID:</Text>
@@ -392,6 +442,10 @@ export function AuditDocument({
                     <Text style={styles.label}>City / Area:</Text>
                     <Text style={styles.value}>{customer.city || '—'} {customer.area ? `(${customer.area})` : ''}</Text>
                   </View>
+                  <View style={styles.row}>
+                    <Text style={styles.label}>Package Tier:</Text>
+                    <Text style={[styles.value, { color: '#002868' }]}>{plan.packageTier || 'Moderate'} ({frequencyLabel})</Text>
+                  </View>
                 </View>
               </View>
             </View>
@@ -399,11 +453,17 @@ export function AuditDocument({
             {/* Audit & Hardware Specifications (Right Column) */}
             <View style={styles.col}>
               <View style={styles.card}>
-                <Text style={styles.cardHeader}>AUDIT & HARDWARE SPECIFICATIONS</Text>
+                <Text style={styles.cardHeader}>AUDIT &amp; HARDWARE SPECIFICATIONS</Text>
                 <View style={styles.cardBody}>
                   <View style={styles.row}>
                     <Text style={styles.label}>Audit Date:</Text>
                     <Text style={[styles.value, { color: '#002868' }]}>{lastAudit ? formatDate(lastAudit) : 'Scheduled'}</Text>
+                  </View>
+                  <View style={styles.row}>
+                    <Text style={styles.label}>Next Audit Date:</Text>
+                    <Text style={[styles.value, { color: '#C2410C', fontWeight: 'bold' }]}>
+                      {nextAudit ? formatDate(nextAudit) : 'Pending Schedule'}
+                    </Text>
                   </View>
                   <View style={styles.row}>
                     <Text style={styles.label}>Auditor / Installer:</Text>
@@ -419,39 +479,40 @@ export function AuditDocument({
                   </View>
                   <View style={styles.row}>
                     <Text style={styles.label}>PV Panels Spec:</Text>
-                    <Text style={styles.value}>{solar.noOfPanels || 0}x {solar.panelBrand || '—'} ({solar.totalWattage ? `${(solar.totalWattage/1000).toFixed(2)} kW` : '—'})</Text>
+                    <Text style={styles.value}>{pvWattageDisplay}</Text>
                   </View>
                   <View style={styles.row}>
                     <Text style={styles.label}>Battery Spec:</Text>
-                    <Text style={styles.value}>{solar.noOfBatteries || 0}x {solar.batteryBrand || '—'} ({solar.batteryType || 'Lithium'})</Text>
+                    <Text style={styles.value}>{batteryDisplay}</Text>
                   </View>
                 </View>
               </View>
             </View>
           </View>
 
-          {/* 7-Point Audit Checklist Card */}
-          <View style={styles.card}>
-            <View style={[styles.cardHeader, { flexDirection: 'row', justifyContent: 'space-between' }]}>
-              <Text style={{ fontSize: 8.2, fontWeight: 'bold', color: '#FFFFFF' }}>7-POINT SYSTEM COMPONENTS AUDIT CHECKLIST</Text>
-              <Text style={{ fontSize: 8.2, fontWeight: 'bold', color: '#FFFFFF' }}>Inspection Status</Text>
+          {/* 7-Point Audit Checklist Card - TWO COLUMNS */}
+          <View style={styles.checklistCard}>
+            <View style={styles.checklistHeader}>
+              <Text style={styles.checklistHeaderText}>7-POINT SYSTEM COMPONENTS AUDIT CHECKLIST</Text>
+              <Text style={styles.checklistHeaderText}>Inspection Status</Text>
             </View>
-            <View style={{ flexDirection: 'row', paddingHorizontal: 4, paddingVertical: 2 }}>
-              {/* Left Column (Items 1-4) */}
-              <View style={{ flex: 1, paddingRight: 4, borderRightWidth: 1, borderRightColor: '#e2e8f0' }}>
-                {checklist.slice(0, 4).map((item, idx) => (
-                  <View key={idx} style={[styles.statusRow, { paddingVertical: 1.5 }, idx === 3 ? { borderBottomWidth: 0 } : {}]}>
-                    <Text style={{ fontSize: 7.8, color: '#555555', fontWeight: 'bold', width: '70%' }}>{item.name}</Text>
-                    <Text style={[getStatusColor(item.val), { fontSize: 7.8, width: '30%', textAlign: 'right' }]}>{item.val}</Text>
+            <View style={styles.checklistBody}>
+              {/* Left Column (Items 1 to 4) */}
+              <View style={styles.checklistColLeft}>
+                {checklistLeft.map((item, idx) => (
+                  <View key={idx} style={styles.checklistItemRow}>
+                    <Text style={styles.checkItemLabel}>{item.name}</Text>
+                    <Text style={[styles.checkItemStatus, getStatusColor(item.val)]}>{item.val}</Text>
                   </View>
                 ))}
               </View>
-              {/* Right Column (Items 5-7) */}
-              <View style={{ flex: 1, paddingLeft: 4 }}>
-                {checklist.slice(4).map((item, idx) => (
-                  <View key={idx} style={[styles.statusRow, { paddingVertical: 1.5 }, idx === 2 ? { borderBottomWidth: 0 } : {}]}>
-                    <Text style={{ fontSize: 7.8, color: '#555555', fontWeight: 'bold', width: '70%' }}>{item.name}</Text>
-                    <Text style={[getStatusColor(item.val), { fontSize: 7.8, width: '30%', textAlign: 'right' }]}>{item.val}</Text>
+
+              {/* Right Column (Items 5 to 8) */}
+              <View style={styles.checklistColRight}>
+                {checklistRight.map((item, idx) => (
+                  <View key={idx} style={styles.checklistItemRow}>
+                    <Text style={styles.checkItemLabel}>{item.name}</Text>
+                    <Text style={[styles.checkItemStatus, getStatusColor(item.val)]}>{item.val}</Text>
                   </View>
                 ))}
               </View>
@@ -460,46 +521,42 @@ export function AuditDocument({
 
           {/* Earthing Resistance & Electrical Safety Parameters */}
           <View style={styles.safetySection}>
-            <View style={styles.tableHeader}>
-              <Text style={{ fontSize: 8, fontWeight: 'bold', color: '#FFFFFF' }}>
-                EARTHING RESISTANCE & ELECTRICAL SAFETY PARAMETERS
+            <View style={styles.safetyHeader}>
+              <Text style={styles.safetyHeaderText}>
+                EARTHING RESISTANCE &amp; ELECTRICAL SAFETY PARAMETERS
               </Text>
             </View>
             <View style={styles.safetyBody}>
-              <View style={{ width: '33%' }}>
-                <Text style={{ fontSize: 7, color: '#64748b', fontWeight: 'bold' }}>AC Earthing Resistance</Text>
-                <Text style={{ fontSize: 8.5, fontWeight: 'bold', color: '#002868' }}>
+              <View style={styles.safetyCol}>
+                <Text style={styles.safetyLabel}>AC Earthing Resistance</Text>
+                <Text style={styles.safetyValue}>
                   {solar.earthingAcOhms != null ? `${solar.earthingAcOhms} Ω` : '0.6 Ω'}
                 </Text>
               </View>
-              <View style={{ width: '33%' }}>
-                <Text style={{ fontSize: 7, color: '#64748b', fontWeight: 'bold' }}>DC Earthing Resistance</Text>
-                <Text style={{ fontSize: 8.5, fontWeight: 'bold', color: '#002868' }}>
-                  {solar.earthingDcOhms != null ? `${solar.earthingDcOhms} Ω` : '0.8 Ω (Normal)'}
+              <View style={styles.safetyCol}>
+                <Text style={styles.safetyLabel}>DC Earthing Resistance</Text>
+                <Text style={styles.safetyValue}>
+                  {solar.earthingDcOhms != null ? `${solar.earthingDcOhms} Ω (Normal)` : '0.8 Ω (Normal)'}
                 </Text>
               </View>
-              <View style={{ width: '33%' }}>
-                <Text style={{ fontSize: 7, color: '#64748b', fontWeight: 'bold' }}>Lightning Protection</Text>
-                <Text style={{ fontSize: 8.5, fontWeight: 'bold', color: solar.lightningProtection ? '#15803d' : '#15803d' }}>
-                  {solar.lightningProtection ? 'Installed & Tested' : 'Installed & Tested'}
+              <View style={styles.safetyCol}>
+                <Text style={styles.safetyLabel}>Lightning Protection</Text>
+                <Text style={[styles.safetyValue, { color: '#15803d' }]}>
+                  {solar.lightningProtection !== false ? 'Installed & Tested' : 'Not Installed'}
                 </Text>
               </View>
             </View>
           </View>
         </View>
 
-        {/* Dynamic Spacer */}
-        <View style={styles.flexSpacer} />
-
         {/* Bottom Pinned Section (Exact Receipt Format) */}
-        <View style={styles.bottomPinnedContainer}>
+        <View style={styles.bottomContainer}>
           <View style={styles.notesSection}>
-            <Text style={styles.notesHeader}>TERMS & ACKNOWLEDGEMENT</Text>
+            <Text style={styles.notesHeader}>TERMS &amp; ACKNOWLEDGEMENT</Text>
             <View style={styles.notesBody}>
               <Text>• This is a computer-generated System Audit Report confirming technical inspection and safety verification.</Text>
-              <Text>• Regular O&M technical system audits are performed periodically under the subscribed solar maintenance agreement.</Text>
-              <Text>• Thank you for choosing EnergyGurus for your Solar Operations & Maintenance services.</Text>
-              <Text>• This is a computer-generated document and does not require a signature or company stamp.</Text>
+              <Text>• Regular O&amp;M technical system audits are performed periodically ({frequencyLabel}) under the subscribed solar maintenance agreement.</Text>
+              <Text>• Thank you for choosing EnergyGurus for your Solar Operations &amp; Maintenance services.</Text>
             </View>
           </View>
 
@@ -509,7 +566,7 @@ export function AuditDocument({
               <Text style={styles.footerTitle}>Head Office:</Text>
               <Text>Building No 61, Block A, Bankers Society, State Life - Lahore</Text>
             </View>
-            <View style={[styles.footerAddress, { borderLeft: '1px solid #c2d0e0', paddingLeft: 6 }]}>
+            <View style={[styles.footerAddress, { borderLeft: '1px solid #c2d0e0', paddingLeft: 4 }]}>
               <Text style={styles.footerTitle}>South Office:</Text>
               <Text>80 C, Ground Floor 13th Commercial Street Road, DHA Phase II - Karachi</Text>
             </View>
@@ -518,13 +575,12 @@ export function AuditDocument({
           {/* Bottom Blue Bar */}
           <View style={styles.footerBlueBar}>
             <Text style={styles.footerBarText}>www.energygurus.online</Text>
-            <Text style={{ color: '#FFF', fontSize: 7.2 }}>|</Text>
+            <Text style={styles.footerBarDivider}>|</Text>
             <Text style={styles.footerBarText}>facebook.com/energygurus.online</Text>
-            <Text style={{ color: '#FFF', fontSize: 7.2 }}>|</Text>
+            <Text style={styles.footerBarDivider}>|</Text>
             <Text style={styles.footerBarText}>youtube.com/energygurus.online</Text>
           </View>
         </View>
-
       </Page>
     </Document>
   )

@@ -18,99 +18,11 @@ import { AutoSuggestInput } from '@/components/ui/auto-suggest-input'
 import { SYSTEM_SIZES, INVERTER_SIZES, INVERTER_BRANDS, PANEL_BRANDS, BATTERY_BRANDS } from '@/lib/solar-constants'
 import { CheckCircle2, Edit3, Loader2, Save, FileText, User, Zap, Wrench } from 'lucide-react'
 import { SectionHeader } from '@/components/ui/section-header'
+import { calculatePackageBreakdown } from '@/lib/pricing'
 
 const PACKAGES = ['Basic', 'Moderate', 'Comprehensive']
 const BILLING_TYPES = ['Monthly', 'Quarterly', 'Half Yearly', 'Yearly']
 const MONITORING_TIMES = ['12 Hours', '24 Hours']
-
-function calculatePackageBreakdown(
-  systemSizeKw: string,
-  packageTier: string,
-  billingType: string,
-  monitoringTime: string
-) {
-  let baseMonthlyRate = 1200
-  if (monitoringTime === '12 Hours') {
-    if (systemSizeKw === '1-10 kW') {
-      if (packageTier === 'Basic') baseMonthlyRate = 1200
-      if (packageTier === 'Moderate') baseMonthlyRate = 1800
-      if (packageTier === 'Comprehensive') baseMonthlyRate = 3000
-    } else if (systemSizeKw === '10-20 kW') {
-      if (packageTier === 'Basic') baseMonthlyRate = 1350
-      if (packageTier === 'Moderate') baseMonthlyRate = 2250
-      if (packageTier === 'Comprehensive') baseMonthlyRate = 3750
-    } else if (systemSizeKw === '20-30 kW') {
-      if (packageTier === 'Basic') baseMonthlyRate = 1500
-      if (packageTier === 'Moderate') baseMonthlyRate = 2700
-      if (packageTier === 'Comprehensive') baseMonthlyRate = 4500
-    }
-  } else {
-    // 24 Hours
-    if (systemSizeKw === '1-10 kW') {
-      if (packageTier === 'Basic') baseMonthlyRate = 2000
-      if (packageTier === 'Moderate') baseMonthlyRate = 3600
-      if (packageTier === 'Comprehensive') baseMonthlyRate = 6000
-    } else if (systemSizeKw === '10-20 kW') {
-      if (packageTier === 'Basic') baseMonthlyRate = 2500
-      if (packageTier === 'Moderate') baseMonthlyRate = 4500
-      if (packageTier === 'Comprehensive') baseMonthlyRate = 7500
-    } else if (systemSizeKw === '20-30 kW') {
-      if (packageTier === 'Basic') baseMonthlyRate = 3000
-      if (packageTier === 'Moderate') baseMonthlyRate = 5400
-      if (packageTier === 'Comprehensive') baseMonthlyRate = 9000
-    }
-  }
-
-  let months = 1
-  let discountPct = 0
-  if (billingType === 'Quarterly') { months = 3; discountPct = 10 }
-  else if (billingType === 'Half Yearly') { months = 6; discountPct = 20 }
-  else if (billingType === 'Yearly') { months = 12; discountPct = 40 }
-  else if (billingType === 'FOC') { months = 12; discountPct = 100 }
-
-  const subtotalBeforeDiscount = baseMonthlyRate * months
-  const discountAmount = subtotalBeforeDiscount * (discountPct / 100)
-  const priceAfterDiscount = subtotalBeforeDiscount - discountAmount
-  const salesTax = Math.round(priceAfterDiscount * 0.05)
-
-  let onboardingFee = 0
-  let isOnboardingWaived = false
-
-  if (billingType === 'FOC') {
-    onboardingFee = 0
-    isOnboardingWaived = true
-  } else if (packageTier === 'Basic') {
-    if (billingType === 'Yearly') {
-      onboardingFee = 0
-      isOnboardingWaived = true
-    } else {
-      onboardingFee = 3000
-      isOnboardingWaived = false
-    }
-  } else if (packageTier === 'Moderate' || packageTier === 'Comprehensive') {
-    if (billingType === 'Half Yearly' || billingType === 'Yearly') {
-      onboardingFee = 0
-      isOnboardingWaived = true
-    } else {
-      onboardingFee = 3000
-      isOnboardingWaived = false
-    }
-  }
-
-  const grandTotal = billingType === 'FOC' ? 0 : (priceAfterDiscount + salesTax + onboardingFee)
-
-  return {
-    baseMonthlyRate,
-    months,
-    discountPct,
-    discountAmount,
-    priceAfterDiscount,
-    salesTax,
-    onboardingFee,
-    isOnboardingWaived,
-    grandTotal
-  }
-}
 
 interface EditCrfModalProps {
   customer: any | null
@@ -139,6 +51,7 @@ export function EditCrfModal({
   const [block, setBlock] = React.useState('')
   const [area, setArea] = React.useState('')
   const [city, setCity] = React.useState('')
+  const [coordinates, setCoordinates] = React.useState('')
   const [assignedInstallerId, setAssignedInstallerId] = React.useState('')
 
   // Package State
@@ -173,6 +86,7 @@ export function EditCrfModal({
       setBlock(customer.block || '')
       setArea(customer.area || '')
       setCity(customer.city || '')
+      setCoordinates(customer.coordinates || '')
       setAssignedInstallerId(customer.assignedInstallerId || '')
 
       if (customer.packagePlan) {
@@ -226,6 +140,7 @@ export function EditCrfModal({
       formData.append('block', block)
       formData.append('area', area)
       formData.append('city', city)
+      formData.append('coordinates', coordinates)
       formData.append('assignedInstallerId', assignedInstallerId)
 
       formData.append('systemSizeKw', systemSizeKw)
@@ -346,6 +261,31 @@ export function EditCrfModal({
                   value={city} 
                   onChange={(e) => setCity(e.target.value)} 
                   className="h-9 text-xs"
+                />
+              </div>
+              <div className="sm:col-span-2 space-y-1">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold text-amber-950">GPS Coordinates / Google Maps Link</Label>
+                  {coordinates && (
+                    <a
+                      href={
+                        coordinates.startsWith('http')
+                          ? coordinates
+                          : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(coordinates)}`
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] text-amber-700 hover:text-amber-900 font-bold underline"
+                    >
+                      Test Pin ↗
+                    </a>
+                  )}
+                </div>
+                <Input 
+                  value={coordinates} 
+                  onChange={(e) => setCoordinates(e.target.value)} 
+                  placeholder="e.g. 31.4707, 74.4101 or Google Maps URL"
+                  className="h-9 text-xs font-mono border-amber-300 bg-white focus-visible:ring-amber-500"
                 />
               </div>
             </div>

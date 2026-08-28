@@ -37,6 +37,7 @@ export async function createCustomer(formData: FormData) {
   const area = (formData.get('area') as string) || null
   const city = formData.get('city') as string
   const country = (formData.get('country') as string) || 'Pakistan'
+  const coordinates = (formData.get('coordinates') as string) || null
   const address = formData.get('address') as string
   const signUpDate = parseDate(formData.get('signUpDate')) || new Date()
   const activationDate = parseDate(formData.get('activationDate'))
@@ -168,6 +169,7 @@ export async function createCustomer(formData: FormData) {
         address,
         city,
         country,
+        coordinates,
         status: CustomerStatus.SIGNUP_GENERATED,
         signupDate: signUpDate,
         activationDate: null,

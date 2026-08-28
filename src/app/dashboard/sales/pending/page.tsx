@@ -123,6 +123,7 @@ export default async function PendingSalesPage() {
     const block = (formData.get('block') as string) || undefined
     const area = (formData.get('area') as string) || undefined
     const city = (formData.get('city') as string) || undefined
+    const coordinates = (formData.get('coordinates') as string) || undefined
 
     // Package fields
     const systemSizeKw = (formData.get('systemSizeKw') as string) || undefined
@@ -181,6 +182,7 @@ export default async function PendingSalesPage() {
         block,
         area,
         city,
+        coordinates,
         assignedInstallerId,
         status: nextStatus as any,
         ...(isActivating ? { activationDate } : {})

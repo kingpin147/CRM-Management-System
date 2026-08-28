@@ -86,3 +86,37 @@ export function formatDiscoRefNo(val: string): string {
   return letters ? `${formattedDigits} ${letters}` : formattedDigits
 }
 
+/**
+ * Calculates Next Audit Date based on Customer Package Tier and First/Base Audit Date:
+ * - Basic: 1 audit per year (Next audit = +12 months / 1 year)
+ * - Moderate / FOC: 2 audits per year (Next audit = +6 months / half year)
+ * - Comprehensive: 4 audits per year (Next audit = +3 months / quarterly)
+ */
+export function calculateNextAuditDate(
+  baseAuditDate: string | Date | null | undefined,
+  packageTier?: string | null
+): Date | null {
+  if (!baseAuditDate) return null
+  const d = typeof baseAuditDate === 'string' ? new Date(baseAuditDate) : new Date(baseAuditDate.getTime())
+  if (isNaN(d.getTime())) return null
+
+  const tier = (packageTier || 'Moderate').toLowerCase().trim()
+  if (tier.includes('comprehensive')) {
+    // 4 audits in year -> Quarterly (+3 months)
+    d.setMonth(d.getMonth() + 3)
+  } else if (tier.includes('basic')) {
+    // 1 audit in year -> Yearly (+12 months)
+    d.setMonth(d.getMonth() + 12)
+  } else {
+    // Moderate / FOC / Default -> Semi-annual (+6 months)
+    d.setMonth(d.getMonth() + 6)
+  }
+  return d
+}
+
+export function getAuditFrequencyLabel(packageTier?: string | null): string {
+  const tier = (packageTier || 'Moderate').toLowerCase().trim()
+  if (tier.includes('comprehensive')) return 'Quarterly (4x/Year)'
+  if (tier.includes('basic')) return 'Annual (1x/Year)'
+  return 'Semi-Annual (2x/Year)'
+}

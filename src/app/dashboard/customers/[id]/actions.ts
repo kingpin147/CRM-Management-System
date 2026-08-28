@@ -20,6 +20,7 @@ export async function updateCustomer(formData: FormData) {
   const streetNumber = formData.get('streetNumber') as string || null
   const block = formData.get('block') as string || null
   const area = formData.get('area') as string || null
+  const coordinates = formData.get('coordinates') as string || null
 
   if (!customerId || !fullName || !contactNumber || !cnic) {
     return { error: 'Full Name, Contact Number, and CNIC are required.' }
@@ -75,6 +76,7 @@ export async function updateCustomer(formData: FormData) {
         streetNumber,
         block,
         area,
+        coordinates,
         ...(calculatedNextBillingDate ? {
           packagePlan: {
             update: {

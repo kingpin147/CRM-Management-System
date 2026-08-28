@@ -21,6 +21,7 @@ import { AutoSuggestInput } from '@/components/ui/auto-suggest-input'
 import { CITIES_LIST, getAreasForCity, getDefaultDiscoForCity } from '@/lib/pakistan-cities-areas'
 import { formatDiscoRefNo } from '@/lib/utils'
 import { SYSTEM_SIZES, INVERTER_SIZES, INVERTER_BRANDS, PANEL_BRANDS, BATTERY_BRANDS, IP_LIST, DISCO_LIST, STRUCTURE_TYPES, STRUCTURE_MATERIALS } from '@/lib/solar-constants'
+import { calculatePackageBreakdown } from '@/lib/pricing'
 
 
 const customerSchema = z.object({
@@ -38,6 +39,7 @@ const customerSchema = z.object({
   area: z.string().optional(),
   city: z.string().min(1, 'Please select or type a City'),
   country: z.string().default('Pakistan'),
+  coordinates: z.string().optional(),
   address: z.string().min(3, 'Address is required'),
   signUpDate: z.string().optional(),
   customerStatus: z.string().default('SIGNUP_GENERATED'),
@@ -134,6 +136,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
       area: '',
       city: '',
       country: 'Pakistan',
+      coordinates: '',
       address: '',
       signUpDate: '',
       customerStatus: 'SIGNUP_GENERATED',
@@ -198,7 +201,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
     },
   })
 
-  // Dynamic Pricing Calculation Lookup Matrix (Revised 10% Quarterly, 20% Half Yearly, 40% Yearly)
+  // Dynamic Pricing Calculation from Centralized Pricing Engine
   const systemSizeKw   = form.watch('systemSizeKw')
   const packageTier    = form.watch('packageTier')
   const billingType    = form.watch('billingType')
@@ -207,82 +210,18 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
   const noOfPanels     = form.watch('noOfPanels')   || 0
   const totalPanelWattage = panelWattage * noOfPanels
 
-  // Compute Base Monthly Rates according to Monitoring 12h vs 24h official rate tables
-  let baseMonthlyRate = 0
-  if (monitoringTime === '12 Hours') {
-    if (systemSizeKw === '1-10 kW') {
-      if (packageTier === 'Basic') baseMonthlyRate = 1000
-      if (packageTier === 'Moderate') baseMonthlyRate = 1800
-      if (packageTier === 'Comprehensive') baseMonthlyRate = 3000
-    } else if (systemSizeKw === '10-20 kW') {
-      if (packageTier === 'Basic') baseMonthlyRate = 1250
-      if (packageTier === 'Moderate') baseMonthlyRate = 2250
-      if (packageTier === 'Comprehensive') baseMonthlyRate = 3750
-    } else if (systemSizeKw === '20-30 kW') {
-      if (packageTier === 'Basic') baseMonthlyRate = 1500
-      if (packageTier === 'Moderate') baseMonthlyRate = 2700
-      if (packageTier === 'Comprehensive') baseMonthlyRate = 4500
-    }
-  } else {
-    // 24 Hours
-    if (systemSizeKw === '1-10 kW') {
-      if (packageTier === 'Basic') baseMonthlyRate = 2000
-      if (packageTier === 'Moderate') baseMonthlyRate = 3600
-      if (packageTier === 'Comprehensive') baseMonthlyRate = 6000
-    } else if (systemSizeKw === '10-20 kW') {
-      if (packageTier === 'Basic') baseMonthlyRate = 2500
-      if (packageTier === 'Moderate') baseMonthlyRate = 4500
-      if (packageTier === 'Comprehensive') baseMonthlyRate = 7500
-    } else if (systemSizeKw === '20-30 kW') {
-      if (packageTier === 'Basic') baseMonthlyRate = 3000
-      if (packageTier === 'Moderate') baseMonthlyRate = 5400
-      if (packageTier === 'Comprehensive') baseMonthlyRate = 9000
-    }
-  }
-
-  // Revised Billing Cycles & Discounts: Quarterly 10%, Half Yearly 20%, Yearly 40%
-  let months = 1
-  let discountPct = 0
-  if (billingType === 'Quarterly')        { months = 3;  discountPct = 10 }
-  else if (billingType === 'Half Yearly') { months = 6;  discountPct = 20 }
-  else if (billingType === 'Yearly')      { months = 12; discountPct = 40 }
-  else if (billingType === 'FOC')         { months = 12; discountPct = 100 }
-
-  const subtotalBeforeDiscount = baseMonthlyRate * months
-  const discountAmount         = subtotalBeforeDiscount * (discountPct / 100)
-  const priceAfterDiscount     = subtotalBeforeDiscount - discountAmount
-  const salesTax               = Math.round(priceAfterDiscount * 0.05)
-
-  // On-Boarding Charges Rules:
-  // @ 3,000/- at time of Sign up
-  // - Basic: Charged on Monthly, Quarterly, Half Yearly (3,000). Waived on Yearly (0).
-  // - Moderate & Comprehensive: Charged on Monthly, Quarterly (3,000). Waived on Half Yearly & Yearly (0).
-  // - FOC: 0 (Waived)
-  let onboardingFee = 0
-  let isOnboardingWaived = false
-
-  if (billingType === 'FOC') {
-    onboardingFee = 0
-    isOnboardingWaived = true
-  } else if (packageTier === 'Basic') {
-    if (billingType === 'Yearly') {
-      onboardingFee = 0
-      isOnboardingWaived = true
-    } else {
-      onboardingFee = 3000
-      isOnboardingWaived = false
-    }
-  } else if (packageTier === 'Moderate' || packageTier === 'Comprehensive') {
-    if (billingType === 'Half Yearly' || billingType === 'Yearly') {
-      onboardingFee = 0
-      isOnboardingWaived = true
-    } else {
-      onboardingFee = 3000
-      isOnboardingWaived = false
-    }
-  }
-
-  const grandTotal = billingType === 'FOC' ? 0 : (priceAfterDiscount + salesTax + onboardingFee)
+  const breakdown = calculatePackageBreakdown(systemSizeKw, packageTier, billingType, monitoringTime)
+  const {
+    baseMonthlyRate,
+    months,
+    discountPct,
+    discountAmount,
+    priceAfterDiscount,
+    salesTax,
+    onboardingFee,
+    isOnboardingWaived,
+    grandTotal,
+  } = breakdown
 
   const noOfInvertersValue = form.watch('noOfInverters') ?? 1
   const [inverterList, setInverterList] = useState<Array<{ brand: string; serial: string; warrantyExpiry: string }>>([
@@ -802,6 +741,40 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                         <FormItem>
                           <FormLabel className="text-xs font-semibold">Country</FormLabel>
                           <FormControl><Input readOnly {...field} className="h-10 text-xs bg-gray-50" /></FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* GPS Coordinates */}
+                    <FormField
+                      control={form.control}
+                      name="coordinates"
+                      render={({ field }) => (
+                        <FormItem>
+                          <div className="flex items-center justify-between">
+                            <FormLabel className="text-xs font-semibold text-amber-950">GPS Coordinates / Map Link</FormLabel>
+                            {field.value && (
+                              <a
+                                href={
+                                  field.value.startsWith('http')
+                                    ? field.value
+                                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(field.value)}`
+                                }
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[10px] text-amber-700 hover:text-amber-900 font-bold underline inline-flex items-center gap-0.5"
+                              >
+                                Test Pin ↗
+                              </a>
+                            )}
+                          </div>
+                          <FormControl>
+                            <Input
+                              placeholder="e.g. 31.4707, 74.4101 or Maps Link"
+                              {...field}
+                              className="h-10 text-xs font-mono bg-white border-amber-300 focus-visible:ring-amber-500"
+                            />
+                          </FormControl>
                         </FormItem>
                       )}
                     />

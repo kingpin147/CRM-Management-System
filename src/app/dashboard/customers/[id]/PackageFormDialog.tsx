@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SYSTEM_SIZES } from '@/lib/solar-constants'
+import { calculatePackageBreakdown } from '@/lib/pricing'
 import { createPackagePlan } from './actions'
 
 export function PackageFormDialog({ customerId, initialData, inline = false }: { customerId: string; initialData?: any; inline?: boolean }) {
@@ -24,6 +25,14 @@ export function PackageFormDialog({ customerId, initialData, inline = false }: {
   const [billingType, setBillingType] = useState(initialData?.billingType || '')
   const [basePrice, setBasePrice] = useState<number | ''>(initialData?.monthlyBasePrice ?? '')
   const [discount, setDiscount] = useState<number | ''>(initialData?.appliedDiscount ?? '')
+
+  useEffect(() => {
+    if (systemSizeKw && packageTier && monitoringTime && billingType && !initialData) {
+      const b = calculatePackageBreakdown(systemSizeKw, packageTier, billingType, monitoringTime)
+      setBasePrice(b.baseMonthlyRate)
+      setDiscount(b.discountPct)
+    }
+  }, [systemSizeKw, packageTier, monitoringTime, billingType, initialData])
 
   async function handleSubmit(formData: FormData) {
     setLoading(true)

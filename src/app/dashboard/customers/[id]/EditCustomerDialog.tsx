@@ -37,6 +37,7 @@ export function EditCustomerDialog({ customer }: { customer: Customer }) {
   const [streetNumber, setStreetNumber] = React.useState(customer.streetNumber || '')
   const [block, setBlock] = React.useState(customer.block || '')
   const [area, setArea] = React.useState(customer.area || '')
+  const [coordinates, setCoordinates] = React.useState(customer.coordinates || '')
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
@@ -57,6 +58,7 @@ export function EditCustomerDialog({ customer }: { customer: Customer }) {
     formData.append('streetNumber', streetNumber)
     formData.append('block', block)
     formData.append('area', area)
+    formData.append('coordinates', coordinates)
 
     const res = await updateCustomer(formData)
     setLoading(false)
@@ -255,6 +257,32 @@ export function EditCustomerDialog({ customer }: { customer: Customer }) {
                     options={getAreasForCity(city)}
                     placeholder="Select or type area/society..."
                     className="h-9 text-xs border-[var(--color-line)] bg-white"
+                  />
+                </div>
+
+                <div className="space-y-1 sm:col-span-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-[11px] font-semibold text-amber-950">GPS Coordinates / Google Maps Link</Label>
+                    {coordinates && (
+                      <a
+                        href={
+                          coordinates.startsWith('http')
+                            ? coordinates
+                            : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(coordinates)}`
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[10px] text-amber-700 hover:text-amber-900 font-bold underline"
+                      >
+                        Test Map ↗
+                      </a>
+                    )}
+                  </div>
+                  <Input
+                    value={coordinates}
+                    onChange={(e) => setCoordinates(e.target.value)}
+                    placeholder="e.g. 31.4707, 74.4101 or Google Maps URL"
+                    className="h-9 text-xs border-amber-300 font-mono bg-white focus-visible:ring-amber-500"
                   />
                 </div>
               </div>

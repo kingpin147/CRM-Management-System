@@ -16,8 +16,8 @@ import { CustomerTicketForm } from './CustomerTicketForm'
 import { TicketUpdateDialog } from '@/app/dashboard/tickets/TicketUpdateDialog'
 import { TicketClosedSetupDialog } from './TicketClosedSetupDialog'
 import { EquipmentPhotoViewer } from './EquipmentPhotoViewer'
-import { Sun, Battery, ShieldCheck, Zap, Receipt, MessageSquare, Mail, History as HistoryIcon, Download, ClipboardCheck } from 'lucide-react'
-import { formatDate, formatDateTime } from '@/lib/utils'
+import { Sun, Battery, ShieldCheck, Zap, Receipt, MessageSquare, Mail, History as HistoryIcon, Download, ClipboardCheck, MapPin, ExternalLink } from 'lucide-react'
+import { formatDate, formatDateTime, calculateNextAuditDate, getAuditFrequencyLabel } from '@/lib/utils'
 import { createClient } from '@/utils/supabase/server'
 import { SectionHeader } from '@/components/ui/section-header'
 import { CustomerIdQuickSwitch } from './CustomerIdQuickSwitch'
@@ -200,7 +200,49 @@ export default async function CustomerDetailPage({
                       <TableBody>
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs w-44 bg-slate-50 border-r border-slate-200 text-[#002868]">Installation Address:</TableCell>
-                          <TableCell className="text-xs text-[var(--color-ink)]">{customer.address || '—'}</TableCell>
+                          <TableCell className="text-xs text-[var(--color-ink)]">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                              <span className="font-medium">{customer.address || '—'}</span>
+                              <a
+                                href={
+                                  customer.coordinates?.trim()
+                                    ? (customer.coordinates.startsWith('http')
+                                        ? customer.coordinates
+                                        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(customer.coordinates)}`)
+                                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${customer.address || ''}, ${customer.city || ''}, Pakistan`)}`
+                                }
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-[11px] font-bold transition-all shadow-2xs cursor-pointer shrink-0 w-fit"
+                                title="Open exact pinpoint location in Google Maps"
+                              >
+                                <MapPin className="h-3.5 w-3.5 text-amber-600" />
+                                <span>Open Google Maps Pin</span>
+                              </a>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">GPS Coordinates:</TableCell>
+                          <TableCell className="text-xs font-mono font-semibold text-slate-800">
+                            {customer.coordinates ? (
+                              <a
+                                href={
+                                  customer.coordinates.startsWith('http')
+                                    ? customer.coordinates
+                                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(customer.coordinates)}`
+                                }
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[#002868] hover:text-amber-600 underline font-bold inline-flex items-center gap-1"
+                              >
+                                <span>{customer.coordinates}</span>
+                                <ExternalLink className="h-3 w-3 text-amber-600" />
+                              </a>
+                            ) : (
+                              <span className="text-slate-400 font-normal">Not Specified (Maps to Address)</span>
+                            )}
+                          </TableCell>
                         </TableRow>
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Customer Type</TableCell>
@@ -918,12 +960,42 @@ export default async function CustomerDetailPage({
                     </SectionHeader>
                     <Table>
                       <TableBody>
+                        {/* 1st Audit Date */}
                         <TableRow className="border-b hover:bg-transparent">
-                          <TableCell className="font-bold text-xs w-44 bg-slate-50 border-r border-slate-200 text-[#002868]">Date of Last Audit</TableCell>
+                          <TableCell className="font-bold text-xs w-44 bg-slate-50 border-r border-slate-200 text-[#002868]">1st Audit Date</TableCell>
+                          <TableCell className="text-xs font-mono font-semibold text-slate-800">
+                            {formatDate(customer.solarSystem?.firstAuditDate || customer.solarSystem?.systemInstallationDate || customer.activationDate || customer.signupDate)}
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Date of Last Audit */}
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Date of Last Audit</TableCell>
                           <TableCell className="text-xs font-mono font-bold text-[#002868]">
                             {customer.solarSystem?.lastAuditDate 
                               ? formatDate(customer.solarSystem.lastAuditDate) 
                               : (customer.solarSystem?.systemInstallationDate ? formatDate(customer.solarSystem.systemInstallationDate) : 'Pending Schedule')}
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Next Scheduled Audit Date */}
+                        <TableRow className="border-b hover:bg-transparent bg-amber-50/40">
+                          <TableCell className="font-bold text-xs bg-amber-100/60 border-r border-slate-200 text-amber-950">Next Scheduled Audit</TableCell>
+                          <TableCell className="text-xs font-mono font-bold text-amber-900">
+                            <div className="flex items-center gap-2">
+                              <span>
+                                {formatDate(
+                                  customer.solarSystem?.nextAuditDate ||
+                                  calculateNextAuditDate(
+                                    customer.solarSystem?.lastAuditDate || customer.solarSystem?.firstAuditDate || customer.activationDate || customer.signupDate,
+                                    customer.packagePlan?.packageTier
+                                  )
+                                )}
+                              </span>
+                              <Badge variant="outline" className="bg-amber-100 text-amber-900 border-amber-300 font-bold text-[10px]">
+                                {getAuditFrequencyLabel(customer.packagePlan?.packageTier)}
+                              </Badge>
+                            </div>
                           </TableCell>
                         </TableRow>
 
