@@ -183,6 +183,10 @@ export default async function CustomerDetailPage({
                           <TableCell className="text-xs text-[var(--color-ink)] font-medium font-mono">{customer.contactNumber}</TableCell>
                         </TableRow>
                         <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">POC #</TableCell>
+                          <TableCell className="text-xs text-[var(--color-ink)] font-medium font-mono">{customer.pocNumber || '—'}</TableCell>
+                        </TableRow>
+                        <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Email:</TableCell>
                           <TableCell className="text-xs text-[var(--color-ink)]">{customer.email || '—'}</TableCell>
                         </TableRow>
@@ -1115,6 +1119,10 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Contact #:</TableCell>
                           <TableCell className="text-xs text-[var(--color-ink)] font-medium font-mono">{customer.contactNumber}</TableCell>
+                        </TableRow>
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">POC #:</TableCell>
+                          <TableCell className="text-xs text-[var(--color-ink)] font-medium font-mono">{customer.pocNumber || '—'}</TableCell>
                         </TableRow>
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Email:</TableCell>

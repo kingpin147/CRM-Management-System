@@ -9,7 +9,8 @@ import { Badge } from '@/components/ui/badge'
 import { DataTable } from '@/components/ui/data-table'
 import { columns, formatTicketId, type TicketWithCustomer } from './columns'
 import { PAKISTAN_CITIES_AREAS } from '@/lib/pakistan-cities-areas'
-import { FileSpreadsheet } from 'lucide-react'
+import { FileSpreadsheet, AlertCircle } from 'lucide-react'
+import { SectionHeader } from '@/components/ui/section-header'
 
 interface TicketsViewProps {
   tickets: TicketWithCustomer[]
@@ -233,25 +234,28 @@ export function TicketsView({ tickets, userRole, initialStatusParam }: TicketsVi
 
   return (
     <div className="space-y-6 animate-reveal">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-display font-bold text-[var(--color-graphite)] tracking-tight flex items-center gap-3">
-            {statusTab === 'PENDING' ? 'Pending Complaints' : 'Complaint Management'}
-            {statusTab === 'PENDING' && (
-              <span className="text-xs px-2.5 py-1 bg-amber-100 text-amber-900 border border-amber-300 rounded-full font-bold">
-                {pendingCount} Pending
-              </span>
-            )}
-          </h1>
-          <p className="text-[var(--color-slate-custom)] mt-1 text-sm">
-            {statusTab === 'PENDING' 
-              ? 'Reviewing pending customer complaints requiring departmental action.' 
-              : 'Track and manage customer complaints across department workflows.'}
-          </p>
-        </div>
-        {/* Note: + Log New Ticket button removed as requested */}
-      </div>
+      <SectionHeader
+        action={
+          <Button
+            onClick={handleExportToExcel}
+            variant="outline"
+            className="h-8 px-3 text-xs font-bold border-emerald-600 text-emerald-700 hover:bg-emerald-50 bg-emerald-50/50 gap-1.5 shadow-2xs cursor-pointer text-white"
+          >
+            <FileSpreadsheet className="h-4 w-4" />
+            Export to Excel
+          </Button>
+        }
+      >
+        <span className="flex items-center gap-2">
+          <AlertCircle className="h-4 w-4 text-[#F58220]" />
+          {statusTab === 'PENDING' ? 'Pending Complaints' : 'Complaint Management'}
+          {statusTab === 'PENDING' && (
+            <span className="text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 rounded-full font-bold ml-1">
+              {pendingCount} Pending
+            </span>
+          )}
+        </span>
+      </SectionHeader>
 
       {/* Primary Filter Toolbar - Country, City, Area, Sub Area, Dates */}
       <div className="bg-white p-4 rounded-xl border border-[var(--color-line)] shadow-xs space-y-3">
@@ -394,17 +398,8 @@ export function TicketsView({ tickets, userRole, initialStatusParam }: TicketsVi
             />
           </div>
 
-          {/* Export to Excel Button */}
-          <div className="flex justify-start md:justify-end">
-            <Button
-              onClick={handleExportToExcel}
-              variant="outline"
-              className="h-9 px-4 text-xs font-bold border-emerald-600 text-emerald-700 hover:bg-emerald-50 bg-emerald-50/50 gap-1.5 shadow-2xs"
-            >
-              <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
-              Export to Excel
-            </Button>
-          </div>
+          {/* Empty column or spacing placeholder */}
+          <div className="hidden md:block"></div>
         </div>
       </div>
 

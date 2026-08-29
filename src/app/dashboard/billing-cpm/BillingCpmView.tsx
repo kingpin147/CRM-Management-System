@@ -6,6 +6,8 @@ import { DebitCreditNoteTab } from './components/DebitCreditNoteTab'
 import { PaymentEntryTab } from './components/PaymentEntryTab'
 import { BulkStatusChangeTab } from './components/BulkStatusChangeTab'
 import { useSearchParams } from 'next/navigation'
+import { SectionHeader } from '@/components/ui/section-header'
+import { CreditCard } from 'lucide-react'
 
 interface BillingCpmViewProps {
   unpostedNotes: any[]
@@ -21,19 +23,24 @@ export function BillingCpmView({
   const searchParams = useSearchParams()
   const activeTab = searchParams.get('tab') || 'package-status'
 
+  const getTabLabel = () => {
+    switch (activeTab) {
+      case 'package-status': return 'Package & Status Change'
+      case 'debit-credit': return 'Debit / Credit Notes'
+      case 'payments': return 'Payment Entry & Approval'
+      case 'bulk-status': return 'Bulk Status Change'
+      default: return 'Billing & CPM'
+    }
+  }
+
   return (
     <div className="space-y-6 animate-reveal">
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 pb-2 border-b border-line">
-        <div>
-          <h1 className="text-2xl lg:text-3xl font-display font-bold text-[var(--color-graphite)] tracking-tight">
-            Billing & CPM
-          </h1>
-          <p className="text-xs text-[var(--color-slate-custom)] mt-0.5">
-            Billing System & Change Process Management — Package upgrades, manual debit/credit adjustments, payment verification, and bulk status updates.
-          </p>
-        </div>
-      </div>
+      <SectionHeader>
+        <span className="flex items-center gap-2">
+          <CreditCard className="h-4 w-4 text-[#F58220]" />
+          {getTabLabel()}
+        </span>
+      </SectionHeader>
 
       {/* Active Tab Content */}
       <div className="pt-1">

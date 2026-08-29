@@ -10,6 +10,7 @@ export async function updateCustomer(formData: FormData) {
   const customerId = formData.get('customerId') as string
   const fullName = formData.get('fullName') as string
   const contactNumber = formData.get('contactNumber') as string
+  const pocNumber = formData.get('pocNumber') as string || null
   const email = formData.get('email') as string || null
   const cnic = formData.get('cnic') as string
   const customerType = formData.get('customerType') as CustomerType
@@ -65,6 +66,7 @@ export async function updateCustomer(formData: FormData) {
       data: {
         fullName,
         contactNumber,
+        pocNumber,
         email,
         cnic,
         customerType,

@@ -46,6 +46,7 @@ export function EditCrfModal({
   const [fullName, setFullName] = React.useState('')
   const [cnic, setCnic] = React.useState('')
   const [contactNumber, setContactNumber] = React.useState('')
+  const [pocNumber, setPocNumber] = React.useState('')
   const [email, setEmail] = React.useState('')
   const [address, setAddress] = React.useState('')
   const [block, setBlock] = React.useState('')
@@ -81,6 +82,7 @@ export function EditCrfModal({
       setFullName(customer.fullName || '')
       setCnic(customer.cnic || '')
       setContactNumber(customer.contactNumber || '')
+      setPocNumber((customer as any).pocNumber || '')
       setEmail(customer.email || '')
       setAddress(customer.address || '')
       setBlock(customer.block || '')
@@ -135,6 +137,7 @@ export function EditCrfModal({
       formData.append('fullName', fullName)
       formData.append('cnic', cnic)
       formData.append('contactNumber', contactNumber)
+      formData.append('pocNumber', pocNumber)
       formData.append('email', email)
       formData.append('address', address)
       formData.append('block', block)
@@ -226,6 +229,15 @@ export function EditCrfModal({
                 <Input 
                   value={contactNumber} 
                   onChange={(e) => setContactNumber(e.target.value)} 
+                  className="h-9 text-xs font-mono"
+                  placeholder="+92 300 1234567"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold text-slate-700">POC #</Label>
+                <Input 
+                  value={pocNumber} 
+                  onChange={(e) => setPocNumber(e.target.value)} 
                   className="h-9 text-xs font-mono"
                   placeholder="+92 300 1234567"
                 />

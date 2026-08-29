@@ -7,8 +7,9 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { CheckCircle2, Wrench, Search, Layers, ArrowRight, UserCheck, Edit3, FileText } from 'lucide-react'
+import { CheckCircle2, Wrench, Search, Layers, ArrowRight, UserCheck, Edit3, FileText, ShoppingBag } from 'lucide-react'
 import { EditCrfModal } from './components/EditCrfModal'
+import { SectionHeader } from '@/components/ui/section-header'
 
 type CustomerRecord = {
   id: string
@@ -17,6 +18,7 @@ type CustomerRecord = {
   fullName: string
   cnic: string
   contactNumber: string
+  pocNumber?: string | null
   email?: string | null
   address?: string | null
   block?: string | null
@@ -127,22 +129,19 @@ export function ManagerApprovalView({
 
   return (
     <div className="space-y-6 animate-reveal">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-display font-bold text-[var(--color-graphite)] tracking-tight">
-            Manager Approval Pipeline
-          </h1>
-          <p className="text-[var(--color-slate-custom)] mt-1 text-sm">
-            Review, approve, and advance customer accounts across Sales Manager, Billing Manager, and O&M Manager stages.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+      <SectionHeader
+        action={
           <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] px-3 py-1 text-xs font-semibold shadow-xs">
             Logged in Role: {userRole}
           </Badge>
-        </div>
-      </div>
+        }
+      >
+        <span className="flex items-center gap-2">
+          <ShoppingBag className="h-4 w-4 text-[#F58220]" />
+          Manager Approval Pipeline
+        </span>
+      </SectionHeader>
+
       {/* Pipeline Table with Filter Tabs & Search */}
       <Card className="shadow-sm border-line bg-white">
         <CardHeader className="py-4 border-b border-line">
@@ -280,7 +279,10 @@ export function ManagerApprovalView({
 
                       {/* Contact & City */}
                       <TableCell className="text-xs">
-                        <span className="font-mono text-slate-700">{c.contactNumber}</span>
+                        <span className="font-mono text-slate-700 block">{c.contactNumber}</span>
+                        {c.pocNumber && (
+                          <span className="font-mono text-[10px] text-slate-500 block">POC: {c.pocNumber}</span>
+                        )}
                         <span className="block text-[11px] text-slate-500 font-medium">{c.city}</span>
                       </TableCell>
 

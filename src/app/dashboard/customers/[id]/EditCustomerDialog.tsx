@@ -27,6 +27,7 @@ export function EditCustomerDialog({ customer }: { customer: Customer }) {
 
   const [fullName, setFullName] = React.useState(customer.fullName || '')
   const [contactNumber, setContactNumber] = React.useState(customer.contactNumber || '')
+  const [pocNumber, setPocNumber] = React.useState((customer as any).pocNumber || '')
   const [email, setEmail] = React.useState(customer.email || '')
   const [cnic, setCnic] = React.useState(customer.cnic || '')
   const [customerType, setCustomerType] = React.useState<string>(customer.customerType)
@@ -48,6 +49,7 @@ export function EditCustomerDialog({ customer }: { customer: Customer }) {
     formData.append('customerId', customer.id)
     formData.append('fullName', fullName)
     formData.append('contactNumber', contactNumber)
+    formData.append('pocNumber', pocNumber)
     formData.append('email', email)
     formData.append('cnic', cnic)
     formData.append('customerType', customerType)
@@ -136,6 +138,15 @@ export function EditCustomerDialog({ customer }: { customer: Customer }) {
                     required
                     value={contactNumber}
                     onChange={(e) => setContactNumber(e.target.value)}
+                    className="border-[var(--color-line)] focus-visible:ring-[var(--color-amber)] bg-white"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-[var(--color-ink)]">POC Number</Label>
+                  <Input
+                    value={pocNumber}
+                    onChange={(e) => setPocNumber(e.target.value)}
                     className="border-[var(--color-line)] focus-visible:ring-[var(--color-amber)] bg-white"
                   />
                 </div>

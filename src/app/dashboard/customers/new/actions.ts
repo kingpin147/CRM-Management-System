@@ -27,6 +27,7 @@ export async function createCustomer(formData: FormData) {
   const fullName = formData.get('fullName') as string
   const customerType = (formData.get('customerType') as CustomerType) || CustomerType.RESIDENTIAL
   const contactNumber = formData.get('contactNumber') as string
+  const pocNumber = (formData.get('pocNumber') as string) || null
   const email = (formData.get('email') as string) || null
   const cnic = formData.get('cnic') as string
   const cnicExpiry = parseDate(formData.get('cnicExpiry'))
@@ -156,6 +157,7 @@ export async function createCustomer(formData: FormData) {
         fullName,
         customerType,
         contactNumber,
+        pocNumber,
         email,
         cnic,
         cnicExpiry,

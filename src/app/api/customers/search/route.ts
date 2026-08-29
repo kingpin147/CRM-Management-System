@@ -37,7 +37,10 @@ export async function GET(request: NextRequest) {
     where.fullName = { contains: fullName, mode: 'insensitive' }
   }
   if (contactNumber) {
-    where.contactNumber = { contains: contactNumber }
+    where.OR = [
+      { contactNumber: { contains: contactNumber } },
+      { pocNumber: { contains: contactNumber } }
+    ]
   }
   if (cnic) {
     where.cnic = { contains: cnic, mode: 'insensitive' }

@@ -358,7 +358,10 @@ export function SignupDocument({ customer, logoSrc }: { customer: any; logoSrc?:
               <View style={styles.gridRow}>
                 <View style={styles.gridColLeft}>
                   <Text style={styles.label}>Contact #:</Text>
-                  <Text style={styles.value}>{customer?.contactNumber}</Text>
+                  <Text style={styles.value}>
+                    {customer?.contactNumber}
+                    {(customer as any)?.pocNumber ? ` / POC: ${(customer as any).pocNumber}` : ''}
+                  </Text>
                 </View>
                 <View style={styles.divider} />
                 <View style={styles.gridColRight}>

@@ -20,6 +20,7 @@ type CustomerRecord = {
   fullName: string
   customerType: string
   contactNumber: string
+  pocNumber?: string | null
   email: string | null
   cnic: string
   crfNumber: string | null
@@ -258,10 +259,12 @@ function billingMetric(group: BillingGroup, column: BillingColumn): BillingMetri
 
 export function ReportsView({ 
   customers, 
-  initialView = 'status' 
+  initialView = 'status',
+  userRole = 'SUPER_ADMIN'
 }: { 
   customers: CustomerRecord[]
   initialView?: string 
+  userRole?: string
 }) {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -525,6 +528,7 @@ export function ReportsView({
           c.customerCode?.toLowerCase().includes(q) ||
           c.crfNumber?.toLowerCase().includes(q) ||
           c.contactNumber?.toLowerCase().includes(q) ||
+          c.pocNumber?.toLowerCase().includes(q) ||
           c.cnic?.toLowerCase().includes(q) ||
           c.address?.toLowerCase().includes(q) ||
           c.city?.toLowerCase().includes(q) ||
@@ -564,6 +568,7 @@ export function ReportsView({
           c.customerCode?.toLowerCase().includes(q) ||
           c.crfNumber?.toLowerCase().includes(q) ||
           c.contactNumber?.toLowerCase().includes(q) ||
+          c.pocNumber?.toLowerCase().includes(q) ||
           c.cnic?.toLowerCase().includes(q)
         if (!match) continue
       }
@@ -615,6 +620,7 @@ export function ReportsView({
           c.customerCode?.toLowerCase().includes(q) ||
           c.crfNumber?.toLowerCase().includes(q) ||
           c.contactNumber?.toLowerCase().includes(q) ||
+          c.pocNumber?.toLowerCase().includes(q) ||
           c.cnic?.toLowerCase().includes(q)
         if (!match) continue
       }
@@ -668,7 +674,7 @@ export function ReportsView({
       }
       if (appliedFilters.searchQuery.trim()) {
         const query = appliedFilters.searchQuery.toLowerCase().trim()
-        const searchable = [c.fullName, c.customerCode, c.crfNumber, c.contactNumber, c.cnic, c.address, c.city, c.area]
+        const searchable = [c.fullName, c.customerCode, c.crfNumber, c.contactNumber, c.pocNumber, c.cnic, c.address, c.city, c.area]
         if (!searchable.some((value) => value?.toLowerCase().includes(query))) continue
       }
 
@@ -909,17 +915,23 @@ export function ReportsView({
     setHasSearched(false)
   }
 
-  const categoryTabs = [
-    { id: 'STATUS', label: 'Customer Status Report', icon: CheckCircle2, count: categoryCounts.STATUS },
-    { id: 'SALES', label: 'Sales Report', icon: Receipt, count: categoryCounts.SALES },
-    { id: 'RECEIVABLE', label: 'Customer Receivable', icon: AlertTriangle, count: categoryCounts.RECEIVABLE },
-    { id: 'ADJUSTMENT', label: 'Adjustment Report', icon: Clock, count: categoryCounts.ADJUSTMENT },
-    { id: 'PAYMENTS', label: 'Payments Report', icon: Zap, count: categoryCounts.PAYMENTS },
-    { id: 'BILLING', label: 'Billing Report', icon: FileSpreadsheet, count: categoryCounts.BILLING },
-    { id: 'SALES_INCENTIVE', label: 'Incentive Disbursement Report (Sales)', icon: Receipt, count: categoryCounts.SALES_INCENTIVE },
-    { id: 'OM_INCENTIVE', label: 'Incentive Disbursement Report (O & M)', icon: CheckCircle2, count: categoryCounts.OM_INCENTIVE },
-    { id: 'REGISTER', label: 'Customer Register', icon: Users, count: categoryCounts.REGISTER },
-  ]
+  const categoryTabs = React.useMemo(() => {
+    const allTabs = [
+      { id: 'STATUS', label: 'Customer Status Report', icon: CheckCircle2, count: categoryCounts.STATUS },
+      { id: 'SALES', label: 'Sales Report', icon: Receipt, count: categoryCounts.SALES },
+      { id: 'RECEIVABLE', label: 'Customer Receivable', icon: AlertTriangle, count: categoryCounts.RECEIVABLE },
+      { id: 'ADJUSTMENT', label: 'Adjustment Report', icon: Clock, count: categoryCounts.ADJUSTMENT },
+      { id: 'PAYMENTS', label: 'Payments Report', icon: Zap, count: categoryCounts.PAYMENTS },
+      { id: 'BILLING', label: 'Billing Report', icon: FileSpreadsheet, count: categoryCounts.BILLING },
+      { id: 'SALES_INCENTIVE', label: 'Incentive Disbursement Report (Sales)', icon: Receipt, count: categoryCounts.SALES_INCENTIVE },
+      { id: 'OM_INCENTIVE', label: 'Incentive Disbursement Report (O & M)', icon: CheckCircle2, count: categoryCounts.OM_INCENTIVE },
+      { id: 'REGISTER', label: 'Customer Register', icon: Users, count: categoryCounts.REGISTER },
+    ]
+    if (userRole === 'SALES') {
+      return allTabs.filter(t => ['STATUS', 'SALES', 'RECEIVABLE'].includes(t.id))
+    }
+    return allTabs
+  }, [userRole, categoryCounts])
 
   const currentTabObj = categoryTabs.find(t => t.id === activeCategory) || categoryTabs[0]
 
@@ -970,7 +982,7 @@ export function ReportsView({
       })
     } else if (activeCategory === 'STATUS') {
       headers = [
-        'Customer ID', 'Customer Name', 'Customer Type', 'Customer Address', 'Contact #',
+        'Customer ID', 'Customer Name', 'Customer Type', 'Customer Address', 'Contact #', 'POC #',
         'House #', 'Block', 'Street #', 'Sub Area', 'Area', 'City',
         'Account Executive Sales Name', 'Installer Name', 'System Type:', 'Monitoring Time',
         'Customer Package', 'Activation', 'New Status', 'Status'
@@ -981,6 +993,7 @@ export function ReportsView({
         `"${c.customerType ? (c.customerType.charAt(0).toUpperCase() + c.customerType.slice(1).toLowerCase()) : 'Residential'}"`,
         `"${c.address}"`,
         `"${c.contactNumber}"`,
+        `"${c.pocNumber || ''}"`,
         `"${c.houseNumber || c.houseNo || ''}"`,
         `"${c.block || ''}"`,
         `"${c.streetNumber || c.streetNo || ''}"`,
@@ -1014,7 +1027,7 @@ export function ReportsView({
       ]]
     } else if (activeCategory === 'SALES') {
       headers = [
-        'Customer ID', 'CRF #', 'Customer Name', 'Address', 'Contact Number',
+        'Customer ID', 'CRF #', 'Customer Name', 'Address', 'Contact Number', 'POC Number',
         'City', 'System Type', 'Package', 'Billing Type', 'Customer Type',
         'Amount Payable', 'Paid Amount', 'Sign up Created Date', 'Activation Date'
       ]
@@ -1024,6 +1037,7 @@ export function ReportsView({
         `"${c.fullName}"`,
         `"${c.address}"`,
         `"${c.contactNumber}"`,
+        `"${c.pocNumber || ''}"`,
         `"${c.city}"`,
         `"${c.packagePlan?.systemSizeKw || c.solarSystem?.inverterSize || '-'}"`,
         `"${c.packagePlan?.packageTier || 'Basic'}"`,
@@ -1036,7 +1050,7 @@ export function ReportsView({
       ])
     } else if (activeCategory === 'RECEIVABLE') {
       headers = [
-        'Customer ID', 'Customer Name', 'Customer Address', 'Contact #',
+        'Customer ID', 'Customer Name', 'Customer Address', 'Contact #', 'POC #',
         'House #', 'Block', 'Street #', 'Sub Area', 'Area',
         'Account Executive', 'City', 'Package', 'Customer Type',
         'System Type:', 'Billing Type', 'Monitoring Time', 'Customer Status',
@@ -1051,6 +1065,7 @@ export function ReportsView({
           `"${c.fullName}"`,
           `"${c.address}"`,
           `"${c.contactNumber}"`,
+          `"${c.pocNumber || ''}"`,
           `"${c.houseNumber || c.houseNo || '-'}"`,
           `"${c.block || '-'}"`,
           `"${c.streetNumber || c.streetNo || '-'}"`,
@@ -1126,7 +1141,7 @@ export function ReportsView({
     } else {
       // REGISTER
       headers = [
-        'Customer ID', 'CRF #', 'Customer Name', 'Customer Address', 'Contact #',
+        'Customer ID', 'CRF #', 'Customer Name', 'Customer Address', 'Contact #', 'POC #',
         'Email Address', 'Sub Area', 'Area', 'City', 'Sign Up Date', 'Activation Date',
         'Package', 'Customer Type', 'System Type', 'Billing Type', 'Monitoring Time',
         'Current Status', 'Sign Up Created by'
@@ -1137,6 +1152,7 @@ export function ReportsView({
         `"${c.fullName}"`,
         `"${c.address}"`,
         `"${c.contactNumber}"`,
+        `"${c.pocNumber || ''}"`,
         `"${c.email || '-'}"`,
         `"${c.subArea || '-'}"`,
         `"${c.area || '-'}"`,
@@ -1597,7 +1613,10 @@ export function ReportsView({
                           </TableCell>
                           <TableCell className="font-semibold text-gray-900 whitespace-nowrap">{c.fullName}</TableCell>
                           <TableCell className="text-gray-600 max-w-xs truncate">{c.address}</TableCell>
-                          <TableCell className="font-mono whitespace-nowrap">{c.contactNumber}</TableCell>
+                          <TableCell className="font-mono whitespace-nowrap">
+                            <div>{c.contactNumber}</div>
+                            {c.pocNumber && <div className="text-[10px] text-slate-400">POC: {c.pocNumber}</div>}
+                          </TableCell>
                           <TableCell className="whitespace-nowrap">{c.houseNumber || c.houseNo || '-'}</TableCell>
                           <TableCell className="whitespace-nowrap">{c.block || '-'}</TableCell>
                           <TableCell className="whitespace-nowrap">{c.streetNumber || c.streetNo || '-'}</TableCell>
@@ -1763,7 +1782,10 @@ export function ReportsView({
                           <TableCell className="whitespace-nowrap font-mono">{formatCrf(c.crfNumber, c.customerCode) || '—'}</TableCell>
                           <TableCell className="font-semibold text-gray-900 whitespace-nowrap">{c.fullName}</TableCell>
                           <TableCell className="text-gray-600 max-w-xs truncate">{c.address}</TableCell>
-                          <TableCell className="font-mono whitespace-nowrap">{c.contactNumber}</TableCell>
+                          <TableCell className="font-mono whitespace-nowrap">
+                            <div>{c.contactNumber}</div>
+                            {c.pocNumber && <div className="text-[10px] text-slate-400">POC: {c.pocNumber}</div>}
+                          </TableCell>
                           <TableCell className="font-semibold whitespace-nowrap">{c.city}</TableCell>
                           <TableCell className="whitespace-nowrap font-medium">{c.packagePlan?.systemSizeKw || c.solarSystem?.inverterSize || '-'}</TableCell>
                           <TableCell className="whitespace-nowrap">
@@ -1861,7 +1883,10 @@ export function ReportsView({
                           </TableCell>
                           <TableCell className="font-semibold text-gray-900 whitespace-nowrap">{c.fullName}</TableCell>
                           <TableCell className="text-gray-600 max-w-xs truncate">{c.address}</TableCell>
-                          <TableCell className="font-mono whitespace-nowrap">{c.contactNumber}</TableCell>
+                          <TableCell className="font-mono whitespace-nowrap">
+                            <div>{c.contactNumber}</div>
+                            {c.pocNumber && <div className="text-[10px] text-slate-400">POC: {c.pocNumber}</div>}
+                          </TableCell>
                           <TableCell className="whitespace-nowrap">{c.houseNumber || c.houseNo || '-'}</TableCell>
                           <TableCell className="whitespace-nowrap">{c.block || '-'}</TableCell>
                           <TableCell className="whitespace-nowrap">{c.streetNumber || c.streetNo || '-'}</TableCell>
@@ -2122,7 +2147,10 @@ export function ReportsView({
                         <TableCell className="font-mono font-semibold text-gray-700">{formatCrf(c.crfNumber, c.customerCode) || '—'}</TableCell>
                         <TableCell className="font-semibold text-gray-900">{c.fullName}</TableCell>
                         <TableCell className="text-gray-600 max-w-xs truncate">{c.address}</TableCell>
-                        <TableCell className="font-mono">{c.contactNumber}</TableCell>
+                         <TableCell className="font-mono">
+                           <div>{c.contactNumber}</div>
+                           {c.pocNumber && <div className="text-[10px] text-gray-400">POC: {c.pocNumber}</div>}
+                         </TableCell>
                         <TableCell className="text-gray-600">{c.email || '-'}</TableCell>
                         <TableCell>{c.subArea || '-'}</TableCell>
                         <TableCell>{c.area || '-'}</TableCell>

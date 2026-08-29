@@ -37,6 +37,7 @@ model Customer {
   fullName       String
   customerType   CustomerType
   contactNumber  String
+  pocNumber      String?
   email          String?
   cnic           String         @unique
   cnicExpiry     DateTime?

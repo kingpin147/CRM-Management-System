@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button'
 import prisma from '@/lib/prisma'
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
+import { SectionHeader } from '@/components/ui/section-header'
+import { ShoppingBag } from 'lucide-react'
 
 export default async function NewCustomerPage() {
   const supabase = await createClient()
@@ -31,17 +33,20 @@ export default async function NewCustomerPage() {
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto animate-reveal">
-      <div className="flex items-center gap-4 mb-2">
-        <Link href="/dashboard/customers">
-          <Button variant="ghost" size="sm" className="text-[var(--color-slate-custom)]">
-            ← Back
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-3xl font-display font-bold text-[var(--color-graphite)] tracking-tight">Create Sale</h1>
-          <p className="text-[var(--color-slate-custom)] mt-1">Enter the personal and location details for the new client.</p>
-        </div>
-      </div>
+      <SectionHeader
+        leftAction={
+          <Link href="/dashboard/customers">
+            <Button variant="ghost" size="sm" className="text-[var(--color-slate-custom)] hover:text-[#002868] h-7 text-xs font-semibold">
+              ← Back
+            </Button>
+          </Link>
+        }
+      >
+        <span className="flex items-center gap-2">
+          <ShoppingBag className="h-4 w-4 text-[#F58220]" />
+          Create Sale
+        </span>
+      </SectionHeader>
 
       <CustomerForm users={users} />
     </div>

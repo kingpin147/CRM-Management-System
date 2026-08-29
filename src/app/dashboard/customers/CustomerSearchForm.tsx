@@ -17,6 +17,7 @@ type CustomerRecord = {
   crfNumber: string | null
   fullName: string
   contactNumber: string
+  pocNumber?: string | null
   cnic: string
   email: string | null
   customerType: string
@@ -345,7 +346,12 @@ export function CustomerSearchForm({
                         {c.fullName}
                         {c.email && <span className="block text-[11px] text-gray-400">{c.email}</span>}
                       </TableCell>
-                      <TableCell className="text-xs">{c.contactNumber}</TableCell>
+                      <TableCell className="text-xs">
+                        <div>{c.contactNumber}</div>
+                        {c.pocNumber && (
+                          <div className="text-[10px] text-gray-400 font-mono">POC: {c.pocNumber}</div>
+                        )}
+                      </TableCell>
                       <TableCell className="font-mono text-xs text-[var(--color-slate-custom)]">{c.cnic}</TableCell>
                       <TableCell className="text-xs">
                         <Badge variant="outline" className="bg-white text-xs font-medium border-line">

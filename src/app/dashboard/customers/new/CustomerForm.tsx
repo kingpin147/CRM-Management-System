@@ -15,13 +15,15 @@ import { Badge } from '@/components/ui/badge'
 import { createCustomer } from './actions'
 import { uploadFile } from '@/utils/supabase/storage'
 import { CustomerType } from '@prisma/client'
-import { ChevronRight, ChevronLeft, CheckCircle2, Check, Sparkles, Loader2, AlertCircle, Download, FileText, Camera, UploadCloud, Image as ImageIcon, X } from 'lucide-react'
+import { ChevronRight, ChevronLeft, CheckCircle2, Check, Sparkles, Loader2, AlertCircle, Download, FileText, Camera, UploadCloud, Image as ImageIcon, X, Users } from 'lucide-react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { AutoSuggestInput } from '@/components/ui/auto-suggest-input'
 import { CITIES_LIST, getAreasForCity, getDefaultDiscoForCity } from '@/lib/pakistan-cities-areas'
 import { formatDiscoRefNo } from '@/lib/utils'
 import { SYSTEM_SIZES, INVERTER_SIZES, INVERTER_BRANDS, PANEL_BRANDS, BATTERY_BRANDS, IP_LIST, DISCO_LIST, STRUCTURE_TYPES, STRUCTURE_MATERIALS } from '@/lib/solar-constants'
 import { calculatePackageBreakdown } from '@/lib/pricing'
+import { SectionHeader } from '@/components/ui/section-header'
+
 
 
 const customerSchema = z.object({
@@ -29,6 +31,7 @@ const customerSchema = z.object({
   fullName: z.string().min(2, 'Name must be at least 2 characters'),
   customerType: z.string().min(1, 'Please select Customer Type'),
   contactNumber: z.string().min(10, 'Contact number is required'),
+  pocNumber: z.string().optional(),
   email: z.string().email('Invalid email').optional().or(z.literal('')),
   cnic: z.string().min(13, 'CNIC number is required'),
   cnicExpiry: z.string().optional(),
@@ -126,6 +129,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
       fullName: '',
       customerType: '',
       contactNumber: '',
+      pocNumber: '',
       email: '',
       cnic: '',
       cnicExpiry: '',
@@ -582,14 +586,12 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
           {activeTab === 1 && (
             <div className="space-y-6 animate-reveal">
 
-              {/* ── Section 1: Customer Details ── */}
-              <Card className="shadow-sm border-line bg-white">
+              <Card className="shadow-sm border-line bg-white overflow-hidden">
+                <SectionHeader leftAction={<Users className="h-4 w-4 text-[#F58220]" />}>
+                  1. Customer Details
+                </SectionHeader>
                 <CardContent className="p-6 space-y-6">
-                  <div className="border-b border-line pb-3">
-                    <h2 className="text-lg font-bold text-[var(--color-graphite)]">1. Customer Details</h2>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
                     {/* Customer Name */}
                     <FormField
                       control={form.control}
@@ -610,6 +612,19 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-xs font-semibold">Contact # *</FormLabel>
+                          <FormControl><Input placeholder="03001234567" {...field} className="h-10 text-xs" /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* POC # */}
+                    <FormField
+                      control={form.control}
+                      name="pocNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs font-semibold">POC #</FormLabel>
                           <FormControl><Input placeholder="03001234567" {...field} className="h-10 text-xs" /></FormControl>
                           <FormMessage />
                         </FormItem>
