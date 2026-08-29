@@ -368,7 +368,7 @@ export function ReportsView({
     return {
       STATUS: customers.length,
       SALES: customers.filter((c) => c.packagePlan !== null).length,
-      CONNECTIVITY: customers.length,
+      CONNECTIVITY: customers.filter((c) => ['CONNECTION_ACTIVE', 'FOC_CONNECTION', 'IN_HOUSE_CONNECTION'].includes(c.status)).length,
       RECEIVABLE: customers.filter((c) => {
         const { balanceAmount } = computeCustomerFinancials(c)
         return (c.status || '').toUpperCase() === 'CONNECTION_ACTIVE' && c.packagePlan && balanceAmount > 0
@@ -395,56 +395,85 @@ export function ReportsView({
     let permBlocked = 0
     let nonPaymentBlocked = 0
 
+    const now = new Date()
     const selectedDate = new Date(appliedFilters.invoiceMonth + '-01')
     const monthStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)
-    const monthEnd = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0, 23, 59, 59, 999)
+    let monthEnd = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0, 23, 59, 59, 999)
+
+    // Capping at current local date/time if selected month is the active month
+    if (selectedDate.getFullYear() === now.getFullYear() && selectedDate.getMonth() === now.getMonth()) {
+      monthEnd = now
+    }
+
+    const isActive = (s: string) => ['CONNECTION_ACTIVE', 'FOC_CONNECTION', 'IN_HOUSE_CONNECTION'].includes(s)
+    const isTemp = (s: string) => s === 'TEMPORARY_BLOCKED'
+    const isPerm = (s: string) => s === 'PERMANENT_DISCONNECTION'
+    const isNonPay = (s: string) => s === 'NON_PAYMENT_BLOCKED'
 
     customers.forEach(c => {
       if (appliedFilters.city !== 'ALL' && c.city?.toLowerCase() !== appliedFilters.city.toLowerCase()) return
       if (appliedFilters.area !== 'ALL' && c.area?.toLowerCase() !== appliedFilters.area.toLowerCase()) return
       if (appliedFilters.subArea !== 'ALL' && c.subArea?.toLowerCase() !== appliedFilters.subArea.toLowerCase()) return
 
-      let statusAtMonthStart = ''
+      let statusAtStart = ''
       const isActivatedBeforeMonth = c.activationDate && new Date(c.activationDate) < monthStart
       const isActivatedDuringMonth = c.activationDate && new Date(c.activationDate) >= monthStart && new Date(c.activationDate) <= monthEnd
 
       if (isActivatedBeforeMonth) {
-        statusAtMonthStart = 'CONNECTION_ACTIVE'
-        const pastHistories = (c.customerHistory || []).filter((h: any) => h.actionType === 'STATUS_CHANGE' && new Date(h.createdAt) < monthStart)
+        statusAtStart = 'CONNECTION_ACTIVE'
+        // Find all status changes before this month (using h.newStatus to catch bulk updates)
+        const pastHistories = (c.customerHistory || []).filter((h: any) => h.newStatus && new Date(h.createdAt) < monthStart)
         if (pastHistories.length > 0) {
           const lastHistory = pastHistories[pastHistories.length - 1]
-          statusAtMonthStart = lastHistory.newStatus
+          statusAtStart = lastHistory.newStatus
         }
-        if (['CONNECTION_ACTIVE', 'FOC_CONNECTION', 'IN_HOUSE_CONNECTION'].includes(statusAtMonthStart)) {
+        if (isActive(statusAtStart)) {
           openingBalance++
         }
       }
 
       if (isActivatedDuringMonth) {
         newSale++
+        statusAtStart = 'CONNECTION_ACTIVE'
       }
 
-      let statusAtMonthEnd = statusAtMonthStart
-      const monthHistories = (c.customerHistory || []).filter((h: any) => h.actionType === 'STATUS_CHANGE' && new Date(h.createdAt) >= monthStart && new Date(h.createdAt) <= monthEnd)
+      // If never activated before or during this month, skip
+      if (!isActivatedBeforeMonth && !isActivatedDuringMonth) {
+        return
+      }
+
+      let statusAtEnd = statusAtStart
+      // Find all status changes during the month
+      const monthHistories = (c.customerHistory || []).filter((h: any) => h.newStatus && new Date(h.createdAt) >= monthStart && new Date(h.createdAt) <= monthEnd)
       
       if (monthHistories.length > 0) {
-        statusAtMonthEnd = monthHistories[monthHistories.length - 1].newStatus
+        statusAtEnd = monthHistories[monthHistories.length - 1].newStatus
       } else if (isActivatedDuringMonth) {
-        statusAtMonthEnd = c.status || 'CONNECTION_ACTIVE' 
+        statusAtEnd = c.status || 'CONNECTION_ACTIVE' 
       }
 
-      const isActiveStart = ['CONNECTION_ACTIVE', 'FOC_CONNECTION', 'IN_HOUSE_CONNECTION'].includes(statusAtMonthStart)
-      const isActiveEnd = ['CONNECTION_ACTIVE', 'FOC_CONNECTION', 'IN_HOUSE_CONNECTION'].includes(statusAtMonthEnd)
-      const wasActiveAtAnyPoint = isActiveStart || isActivatedDuringMonth
+      const wasActiveStart = isActive(statusAtStart)
+      const wasActiveEnd = isActive(statusAtEnd)
 
-      if (wasActiveAtAnyPoint && !isActiveEnd) {
-        if (statusAtMonthEnd === 'TEMPORARY_BLOCKED') tempBlocked++
-        else if (statusAtMonthEnd === 'PERMANENT_DISCONNECTION') permBlocked++
-        else if (statusAtMonthEnd === 'NON_PAYMENT_BLOCKED') nonPaymentBlocked++
-      }
-      
-      if (!isActiveStart && !isActivatedDuringMonth && isActiveEnd) {
-        tempBlocked--
+      if (wasActiveStart && !wasActiveEnd) {
+        // Active -> Blocked
+        if (isTemp(statusAtEnd)) tempBlocked++
+        else if (isPerm(statusAtEnd)) permBlocked++
+        else if (isNonPay(statusAtEnd)) nonPaymentBlocked++
+      } else if (!wasActiveStart && wasActiveEnd) {
+        // Blocked -> Active
+        if (isTemp(statusAtStart)) tempBlocked--
+        else if (isPerm(statusAtStart)) permBlocked--
+        else if (isNonPay(statusAtStart)) nonPaymentBlocked--
+      } else if (!wasActiveStart && !wasActiveEnd && statusAtStart !== statusAtEnd) {
+        // Blocked A -> Blocked B
+        if (isTemp(statusAtStart)) tempBlocked--
+        else if (isPerm(statusAtStart)) permBlocked--
+        else if (isNonPay(statusAtStart)) nonPaymentBlocked--
+
+        if (isTemp(statusAtEnd)) tempBlocked++
+        else if (isPerm(statusAtEnd)) permBlocked++
+        else if (isNonPay(statusAtEnd)) nonPaymentBlocked++
       }
     })
 
@@ -898,6 +927,7 @@ export function ReportsView({
     setSearchQuery('')
     setIncludeZeroNegative(false)
     setSelectedAdjustmentType('ALL')
+    setInvoiceMonth(`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`)
     setAppliedFilters({
       status: 'ALL',
       customerType: 'ALL',
@@ -918,6 +948,7 @@ export function ReportsView({
   const categoryTabs = React.useMemo(() => {
     const allTabs = [
       { id: 'STATUS', label: 'Customer Status Report', icon: CheckCircle2, count: categoryCounts.STATUS },
+      { id: 'CONNECTIVITY', label: 'Connectivity Report Summary', icon: Users, count: categoryCounts.CONNECTIVITY },
       { id: 'SALES', label: 'Sales Report', icon: Receipt, count: categoryCounts.SALES },
       { id: 'RECEIVABLE', label: 'Customer Receivable', icon: AlertTriangle, count: categoryCounts.RECEIVABLE },
       { id: 'ADJUSTMENT', label: 'Adjustment Report', icon: Clock, count: categoryCounts.ADJUSTMENT },
@@ -1365,7 +1396,7 @@ export function ReportsView({
               </div>
             )}
 
-            {['SALES_INCENTIVE', 'OM_INCENTIVE'].includes(activeCategory) && (
+            {['SALES_INCENTIVE', 'OM_INCENTIVE', 'CONNECTIVITY'].includes(activeCategory) && (
               <div className="sm:col-span-2 md:col-span-4 pt-1 flex items-center gap-2">
                 <Label className="text-xs font-semibold text-[var(--color-ink)] whitespace-nowrap">Select Month</Label>
                 <Input type="month" value={invoiceMonth} onChange={(e) => setInvoiceMonth(e.target.value)} className="text-xs h-9 border-[var(--color-line)] w-40" />
@@ -1375,7 +1406,7 @@ export function ReportsView({
           </div>
 
           {/* Search bar & Action Buttons */}
-          <div className={`flex flex-col md:flex-row ${(activeCategory === 'SALES' || activeCategory === 'RECEIVABLE' || activeCategory === 'ADJUSTMENT' || activeCategory === 'STATUS' || activeCategory === 'REGISTER' || activeCategory === 'SALES_INCENTIVE' || activeCategory === 'OM_INCENTIVE') ? 'justify-end' : 'justify-between'} items-stretch md:items-center gap-3 pt-4 border-t border-gray-100`}>
+          <div className={`flex flex-col md:flex-row ${(activeCategory === 'SALES' || activeCategory === 'RECEIVABLE' || activeCategory === 'ADJUSTMENT' || activeCategory === 'STATUS' || activeCategory === 'REGISTER' || activeCategory === 'SALES_INCENTIVE' || activeCategory === 'OM_INCENTIVE' || activeCategory === 'CONNECTIVITY') ? 'justify-end' : 'justify-between'} items-stretch md:items-center gap-3 pt-4 border-t border-gray-100`}>
             {activeCategory !== 'REGISTER' && (activeCategory !== 'SALES' && activeCategory !== 'CONNECTIVITY') && activeCategory !== 'RECEIVABLE' && activeCategory !== 'STATUS' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'SALES_INCENTIVE' && activeCategory !== 'OM_INCENTIVE' && (
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-[var(--color-slate-custom)]" />
@@ -1420,6 +1451,8 @@ export function ReportsView({
                             ? filteredPaymentRows.length
                             : activeCategory === 'BILLING'
                         ? billingSummaryRows.length
+                        : activeCategory === 'CONNECTIVITY'
+                          ? 1
                                     : ['SALES_INCENTIVE', 'OM_INCENTIVE'].includes(activeCategory)
                                       ? incentiveRows.length
                       : filteredCustomers.length}

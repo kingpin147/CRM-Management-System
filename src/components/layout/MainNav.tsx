@@ -213,6 +213,11 @@ export function MainNav({
               {!isSalesExec && (
                 <>
                   <DropdownMenuItem>
+                    <Link href="/dashboard/reports?view=connectivity" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
+                      Connectivity Report Summary
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
                     <Link href="/dashboard/reports?view=adjustment" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
                       Adjustment Report
                     </Link>
@@ -349,6 +354,9 @@ export function MainNav({
             </Link>
             {!isSalesExec && (
               <>
+                <Link href="/dashboard/reports?view=connectivity" className={linkClass('/dashboard/reports?view=connectivity')}>
+                  Connectivity Report Summary
+                </Link>
                 <Link href="/dashboard/reports?view=adjustment" className={linkClass('/dashboard/reports?view=adjustment')}>
                   Adjustment Report
                 </Link>
