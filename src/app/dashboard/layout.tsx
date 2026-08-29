@@ -1,7 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
 import { Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { MainNav } from '@/components/layout/MainNav'
@@ -12,6 +11,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { UserNav } from '@/components/layout/UserNav'
+import { Logo } from '@/components/ui/logo'
 
 export default async function DashboardLayout({
   children,
@@ -53,24 +53,22 @@ export default async function DashboardLayout({
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-64 p-0">
-                <Link href="/dashboard/customers" className="h-16 flex items-center gap-2 px-6 border-b border-line shadow-sm hover:opacity-80 transition-opacity">
-                  <Image src="/logo-icon.svg" alt="EnergyGurus Logo" width={28} height={28} />
-                  <span className="font-display font-bold text-xl text-[var(--color-graphite)]">EnergyGurus</span>
-                </Link>
+                <Logo
+                  href="/dashboard/customers"
+                  iconSize={28}
+                  className="h-16 px-6 border-b border-line shadow-sm hover:opacity-80 transition-opacity"
+                />
                 <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
                   <MainNav role={userRole} orientation="vertical" />
                 </nav>
               </SheetContent>
             </Sheet>
-            <Link href="/dashboard/customers" className="font-display font-bold text-base text-[var(--color-graphite)] hover:opacity-80 transition-opacity">EnergyGurus</Link>
+            <Logo href="/dashboard/customers" iconSize={24} className="hover:opacity-80 transition-opacity" />
           </div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center flex-1 gap-2 lg:gap-4 xl:gap-6 min-w-0">
-            <Link href="/dashboard/customers" className="flex items-center gap-1.5 lg:gap-2 shrink-0 hover:opacity-80 transition-opacity">
-              <Image src="/logo-icon.svg" alt="EnergyGurus Logo" width={26} height={26} className="w-6 h-6 lg:w-7 lg:h-7" />
-              <span className="font-display font-bold text-base lg:text-lg xl:text-xl text-[var(--color-graphite)] tracking-tight">EnergyGurus</span>
-            </Link>
+            <Logo href="/dashboard/customers" iconSize={28} className="hover:opacity-80 transition-opacity" />
             <div className="flex-1 min-w-0 overflow-x-auto no-scrollbar">
               <MainNav role={userRole} orientation="horizontal" />
             </div>

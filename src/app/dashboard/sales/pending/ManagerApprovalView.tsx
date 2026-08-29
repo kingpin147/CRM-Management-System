@@ -2,12 +2,12 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { CheckCircle2, Clock, Receipt, Wrench, Search, Layers, ArrowRight, UserCheck, Edit3, FileText } from 'lucide-react'
+import { CheckCircle2, Wrench, Search, Layers, ArrowRight, UserCheck, Edit3, FileText } from 'lucide-react'
 import { EditCrfModal } from './components/EditCrfModal'
 
 type CustomerRecord = {
@@ -143,97 +143,6 @@ export function ManagerApprovalView({
           </Badge>
         </div>
       </div>
-
-      {/* 3-Stage Pipeline Cards (Interactive Filter Cards) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Stage 1: Sales Manager Approval Card */}
-        {(!isSpecificRole || isSales) && (
-        <Card 
-          onClick={() => setSelectedStage(selectedStage === 'STAGE_1' ? (isSales ? 'STAGE_1' : 'ALL') : 'STAGE_1')}
-          className={`cursor-pointer transition-all duration-200 border-2 ${
-            selectedStage === 'STAGE_1' 
-              ? 'border-amber-500 bg-amber-50/80 shadow-md ring-2 ring-amber-400/30' 
-              : 'border-amber-200/70 bg-amber-50/30 hover:bg-amber-50/60 hover:border-amber-400'
-          }`}
-        >
-          <CardContent className="p-4.5 flex items-center justify-between">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 text-amber-900 font-bold text-sm">
-                <Clock className="h-4 w-4 text-amber-600" />
-                Stage 1: Pending on Sales
-              </div>
-              <p className="text-xs text-amber-800/80">Sign Up Created → Pending Sales Manager Approval</p>
-              <div className="flex items-baseline gap-2 mt-2">
-                <span className="text-2xl font-bold text-amber-950 font-mono">{stage1Customers.length}</span>
-                <span className="text-xs font-semibold text-amber-800">Pending Approvals</span>
-              </div>
-            </div>
-            {selectedStage === 'STAGE_1' && (
-              <Badge className="bg-amber-600 text-white text-[11px] font-bold">Active View</Badge>
-            )}
-          </CardContent>
-        </Card>
-        )}
-
-        {/* Stage 2: Billing Manager Payment Verification Card */}
-        {(!isSpecificRole || isBilling || isSales) && (
-        <Card 
-          onClick={() => setSelectedStage(selectedStage === 'STAGE_2' ? (isSales ? 'STAGE_2' : 'ALL') : 'STAGE_2')}
-          className={`cursor-pointer transition-all duration-200 border-2 ${
-            selectedStage === 'STAGE_2' 
-              ? 'border-blue-500 bg-blue-50/80 shadow-md ring-2 ring-blue-400/30' 
-              : 'border-blue-200/70 bg-blue-50/30 hover:bg-blue-50/60 hover:border-blue-400'
-          }`}
-        >
-          <CardContent className="p-4.5 flex items-center justify-between">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 text-blue-900 font-bold text-sm">
-                <Receipt className="h-4 w-4 text-blue-600" />
-                Stage 2: Pending for Payment Verification
-              </div>
-              <p className="text-xs text-blue-800/80">Sales Manager Approved → Pending Billing Manager Verification</p>
-              <div className="flex items-baseline gap-2 mt-2">
-                <span className="text-2xl font-bold text-blue-950 font-mono">{stage2Customers.length}</span>
-                <span className="text-xs font-semibold text-blue-800">Pending Verifications</span>
-              </div>
-            </div>
-            {selectedStage === 'STAGE_2' && (
-              <Badge className="bg-blue-600 text-white text-[11px] font-bold">Active View</Badge>
-            )}
-          </CardContent>
-        </Card>
-        )}
-
-        {/* Stage 3: O&M Manager Approval Card */}
-        {(!isSpecificRole || isOM) && (
-        <Card 
-          onClick={() => setSelectedStage(selectedStage === 'STAGE_3' ? 'ALL' : 'STAGE_3')}
-          className={`cursor-pointer transition-all duration-200 border-2 ${
-            selectedStage === 'STAGE_3' 
-              ? 'border-[#002868] bg-sky-50/80 shadow-md ring-2 ring-[#002868]/30' 
-              : 'border-sky-200/70 bg-sky-50/30 hover:bg-sky-50/60 hover:border-[#002868]/60'
-          }`}
-        >
-          <CardContent className="p-4.5 flex items-center justify-between">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 text-[#002868] font-bold text-sm">
-                <Wrench className="h-4 w-4 text-[#002868]" />
-                Stage 3: Pending for O&M
-              </div>
-              <p className="text-xs text-sky-800/80">Payment Verified → Pending O&M Manager Approval</p>
-              <div className="flex items-baseline gap-2 mt-2">
-                <span className="text-2xl font-bold text-[#002868] font-mono">{stage3Customers.length}</span>
-                <span className="text-xs font-semibold text-[#002868]">Pending Approvals</span>
-              </div>
-            </div>
-            {selectedStage === 'STAGE_3' && (
-              <Badge className="bg-[#002868] text-white text-[11px] font-bold">Active View</Badge>
-            )}
-          </CardContent>
-        </Card>
-        )}
-      </div>
-
       {/* Pipeline Table with Filter Tabs & Search */}
       <Card className="shadow-sm border-line bg-white">
         <CardHeader className="py-4 border-b border-line">
