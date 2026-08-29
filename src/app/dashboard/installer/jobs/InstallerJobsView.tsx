@@ -217,7 +217,7 @@ export function InstallerJobsView({
                               setSelectedCustomer(c)
                               setIsModalOpen(true)
                             }}
-                            className="h-8 bg-[#002868] hover:bg-[#001d4a] text-white font-bold text-xs gap-1.5 shadow-xs cursor-pointer"
+                            className="h-8 bg-[#135d86] hover:bg-[#f16232] text-white font-bold text-xs gap-1.5 shadow-xs cursor-pointer"
                           >
                             <Wrench className="h-3.5 w-3.5 text-amber-400" />
                             Edit Specs &amp; Audit

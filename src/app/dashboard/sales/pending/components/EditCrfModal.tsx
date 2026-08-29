@@ -618,7 +618,7 @@ export function EditCrfModal({
                   ? 'w-full sm:w-auto bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold gap-1.5' 
                   : isStage2 
                   ? 'w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold gap-1.5' 
-                  : 'w-full sm:w-auto bg-[#002868] hover:bg-[#001d4a] text-white text-xs font-bold gap-1.5'
+                  : 'w-full sm:w-auto bg-[#135d86] hover:bg-[#f16232] text-white text-xs font-bold gap-1.5'
               }
             >
               {isSaving && saveMode === 'SAVE_AND_APPROVE' ? (

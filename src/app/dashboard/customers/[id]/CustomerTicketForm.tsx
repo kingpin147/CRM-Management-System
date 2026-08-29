@@ -255,7 +255,7 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
           </Table>
 
           <div className="flex justify-end pt-2">
-            <Button type="submit" disabled={loading} className="bg-[#002868] hover:bg-[#001d4a] text-white font-bold text-xs shadow-sm px-6">
+            <Button type="submit" disabled={loading} className="bg-[#135d86] hover:bg-[#f16232] text-white font-bold text-xs shadow-sm px-6">
               {loading ? 'Submitting...' : 'Submit Ticket'}
             </Button>
           </div>

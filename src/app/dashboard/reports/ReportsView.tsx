@@ -1190,7 +1190,7 @@ export function ReportsView({
               <Button onClick={handleReset} variant="ghost" size="sm" className="h-7 text-xs text-white hover:bg-white/20 font-semibold gap-1 px-2 cursor-pointer">
                 <RotateCcw className="h-3.5 w-3.5" /> Reset Filters
               </Button>
-              <Button onClick={handleExportExcel} className="h-8 text-xs bg-[var(--color-amber)] hover:bg-[#d69333] text-white font-bold shadow-xs gap-1.5 px-3 cursor-pointer">
+              <Button onClick={handleExportExcel} className="h-8 text-xs bg-[#135d86] hover:bg-[#f16232] text-white font-bold shadow-xs gap-1.5 px-3 cursor-pointer">
                 <FileSpreadsheet className="h-3.5 w-3.5" /> Export to Excel
               </Button>
             </div>
@@ -1403,7 +1403,7 @@ export function ReportsView({
               <Button
                 type="button"
                 onClick={() => handleSearch()}
-                className="h-10 text-xs font-bold bg-[#002868] hover:bg-[#001d4a] text-white shadow-md gap-2 cursor-pointer px-6"
+                className="h-10 text-xs font-bold bg-[#135d86] hover:bg-[#f16232] text-white shadow-md gap-2 cursor-pointer px-6"
               >
                 <Search className="h-4 w-4 text-amber-400" /> Search / Apply Filters
               </Button>

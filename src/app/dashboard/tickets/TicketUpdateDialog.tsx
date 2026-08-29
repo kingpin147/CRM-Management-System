@@ -170,7 +170,7 @@ export function TicketUpdateDialog({ ticket }: { ticket: TicketWithCustomer }) {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading} className="bg-[#002868] hover:bg-[#001d4a] text-white font-bold text-xs shadow-xs">
+            <Button type="submit" disabled={loading} className="text-xs">
               {loading ? 'Saving...' : 'Save Changes'}
             </Button>
           </DialogFooter>

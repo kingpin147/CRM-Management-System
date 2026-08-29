@@ -54,6 +54,7 @@ export function UserRowActions({ user }: { user: UserProps }) {
   const [selectedRole, setSelectedRole] = useState<Role>(user.role as Role)
   const [designationInput, setDesignationInput] = useState<string>(user.designation || '')
   const [newPassword, setNewPassword] = useState<string | null>(null)
+  const [typedPassword, setTypedPassword] = useState('')
   
   const handleToggleStatus = async () => {
     setLoading(true)
@@ -77,9 +78,13 @@ export function UserRowActions({ user }: { user: UserProps }) {
   }
 
   const handleResetPassword = async () => {
+    if (typedPassword.trim().length < 6) {
+      alert('Password must be at least 6 characters long.')
+      return
+    }
     setLoading(true)
     try {
-      const res = await resetUserPassword(user.id)
+      const res = await resetUserPassword(user.id, typedPassword.trim())
       if (res.error) {
         alert(res.error)
         setResetOpen(false)
@@ -254,35 +259,58 @@ export function UserRowActions({ user }: { user: UserProps }) {
       </AlertDialog>
 
       {/* Reset Password Dialog */}
-      <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
+      <AlertDialog open={resetOpen} onOpenChange={(open) => {
+        setResetOpen(open);
+        if (!open) {
+          setTypedPassword('');
+          setNewPassword(null);
+        }
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Reset Password</AlertDialogTitle>
-            <AlertDialogDescription>
-              {!newPassword ? (
-                 <>Are you sure you want to reset the password for <strong>{user.fullName}</strong>?</>
-              ) : (
-                 <>
-                  <p className="mb-4">The password has been reset successfully.</p>
-                  <p className="font-semibold text-[var(--color-ink)] mb-2">New Password:</p>
-                  <div className="bg-muted p-3 rounded text-center text-lg font-mono font-bold tracking-wider select-all">
-                    {newPassword}
-                  </div>
-                  <p className="mt-4 text-amber-600 text-sm">Please copy this password and securely share it with the user. You will not be able to see it again.</p>
-                 </>
-              )}
+            <AlertDialogTitle>Change User Password</AlertDialogTitle>
+            <AlertDialogDescription render={<div />}>
+              <div>
+                {!newPassword ? (
+                   <div className="space-y-4 text-left">
+                     <p>Type a new password for <strong>{user.fullName}</strong>:</p>
+                     <div className="space-y-1.5">
+                       <label className="text-xs font-semibold text-slate-700">New Password *</label>
+                       <input
+                         type="text"
+                         value={typedPassword}
+                         onChange={(e) => setTypedPassword(e.target.value)}
+                         className="w-full h-9 px-3 text-xs rounded-lg border border-slate-300 bg-white font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[var(--color-amber)]"
+                         placeholder="Enter new password (min. 6 characters)"
+                       />
+                     </div>
+                   </div>
+                ) : (
+                   <>
+                    <p className="mb-4">The password has been updated successfully.</p>
+                    <p className="font-semibold text-[var(--color-ink)] mb-2">New Password:</p>
+                    <div className="bg-muted p-3 rounded text-center text-lg font-mono font-bold tracking-wider select-all">
+                      {newPassword}
+                    </div>
+                    <p className="mt-4 text-amber-600 text-sm">Please share this password securely with the user.</p>
+                   </>
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             {!newPassword ? (
               <>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleResetPassword} disabled={loading}>
-                  {loading ? 'Resetting...' : 'Yes, Reset Password'}
+                <AlertDialogAction 
+                  onClick={handleResetPassword} 
+                  disabled={loading || typedPassword.trim().length < 6}
+                >
+                  {loading ? 'Changing...' : 'Change Password'}
                 </AlertDialogAction>
               </>
             ) : (
-              <AlertDialogAction onClick={() => { setResetOpen(false); setNewPassword(null); }}>
+              <AlertDialogAction onClick={() => { setResetOpen(false); setNewPassword(null); setTypedPassword(''); }}>
                 Done
               </AlertDialogAction>
             )}

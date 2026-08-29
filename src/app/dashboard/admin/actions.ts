@@ -73,7 +73,7 @@ export async function createUser(formData: FormData) {
 }
 
 // Ensure requester has permissions to act on target
-async function checkPermissions(targetUserId: string, requireSuperAdmin: boolean = false) {
+async function checkPermissions(targetUserId: string, requireSuperAdmin: boolean = false, allowSelfAction: boolean = false) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { allowed: false, error: 'Unauthorized' }
@@ -100,7 +100,7 @@ async function checkPermissions(targetUserId: string, requireSuperAdmin: boolean
   }
 
   // Cannot delete/disable yourself
-  if (requester.id === targetUserId) {
+  if (!allowSelfAction && requester.id === targetUserId) {
     return { allowed: false, error: 'Cannot perform this action on your own account' }
   }
 
@@ -158,16 +158,19 @@ export async function toggleUserStatus(targetUserId: string, newStatus: boolean)
   }
 }
 
-export async function resetUserPassword(targetUserId: string) {
+export async function resetUserPassword(targetUserId: string, customPassword?: string) {
   try {
-    const { allowed, error, target } = await checkPermissions(targetUserId)
+    const { allowed, error, target } = await checkPermissions(targetUserId, false, true)
     if (!allowed || !target) return { error }
 
-    // Generate random 12 char password
-    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*'
-    let newPassword = ''
-    for (let i = 0; i < 12; i++) {
-      newPassword += chars.charAt(Math.floor(Math.random() * chars.length))
+    let newPassword = customPassword?.trim()
+    if (!newPassword) {
+      // Generate random 12 char password
+      const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*'
+      newPassword = ''
+      for (let i = 0; i < 12; i++) {
+        newPassword += chars.charAt(Math.floor(Math.random() * chars.length))
+      }
     }
 
     const adminAuthClient = createAdminClient()

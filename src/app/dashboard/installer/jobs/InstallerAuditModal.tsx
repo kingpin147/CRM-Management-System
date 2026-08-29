@@ -1060,7 +1060,7 @@ export function InstallerAuditModal({
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="bg-[#002868] hover:bg-[#001d4a] text-white font-bold text-xs gap-2 px-6 shadow-md cursor-pointer"
+              className="bg-[#135d86] hover:bg-[#f16232] text-white font-bold text-xs gap-2 px-6 shadow-md cursor-pointer"
             >
               {isSubmitting ? (
                 <>

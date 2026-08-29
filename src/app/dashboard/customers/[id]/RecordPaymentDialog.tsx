@@ -54,7 +54,7 @@ export function RecordPaymentDialog({ customerId }: { customerId: string }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button size="sm" className="bg-[#002868] hover:bg-[#001d4a] text-white font-bold text-xs shadow-xs" />}>
+      <DialogTrigger render={<Button size="sm" className="bg-[#135d86] hover:bg-[#f16232] text-white font-bold text-xs shadow-xs" />}>
         + Record Payment
       </DialogTrigger>
       <DialogContent className="sm:max-w-2xl md:max-w-3xl bg-white border border-[var(--color-line)] shadow-premium rounded-2xl p-6">
@@ -136,7 +136,7 @@ export function RecordPaymentDialog({ customerId }: { customerId: string }) {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading} className="bg-[#002868] hover:bg-[#001d4a] text-white font-bold text-xs shadow-xs cursor-pointer">
+            <Button type="submit" disabled={loading} className="bg-[#135d86] hover:bg-[#f16232] text-white font-bold text-xs shadow-xs cursor-pointer">
               {loading ? 'Recording...' : 'Credit Payment'}
             </Button>
           </DialogFooter>

@@ -60,7 +60,7 @@ export function TicketClosedSetupDialog({ ticket }: { ticket: any }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button size="sm" className="h-8 text-xs font-bold text-white bg-[#002868] hover:bg-[#001d4a] shadow-xs">Update / Close Ticket</Button>} />
+      <DialogTrigger render={<Button size="sm" className="h-8 text-xs font-bold text-white bg-[#135d86] hover:bg-[#f16232] shadow-xs">Update / Close Ticket</Button>} />
 
       <DialogContent className="sm:max-w-3xl md:max-w-4xl lg:max-w-5xl p-0 border-line max-h-[90vh] overflow-y-auto bg-white">
         <SectionHeader>
@@ -158,7 +158,7 @@ export function TicketClosedSetupDialog({ ticket }: { ticket: any }) {
           </Table>
 
           <div className="flex justify-end">
-            <Button type="submit" disabled={loading} className="bg-[#002868] hover:bg-[#001d4a] text-white font-bold text-xs px-6 shadow-xs">
+            <Button type="submit" disabled={loading} className="bg-[#135d86] hover:bg-[#f16232] text-white font-bold text-xs px-6 shadow-xs">
               {loading ? 'Submitting...' : 'Submit Resolution'}
             </Button>
           </div>

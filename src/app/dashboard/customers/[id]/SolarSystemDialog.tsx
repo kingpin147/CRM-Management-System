@@ -280,7 +280,7 @@ export function SolarSystemDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button size="sm" className="bg-[#F58220] hover:bg-[#d96e14] text-white font-bold text-xs shadow-xs cursor-pointer" />}>
+      <DialogTrigger render={<Button size="sm" className="bg-[#135d86] hover:bg-[#f16232] text-white font-bold text-xs shadow-xs cursor-pointer" />}>
         {solarSystem ? 'Edit System Specs' : '+ Add Solar System Specs'}
       </DialogTrigger>
       <DialogContent className="sm:max-w-3xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl bg-white border border-[var(--color-line)] shadow-premium rounded-2xl p-6 max-h-[90vh] overflow-y-auto">
@@ -773,7 +773,7 @@ export function SolarSystemDialog({
             <Button
               type="submit"
               disabled={loading || uploadingInverter || uploadingBattery || uploadingPanel}
-              className="bg-[#002868] hover:bg-[#001d4a] text-white font-bold text-xs shadow-xs flex items-center gap-1.5"
+              className="bg-[#135d86] hover:bg-[#f16232] text-white font-bold text-xs shadow-xs flex items-center gap-1.5"
             >
               {loading ? (
                 <>

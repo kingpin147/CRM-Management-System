@@ -156,7 +156,7 @@ export function CustomerSearchAutoSuggest({
           type="button"
           onClick={handleManualSearch}
           disabled={isSearchingCustomer || isLoading || !query.trim()}
-          className="h-10 px-5 bg-[#002868] hover:bg-[#001d4a] text-white font-semibold text-xs gap-2 rounded-lg shadow-2xs cursor-pointer shrink-0"
+          className="h-10 px-5 bg-[#135d86] hover:bg-[#f16232] text-white font-semibold text-xs gap-2 rounded-lg shadow-2xs cursor-pointer shrink-0"
         >
           {isSearchingCustomer || isLoading ? (
             <>

@@ -188,7 +188,7 @@ export function PackageFormDialog({ customerId, initialData, inline = false }: {
       </div>
 
       <div className="pt-4 flex justify-end gap-2 border-t border-[var(--color-line)]">
-        <Button type="submit" disabled={loading} className="bg-[#002868] hover:bg-[#001d4a] text-white font-bold text-xs px-6 shadow-xs cursor-pointer">
+        <Button type="submit" disabled={loading} className="bg-[#135d86] hover:bg-[#f16232] text-white font-bold text-xs px-6 shadow-xs cursor-pointer">
           {loading ? 'Saving...' : 'Save & Activate Plan'}
         </Button>
       </div>
@@ -201,7 +201,7 @@ export function PackageFormDialog({ customerId, initialData, inline = false }: {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button className="w-full shadow-md bg-[#002868] hover:bg-[#001d4a] text-white font-bold">Create Quotation</Button>} />
+      <DialogTrigger render={<Button className="w-full shadow-md bg-[#135d86] hover:bg-[#f16232] text-white font-bold">Create Quotation</Button>} />
       <DialogContent className="sm:max-w-2xl md:max-w-3xl lg:max-w-4xl border-line max-h-[90vh] overflow-y-auto bg-white p-6">
         <DialogHeader className="pb-2 border-b border-[var(--color-line)]">
           <DialogTitle className="text-[var(--color-graphite)] font-display text-xl">Assign Service Package</DialogTitle>

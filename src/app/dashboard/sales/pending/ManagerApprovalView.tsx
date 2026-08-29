@@ -338,7 +338,7 @@ export function ManagerApprovalView({
                               className={
                                 isStage1 ? 'bg-amber-600 hover:bg-amber-700 text-white text-xs gap-1.5 shadow-xs font-bold cursor-pointer' :
                                 isStage2 ? 'bg-blue-600 hover:bg-blue-700 text-white text-xs gap-1.5 shadow-xs font-bold cursor-pointer' :
-                                'bg-[#002868] hover:bg-[#001d4a] text-white text-xs gap-1.5 shadow-xs font-bold cursor-pointer'
+                                'bg-[#135d86] hover:bg-[#f16232] text-white text-xs gap-1.5 shadow-xs font-bold cursor-pointer'
                               }
                             >
                               <CheckCircle2 className="h-3.5 w-3.5" />

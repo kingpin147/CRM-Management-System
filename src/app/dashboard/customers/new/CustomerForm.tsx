@@ -1818,7 +1818,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                   <Button type="button" variant="outline" onClick={() => setActiveTab(1)} className="text-xs gap-2 cursor-pointer">
                     <ChevronLeft className="w-4 h-4" /> Previous: Customer Details
                   </Button>
-                  <Button type="button" onClick={() => handleNextTab(3)} className="bg-[var(--color-amber)] hover:bg-[#d69333] text-white font-bold text-xs gap-2 px-6 shadow-sm cursor-pointer">
+                  <Button type="button" onClick={() => handleNextTab(3)} className="bg-[#135d86] hover:bg-[#f16232] text-white font-bold text-xs gap-2 px-6 shadow-sm cursor-pointer">
                     Next: Installer Details <ChevronRight className="w-4 h-4" />
                   </Button>
                 </div>
@@ -1947,7 +1947,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                   <Button
                     type="submit"
                     disabled={uploading || form.formState.isSubmitting}
-                    className="bg-[var(--color-amber)] hover:bg-[#d69333] text-white font-bold text-sm px-8 h-11 shadow-md gap-2.5 cursor-pointer disabled:opacity-75"
+                    className="bg-[#135d86] hover:bg-[#f16232] text-white font-bold text-sm px-8 h-11 shadow-md gap-2.5 cursor-pointer disabled:opacity-75"
                   >
                     {uploading || form.formState.isSubmitting ? (
                       <>
@@ -2003,7 +2003,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                   rel="noopener noreferrer"
                   className="w-full"
                 >
-                  <Button className="w-full bg-[#002868] hover:bg-[#001d4a] text-white font-bold text-xs py-3 flex items-center justify-center gap-2 rounded-xl shadow-md cursor-pointer">
+                  <Button className="w-full bg-[#135d86] hover:bg-[#f16232] text-white font-bold text-xs py-3 flex items-center justify-center gap-2 rounded-xl shadow-md cursor-pointer">
                     <Download className="h-4 w-4 text-amber-400" />
                     Download / Print Signup Form (CRF PDF)
                   </Button>

@@ -52,7 +52,7 @@ export function CustomerIdQuickSwitch({
         type="button"
         onClick={go}
         disabled={isPending}
-        className="h-10 text-xs font-bold bg-[#002868] hover:bg-[#001d4a] text-white shadow-md gap-2 cursor-pointer px-5"
+        className="h-10 text-xs font-bold bg-[#135d86] hover:bg-[#f16232] text-white shadow-md gap-2 cursor-pointer px-5"
       >
         Open
       </Button>

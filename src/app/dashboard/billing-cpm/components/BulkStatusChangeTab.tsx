@@ -175,7 +175,7 @@ export function BulkStatusChangeTab() {
               <Button
                 onClick={handleSearch}
                 disabled={isSearching}
-                className="h-9 px-5 bg-[var(--color-amber)] text-white font-semibold text-xs gap-1.5"
+                className="h-9 px-5 bg-[#135d86] hover:bg-[#f16232] text-white font-semibold text-xs gap-1.5"
               >
                 {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                 Search Customers
