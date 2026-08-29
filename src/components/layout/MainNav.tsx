@@ -59,11 +59,13 @@ export function MainNav({
   const isOMManager = role === 'OM_MANAGER'
   const isInstaller = role === 'INSTALLATION'
   const isSalesExec = role === 'SALES'
+  const isIpNoc = role === 'IP_NOC_EXECUTIVE'
 
   const canViewAdmin = isSuperAdmin
   const canViewApproval = isSuperAdmin || isSalesManager || isOMManager
   const canViewBilling = isSuperAdmin || isSalesManager
   const canViewReports = isSuperAdmin || isSalesManager || isOMManager || isSalesExec
+  const canViewAssignedJobs = isInstaller || isIpNoc
 
   if (orientation === 'horizontal') {
     return (
@@ -80,7 +82,7 @@ export function MainNav({
         </Link>
 
         {/* 1. Sales / Assigned Jobs Tab */}
-        {isInstaller ? (
+        {canViewAssignedJobs ? (
           <Link 
             href="/dashboard/installer/jobs" 
             className={linkClass('/dashboard/installer/jobs')}
@@ -283,10 +285,10 @@ export function MainNav({
 
       <div>
         <p className="px-3 text-xs font-bold text-[var(--color-slate-custom)] uppercase tracking-wider mb-1">
-          {isInstaller ? 'Installer Jobs' : 'Sales'}
+          {canViewAssignedJobs ? 'Assigned Jobs' : 'Sales'}
         </p>
         <div className="space-y-0.5">
-          {isInstaller ? (
+          {canViewAssignedJobs ? (
             <Link href="/dashboard/installer/jobs" className={linkClass('/dashboard/installer/jobs')}>
               Assigned Jobs
             </Link>

@@ -28,8 +28,14 @@ export async function submitInstallerAudit(formData: FormData) {
   const inverterCategory = (formData.get('inverterCategory') as string) || 'Low Voltage'
   const inverterSize = (formData.get('inverterSize') as string) || ''
   const noOfInverters = Number(formData.get('noOfInverters') || 1)
-  const inverterSerial = (formData.get('inverterSerial') as string) || ''
-  const inverterWarrantyEnd = formData.get('inverterWarrantyEnd') ? new Date(formData.get('inverterWarrantyEnd') as string) : null
+  
+  const inverterSerialsStr = formData.get('inverterSerials') as string
+  const inverterSerials = inverterSerialsStr ? JSON.parse(inverterSerialsStr) : []
+  
+  const inverterWarrantyEndsStr = formData.get('inverterWarrantyEnds') as string
+  const inverterWarrantyEnds = inverterWarrantyEndsStr 
+    ? JSON.parse(inverterWarrantyEndsStr).map((d: string) => d ? new Date(d) : null) 
+    : []
 
   // Solar PV Panels Specifications
   const panelBrand = (formData.get('panelBrand') as string) || ''
@@ -45,8 +51,14 @@ export async function submitInstallerAudit(formData: FormData) {
   const batteryType = (formData.get('batteryType') as string) || 'Lithium-ion'
   const batteryCategory = (formData.get('batteryCategory') as string) || 'Low Voltage'
   const noOfBatteries = Number(formData.get('noOfBatteries') || 0)
-  const batterySerial = (formData.get('batterySerial') as string) || ''
-  const batteryWarrantyEnd = formData.get('batteryWarrantyEnd') ? new Date(formData.get('batteryWarrantyEnd') as string) : null
+  
+  const batterySerialsStr = formData.get('batterySerials') as string
+  const batterySerials = batterySerialsStr ? JSON.parse(batterySerialsStr) : []
+  
+  const batteryWarrantyEndsStr = formData.get('batteryWarrantyEnds') as string
+  const batteryWarrantyEnds = batteryWarrantyEndsStr 
+    ? JSON.parse(batteryWarrantyEndsStr).map((d: string) => d ? new Date(d) : null) 
+    : []
 
   // Mounting Structure, Protection & Installation Details
   const structureType = (formData.get('structureType') as string) || 'Elevated GI Structure'
@@ -81,18 +93,15 @@ export async function submitInstallerAudit(formData: FormData) {
   const nextAuditDate = calculateNextAuditDate(firstAuditDate, packageTier)
 
   // Equipment photos
-  const inverterImageUrl = (formData.get('inverterImageUrl') as string) || ''
-  const batteryImageUrl = (formData.get('batteryImageUrl') as string) || ''
-  const panelImageUrl = (formData.get('panelImageUrl') as string) || ''
-
   const currentSystem = customerRecord?.solarSystem
 
-  const finalInverterImages = inverterImageUrl 
-    ? [inverterImageUrl] 
-    : (currentSystem?.inverterImages || [])
-  const finalBatteryImages = batteryImageUrl 
-    ? [batteryImageUrl] 
-    : (currentSystem?.batteryImages || [])
+  const inverterImageUrlsStr = (formData.get('inverterImageUrls') as string) || ''
+  const finalInverterImages = inverterImageUrlsStr ? JSON.parse(inverterImageUrlsStr) : (currentSystem?.inverterImages || [])
+
+  const batteryImageUrlsStr = (formData.get('batteryImageUrls') as string) || ''
+  const finalBatteryImages = batteryImageUrlsStr ? JSON.parse(batteryImageUrlsStr) : (currentSystem?.batteryImages || [])
+
+  const panelImageUrl = (formData.get('panelImageUrl') as string) || ''
   const finalPanelImages = panelImageUrl 
     ? [panelImageUrl] 
     : (currentSystem as any)?.panelImages || []
@@ -112,8 +121,10 @@ export async function submitInstallerAudit(formData: FormData) {
       inverterCategory,
       inverterSize,
       noOfInverters,
-      inverterSerial,
-      inverterWarrantyEnd,
+      inverterSerial: inverterSerials[0] || '', // Fallback for legacy
+      inverterSerials,
+      inverterWarrantyEnd: inverterWarrantyEnds[0] || null, // Legacy
+      inverterWarrantyEnds,
       panelBrand,
       panelType,
       panelTechnology,
@@ -125,8 +136,10 @@ export async function submitInstallerAudit(formData: FormData) {
       batteryType,
       batteryCategory,
       noOfBatteries,
-      batterySerial,
-      batteryWarrantyEnd,
+      batterySerial: batterySerials[0] || '', // Legacy
+      batterySerials,
+      batteryWarrantyEnd: batteryWarrantyEnds[0] || null, // Legacy
+      batteryWarrantyEnds,
       earthing,
       earthingLastCheck,
       earthingAcOhms,
@@ -162,8 +175,10 @@ export async function submitInstallerAudit(formData: FormData) {
       inverterCategory,
       inverterSize,
       noOfInverters,
-      inverterSerial,
-      inverterWarrantyEnd,
+      inverterSerial: inverterSerials[0] || '',
+      inverterSerials,
+      inverterWarrantyEnd: inverterWarrantyEnds[0] || null,
+      inverterWarrantyEnds,
       panelBrand,
       panelType,
       panelTechnology,
@@ -175,8 +190,10 @@ export async function submitInstallerAudit(formData: FormData) {
       batteryType,
       batteryCategory,
       noOfBatteries,
-      batterySerial,
-      batteryWarrantyEnd,
+      batterySerial: batterySerials[0] || '',
+      batterySerials,
+      batteryWarrantyEnd: batteryWarrantyEnds[0] || null,
+      batteryWarrantyEnds,
       earthing,
       earthingLastCheck,
       earthingAcOhms,
