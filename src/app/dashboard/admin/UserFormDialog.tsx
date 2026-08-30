@@ -154,6 +154,7 @@ export function UserFormDialog() {
                   <SelectItem value="OM_MANAGER" className="text-xs font-medium py-2">O & M Manager</SelectItem>
                   <SelectItem value="INSTALLATION" className="text-xs font-medium py-2">Installer (O&M Team)</SelectItem>
                   <SelectItem value="CUSTOMER_SUPPORT" className="text-xs font-medium py-2">Customer Support</SelectItem>
+                  <SelectItem value="IP_NOC_EXECUTIVE" className="text-xs font-medium py-2">IP NOC Executive</SelectItem>
                 </SelectContent>
               </Select>
             </div>
