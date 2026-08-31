@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Search, Wrench, CheckCircle2, Eye, Sun, RotateCcw, Download, ShieldCheck, MapPin } from 'lucide-react'
 import { InstallerAuditModal } from './InstallerAuditModal'
 import { useRouter } from 'next/navigation'
+import { SectionHeader } from '@/components/ui/section-header'
 
 interface InstallerJobsViewProps {
   customers: any[]
@@ -33,9 +34,16 @@ export function InstallerJobsView({
   const isOMManager = userRole === 'OM_MANAGER'
 
   const filteredCustomers = React.useMemo(() => {
-    if (!searchQuery.trim()) return customers
+    let baseList = customers;
+
+    if (!isIPNOC && !isOMManager) {
+      baseList = customers.filter((c: any) => !Boolean(c.solarSystem?.lastAuditDate || c.solarSystem?.inverterBrand));
+    }
+
+    if (!searchQuery.trim()) return baseList;
+
     const q = searchQuery.toLowerCase().trim()
-    return customers.filter((c: any) =>
+    return baseList.filter((c: any) =>
       c.fullName?.toLowerCase().includes(q) ||
       c.customerCode?.toLowerCase().includes(q) ||
       c.crfNumber?.toLowerCase().includes(q) ||
@@ -43,7 +51,7 @@ export function InstallerJobsView({
       c.city?.toLowerCase().includes(q) ||
       c.area?.toLowerCase().includes(q)
     )
-  }, [customers, searchQuery])
+  }, [customers, searchQuery, isIPNOC, isOMManager])
 
   // KPIs dynamically rendered based on user role
   const pendingCount = isIPNOC
@@ -112,6 +120,9 @@ export function InstallerJobsView({
       </div>
 
       {/* Main Assigned Jobs Table Card */}
+      <SectionHeader leftAction={<Wrench className="h-4 w-4 text-amber-600" />}>
+        Assigned Customer Jobs Queue
+      </SectionHeader>
       <Card className="shadow-sm border-line bg-white overflow-hidden">
         <CardHeader className="py-4 bg-slate-50/70 border-b border-line flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div>

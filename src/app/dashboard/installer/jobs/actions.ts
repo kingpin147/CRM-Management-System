@@ -34,7 +34,7 @@ export async function submitInstallerAudit(formData: FormData) {
   
   const inverterWarrantyEndsStr = formData.get('inverterWarrantyEnds') as string
   const inverterWarrantyEnds = inverterWarrantyEndsStr 
-    ? JSON.parse(inverterWarrantyEndsStr).map((d: string) => d ? new Date(d) : null) 
+    ? JSON.parse(inverterWarrantyEndsStr).map((d: string) => d ? new Date(d) : new Date('1970-01-01')) 
     : []
 
   // Solar PV Panels Specifications
@@ -57,7 +57,7 @@ export async function submitInstallerAudit(formData: FormData) {
   
   const batteryWarrantyEndsStr = formData.get('batteryWarrantyEnds') as string
   const batteryWarrantyEnds = batteryWarrantyEndsStr 
-    ? JSON.parse(batteryWarrantyEndsStr).map((d: string) => d ? new Date(d) : null) 
+    ? JSON.parse(batteryWarrantyEndsStr).map((d: string) => d ? new Date(d) : new Date('1970-01-01')) 
     : []
 
   // Mounting Structure, Protection & Installation Details

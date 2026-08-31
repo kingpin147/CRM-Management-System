@@ -29,18 +29,15 @@ export const INVERTER_BRANDS = [
   'Knox', 'Fronius', 'Livoltek', 'GoodWe', 'Galaxy', 'Solis', 'CoreTech', 'Inverex',
   'Ziewnic', 'Itel', 'Sunviour', 'Yinergy', 'Huawei', 'SAJ', 'Fox ESS', 'Solplanet',
   'Solax Power', 'Tesla', 'Crown', 'Growatt', 'Deye', 'Sungrow', 'Sofar', 'SMA',
-  'SolarEdge', 'KSTAR', 'SolarMax', 'SRNE', 'Voltronic / Axpert', 'Kodak', 'Sineng',
+  'SolarEdge', 'KSTAR', 'SolarMax', 'SRNE', 'Voltronic/Axpert', 'Kodak', 'Sineng',
   'FIMER', 'Canadian Solar', 'Apex', 'Gripsun', 'Anicsun', 'Maxpower', 'Auxsol',
-  'Onyx', 'Powerage', 'Sunlife', 'Must', 'Other'
+  'Onyx', 'Powerage', 'Sunlife', 'Other'
 ]
 
 export const PANEL_BRANDS = [
-  'AIKO', 'LONGi', 'Risen', 'Trina Solar', 'Jinko', 'Astronergy', 'GCL', 'Huasun',
-  'DMEGC', 'JA Solar', 'Jolywood', 'DASolar', 'DAH Solar', 'TW Solar', 'Jetion Solar',
-  'Grand Sunergy', 'SPIC', 'Solargiga', 'Canadian Solar', 'REC Group', 'Eging PV',
-  'RUNERGY', 'URECO', 'Yingli', 'Suntech', 'Kalyon PV', 'Qcells', 'CECEP',
-  'Jinergy', 'Meyer Burger', 'Qn-SOLAR', 'Seraphim', 'ZNSHINE', 'OSDA', 'Talesun',
-  'First Solar', 'SunPower / Maxeon', 'Phono Solar', 'Akcome', 'Boviet', 'Other'
+  'JA Solar', 'Jinko', 'Longi', 'Trina', 'Canadian', 'Risen', 'Qcells', 'SunPower',
+  'REC', 'Hanwha', 'Yingli', 'Talesun', 'Seraphim', 'HT-SAAE', 'ZNSHINE', 'DAH Solar',
+  'Eging PV', 'GCL', 'Other'
 ]
 
 export const BATTERY_BRANDS = [

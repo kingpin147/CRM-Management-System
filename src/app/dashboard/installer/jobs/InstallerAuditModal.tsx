@@ -611,22 +611,22 @@ export function InstallerAuditModal({
                       </h4>
                     </div>
                     
-                    <div className="space-y-1">
-                      <Label className="text-xs font-semibold">Inverter {index + 1} Serial # *</Label>
-                      <Input
-                        value={inverterSerials[index] || ''}
-                        onChange={(e) => {
-                          const newSerials = [...inverterSerials];
-                          newSerials[index] = e.target.value;
-                          setInverterSerials(newSerials);
-                        }}
-                        placeholder="e.g. SN-INV-049812"
-                        className="h-9 text-xs font-mono bg-white"
-                        required
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                      <div className="space-y-1">
+                        <Label className="text-xs font-semibold">Inverter {index + 1} Serial # *</Label>
+                        <Input
+                          value={inverterSerials[index] || ''}
+                          onChange={(e) => {
+                            const newSerials = [...inverterSerials];
+                            newSerials[index] = e.target.value;
+                            setInverterSerials(newSerials);
+                          }}
+                          placeholder="e.g. SN-INV-049812"
+                          className="h-9 text-xs font-mono bg-white"
+                          required
+                        />
+                      </div>
+                      
                       <div className="space-y-1">
                         <Label className="text-xs font-semibold text-amber-900">Warranty Expiry Date</Label>
                         <DateInput
@@ -881,7 +881,7 @@ export function InstallerAuditModal({
                       </h4>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
                       <div className="space-y-1">
                         <Label className="text-xs font-semibold">Battery {index + 1} Serial #</Label>
                         <Input
@@ -907,9 +907,7 @@ export function InstallerAuditModal({
                           className="h-9"
                         />
                       </div>
-                    </div>
 
-                    <div className="pt-2 border-t border-slate-200">
                       <div className="space-y-1">
                         <Label className="text-xs font-bold text-slate-800 flex items-center gap-1">
                           <Camera className="h-3.5 w-3.5 text-sky-600" />
