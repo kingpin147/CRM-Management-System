@@ -81,12 +81,14 @@ export function InstallerAuditModal({
   const [inverterPhase, setInverterPhase] = React.useState(solar.inverterPhase || 'Three Phase')
   const [inverterCategory, setInverterCategory] = React.useState(solar.inverterCategory || 'Low Voltage')
   const [noOfInverters, setNoOfInverters] = React.useState<number>(solar.noOfInverters != null ? Number(solar.noOfInverters) : 1)
-  const [inverterSerial, setInverterSerial] = React.useState(solar.inverterSerial || '')
-  const [inverterWarrantyEnd, setInverterWarrantyEnd] = React.useState(
-    solar.inverterWarrantyEnd ? new Date(solar.inverterWarrantyEnd).toISOString().split('T')[0] : ''
+  const [inverterSerials, setInverterSerials] = React.useState<string[]>(solar.inverterSerials?.length ? solar.inverterSerials : [solar.inverterSerial || ''])
+  const [inverterWarrantyEnds, setInverterWarrantyEnds] = React.useState<string[]>(
+    solar.inverterWarrantyEnds?.length
+      ? solar.inverterWarrantyEnds.map((d: any) => d ? new Date(d).toISOString().split('T')[0] : '')
+      : [solar.inverterWarrantyEnd ? new Date(solar.inverterWarrantyEnd).toISOString().split('T')[0] : '']
   )
-  const [inverterImageUrl, setInverterImageUrl] = React.useState(solar.inverterImages?.[0] || '')
-  const [uploadingInverter, setUploadingInverter] = React.useState(false)
+  const [inverterImageUrls, setInverterImageUrls] = React.useState<string[]>(solar.inverterImages?.length ? solar.inverterImages : [])
+  const [uploadingInverterIndex, setUploadingInverterIndex] = React.useState<number | null>(null)
 
   // 3. Solar PV Panels Specifications
   const [panelBrand, setPanelBrand] = React.useState(solar.panelBrand || '')
@@ -105,12 +107,14 @@ export function InstallerAuditModal({
   const [batteryType, setBatteryType] = React.useState(solar.batteryType || 'Lithium-ion')
   const [batteryCategory, setBatteryCategory] = React.useState(solar.batteryCategory || 'Low Voltage (LV)')
   const [noOfBatteries, setNoOfBatteries] = React.useState<number>(solar.noOfBatteries != null ? Number(solar.noOfBatteries) : 0)
-  const [batterySerial, setBatterySerial] = React.useState(solar.batterySerial || '')
-  const [batteryWarrantyEnd, setBatteryWarrantyEnd] = React.useState(
-    solar.batteryWarrantyEnd ? new Date(solar.batteryWarrantyEnd).toISOString().split('T')[0] : ''
+  const [batterySerials, setBatterySerials] = React.useState<string[]>(solar.batterySerials?.length ? solar.batterySerials : [solar.batterySerial || ''])
+  const [batteryWarrantyEnds, setBatteryWarrantyEnds] = React.useState<string[]>(
+    solar.batteryWarrantyEnds?.length
+      ? solar.batteryWarrantyEnds.map((d: any) => d ? new Date(d).toISOString().split('T')[0] : '')
+      : [solar.batteryWarrantyEnd ? new Date(solar.batteryWarrantyEnd).toISOString().split('T')[0] : '']
   )
-  const [batteryImageUrl, setBatteryImageUrl] = React.useState(solar.batteryImages?.[0] || '')
-  const [uploadingBattery, setUploadingBattery] = React.useState(false)
+  const [batteryImageUrls, setBatteryImageUrls] = React.useState<string[]>(solar.batteryImages?.length ? solar.batteryImages : [])
+  const [uploadingBatteryIndex, setUploadingBatteryIndex] = React.useState<number | null>(null)
 
   // 5. Mounting Structure, Earthing & Protection Specs
   const [structureType, setStructureType] = React.useState(solar.structureType || 'Elevated')
@@ -158,9 +162,9 @@ export function InstallerAuditModal({
       setInverterPhase(s.inverterPhase || 'Three Phase')
       setInverterCategory(s.inverterCategory || 'Low Voltage')
       setNoOfInverters(s.noOfInverters != null ? Number(s.noOfInverters) : 1)
-      setInverterSerial(s.inverterSerial || '')
-      setInverterWarrantyEnd(s.inverterWarrantyEnd ? new Date(s.inverterWarrantyEnd).toISOString().split('T')[0] : '')
-      setInverterImageUrl(s.inverterImages?.[0] || '')
+      setInverterSerials(s.inverterSerials?.length ? s.inverterSerials : [s.inverterSerial || ''])
+      setInverterWarrantyEnds(s.inverterWarrantyEnds?.length ? s.inverterWarrantyEnds.map((d: any) => d ? new Date(d).toISOString().split('T')[0] : '') : [s.inverterWarrantyEnd ? new Date(s.inverterWarrantyEnd).toISOString().split('T')[0] : ''])
+      setInverterImageUrls(s.inverterImages?.length ? s.inverterImages : [])
 
       // Section 3
       setPanelBrand(s.panelBrand || '')
@@ -176,9 +180,9 @@ export function InstallerAuditModal({
       setBatteryType(s.batteryType || 'Lithium-ion')
       setBatteryCategory(s.batteryCategory || 'Low Voltage (LV)')
       setNoOfBatteries(s.noOfBatteries != null ? Number(s.noOfBatteries) : 0)
-      setBatterySerial(s.batterySerial || '')
-      setBatteryWarrantyEnd(s.batteryWarrantyEnd ? new Date(s.batteryWarrantyEnd).toISOString().split('T')[0] : '')
-      setBatteryImageUrl(s.batteryImages?.[0] || '')
+      setBatterySerials(s.batterySerials?.length ? s.batterySerials : [s.batterySerial || ''])
+      setBatteryWarrantyEnds(s.batteryWarrantyEnds?.length ? s.batteryWarrantyEnds.map((d: any) => d ? new Date(d).toISOString().split('T')[0] : '') : [s.batteryWarrantyEnd ? new Date(s.batteryWarrantyEnd).toISOString().split('T')[0] : ''])
+      setBatteryImageUrls(s.batteryImages?.length ? s.batteryImages : [])
 
       // Section 5
       setStructureType(s.structureType || 'Elevated')
@@ -224,18 +228,24 @@ export function InstallerAuditModal({
     return result.url
   }
 
-  async function handleInverterPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleInverterPhoto(e: React.ChangeEvent<HTMLInputElement>, index: number) {
     const file = e.target.files?.[0]
     if (!file) return
-    setUploadingInverter(true)
+    setUploadingInverterIndex(index)
     setError(null)
     try {
       const url = await uploadEquipmentPhoto(file, 'equipment/inverters')
-      if (url) setInverterImageUrl(url)
+      if (url) {
+        setInverterImageUrls(prev => {
+          const newUrls = [...prev]
+          newUrls[index] = url
+          return newUrls
+        })
+      }
     } catch (err: any) {
       setError(`Inverter Photo Upload Error: ${err.message}`)
     } finally {
-      setUploadingInverter(false)
+      setUploadingInverterIndex(null)
     }
   }
 
@@ -254,18 +264,24 @@ export function InstallerAuditModal({
     }
   }
 
-  async function handleBatteryPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleBatteryPhoto(e: React.ChangeEvent<HTMLInputElement>, index: number) {
     const file = e.target.files?.[0]
     if (!file) return
-    setUploadingBattery(true)
+    setUploadingBatteryIndex(index)
     setError(null)
     try {
       const url = await uploadEquipmentPhoto(file, 'equipment/batteries')
-      if (url) setBatteryImageUrl(url)
+      if (url) {
+        setBatteryImageUrls(prev => {
+          const newUrls = [...prev]
+          newUrls[index] = url
+          return newUrls
+        })
+      }
     } catch (err: any) {
       setError(`Battery Photo Upload Error: ${err.message}`)
     } finally {
-      setUploadingBattery(false)
+      setUploadingBatteryIndex(null)
     }
   }
 
@@ -289,9 +305,9 @@ export function InstallerAuditModal({
       formData.append('inverterPhase', inverterPhase)
       formData.append('inverterCategory', inverterCategory)
       formData.append('noOfInverters', String(noOfInverters))
-      formData.append('inverterSerial', inverterSerial)
-      formData.append('inverterWarrantyEnd', inverterWarrantyEnd)
-      formData.append('inverterImageUrl', inverterImageUrl)
+      formData.append('inverterSerials', JSON.stringify(inverterSerials.slice(0, noOfInverters)))
+      formData.append('inverterWarrantyEnds', JSON.stringify(inverterWarrantyEnds.slice(0, noOfInverters)))
+      formData.append('inverterImageUrls', JSON.stringify(inverterImageUrls.slice(0, noOfInverters)))
 
       formData.append('panelBrand', panelBrand)
       formData.append('panelTechnology', panelTechnology)
@@ -305,9 +321,9 @@ export function InstallerAuditModal({
       formData.append('batteryType', batteryType)
       formData.append('batteryCategory', batteryCategory)
       formData.append('noOfBatteries', String(noOfBatteries))
-      formData.append('batterySerial', batterySerial)
-      formData.append('batteryWarrantyEnd', batteryWarrantyEnd)
-      formData.append('batteryImageUrl', batteryImageUrl)
+      formData.append('batterySerials', JSON.stringify(batterySerials.slice(0, noOfBatteries)))
+      formData.append('batteryWarrantyEnds', JSON.stringify(batteryWarrantyEnds.slice(0, noOfBatteries)))
+      formData.append('batteryImageUrls', JSON.stringify(batteryImageUrls.slice(0, noOfBatteries)))
 
       formData.append('structureType', structureType)
       formData.append('structureMaterial', structureMaterial)
@@ -504,7 +520,7 @@ export function InstallerAuditModal({
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
                 <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                   <p className="text-xs font-bold text-[#002868] uppercase tracking-wide">2. Inverter Unit Specifications</p>
-                  {inverterImageUrl && (
+                  {inverterImageUrls.some(Boolean) && (
                     <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Photo Uploaded
                     </span>
@@ -584,60 +600,84 @@ export function InstallerAuditModal({
                       className="h-9 text-xs font-mono bg-white font-bold"
                     />
                   </div>
-                  <div className="space-y-1 sm:col-span-2">
-                    <Label className="text-xs font-semibold">Inverter Serial # *</Label>
-                    <Input
-                      value={inverterSerial}
-                      onChange={(e) => setInverterSerial(e.target.value)}
-                      placeholder="e.g. SN-INV-049812"
-                      className="h-9 text-xs font-mono bg-white"
-                      required
-                    />
-                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-200 items-end">
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-amber-900">Inverter Warranty Expiry Date</Label>
-                    <DateInput
-                      value={inverterWarrantyEnd}
-                      onChange={(e) => setInverterWarrantyEnd(e.target.value)}
-                      className="h-9"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-bold text-slate-800 flex items-center gap-1">
-                      <Camera className="h-3.5 w-3.5 text-amber-600" />
-                      Inverter Hardware Photo
-                    </Label>
-                    <div className="relative flex items-center gap-2">
+                {Array.from({ length: noOfInverters }).map((_, index) => (
+                  <div key={`inverter-${index}`} className="mt-4 p-4 rounded-xl border border-amber-200/60 bg-amber-50/30 space-y-4">
+                    <div className="flex items-center justify-between pb-2 border-b border-amber-200/60">
+                      <h4 className="text-sm font-bold text-amber-900 flex items-center gap-2">
+                        <Zap className="h-4 w-4 text-amber-500" />
+                        Inverter Unit {index + 1}
+                      </h4>
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold">Inverter {index + 1} Serial # *</Label>
                       <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleInverterPhoto}
-                        disabled={uploadingInverter}
-                        className="h-9 text-xs bg-white border-amber-200 file:bg-amber-100 file:text-amber-900 file:border-0 file:rounded file:px-2 file:py-1 file:text-xs file:font-semibold cursor-pointer"
+                        value={inverterSerials[index] || ''}
+                        onChange={(e) => {
+                          const newSerials = [...inverterSerials];
+                          newSerials[index] = e.target.value;
+                          setInverterSerials(newSerials);
+                        }}
+                        placeholder="e.g. SN-INV-049812"
+                        className="h-9 text-xs font-mono bg-white"
+                        required
                       />
-                      {uploadingInverter && (
-                        <div className="absolute right-3 flex items-center gap-1 text-xs text-amber-700 font-semibold bg-white/90 px-1.5 rounded">
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading...
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+                      <div className="space-y-1">
+                        <Label className="text-xs font-semibold text-amber-900">Warranty Expiry Date</Label>
+                        <DateInput
+                          value={inverterWarrantyEnds[index] || ''}
+                          onChange={(e) => {
+                            const newWarranties = [...inverterWarrantyEnds];
+                            newWarranties[index] = e.target.value;
+                            setInverterWarrantyEnds(newWarranties);
+                          }}
+                          className="h-9"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs font-bold text-slate-800 flex items-center gap-1">
+                          <Camera className="h-3.5 w-3.5 text-amber-600" />
+                          Hardware Photo
+                        </Label>
+                        <div className="relative flex items-center gap-2">
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleInverterPhoto(e, index)}
+                            disabled={uploadingInverterIndex === index}
+                            className="h-9 text-xs bg-white border-amber-200 file:bg-amber-100 file:text-amber-900 file:border-0 file:rounded file:px-2 file:py-1 file:text-xs file:font-semibold cursor-pointer"
+                          />
+                          {uploadingInverterIndex === index && (
+                            <div className="absolute right-3 flex items-center gap-1 text-xs text-amber-700 font-semibold bg-white/90 px-1.5 rounded">
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading...
+                            </div>
+                          )}
+                          {inverterImageUrls[index] && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const newUrls = [...inverterImageUrls];
+                                newUrls[index] = '';
+                                setInverterImageUrls(newUrls);
+                              }}
+                              className="h-9 px-2 text-red-600 hover:bg-red-50 text-xs shrink-0"
+                              title="Remove Photo"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
-                      )}
-                      {inverterImageUrl && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setInverterImageUrl('')}
-                          className="h-9 px-2 text-red-600 hover:bg-red-50 text-xs shrink-0"
-                          title="Remove Photo"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
+                      </div>
                     </div>
                   </div>
-                </div>
+                ))}
               </div>
 
               {/* 3. Solar Panels Specs */}
@@ -774,7 +814,7 @@ export function InstallerAuditModal({
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
                 <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                   <p className="text-xs font-bold text-[#002868] uppercase tracking-wide">4. Battery Energy Storage System (BESS)</p>
-                  {batteryImageUrl && (
+                  {batteryImageUrls.some(Boolean) && (
                     <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Photo Uploaded
                     </span>
@@ -832,60 +872,83 @@ export function InstallerAuditModal({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Battery Serial #</Label>
-                    <Input
-                      value={batterySerial}
-                      onChange={(e) => setBatterySerial(e.target.value)}
-                      placeholder="e.g. SN-BAT-092819 (Optional)"
-                      className="h-9 text-xs font-mono bg-white"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-amber-900">Battery Warranty Expiry Date</Label>
-                    <DateInput
-                      value={batteryWarrantyEnd}
-                      onChange={(e) => setBatteryWarrantyEnd(e.target.value)}
-                      className="h-9"
-                    />
-                  </div>
-                </div>
+                {Array.from({ length: noOfBatteries }).map((_, index) => (
+                  <div key={`battery-${index}`} className="mt-4 p-4 rounded-xl border border-slate-300 bg-slate-50/50 space-y-4">
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                      <h4 className="text-sm font-bold text-[#002868] flex items-center gap-2">
+                        <Battery className="h-4 w-4 text-sky-600" />
+                        Battery Unit {index + 1}
+                      </h4>
+                    </div>
 
-                <div className="pt-2 border-t border-slate-200">
-                  <div className="space-y-1">
-                    <Label className="text-xs font-bold text-slate-800 flex items-center gap-1">
-                      <Camera className="h-3.5 w-3.5 text-sky-600" />
-                      Battery Bank Photo
-                    </Label>
-                    <div className="relative flex items-center gap-2">
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleBatteryPhoto}
-                        disabled={uploadingBattery}
-                        className="h-9 text-xs bg-white border-slate-300 file:bg-slate-100 file:text-slate-900 file:border-0 file:rounded file:px-2 file:py-1 file:text-xs file:font-semibold cursor-pointer"
-                      />
-                      {uploadingBattery && (
-                        <div className="absolute right-3 flex items-center gap-1 text-xs text-sky-700 font-semibold bg-white/90 px-1.5 rounded">
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading...
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs font-semibold">Battery {index + 1} Serial #</Label>
+                        <Input
+                          value={batterySerials[index] || ''}
+                          onChange={(e) => {
+                            const newSerials = [...batterySerials];
+                            newSerials[index] = e.target.value;
+                            setBatterySerials(newSerials);
+                          }}
+                          placeholder="e.g. SN-BAT-092819 (Optional)"
+                          className="h-9 text-xs font-mono bg-white"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs font-semibold text-amber-900">Warranty Expiry Date</Label>
+                        <DateInput
+                          value={batteryWarrantyEnds[index] || ''}
+                          onChange={(e) => {
+                            const newWarranties = [...batteryWarrantyEnds];
+                            newWarranties[index] = e.target.value;
+                            setBatteryWarrantyEnds(newWarranties);
+                          }}
+                          className="h-9"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-200">
+                      <div className="space-y-1">
+                        <Label className="text-xs font-bold text-slate-800 flex items-center gap-1">
+                          <Camera className="h-3.5 w-3.5 text-sky-600" />
+                          Battery Hardware Photo
+                        </Label>
+                        <div className="relative flex items-center gap-2">
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleBatteryPhoto(e, index)}
+                            disabled={uploadingBatteryIndex === index}
+                            className="h-9 text-xs bg-white border-slate-300 file:bg-slate-100 file:text-slate-900 file:border-0 file:rounded file:px-2 file:py-1 file:text-xs file:font-semibold cursor-pointer"
+                          />
+                          {uploadingBatteryIndex === index && (
+                            <div className="absolute right-3 flex items-center gap-1 text-xs text-sky-700 font-semibold bg-white/90 px-1.5 rounded">
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading...
+                            </div>
+                          )}
+                          {batteryImageUrls[index] && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const newUrls = [...batteryImageUrls];
+                                newUrls[index] = '';
+                                setBatteryImageUrls(newUrls);
+                              }}
+                              className="h-9 px-2 text-red-600 hover:bg-red-50 text-xs shrink-0"
+                              title="Remove Photo"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
-                      )}
-                      {batteryImageUrl && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setBatteryImageUrl('')}
-                          className="h-9 px-2 text-red-600 hover:bg-red-50 text-xs shrink-0"
-                          title="Remove Photo"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
+                      </div>
                     </div>
                   </div>
-                </div>
+                ))}
               </div>
 
               {/* 5. Mounting Structure, Earthing & Protection Specs */}

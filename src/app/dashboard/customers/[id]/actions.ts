@@ -158,10 +158,33 @@ export async function saveSolarSystem(formData: FormData) {
   const inverterCategory = formData.get('inverterCategory') as string || 'Low Voltage'
   const inverterSize = formData.get('inverterSize') as string || '10 kW'
   const noOfInverters = Number(formData.get('noOfInverters')) || 1
-  const inverterSerial = formData.get('inverterSerial') as string || 'SN-INV-' + Date.now().toString().slice(-6)
   
-  const inverterWarrantyRaw = formData.get('inverterWarrantyEnd') as string
-  const inverterWarrantyEnd = inverterWarrantyRaw ? new Date(inverterWarrantyRaw) : undefined
+  let inverterSerial = formData.get('inverterSerial') as string || 'SN-INV-' + Date.now().toString().slice(-6)
+  let inverterWarrantyRaw = formData.get('inverterWarrantyEnd') as string
+  let inverterWarrantyEnd = inverterWarrantyRaw ? new Date(inverterWarrantyRaw) : undefined
+
+  let inverterSerials: string[] = []
+  let inverterWarrantyEnds: Date[] = []
+  
+  try {
+    const rawSerials = formData.get('inverterSerials') as string
+    if (rawSerials) inverterSerials = JSON.parse(rawSerials)
+    
+    const rawWarranties = formData.get('inverterWarrantyEnds') as string
+    if (rawWarranties) {
+      const parsed = JSON.parse(rawWarranties) as string[]
+      inverterWarrantyEnds = parsed.map(w => w ? new Date(w) : new Date())
+    }
+  } catch (e) {
+    console.error('Failed to parse inverter arrays', e)
+  }
+
+  if (inverterSerials.length > 0) {
+    inverterSerial = inverterSerials[0]
+  }
+  if (inverterWarrantyEnds.length > 0) {
+    inverterWarrantyEnd = inverterWarrantyEnds[0]
+  }
 
   // Panel
   const panelBrand = formData.get('panelBrand') as string || 'Longi'
@@ -178,9 +201,33 @@ export async function saveSolarSystem(formData: FormData) {
   const batteryType = formData.get('batteryType') as string || 'Lithium'
   const batteryCategory = formData.get('batteryCategory') as string || 'Low Voltage'
   const noOfBatteries = Number(formData.get('noOfBatteries')) || 1
-  const batterySerial = formData.get('batterySerial') as string || 'SN-BAT-' + Date.now().toString().slice(-6)
-  const batteryWarrantyRaw = formData.get('batteryWarrantyEnd') as string
-  const batteryWarrantyEnd = batteryWarrantyRaw ? new Date(batteryWarrantyRaw) : undefined
+  
+  let batterySerial = formData.get('batterySerial') as string || 'SN-BAT-' + Date.now().toString().slice(-6)
+  let batteryWarrantyRaw = formData.get('batteryWarrantyEnd') as string
+  let batteryWarrantyEnd = batteryWarrantyRaw ? new Date(batteryWarrantyRaw) : undefined
+
+  let batterySerials: string[] = []
+  let batteryWarrantyEnds: Date[] = []
+  
+  try {
+    const rawSerials = formData.get('batterySerials') as string
+    if (rawSerials) batterySerials = JSON.parse(rawSerials)
+    
+    const rawWarranties = formData.get('batteryWarrantyEnds') as string
+    if (rawWarranties) {
+      const parsed = JSON.parse(rawWarranties) as string[]
+      batteryWarrantyEnds = parsed.map(w => w ? new Date(w) : new Date())
+    }
+  } catch (e) {
+    console.error('Failed to parse battery arrays', e)
+  }
+
+  if (batterySerials.length > 0) {
+    batterySerial = batterySerials[0]
+  }
+  if (batteryWarrantyEnds.length > 0) {
+    batteryWarrantyEnd = batteryWarrantyEnds[0]
+  }
 
   // Earthing & Specs
   const earthing = formData.get('earthing') as string || 'AC & DC Grounding'
@@ -242,7 +289,9 @@ export async function saveSolarSystem(formData: FormData) {
         inverterSize,
         noOfInverters,
         inverterSerial,
+        inverterSerials,
         inverterWarrantyEnd,
+        inverterWarrantyEnds,
         panelBrand,
         panelType,
         panelTechnology,
@@ -255,7 +304,9 @@ export async function saveSolarSystem(formData: FormData) {
         batteryCategory,
         noOfBatteries,
         batterySerial,
+        batterySerials,
         batteryWarrantyEnd,
+        batteryWarrantyEnds,
         earthing,
         earthingAcOhms,
         earthingDcOhms,
@@ -281,7 +332,9 @@ export async function saveSolarSystem(formData: FormData) {
         inverterSize,
         noOfInverters,
         inverterSerial,
+        inverterSerials,
         inverterWarrantyEnd,
+        inverterWarrantyEnds,
         panelBrand,
         panelType,
         panelTechnology,
@@ -294,7 +347,9 @@ export async function saveSolarSystem(formData: FormData) {
         batteryCategory,
         noOfBatteries,
         batterySerial,
+        batterySerials,
         batteryWarrantyEnd,
+        batteryWarrantyEnds,
         earthing,
         earthingAcOhms,
         earthingDcOhms,

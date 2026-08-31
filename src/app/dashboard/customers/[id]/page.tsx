@@ -401,16 +401,20 @@ export default async function CustomerDetailPage({
           const invBrands = customer.solarSystem?.inverterBrand 
             ? customer.solarSystem.inverterBrand.split(',').map((s: string) => s.trim()).filter(Boolean)
             : []
-          const invSerials = customer.solarSystem?.inverterSerial 
-            ? customer.solarSystem.inverterSerial.split(',').map((s: string) => s.trim()).filter(Boolean)
-            : []
+          const invSerials = (customer.solarSystem?.inverterSerials && customer.solarSystem.inverterSerials.length > 0)
+            ? customer.solarSystem.inverterSerials
+            : (customer.solarSystem?.inverterSerial 
+                ? customer.solarSystem.inverterSerial.split(',').map((s: string) => s.trim()).filter(Boolean)
+                : [])
           const noOfInverters = customer.solarSystem?.noOfInverters != null 
             ? Number(customer.solarSystem.noOfInverters) 
             : Math.max(invBrands.length, invSerials.length)
 
-          const batSerials = customer.solarSystem?.batterySerial 
-            ? customer.solarSystem.batterySerial.split(',').map((s: string) => s.trim()).filter(Boolean)
-            : []
+          const batSerials = (customer.solarSystem?.batterySerials && customer.solarSystem.batterySerials.length > 0)
+            ? customer.solarSystem.batterySerials
+            : (customer.solarSystem?.batterySerial 
+                ? customer.solarSystem.batterySerial.split(',').map((s: string) => s.trim()).filter(Boolean)
+                : [])
           const noOfBatteries = customer.solarSystem?.noOfBatteries != null 
             ? Number(customer.solarSystem.noOfBatteries) 
             : batSerials.length
@@ -603,7 +607,7 @@ export default async function CustomerDetailPage({
                                         <div className="text-[11px] text-slate-700 flex justify-between items-center">
                                           <span className="font-semibold text-slate-500">Warranty End:</span> 
                                           <span className="font-mono font-semibold text-amber-900 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
-                                            {formatDate(customer.solarSystem?.inverterWarrantyEnd)}
+                                            {formatDate(customer.solarSystem?.inverterWarrantyEnds?.[idx] || customer.solarSystem?.inverterWarrantyEnd)}
                                           </span>
                                         </div>
                                         {(customer.solarSystem?.inverterImages?.[idx] || customer.solarSystem?.inverterImages?.[0]) && (
@@ -861,7 +865,7 @@ export default async function CustomerDetailPage({
                                         <div className="text-[11px] text-slate-700 flex justify-between items-center">
                                           <span className="font-semibold text-slate-500">Warranty End:</span> 
                                           <span className="font-mono font-semibold text-amber-900 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
-                                            {formatDate(customer.solarSystem?.batteryWarrantyEnd)}
+                                            {formatDate(customer.solarSystem?.batteryWarrantyEnds?.[idx] || customer.solarSystem?.batteryWarrantyEnd)}
                                           </span>
                                         </div>
                                       </div>
