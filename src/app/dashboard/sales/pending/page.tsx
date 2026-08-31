@@ -145,6 +145,52 @@ export default async function PendingSalesPage() {
     const earthingAcOhmsStr = formData.get('earthingAcOhms') as string
     const earthingDcOhmsStr = formData.get('earthingDcOhms') as string
 
+    const meterType = (formData.get('meterType') as string) || undefined
+    const meterPhase = (formData.get('meterPhase') as string) || undefined
+    const zeroExportDevice = formData.get('zeroExportDevice') === 'Yes' ? true : formData.get('zeroExportDevice') === 'No' ? false : undefined
+    const disco = (formData.get('disco') as string) || undefined
+    const discoRefNo = (formData.get('discoRefNo') as string) || undefined
+    
+    const inverterType = (formData.get('inverterType') as string) || undefined
+    const inverterPhase = (formData.get('inverterPhase') as string) || undefined
+    const inverterCategory = (formData.get('inverterCategory') as string) || undefined
+    const noOfInvertersStr = formData.get('noOfInverters') as string
+    const inverterSerial = (formData.get('inverterSerial') as string) || undefined
+    const inverterWarrantyEndStr = formData.get('inverterWarrantyEnd') as string
+
+    const panelType = (formData.get('panelType') as string) || undefined
+    const panelTechnology = (formData.get('panelTechnology') as string) || undefined
+    const panelWattageStr = formData.get('panelWattage') as string
+    const panelWarrantyEndStr = formData.get('panelWarrantyEnd') as string
+
+    const batteryCategory = (formData.get('batteryCategory') as string) || undefined
+    const batteryType = (formData.get('batteryType') as string) || undefined
+    const batterySerial = (formData.get('batterySerial') as string) || undefined
+    const batteryWarrantyEndStr = formData.get('batteryWarrantyEnd') as string
+
+    const earthingType = (formData.get('earthingType') as string) || undefined
+    const lightningProtection = formData.get('lightningProtection') === 'Yes' ? true : formData.get('lightningProtection') === 'No' ? false : undefined
+    const breakerName = (formData.get('breakerName') as string) || undefined
+    const ingressProtection = (formData.get('ingressProtection') as string) || undefined
+    const structureType = (formData.get('structureType') as string) || undefined
+    const structureMaterial = (formData.get('structureMaterial') as string) || undefined
+    const systemInstallationDateStr = formData.get('systemInstallationDate') as string
+    
+    const installerName = (formData.get('installerName') as string) || undefined
+    const installerCompany = (formData.get('installerCompany') as string) || undefined
+    const installerAddress = (formData.get('installerAddress') as string) || undefined
+    const installerContact = (formData.get('installerContact') as string) || undefined
+    const installerEmail = (formData.get('installerEmail') as string) || undefined
+    
+    const lastAuditDateStr = formData.get('lastAuditDate') as string
+    const inverterStatus = (formData.get('inverterStatus') as string) || undefined
+    const panelStatus = (formData.get('panelStatus') as string) || undefined
+    const batteryStatus = (formData.get('batteryStatus') as string) || undefined
+    const structureStatus = (formData.get('structureStatus') as string) || undefined
+    const cableStatus = (formData.get('cableStatus') as string) || undefined
+    const earthingStatus = (formData.get('earthingStatus') as string) || undefined
+    const breakerStatus = (formData.get('breakerStatus') as string) || undefined
+
     let nextStatus = currentStatus
     if (shouldAdvance) {
       if (currentStatus === 'SIGNUP_GENERATED') {
@@ -220,54 +266,135 @@ export default async function PendingSalesPage() {
     }
 
     // 3. Upsert Solar System
-    if (inverterBrand || inverterSize || panelBrand || panelQuantityStr || batteryBrand || batteryQtyStr || earthingAcOhmsStr || earthingDcOhmsStr) {
-      const pQty = panelQuantityStr !== '' && panelQuantityStr !== null ? parseInt(panelQuantityStr, 10) : undefined
-      const bQty = batteryQtyStr !== '' && batteryQtyStr !== null ? parseInt(batteryQtyStr, 10) : undefined
-      const acOhms = earthingAcOhmsStr !== '' && earthingAcOhmsStr !== null ? parseFloat(earthingAcOhmsStr) : undefined
-      const dcOhms = earthingDcOhmsStr !== '' && earthingDcOhmsStr !== null ? parseFloat(earthingDcOhmsStr) : undefined
+    const pQty = panelQuantityStr !== '' && panelQuantityStr !== null ? parseInt(panelQuantityStr, 10) : undefined
+    const bQty = batteryQtyStr !== '' && batteryQtyStr !== null ? parseInt(batteryQtyStr, 10) : undefined
+    const acOhms = earthingAcOhmsStr !== '' && earthingAcOhmsStr !== null ? parseFloat(earthingAcOhmsStr) : undefined
+    const dcOhms = earthingDcOhmsStr !== '' && earthingDcOhmsStr !== null ? parseFloat(earthingDcOhmsStr) : undefined
+    const pWatt = panelWattageStr !== '' && panelWattageStr !== null ? parseInt(panelWattageStr, 10) : undefined
+    const invCount = noOfInvertersStr !== '' && noOfInvertersStr !== null ? parseInt(noOfInvertersStr, 10) : undefined
+    
+    const invWarrantyEnd = inverterWarrantyEndStr ? new Date(inverterWarrantyEndStr) : undefined
+    const panWarrantyEnd = panelWarrantyEndStr ? new Date(panelWarrantyEndStr) : undefined
+    const batWarrantyEnd = batteryWarrantyEndStr ? new Date(batteryWarrantyEndStr) : undefined
+    const sysInstDate = systemInstallationDateStr ? new Date(systemInstallationDateStr) : undefined
+    const lastAuditDt = lastAuditDateStr ? new Date(lastAuditDateStr) : undefined
 
-      await prisma.solarSystem.upsert({
-        where: { customerId },
-        create: {
-          customerId,
-          meterType: 'Green Meter',
-          zeroExportDevice: false,
-          inverterBrand: inverterBrand || '',
-          inverterType: 'OnGrid',
-          inverterPhase: 'Three',
-          inverterCategory: 'Low Voltage',
-          inverterSize: inverterSize || '',
-          noOfInverters: 1,
-          inverterSerial: '',
-          panelBrand: panelBrand || '',
-          panelType: 'Bifacial',
-          panelTechnology: 'Mono Perc',
-          panelWattage: 550,
-          noOfPanels: pQty || 0,
-          totalWattage: (pQty || 0) * 550,
-          batteryCategory: 'Low Voltage',
-          batteryType: 'Lithium',
-          batteryBrand: batteryBrand || '',
-          noOfBatteries: bQty || 0,
-          batterySerial: '',
-          earthing: 'Both',
-          earthingAcOhms: acOhms || 0,
-          earthingDcOhms: dcOhms || 0,
-          lightningProtection: false,
-          breakerName: 'Schneider / ABB',
-        },
-        update: {
-          inverterBrand,
-          inverterSize,
-          panelBrand,
-          noOfPanels: pQty,
-          batteryBrand,
-          noOfBatteries: bQty,
-          earthingAcOhms: acOhms,
-          earthingDcOhms: dcOhms,
-        }
-      })
-    }
+    await prisma.solarSystem.upsert({
+      where: { customerId },
+      create: {
+        customerId,
+        meterType: meterType || 'Green Meter',
+        meterPhase: meterPhase,
+        zeroExportDevice: zeroExportDevice ?? false,
+        disco: disco,
+        discoRefNo: discoRefNo,
+        
+        inverterBrand: inverterBrand || '',
+        inverterType: inverterType || 'OnGrid',
+        inverterPhase: inverterPhase || 'Three',
+        inverterCategory: inverterCategory || 'Low Voltage',
+        inverterSize: inverterSize || '',
+        noOfInverters: invCount || 1,
+        inverterSerial: inverterSerial || '',
+        inverterWarrantyEnd: invWarrantyEnd,
+        
+        panelBrand: panelBrand || '',
+        panelType: panelType || 'Bifacial',
+        panelTechnology: panelTechnology || 'Mono Perc',
+        panelWattage: pWatt || 550,
+        noOfPanels: pQty || 0,
+        totalWattage: (pQty || 0) * (pWatt || 550),
+        panelWarrantyEnd: panWarrantyEnd,
+        
+        batteryCategory: batteryCategory || 'Low Voltage',
+        batteryType: batteryType || 'Lithium',
+        batteryBrand: batteryBrand || '',
+        noOfBatteries: bQty || 0,
+        batterySerial: batterySerial || '',
+        batteryWarrantyEnd: batWarrantyEnd,
+        
+        earthing: earthingType || 'Both',
+        earthingAcOhms: acOhms || 0,
+        earthingDcOhms: dcOhms || 0,
+        lightningProtection: lightningProtection ?? false,
+        breakerName: breakerName || 'Schneider / ABB',
+        ingressProtection: ingressProtection,
+        structureType: structureType,
+        structureMaterial: structureMaterial,
+        systemInstallationDate: sysInstDate,
+        
+        installerName: installerName,
+        installerCompany: installerCompany,
+        installerAddress: installerAddress,
+        installerContact: installerContact,
+        installerEmail: installerEmail,
+        
+        lastAuditDate: lastAuditDt,
+        inverterStatus: inverterStatus,
+        panelStatus: panelStatus,
+        batteryStatus: batteryStatus,
+        structureStatus: structureStatus,
+        cableStatus: cableStatus,
+        earthingStatus: earthingStatus,
+        breakerStatus: breakerStatus
+      },
+      update: {
+        meterType,
+        meterPhase,
+        ...(zeroExportDevice !== undefined ? { zeroExportDevice } : {}),
+        disco,
+        discoRefNo,
+        
+        inverterBrand,
+        inverterType,
+        inverterPhase,
+        inverterCategory,
+        inverterSize,
+        ...(invCount !== undefined ? { noOfInverters: invCount } : {}),
+        inverterSerial,
+        ...(invWarrantyEnd !== undefined ? { inverterWarrantyEnd: invWarrantyEnd } : {}),
+        
+        panelBrand,
+        panelType,
+        panelTechnology,
+        ...(pWatt !== undefined ? { panelWattage: pWatt } : {}),
+        ...(pQty !== undefined ? { noOfPanels: pQty } : {}),
+        ...(pQty !== undefined && pWatt !== undefined ? { totalWattage: pQty * pWatt } : {}),
+        ...(panWarrantyEnd !== undefined ? { panelWarrantyEnd: panWarrantyEnd } : {}),
+        
+        batteryCategory,
+        batteryType,
+        batteryBrand,
+        ...(bQty !== undefined ? { noOfBatteries: bQty } : {}),
+        batterySerial,
+        ...(batWarrantyEnd !== undefined ? { batteryWarrantyEnd: batWarrantyEnd } : {}),
+        
+        ...(earthingType !== undefined ? { earthing: earthingType } : {}),
+        ...(acOhms !== undefined ? { earthingAcOhms: acOhms } : {}),
+        ...(dcOhms !== undefined ? { earthingDcOhms: dcOhms } : {}),
+        ...(lightningProtection !== undefined ? { lightningProtection } : {}),
+        breakerName,
+        ingressProtection,
+        structureType,
+        structureMaterial,
+        ...(sysInstDate !== undefined ? { systemInstallationDate: sysInstDate } : {}),
+        
+        installerName,
+        installerCompany,
+        installerAddress,
+        installerContact,
+        installerEmail,
+        
+        ...(lastAuditDt !== undefined ? { lastAuditDate: lastAuditDt } : {}),
+        inverterStatus,
+        panelStatus,
+        batteryStatus,
+        structureStatus,
+        cableStatus,
+        earthingStatus,
+        breakerStatus
+      }
+    })
 
     revalidatePath('/dashboard/sales/pending')
     revalidatePath('/dashboard/customers')
