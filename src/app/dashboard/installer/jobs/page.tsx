@@ -13,7 +13,7 @@ export default async function InstallerJobsPage() {
     select: { id: true, fullName: true, role: true }
   })
 
-  if (!dbUser?.role || !['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'OM_MANAGER', 'INSTALLATION'].includes(dbUser.role)) {
+  if (!dbUser?.role || !['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'OM_MANAGER', 'INSTALLATION', 'IP_NOC_EXECUTIVE'].includes(dbUser.role)) {
     redirect('/dashboard/customers')
   }
 
