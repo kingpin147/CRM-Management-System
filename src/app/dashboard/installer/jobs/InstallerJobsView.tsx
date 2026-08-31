@@ -29,6 +29,9 @@ export function InstallerJobsView({
   const [selectedCustomer, setSelectedCustomer] = React.useState<any | null>(null)
   const [isModalOpen, setIsModalOpen] = React.useState(false)
 
+  const isIPNOC = userRole === 'IP_NOC_EXECUTIVE'
+  const isOMManager = userRole === 'OM_MANAGER'
+
   const filteredCustomers = React.useMemo(() => {
     if (!searchQuery.trim()) return customers
     const q = searchQuery.toLowerCase().trim()
@@ -42,8 +45,40 @@ export function InstallerJobsView({
     )
   }, [customers, searchQuery])
 
-  const pendingAuditCount = customers.filter((c: any) => !c.solarSystem?.lastAuditDate || c.status === 'PENDING_ACTIVATION').length
-  const completedAuditCount = customers.filter((c: any) => c.solarSystem?.lastAuditDate).length
+  // KPIs dynamically rendered based on user role
+  const pendingCount = isIPNOC
+    ? customers.filter((c: any) => c.status === 'PENDING_IP_NOC').length
+    : isOMManager
+    ? customers.filter((c: any) => c.status === 'PENDING_ACTIVATION').length
+    : customers.filter((c: any) => !c.solarSystem?.lastAuditDate || c.status === 'PENDING_ACTIVATION').length
+
+  const completedCount = isIPNOC
+    ? customers.filter((c: any) => c.status === 'CONNECTION_ACTIVE').length
+    : isOMManager
+    ? customers.filter((c: any) => ['PENDING_IP_NOC', 'CONNECTION_ACTIVE'].includes(c.status)).length
+    : customers.filter((c: any) => c.solarSystem?.lastAuditDate).length
+
+  // Header dynamic details
+  const headerTitle = isIPNOC 
+    ? "IP NOC Operations & Assigned Jobs" 
+    : isOMManager 
+    ? "O&M Management & Assigned Jobs" 
+    : "Installer Field Operations & Assigned Jobs"
+    
+  const portalBadge = isIPNOC 
+    ? "IP NOC Portal" 
+    : isOMManager 
+    ? "O&M Portal" 
+    : "Installer Portal"
+    
+  const subtitleLabel = isIPNOC 
+    ? "Setup IP NOC & Configure Connection." 
+    : isOMManager 
+    ? "Review Audits & Approve Jobs for IP NOC."
+    : "Fill Solar Hardware Specs (Part 2) & 7-Point System Audit (Part 3)."
+
+  const pendingLabel = isIPNOC ? "Pending Setup" : isOMManager ? "Pending Approvals" : "Pending Audits"
+  const completedLabel = isIPNOC ? "Connections Active" : isOMManager ? "Approved Jobs" : "Completed"
 
   return (
     <div className="space-y-6">
@@ -52,26 +87,26 @@ export function InstallerJobsView({
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-display font-bold text-[var(--color-graphite)] tracking-tight">
-              Installer Field Operations &amp; Assigned Jobs
+              {headerTitle}
             </h1>
             <Badge variant="outline" className="bg-amber-100 text-amber-900 border-amber-300 font-bold text-xs">
-              Installer Portal
+              {portalBadge}
             </Badge>
           </div>
           <p className="text-xs text-[var(--color-slate-custom)] mt-1">
-            Logged in Specialist: <strong className="text-slate-800">{currentUserName}</strong> | Fill Solar Hardware Specs (Part 2) &amp; 7-Point System Audit (Part 3).
+            Logged in Specialist: <strong className="text-slate-800">{currentUserName}</strong> | {subtitleLabel}
           </p>
         </div>
 
         {/* Quick KPI Count */}
         <div className="flex items-center gap-3">
           <div className="bg-amber-50 border border-amber-200 px-4 py-2 rounded-xl text-center">
-            <p className="text-[10px] font-bold uppercase text-amber-800">Pending Audits</p>
-            <p className="text-xl font-bold font-mono text-amber-950">{pendingAuditCount}</p>
+            <p className="text-[10px] font-bold uppercase text-amber-800">{pendingLabel}</p>
+            <p className="text-xl font-bold font-mono text-amber-950">{pendingCount}</p>
           </div>
           <div className="bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-xl text-center">
-            <p className="text-[10px] font-bold uppercase text-emerald-800">Completed</p>
-            <p className="text-xl font-bold font-mono text-emerald-950">{completedAuditCount}</p>
+            <p className="text-[10px] font-bold uppercase text-emerald-800">{completedLabel}</p>
+            <p className="text-xl font-bold font-mono text-emerald-950">{completedCount}</p>
           </div>
         </div>
       </div>

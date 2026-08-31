@@ -20,17 +20,25 @@ export default async function InstallerJobsPage() {
   const isTechnician = dbUser.role === 'INSTALLATION'
 
   // Fetch jobs assigned to this installer (or all jobs for O&M / Super Admin)
-  const whereClause = isTechnician
-    ? {
+  let whereClause: any = {}
+  
+  if (isTechnician) {
+    whereClause = {
         OR: [
           { assignedInstallerId: dbUser.id },
           { solarSystem: { is: { installerName: { contains: dbUser.fullName, mode: 'insensitive' } } } },
           { status: { in: ['SIGNUP_GENERATED', 'PENDING_ACTIVATION', 'PENDING_PAYMENT_VERIFICATION', 'CONNECTION_ACTIVE'] } }
         ]
       }
-    : {
-        status: { in: ['SIGNUP_GENERATED', 'PENDING_ACTIVATION', 'PENDING_PAYMENT_VERIFICATION', 'CONNECTION_ACTIVE'] }
+  } else if ((dbUser.role as string) === 'IP_NOC_EXECUTIVE') {
+    whereClause = {
+      status: { in: ['PENDING_IP_NOC', 'CONNECTION_ACTIVE'] }
+    }
+  } else {
+    whereClause = {
+        status: { in: ['SIGNUP_GENERATED', 'PENDING_ACTIVATION', 'PENDING_IP_NOC', 'PENDING_PAYMENT_VERIFICATION', 'CONNECTION_ACTIVE'] }
       }
+  }
 
   const rawCustomers = await prisma.customer.findMany({
     where: whereClause as any,
