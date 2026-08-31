@@ -144,8 +144,8 @@ export default async function CustomerDetailPage({
             href={`/dashboard/customers/${id}?tab=${t.id}`}
             className={`px-4 py-2 text-sm font-semibold border-b-2 whitespace-nowrap transition-all rounded-t-lg cursor-pointer ${
               activeTab === t.id
-                ? 'border-[#002868] text-white font-bold bg-[#002868] shadow-xs'
-                : 'border-transparent text-slate-600 hover:text-[#002868] hover:bg-slate-200/60'
+                ? 'border-[#f16232] text-white font-bold bg-[#f16232] shadow-xs'
+                : 'border-[#136d86] text-white bg-[#136d86] hover:bg-[#136d86]/90 hover:text-white'
             }`}
           >
             {t.label}
