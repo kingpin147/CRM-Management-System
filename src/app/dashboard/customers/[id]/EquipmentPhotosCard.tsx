@@ -207,7 +207,7 @@ export function EquipmentPhotosCard({ customerId, solarSystem, canEdit }: Equipm
                     rel="noopener noreferrer"
                     className="text-xs text-amber-400 hover:underline font-mono"
                   >
-                    Open Original R2 URL ↗
+                    Open Original Image URL ↗
                   </a>
                 </div>
               </div>

@@ -29,15 +29,16 @@ export function EquipmentPhotoViewer({
 
   return (
     <>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
+      <div
         onClick={() => setOpen(true)}
-        className={className || "h-7 text-xs bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100 font-bold gap-1 px-2.5 shadow-2xs cursor-pointer"}
+        className={`group relative overflow-hidden rounded-md border border-slate-200 bg-slate-100 cursor-pointer shadow-sm hover:border-[#002868] transition-all flex items-center justify-center ${className || 'w-16 h-12'}`}
       >
-        <Camera className="w-3.5 h-3.5 text-amber-600" /> {buttonLabel || 'View Photo'}
-      </Button>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={imageUrl} alt={title} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+        <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <Camera className="w-4 h-4 text-white" />
+        </div>
+      </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl bg-slate-950 border-slate-800 text-white p-6 rounded-2xl">

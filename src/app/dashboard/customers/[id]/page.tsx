@@ -868,6 +868,16 @@ export default async function CustomerDetailPage({
                                             {formatDate(customer.solarSystem?.batteryWarrantyEnds?.[idx] || customer.solarSystem?.batteryWarrantyEnd)}
                                           </span>
                                         </div>
+                                        {(customer.solarSystem?.batteryImages?.[idx] || customer.solarSystem?.batteryImages?.[0]) && (
+                                          <div className="text-[11px] text-slate-700 flex justify-between items-center pt-1 border-t border-slate-100">
+                                            <span className="font-semibold text-slate-500">Battery #{idx + 1} Image:</span> 
+                                            <EquipmentPhotoViewer
+                                              imageUrl={customer.solarSystem?.batteryImages?.[idx] || customer.solarSystem?.batteryImages?.[0]}
+                                              title={`Battery #${idx + 1} (${brand}) Hardware Photo`}
+                                              buttonLabel={`View Battery #${idx + 1} Photo`}
+                                            />
+                                          </div>
+                                        )}
                                       </div>
                                     )
                                   })}

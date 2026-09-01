@@ -308,10 +308,10 @@ export function SolarSystemDialog({
               {/* 1. Inverter Section */}
               <div className="space-y-3 bg-slate-50/60 p-4 rounded-xl border border-slate-200/80">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-amber)]">1. Inverter Specifications & R2 Photo</h4>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-amber)]">1. Inverter Specifications & Photo</h4>
                   {inverterImageUrls.some(Boolean) && (
                     <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Photo Uploaded to R2
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Photo Uploaded
                     </span>
                   )}
                 </div>
@@ -825,7 +825,7 @@ export function SolarSystemDialog({
                   <Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving Solar Specs...
                 </>
               ) : (
-                'Save Solar Specs & R2 Photos'
+                'Save Solar Specs & Photos'
               )}
             </Button>
           </DialogFooter>
