@@ -259,10 +259,12 @@ function billingMetric(group: BillingGroup, column: BillingColumn): BillingMetri
 
 export function ReportsView({ 
   customers, 
+  users = [],
   initialView = 'status',
   userRole = 'SUPER_ADMIN'
 }: { 
   customers: CustomerRecord[]
+  users?: any[]
   initialView?: string 
   userRole?: string
 }) {
@@ -354,14 +356,18 @@ export function ReportsView({
   }, [customers])
 
   const aeOptions = React.useMemo(() => {
-    return Array.from(
-      new Set(
-        customers
-          .map((c) => c.accountExecutive?.fullName || c.accountExecutiveName)
-          .filter((name): name is string => Boolean(name && name.trim()))
-      )
-    ).sort()
-  }, [customers])
+    const names = new Set(
+      customers
+        .map((c) => c.accountExecutive?.fullName || c.accountExecutiveName)
+        .filter((name): name is string => Boolean(name && name.trim()))
+    )
+    users.forEach(u => {
+      if (u.role === 'SALES' || u.role === 'SALES_MANAGER') {
+        if (u.fullName) names.add(u.fullName)
+      }
+    })
+    return Array.from(names).sort()
+  }, [customers, users])
 
   // Category counts
   const categoryCounts = React.useMemo(() => {
@@ -799,54 +805,58 @@ export function ReportsView({
   }, [customers, activeCategory, hasSearched, appliedFilters, invoiceMonth])
 
   const aeSummaryList = React.useMemo(() => {
-    if (!hasSearched) return []
+    const map = new Map<string, any>()
+    
+    aeOptions.forEach(name => {
+      map.set(name, {
+        name,
+        salesTarget: 0,
+        newSaleActive: 0,
+        tempBlocked: 0,
+        permBlocked: 0,
+        nonPaymentBlocked: 0,
+        totalBlocked: 0,
+        balanceTarget: 0,
+        amountPayable: 0,
+        paidAmount: 0,
+      })
+    })
 
-    const map = new Map<string, {
-      name: string
-      newSaleActive: number
-      tempBlocked: number
-      permBlocked: number
-      nonPaymentBlocked: number
-      totalBlocked: number
-      salesTarget: number
-      balanceTarget: number
-      achievedPct: number
-      amountPayable: number
-      paidAmount: number
-    }>()
+    const sourceCustomers = hasSearched ? filteredCustomers : customers.filter(c => c.packagePlan)
 
-    filteredCustomers.forEach((c) => {
+    sourceCustomers.forEach((c) => {
       const aeName = c.accountExecutive?.fullName || c.accountExecutiveName || 'Unassigned'
       if (!map.has(aeName)) {
         map.set(aeName, {
           name: aeName,
+          salesTarget: 0,
           newSaleActive: 0,
           tempBlocked: 0,
           permBlocked: 0,
           nonPaymentBlocked: 0,
           totalBlocked: 0,
-          salesTarget: 24,
-          balanceTarget: 24,
-          achievedPct: 0,
+          balanceTarget: 0,
           amountPayable: 0,
           paidAmount: 0,
         })
       }
 
-      const item = map.get(aeName)!
-      const statusUpper = (c.status || '').toUpperCase()
+      const item = map.get(aeName)
+      const st = (c.status || '').toUpperCase()
 
-      if (statusUpper === 'CONNECTION_ACTIVE' || statusUpper === 'SIGNUP_GENERATED' || statusUpper === 'PENDING_ACTIVATION') {
-        item.newSaleActive += 1
-      } else if (statusUpper === 'TEMPORARY_BLOCKED') {
-        item.tempBlocked += 1
-      } else if (statusUpper === 'PERMANENT_DISCONNECTION') {
-        item.permBlocked += 1
-      } else if (statusUpper === 'NON_PAYMENT_BLOCKED') {
-        item.nonPaymentBlocked += 1
+      if (['CONNECTION_ACTIVE', 'FOC_CONNECTION', 'IN_HOUSE_CONNECTION'].includes(st)) {
+        item.newSaleActive++
+      } else if (st === 'TEMPORARY_BLOCKED') {
+        item.tempBlocked++
+        item.totalBlocked++
+      } else if (st === 'PERMANENT_DISCONNECTION') {
+        item.permBlocked++
+        item.totalBlocked++
+      } else if (st === 'NON_PAYMENT_BLOCKED') {
+        item.nonPaymentBlocked++
+        item.totalBlocked++
       }
 
-      item.totalBlocked = item.tempBlocked + item.permBlocked + item.nonPaymentBlocked
       item.amountPayable += Number(c.packagePlan?.totalAmount || 0)
       item.paidAmount += Number(c.packagePlan?.paidAmount || 0)
     })
@@ -867,7 +877,7 @@ export function ReportsView({
         achievedPct,
       }
     })
-  }, [filteredCustomers, hasSearched])
+  }, [filteredCustomers, customers, hasSearched, aeOptions])
 
   const aeTotals = React.useMemo(() => {
     return aeSummaryList.reduce(
@@ -1752,13 +1762,7 @@ export function ReportsView({
                   </TableRow>
                 </TableHeader>
                 <TableBody className="bg-white divide-y divide-slate-200">
-                  {!hasSearched ? (
-                    <TableRow>
-                      <TableCell colSpan={11} className="h-32 text-center text-xs text-[var(--color-slate-custom)] font-medium">
-                        Select filters and click &quot;Search / Apply Filters&quot; to load report data.
-                      </TableCell>
-                    </TableRow>
-                  ) : aeSummaryList.length === 0 ? (
+                  {aeSummaryList.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={11} className="h-20 text-center text-sm text-[var(--color-slate-custom)]">
                         No sales records found matching the selected filters.

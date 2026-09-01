@@ -40,12 +40,18 @@ export default async function ReportsPage({
   // Sanitize Decimal and Date instances to plain JSON primitives
   const customers = JSON.parse(JSON.stringify(rawCustomers))
 
+  const rawUsers = await prisma.user.findMany({
+    where: { isActive: true },
+    select: { id: true, fullName: true, role: true }
+  })
+  const users = JSON.parse(JSON.stringify(rawUsers))
+
   const { view } = await searchParams
   const initialView = (typeof view === 'string' ? view : 'status')
 
   return (
     <div className="space-y-6 animate-reveal">
-      <ReportsView customers={customers} initialView={initialView} userRole={userRole} />
+      <ReportsView customers={customers} users={users} initialView={initialView} userRole={userRole} />
     </div>
   )
 }
