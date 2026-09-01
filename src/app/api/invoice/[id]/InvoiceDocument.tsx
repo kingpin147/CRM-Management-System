@@ -447,18 +447,32 @@ export function InvoiceDocument({
   
   while (pastInvoices.length < 6) {
     const cycleIdx = pastInvoices.length
-    const d = new Date(issueDate.getFullYear(), issueDate.getMonth() - cycleIdx, 1)
-    const mStr = `${monthShorts[d.getMonth()]}-${d.getFullYear().toString().slice(-2)}`
-    const invCode = cycleIdx === 0 ? invoiceNumber : `LHE-${1234 + cycleIdx * 111}`
-    pastInvoices.push({
-      id: `cycle-${cycleIdx}`,
-      invoiceNumber: invCode,
-      month: mStr,
-      amount: totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 }),
-      payment: cycleIdx === 0 ? '0.00' : totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 }),
-      status: cycleIdx === 0 ? 'PENDING' : 'PAID',
-      isMock: true,
-    })
+    
+    if (cycleIdx === 0) {
+      // Show the current invoice if there is no history at all
+      const mStr = `${monthShorts[issueDate.getMonth()]}-${issueDate.getFullYear().toString().slice(-2)}`
+      pastInvoices.push({
+        id: `cycle-0`,
+        invoiceNumber: invoiceNumber,
+        month: mStr,
+        amount: totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 }),
+        payment: '0.00',
+        status: 'PENDING',
+        isMock: true,
+      })
+    } else {
+      // Real history doesn't exist for this row, show dashes
+      pastInvoices.push({
+        id: `cycle-${cycleIdx}`,
+        invoiceNumber: '—',
+        month: '—',
+        amount: '—',
+        payment: '—',
+        status: '—',
+        isMock: true,
+        isEmpty: true,
+      })
+    }
   }
 
   return (
