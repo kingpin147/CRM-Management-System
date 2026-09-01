@@ -14,6 +14,7 @@ import { createTicket } from './actions'
 import { uploadFile } from '@/utils/supabase/storage'
 import { CustomerSearchAutoSuggest } from '@/app/dashboard/billing-cpm/components/CustomerSearchAutoSuggest'
 import { Check } from 'lucide-react'
+import { TICKET_SUBTYPES, TECHNICAL_CATEGORIES, CATEGORIZED_FAULTS, ESCALATION_MATRIX } from '@/lib/ticket-constants'
 
 const TicketType = {
   TECHNICAL_COMPLAINT: 'TECHNICAL_COMPLAINT',
@@ -27,22 +28,10 @@ const ticketSchema = z.object({
   category: z.string().min(1, 'Category is required'),
   subCategory: z.string().optional(),
   faultCode: z.string().optional(),
-  actionPriority: z.string().min(1, 'Priority is required'),
+  escalation: z.string().min(1, 'Escalation is required'),
   assignedTo: z.string().min(1, 'Department is required'),
   description: z.string().min(10, 'Description must be at least 10 characters long'),
 })
-
-// Mock data for dependent dropdowns
-const BRANDS: Record<string, string[]> = {
-  Inverter: ['Huawei', 'Solis', 'Sungrow', 'Fronius', 'Growatt'],
-  Panel: ['Jinko', 'Longi', 'Canadian Solar', 'Trina'],
-  Battery: ['Pylontech', 'BYD', 'Narada'],
-  Breaker: ['Schneider', 'ABB', 'Tomzn'],
-}
-
-const FAULT_CODES: Record<string, string[]> = {
-  Inverter: ['(01) BatVolLow', '(02) BatOverCurrSw', '(03) GridVolHigh', '(04) GridFreqOut'],
-}
 
 export function TicketForm({ customers }: { customers: { id: string, fullName: string, customerCode: string }[] }) {
   const router = useRouter()
@@ -56,9 +45,9 @@ export function TicketForm({ customers }: { customers: { id: string, fullName: s
       customerId: '',
       ticketType: '' as any,
       category: '',
-      subCategory: '',
+      subCategory: 'N/A',
       faultCode: '',
-      actionPriority: '',
+      escalation: '',
       assignedTo: '',
       description: '',
     },
@@ -69,8 +58,14 @@ export function TicketForm({ customers }: { customers: { id: string, fullName: s
   const selectedCategory = form.watch('category')
 
   const isTechnical = selectedTicketType === 'TECHNICAL_COMPLAINT'
-  const availableBrands = isTechnical && selectedCategory ? (BRANDS[selectedCategory] || []) : []
-  const availableFaults = isTechnical && selectedCategory ? (FAULT_CODES[selectedCategory] || []) : []
+  const categoryOptions = isTechnical ? TECHNICAL_CATEGORIES : (selectedTicketType ? ['Billing', 'General Inquiry'] : [])
+  
+  let availableFaults: string[] = []
+  if (isTechnical && selectedCategory) {
+    availableFaults = CATEGORIZED_FAULTS[selectedCategory] || []
+  } else if (!isTechnical && selectedTicketType) {
+    availableFaults = TICKET_SUBTYPES[selectedTicketType as keyof typeof TICKET_SUBTYPES] || []
+  }
 
   async function onSubmit(values: z.infer<typeof ticketSchema>) {
     setError(null)
@@ -95,7 +90,6 @@ export function TicketForm({ customers }: { customers: { id: string, fullName: s
     })
     
     formData.append('source', 'Portal')
-    formData.append('escalation', 'Level-1')
     if (attachmentUrl) formData.append('attachmentUrl', attachmentUrl)
 
     const result = await createTicket(formData)
@@ -151,6 +145,9 @@ export function TicketForm({ customers }: { customers: { id: string, fullName: s
                 <FormLabel>Ticket Type</FormLabel>
                 <Select onValueChange={(val) => {
                   field.onChange(val)
+                  form.setValue('category', '')
+                  form.setValue('faultCode', '')
+                  form.setValue('escalation', '')
                   // Auto-assign department based on ticket type
                   if (val === 'TECHNICAL_COMPLAINT') form.setValue('assignedTo', 'O&M')
                   if (val === 'BILLING_COMPLAINT' || val === 'SERVICE_REQUEST') form.setValue('assignedTo', 'Billing')
@@ -178,26 +175,16 @@ export function TicketForm({ customers }: { customers: { id: string, fullName: s
                 <Select onValueChange={(val) => {
                   field.onChange(val)
                   // Reset dependent fields when category changes
-                  form.setValue('subCategory', '')
                   form.setValue('faultCode', '')
+                  form.setValue('escalation', '')
                 }} value={field.value}>
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {isTechnical ? (
-                      <>
-                        <SelectItem value="Inverter">Inverter</SelectItem>
-                        <SelectItem value="Panel">Solar Panel</SelectItem>
-                        <SelectItem value="Battery">Battery</SelectItem>
-                        <SelectItem value="Breaker">Breaker</SelectItem>
-                      </>
-                    ) : (
-                      <>
-                        <SelectItem value="Billing">Billing</SelectItem>
-                        <SelectItem value="General">General Inquiry</SelectItem>
-                      </>
-                    )}
+                    {categoryOptions.map(cat => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -205,39 +192,23 @@ export function TicketForm({ customers }: { customers: { id: string, fullName: s
             )}
           />
 
-          {isTechnical && availableBrands.length > 0 && (
-            <FormField
-              control={form.control}
-              name="subCategory"
-              render={({ field }) => (
-                <FormItem className="animate-reveal">
-                  <FormLabel>Sub Category (Brand)</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger><SelectValue placeholder="Select brand" /></SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {availableBrands.map(brand => (
-                        <SelectItem key={brand} value={brand}>{brand}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
-
-          {isTechnical && availableFaults.length > 0 && (
+          {availableFaults.length > 0 && (
             <FormField
               control={form.control}
               name="faultCode"
               render={({ field }) => (
                 <FormItem className="animate-reveal">
-                  <FormLabel>Fault Code</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <FormLabel>Fault / Subtype</FormLabel>
+                  <Select onValueChange={(val) => {
+                    field.onChange(val)
+                    if (isTechnical && val && ESCALATION_MATRIX[val]) {
+                      form.setValue('escalation', ESCALATION_MATRIX[val])
+                    } else {
+                      form.setValue('escalation', '')
+                    }
+                  }} value={field.value}>
                     <FormControl>
-                      <SelectTrigger><SelectValue placeholder="Select fault code" /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder="Select fault/subtype" /></SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {availableFaults.map(fault => (
@@ -253,16 +224,17 @@ export function TicketForm({ customers }: { customers: { id: string, fullName: s
 
           <FormField
             control={form.control}
-            name="actionPriority"
+            name="escalation"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Priority</FormLabel>
+                <FormLabel>Escalation</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
-                    <SelectTrigger><SelectValue placeholder="Select priority" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="Select escalation" /></SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="High">High Priority</SelectItem>
+                    <SelectItem value="Critical">Critical</SelectItem>
+                    <SelectItem value="High">High</SelectItem>
                     <SelectItem value="Medium">Medium</SelectItem>
                     <SelectItem value="Low">Low</SelectItem>
                   </SelectContent>

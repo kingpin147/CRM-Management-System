@@ -435,7 +435,7 @@ export async function createCustomerTicket(formData: FormData) {
   const subCategory = formData.get('subCategory') as string || null
   const faultCode = formData.get('faultCode') as string || null
   const assignedTo = formData.get('assignedTo') as string || 'O&M'
-  const actionPriority = formData.get('actionPriority') as string || 'Medium'
+  const escalation = formData.get('escalation') as string || 'Medium'
   const description = formData.get('description') as string
 
   if (!customerId || !description) {
@@ -452,9 +452,9 @@ export async function createCustomerTicket(formData: FormData) {
         ticketType,
         source: 'CRM Customer Portal',
         assignedTo,
-        escalation: 'Level-1',
+        escalation,
         status: TicketStatus.PENDING,
-        actionPriority,
+        actionPriority: escalation,
         category,
         subCategory,
         fault: faultCode,

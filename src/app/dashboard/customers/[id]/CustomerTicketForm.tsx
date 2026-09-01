@@ -12,19 +12,7 @@ import { SectionHeader } from '@/components/ui/section-header'
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table'
 import { createCustomerTicket } from './actions'
 import { AutoSuggestInput } from '@/components/ui/auto-suggest-input'
-
-const CATEGORY_MAP: Record<string, string[]> = {
-  TECHNICAL_COMPLAINT: ['Inverter', 'Panel', 'Battery', 'Breaker'],
-  BILLING_COMPLAINT: ['Wrong arrears', 'Invoice Not Received', 'Billing is not Updated', 'Billing Plan Change', 'Wrong Invoice Charged'],
-  SERVICE_REQUEST: ['Solar System Audit Request', 'Internal Shifting', 'Package Change', 'Temp. Blocked', 'Termination', 'Restoration', 'Profile Change Request'],
-}
-
-const FAULT_MAP: Record<string, string[]> = {
-  Inverter: ['(01) BatVolLow', '(02) BatOverCurrSw', 'Over Tem', 'OverLoad', 'Short Circ', 'Grid Over', 'Grid Unde', 'Phase'],
-  Panel: ['Low DC Voltage', 'Physical Crack', 'Hotspot Detected', 'Soiling Fault', 'MC4 Burn'],
-  Battery: ['Low Voltage', 'BMS Comm Error', 'Low Runtime', 'Cell Imbalance'],
-  Breaker: ['Tripped', 'Overcurrent Alarm', 'SPD Blown', 'Thermal Trip'],
-}
+import { TICKET_SUBTYPES, TECHNICAL_CATEGORIES, CATEGORIZED_FAULTS, ESCALATION_MATRIX } from '@/lib/ticket-constants'
 
 export function CustomerTicketForm({ customerId }: { customerId: string }) {
   const router = useRouter()
@@ -34,7 +22,6 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
 
   const [ticketType, setTicketType] = React.useState<string>('')
   const [category, setCategory] = React.useState('')
-  const [subCategory, setSubCategory] = React.useState('')
   const [faultCode, setFaultCode] = React.useState('')
   const [sourceOfComplain, setSourceOfComplain] = React.useState('')
   const [escalation, setEscalation] = React.useState('')
@@ -43,12 +30,14 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
   const [firstCallResolution, setFirstCallResolution] = React.useState('')
   const [description, setDescription] = React.useState('')
 
+  const isTechnical = ticketType === 'TECHNICAL_COMPLAINT'
+
   // When ticketType changes, reset category & dependents
   const handleTicketTypeChange = (type: string) => {
     setTicketType(type)
     setCategory('')
-    setSubCategory('')
     setFaultCode('')
+    setEscalation('')
     if (type === 'TECHNICAL_COMPLAINT') {
       setAssignedTo('Operation & Maintenance')
     } else if (type === 'BILLING_COMPLAINT') {
@@ -58,19 +47,19 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
     }
   }
 
-  // When category changes, reset subCategory & fault
+  // When category changes, reset fault
   const handleCategoryChange = (cat: string) => {
     setCategory(cat)
-    if (ticketType === 'TECHNICAL_COMPLAINT') {
-      setSubCategory(`${cat} Brands`)
-      setFaultCode('')
-    } else if (cat === 'Solar System Audit Request') {
-      setSubCategory('Audit Request')
-      setFaultCode('General Audit')
-      setAssignedTo('Operation & Maintenance')
+    setFaultCode('')
+    setEscalation('')
+  }
+
+  const handleFaultChange = (fault: string) => {
+    setFaultCode(fault)
+    if (isTechnical && ESCALATION_MATRIX[fault]) {
+      setEscalation(ESCALATION_MATRIX[fault])
     } else {
-      setSubCategory('N/A')
-      setFaultCode('General')
+      setEscalation('')
     }
   }
 
@@ -90,7 +79,7 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
     formData.append('customerId', customerId)
     formData.append('ticketType', ticketType)
     formData.append('category', category)
-    formData.append('subCategory', subCategory || 'General')
+    formData.append('subCategory', 'N/A')
     formData.append('faultCode', faultCode || 'General')
     formData.append('sourceOfComplain', sourceOfComplain)
     formData.append('escalation', escalation)
@@ -111,9 +100,13 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
     }
   }
 
-  const faultOptions = ticketType === 'TECHNICAL_COMPLAINT'
-    ? (category ? FAULT_MAP[category] || ['(01) BatVolLow', '(02) BatOverCurrSw'] : [])
-    : [category || 'General']
+  const categoryOptions = isTechnical ? TECHNICAL_CATEGORIES : (ticketType ? ['Billing', 'General Inquiry'] : [])
+  let faultOptions: string[] = []
+  if (isTechnical && category) {
+    faultOptions = CATEGORIZED_FAULTS[category] || []
+  } else if (!isTechnical && ticketType) {
+    faultOptions = TICKET_SUBTYPES[ticketType as keyof typeof TICKET_SUBTYPES] || []
+  }
 
   return (
     <Card className="shadow-sm border-line overflow-hidden bg-white">
@@ -133,7 +126,7 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
 
           <Table className="border border-slate-200 rounded-lg overflow-hidden">
             <TableBody>
-              {/* Row 1: Ticket Type, Category, Sub Category, Fault */}
+              {/* Row 1: Ticket Type, Category, Fault */}
               <TableRow className="hover:bg-transparent border-b border-slate-200">
                 <TableCell className="font-bold text-xs bg-slate-50 w-36 border-r border-slate-200 text-[#002868]">Ticket Type *:</TableCell>
                 <TableCell className="border-r border-slate-200">
@@ -157,17 +150,17 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
                     className="w-full h-9 px-2 rounded border border-gray-300 text-xs font-medium bg-white"
                   >
                     <option value="">Select Category...</option>
-                    {(CATEGORY_MAP[ticketType] || []).map((cat) => (
+                    {categoryOptions.map((cat) => (
                       <option key={cat} value={cat}>{cat}</option>
                     ))}
                   </select>
                 </TableCell>
 
-                <TableCell className="font-bold text-xs bg-slate-50 w-24 border-r border-slate-200 text-[#002868]">Fault</TableCell>
+                <TableCell className="font-bold text-xs bg-slate-50 w-24 border-r border-slate-200 text-[#002868]">Fault / Subtype *</TableCell>
                 <TableCell colSpan={3}>
                   <AutoSuggestInput
                     value={faultCode}
-                    onChange={setFaultCode}
+                    onChange={handleFaultChange}
                     options={faultOptions}
                     placeholder="Type or select fault..."
                     className="h-9 text-xs bg-white"
@@ -196,7 +189,7 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
                     className="w-full h-9 px-2 rounded border border-gray-300 text-xs font-medium bg-white"
                   >
                     <option value="">Select Escalation Level...</option>
-                    {['Level-1', 'Level-2', 'Level-3'].map(esc => (
+                    {['Low', 'Medium', 'High', 'Critical'].map(esc => (
                       <option key={esc} value={esc}>{esc}</option>
                     ))}
                   </select>
@@ -264,4 +257,3 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
     </Card>
   )
 }
-
