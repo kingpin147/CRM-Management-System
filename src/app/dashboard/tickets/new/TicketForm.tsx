@@ -181,7 +181,9 @@ export function TicketForm({ customers }: { customers: { id: string, fullName: s
                   field.onChange(val)
                   // Reset dependent fields when category changes
                   form.setValue('faultCode', '')
-                  form.setValue('escalation', '')
+                  if (selectedTicketType !== 'BILLING_COMPLAINT' && selectedTicketType !== 'SERVICE_REQUEST') {
+                    form.setValue('escalation', '')
+                  }
                 }} value={field.value}>
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
@@ -208,7 +210,7 @@ export function TicketForm({ customers }: { customers: { id: string, fullName: s
                     field.onChange(val)
                     if (isTechnical && val && ESCALATION_MATRIX[val]) {
                       form.setValue('escalation', ESCALATION_MATRIX[val])
-                    } else {
+                    } else if (selectedTicketType !== 'BILLING_COMPLAINT' && selectedTicketType !== 'SERVICE_REQUEST') {
                       form.setValue('escalation', '')
                     }
                   }} value={field.value}>

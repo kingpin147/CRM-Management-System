@@ -55,14 +55,16 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
   const handleCategoryChange = (cat: string) => {
     setCategory(cat)
     setFaultCode('')
-    setEscalation('')
+    if (ticketType !== 'BILLING_COMPLAINT' && ticketType !== 'SERVICE_REQUEST') {
+      setEscalation('')
+    }
   }
 
   const handleFaultChange = (fault: string) => {
     setFaultCode(fault)
     if (isTechnical && ESCALATION_MATRIX[fault]) {
       setEscalation(ESCALATION_MATRIX[fault])
-    } else {
+    } else if (ticketType !== 'BILLING_COMPLAINT' && ticketType !== 'SERVICE_REQUEST') {
       setEscalation('')
     }
   }
