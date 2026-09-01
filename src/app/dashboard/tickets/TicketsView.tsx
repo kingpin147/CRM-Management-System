@@ -238,8 +238,8 @@ export function TicketsView({ tickets, userRole, initialStatusParam }: TicketsVi
         action={
           <Button
             onClick={handleExportToExcel}
-            variant="outline"
-            className="h-8 px-3 text-xs font-bold border-emerald-600 text-emerald-700 hover:bg-emerald-50 bg-emerald-50/50 gap-1.5 shadow-2xs cursor-pointer text-white"
+            variant="default"
+            className="h-8 px-4 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 shadow-sm cursor-pointer transition-colors"
           >
             <FileSpreadsheet className="h-4 w-4" />
             Export to Excel
