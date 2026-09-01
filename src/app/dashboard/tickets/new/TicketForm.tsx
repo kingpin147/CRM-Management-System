@@ -148,9 +148,14 @@ export function TicketForm({ customers }: { customers: { id: string, fullName: s
                   form.setValue('category', '')
                   form.setValue('faultCode', '')
                   form.setValue('escalation', '')
-                  // Auto-assign department based on ticket type
-                  if (val === 'TECHNICAL_COMPLAINT') form.setValue('assignedTo', 'O&M')
-                  if (val === 'BILLING_COMPLAINT' || val === 'SERVICE_REQUEST') form.setValue('assignedTo', 'Billing')
+                  // Auto-assign department and escalation based on ticket type
+                  if (val === 'TECHNICAL_COMPLAINT') {
+                    form.setValue('assignedTo', 'O&M')
+                  }
+                  if (val === 'BILLING_COMPLAINT' || val === 'SERVICE_REQUEST') {
+                    form.setValue('assignedTo', 'Billing')
+                    form.setValue('escalation', 'Low')
+                  }
                 }} value={field.value}>
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>

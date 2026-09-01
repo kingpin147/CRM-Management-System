@@ -37,13 +37,17 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
     setTicketType(type)
     setCategory('')
     setFaultCode('')
-    setEscalation('')
     if (type === 'TECHNICAL_COMPLAINT') {
+      setEscalation('')
       setAssignedTo('Operation & Maintenance')
     } else if (type === 'BILLING_COMPLAINT') {
       setAssignedTo('Billing')
+      setEscalation('Low')
     } else if (type === 'SERVICE_REQUEST') {
       setAssignedTo('Customer Service')
+      setEscalation('Low')
+    } else {
+      setEscalation('')
     }
   }
 
