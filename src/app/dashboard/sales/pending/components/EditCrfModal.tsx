@@ -63,6 +63,7 @@ export function EditCrfModal({
   
   // Payment State
   const [paymentMode, setPaymentMode] = React.useState('')
+  const [paymentAmount, setPaymentAmount] = React.useState('')
   const [paymentDescription, setPaymentDescription] = React.useState('')
 
   // Solar System State
@@ -79,6 +80,11 @@ export function EditCrfModal({
   const breakdown = React.useMemo(() => {
     return calculatePackageBreakdown(systemSizeKw, packageTier, billingType, monitoringTime)
   }, [systemSizeKw, packageTier, billingType, monitoringTime])
+
+  // Sync payment amount with calculated total whenever breakdown changes
+  React.useEffect(() => {
+    setPaymentAmount(String(breakdown.grandTotal))
+  }, [breakdown.grandTotal])
 
   // Populate form state whenever selected customer changes
   React.useEffect(() => {
@@ -162,6 +168,7 @@ export function EditCrfModal({
       formData.append('totalAmount', String(breakdown.grandTotal))
 
       formData.append('paymentMode', paymentMode)
+      formData.append('paymentAmount', paymentAmount)
       formData.append('paymentDescription', paymentDescription)
 
       formData.append('inverterBrand', inverterBrand)
@@ -463,7 +470,7 @@ export function EditCrfModal({
             {/* Payment Entry Tab */}
             <div className="bg-white/90 p-4 rounded-xl border border-slate-200 shadow-2xs space-y-3">
               <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Payment Entry</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="space-y-1">
                   <Label className="text-xs font-semibold text-slate-700">Payment Mode</Label>
                   <Select value={paymentMode} onValueChange={(val) => setPaymentMode(val || '')}>
@@ -477,6 +484,19 @@ export function EditCrfModal({
                       <SelectItem value="Credit Card">Credit Card</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-slate-700">Amount (PKR)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    value={paymentAmount}
+                    onChange={(e) => setPaymentAmount(e.target.value)}
+                    className="h-9 text-xs font-mono font-semibold"
+                    placeholder="Enter amount"
+                  />
                 </div>
 
                 <div className="space-y-1">

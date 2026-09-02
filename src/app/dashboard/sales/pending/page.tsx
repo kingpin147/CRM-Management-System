@@ -135,6 +135,11 @@ export default async function PendingSalesPage() {
     const salesTaxAmount = formData.get('salesTaxAmount') ? Number(formData.get('salesTaxAmount')) : undefined
     const totalAmount = formData.get('totalAmount') ? Number(formData.get('totalAmount')) : undefined
 
+    // Payment entry fields
+    const paymentMode = (formData.get('paymentMode') as string) || ''
+    const paymentAmountStr = formData.get('paymentAmount') as string
+    const paymentDescription = (formData.get('paymentDescription') as string) || ''
+
     // Solar system fields
     const inverterBrand = (formData.get('inverterBrand') as string) || undefined
     const inverterSize = (formData.get('inverterSize') as string) || undefined
@@ -395,6 +400,22 @@ export default async function PendingSalesPage() {
         breakerStatus
       }
     })
+
+    // 4. Create Transaction if paymentAmount and paymentMode are provided
+    const paymentAmount = paymentAmountStr !== '' && paymentAmountStr !== null ? parseFloat(paymentAmountStr) : undefined
+    if (paymentAmount && paymentAmount > 0 && paymentMode) {
+      const methodStr = paymentDescription
+        ? `${paymentMode} | ${paymentDescription}`
+        : paymentMode
+      await prisma.transaction.create({
+        data: {
+          customerId,
+          amount: paymentAmount,
+          paymentMethod: methodStr,
+          status: 'COMPLETED',
+        }
+      })
+    }
 
     revalidatePath('/dashboard/sales/pending')
     revalidatePath('/dashboard/customers')
