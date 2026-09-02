@@ -59,6 +59,8 @@ const customerSchema = z.object({
   onboardingFee: z.coerce.number().default(0),
   totalAmount: z.coerce.number().default(0),
   paidAmount: z.coerce.number().default(0),
+  paymentMode: z.string().optional(),
+  paymentDescription: z.string().optional(),
 
   // TAB 2: Solar System Details (Optional defaults for technical specs)
   meterType: z.string().optional(),
@@ -1040,6 +1042,43 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                         <FormItem>
                           <FormLabel className="text-xs font-semibold">Paid Amount (PKR)</FormLabel>
                           <FormControl><Input type="number" placeholder="0" {...field} className="h-10 text-xs font-mono font-bold text-amber-800" /></FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Payment Mode */}
+                    <FormField
+                      control={form.control}
+                      name="paymentMode"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs font-semibold">Payment Mode</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value || ''}>
+                            <FormControl>
+                              <SelectTrigger className="h-10 text-xs">
+                                <SelectValue placeholder="Select Payment Mode..." />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Cash">Cash</SelectItem>
+                              <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                              <SelectItem value="Cheque">Cheque</SelectItem>
+                              <SelectItem value="Credit Card">Credit Card</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Payment Description */}
+                    <FormField
+                      control={form.control}
+                      name="paymentDescription"
+                      render={({ field }) => (
+                        <FormItem className="md:col-span-2">
+                          <FormLabel className="text-xs font-semibold">Payment Description / Ref #</FormLabel>
+                          <FormControl><Input placeholder="Enter transaction ID, cheque number, or details" {...field} className="h-10 text-xs" /></FormControl>
                         </FormItem>
                       )}
                     />

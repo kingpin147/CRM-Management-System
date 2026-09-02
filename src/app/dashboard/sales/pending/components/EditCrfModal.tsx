@@ -60,6 +60,10 @@ export function EditCrfModal({
   const [packageTier, setPackageTier] = React.useState('Basic')
   const [billingType, setBillingType] = React.useState('Monthly')
   const [monitoringTime, setMonitoringTime] = React.useState('12 Hours')
+  
+  // Payment State
+  const [paymentMode, setPaymentMode] = React.useState('')
+  const [paymentDescription, setPaymentDescription] = React.useState('')
 
   // Solar System State
   const [inverterBrand, setInverterBrand] = React.useState('')
@@ -156,6 +160,9 @@ export function EditCrfModal({
       formData.append('appliedDiscount', String(breakdown.discountPct))
       formData.append('salesTaxAmount', String(breakdown.salesTax))
       formData.append('totalAmount', String(breakdown.grandTotal))
+
+      formData.append('paymentMode', paymentMode)
+      formData.append('paymentDescription', paymentDescription)
 
       formData.append('inverterBrand', inverterBrand)
       formData.append('inverterSize', inverterSize)
@@ -449,6 +456,37 @@ export function EditCrfModal({
                 </div>
                 <div className="text-slate-600 text-[11px]">
                   <span>Amount automatically calculates as per selected package and cycle.</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Payment Entry Tab */}
+            <div className="bg-white/90 p-4 rounded-xl border border-slate-200 shadow-2xs space-y-3">
+              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Payment Entry</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-slate-700">Payment Mode</Label>
+                  <Select value={paymentMode} onValueChange={(val) => setPaymentMode(val || '')}>
+                    <SelectTrigger className="h-9 text-xs">
+                      <SelectValue placeholder="Select Payment Mode..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Cash">Cash</SelectItem>
+                      <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="Cheque">Cheque</SelectItem>
+                      <SelectItem value="Credit Card">Credit Card</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-slate-700">Payment Description / Ref #</Label>
+                  <Input 
+                    value={paymentDescription} 
+                    onChange={(e) => setPaymentDescription(e.target.value)} 
+                    className="h-9 text-xs"
+                    placeholder="Enter transaction ID, cheque number, or details"
+                  />
                 </div>
               </div>
             </div>
