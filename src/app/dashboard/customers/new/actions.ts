@@ -68,6 +68,8 @@ export async function createCustomer(formData: FormData) {
   const onboardingFee = Number(formData.get('onboardingFee') || 0)
   const totalAmount = Number(formData.get('totalAmount') || 0)
   const paidAmount = Number(formData.get('paidAmount') || 0)
+  const paymentMode = (formData.get('paymentMode') as string) || ''
+  const paymentDescription = (formData.get('paymentDescription') as string) || ''
 
   // Solar System fields (Blank/null when not provided)
   const disco = (formData.get('disco') as string) || null
@@ -256,6 +258,15 @@ export async function createCustomer(formData: FormData) {
             }
           ]
         } : undefined,
+        transactions: paidAmount > 0 ? {
+          create: [
+            {
+              amount: paidAmount,
+              paymentMethod: paymentDescription ? `${paymentMode} | ${paymentDescription}` : (paymentMode || 'Cash'),
+              status: 'COMPLETED'
+            }
+          ]
+        } : undefined,
         ledgerEntries: totalAmount > 0 ? {
           create: [
             {
@@ -266,7 +277,7 @@ export async function createCustomer(formData: FormData) {
               balance: totalAmount,
             },
             ...(paidAmount > 0 ? [{
-              narration: `Advance Payment Received`,
+              narration: paymentDescription ? `Advance Payment Received (${paymentMode}) - ${paymentDescription}` : `Advance Payment Received (${paymentMode || 'Cash'})`,
               refNumber: `PRV-${Math.floor(100000 + Math.random() * 900000)}`,
               debit: 0,
               credit: paidAmount,

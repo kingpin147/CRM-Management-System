@@ -1033,56 +1033,62 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                     </div>
                   </div>
 
+                  {/* Payment Entry Section */}
+                  <div className="bg-white/90 p-4 rounded-xl border border-slate-200 shadow-2xs space-y-3">
+                    <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Payment Entry</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                      {/* Amount */}
+                      <FormField
+                        control={form.control}
+                        name="paidAmount"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs font-semibold">Amount (PKR)</FormLabel>
+                            <FormControl><Input type="number" placeholder="0" {...field} className="h-10 text-xs font-mono font-bold text-amber-800" /></FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* Payment Mode */}
+                      <FormField
+                        control={form.control}
+                        name="paymentMode"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs font-semibold">Payment Mode</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value || ''}>
+                              <FormControl>
+                                <SelectTrigger className="h-10 text-xs">
+                                  <SelectValue placeholder="Select Payment Mode..." />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="Cash">Cash</SelectItem>
+                                <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                                <SelectItem value="Cheque">Cheque</SelectItem>
+                                <SelectItem value="Credit Card">Credit Card</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* Payment Description */}
+                      <FormField
+                        control={form.control}
+                        name="paymentDescription"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs font-semibold">Payment Description / Ref #</FormLabel>
+                            <FormControl><Input placeholder="Enter transaction ID, cheque number, or details" {...field} className="h-10 text-xs" /></FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Paid Amount */}
-                    <FormField
-                      control={form.control}
-                      name="paidAmount"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs font-semibold">Paid Amount (PKR)</FormLabel>
-                          <FormControl><Input type="number" placeholder="0" {...field} className="h-10 text-xs font-mono font-bold text-amber-800" /></FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Payment Mode */}
-                    <FormField
-                      control={form.control}
-                      name="paymentMode"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs font-semibold">Payment Mode</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value || ''}>
-                            <FormControl>
-                              <SelectTrigger className="h-10 text-xs">
-                                <SelectValue placeholder="Select Payment Mode..." />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="Cash">Cash</SelectItem>
-                              <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
-                              <SelectItem value="Cheque">Cheque</SelectItem>
-                              <SelectItem value="Credit Card">Credit Card</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Payment Description */}
-                    <FormField
-                      control={form.control}
-                      name="paymentDescription"
-                      render={({ field }) => (
-                        <FormItem className="md:col-span-2">
-                          <FormLabel className="text-xs font-semibold">Payment Description / Ref #</FormLabel>
-                          <FormControl><Input placeholder="Enter transaction ID, cheque number, or details" {...field} className="h-10 text-xs" /></FormControl>
-                        </FormItem>
-                      )}
-                    />
-
                     {/* Account Executive Sales */}
                     <FormField
                       control={form.control}
