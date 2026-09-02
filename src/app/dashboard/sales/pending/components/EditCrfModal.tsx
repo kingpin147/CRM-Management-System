@@ -22,7 +22,7 @@ import { calculatePackageBreakdown } from '@/lib/pricing'
 
 const PACKAGES = ['Basic', 'Moderate', 'Comprehensive']
 const BILLING_TYPES = ['Monthly', 'Quarterly', 'Half Yearly', 'Yearly']
-const MONITORING_TIMES = ['12 Hours', '24 Hours']
+const MONITORING_TIMES = ['Hybrid', 'Grid Tied']
 
 interface EditCrfModalProps {
   customer: any | null
@@ -56,10 +56,10 @@ export function EditCrfModal({
   const [assignedInstallerId, setAssignedInstallerId] = React.useState('')
 
   // Package State
-  const [systemSizeKw, setSystemSizeKw] = React.useState('1-10 kW')
+  const [systemSizeKw, setSystemSizeKw] = React.useState('1 - 5 kW')
   const [packageTier, setPackageTier] = React.useState('Basic')
   const [billingType, setBillingType] = React.useState('Monthly')
-  const [monitoringTime, setMonitoringTime] = React.useState('12 Hours')
+  const [monitoringTime, setMonitoringTime] = React.useState('Hybrid')
   
   // Payment State
   const [paymentMode, setPaymentMode] = React.useState('')
@@ -102,10 +102,10 @@ export function EditCrfModal({
       setAssignedInstallerId(customer.assignedInstallerId || '')
 
       if (customer.packagePlan) {
-        setSystemSizeKw(customer.packagePlan.systemSizeKw || '1-10 kW')
+        setSystemSizeKw(customer.packagePlan.systemSizeKw || '1 - 5 kW')
         setPackageTier(customer.packagePlan.packageTier || 'Basic')
         setBillingType(customer.packagePlan.billingType || 'Monthly')
-        setMonitoringTime(customer.packagePlan.monitoringTime || '12 Hours')
+        setMonitoringTime(customer.packagePlan.monitoringTime || 'Hybrid')
       }
 
       if (customer.solarSystem) {
@@ -366,10 +366,10 @@ export function EditCrfModal({
               </div>
 
               <div className="space-y-1">
-                <Label className="text-xs font-semibold text-slate-700">Monitoring Time</Label>
+                <Label className="text-xs font-semibold text-slate-700">System Type</Label>
                 <Select value={monitoringTime} onValueChange={(val) => val && setMonitoringTime(val)}>
                   <SelectTrigger className="h-9 text-xs">
-                    <SelectValue placeholder="Select Hours" />
+                    <SelectValue placeholder="Select Type" />
                   </SelectTrigger>
                   <SelectContent>
                     {MONITORING_TIMES.map(m => (
@@ -472,6 +472,19 @@ export function EditCrfModal({
               <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Payment Entry</h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-slate-700">Amount (PKR)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    value={paymentAmount}
+                    onChange={(e) => setPaymentAmount(e.target.value)}
+                    className="h-9 text-xs font-mono font-semibold"
+                    placeholder="Enter amount"
+                  />
+                </div>
+
+                <div className="space-y-1">
                   <Label className="text-xs font-semibold text-slate-700">Payment Mode</Label>
                   <Select value={paymentMode} onValueChange={(val) => setPaymentMode(val || '')}>
                     <SelectTrigger className="h-9 text-xs">
@@ -484,19 +497,6 @@ export function EditCrfModal({
                       <SelectItem value="Credit Card">Credit Card</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
-
-                <div className="space-y-1">
-                  <Label className="text-xs font-semibold text-slate-700">Amount (PKR)</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    step={0.01}
-                    value={paymentAmount}
-                    onChange={(e) => setPaymentAmount(e.target.value)}
-                    className="h-9 text-xs font-mono font-semibold"
-                    placeholder="Enter amount"
-                  />
                 </div>
 
                 <div className="space-y-1">

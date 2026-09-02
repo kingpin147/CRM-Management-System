@@ -23,7 +23,7 @@ export default async function InstallerJobsPage() {
   const whereClause = isTechnician
     ? {
         AND: [
-          { status: { in: ['PENDING_ACTIVATION', 'PENDING_PAYMENT_VERIFICATION', 'CONNECTION_ACTIVE'] } },
+          { status: { in: ['PENDING_INSTALLER_AUDIT', 'PENDING_ACTIVATION', 'PENDING_PAYMENT_VERIFICATION', 'CONNECTION_ACTIVE'] } },
           {
             OR: [
               { assignedInstallerId: dbUser.id },
@@ -33,7 +33,7 @@ export default async function InstallerJobsPage() {
         ]
       }
     : {
-        status: { in: ['PENDING_ACTIVATION', 'PENDING_PAYMENT_VERIFICATION', 'CONNECTION_ACTIVE'] }
+        status: { in: ['PENDING_INSTALLER_AUDIT', 'PENDING_ACTIVATION', 'PENDING_PAYMENT_VERIFICATION', 'CONNECTION_ACTIVE'] }
       }
 
   const rawCustomers = await prisma.customer.findMany({

@@ -19,10 +19,13 @@ export const INVERTER_SIZES = [
 ]
 
 export const SYSTEM_SIZES = [
-  '1-10 kW',
-  '10-20 kW',
-  '20-30 kW',
-  '30+ kW',
+  '1 - 5 kW',
+  '6 - 10 kW',
+  '11 - 15 kW',
+  '16 - 20 kW',
+  '21 - 25 kW',
+  '26 - 30 kW',
+  '30 kW & Above',
 ]
 
 export const INVERTER_BRANDS = [

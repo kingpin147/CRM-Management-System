@@ -65,12 +65,12 @@ export default async function PendingSalesPage() {
     if (currentStatus === 'SIGNUP_GENERATED') {
       nextStatus = 'PENDING_PAYMENT_VERIFICATION' // Approved by Sales Manager -> Sent to Billing Manager
     } else if (currentStatus === 'PENDING_PAYMENT_VERIFICATION') {
-      nextStatus = 'PENDING_ACTIVATION' // Payment verified by Billing Manager -> Sent to O&M Manager
+      nextStatus = 'PENDING_INSTALLER_AUDIT' // Payment verified by Billing Manager -> Sent to Installer
     } else if (currentStatus === 'PENDING_ACTIVATION') {
-      nextStatus = 'CONNECTION_ACTIVE' // Approved by O&M Manager -> Active Connection
+      nextStatus = 'PENDING_IP_NOC' // Approved by O&M Manager -> IP NOC Executive
     }
 
-    const isActivating = nextStatus === 'CONNECTION_ACTIVE'
+    const isActivating = false // Activation happens at IP NOC stage now, so this won't be triggered here, but keeping logic structure
     const activationDate = isActivating ? new Date() : undefined
 
     const customer = await prisma.customer.findUnique({
@@ -201,15 +201,15 @@ export default async function PendingSalesPage() {
       if (currentStatus === 'SIGNUP_GENERATED') {
         nextStatus = 'PENDING_PAYMENT_VERIFICATION' // Sales Manager Approval
       } else if (currentStatus === 'PENDING_PAYMENT_VERIFICATION') {
-        nextStatus = 'PENDING_ACTIVATION' // Billing Manager Approval
+        nextStatus = 'PENDING_INSTALLER_AUDIT' // Billing Manager Approval
       } else if (currentStatus === 'PENDING_ACTIVATION') {
-        nextStatus = 'CONNECTION_ACTIVE' // O&M Manager Approval
+        nextStatus = 'PENDING_IP_NOC' // O&M Manager Approval
       }
     }
 
     const assignedInstallerId = (formData.get('assignedInstallerId') as string) || undefined
-    const isActivating = nextStatus === 'CONNECTION_ACTIVE'
-    const activationDate = isActivating ? new Date() : undefined
+    const isActivating = false
+    const activationDate = undefined
 
     let calculatedNextBillingDate: Date | undefined
     if (isActivating) {

@@ -58,7 +58,7 @@ export function InstallerJobsView({
     ? customers.filter((c: any) => c.status === 'PENDING_IP_NOC').length
     : isOMManager
     ? customers.filter((c: any) => c.status === 'PENDING_ACTIVATION').length
-    : customers.filter((c: any) => !c.solarSystem?.lastAuditDate || c.status === 'PENDING_ACTIVATION').length
+    : customers.filter((c: any) => !c.solarSystem?.lastAuditDate || c.status === 'PENDING_INSTALLER_AUDIT').length
 
   const completedCount = isIPNOC
     ? customers.filter((c: any) => c.status === 'CONNECTION_ACTIVE').length
