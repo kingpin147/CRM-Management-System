@@ -46,6 +46,18 @@ export async function submitInstallerAudit(formData: FormData) {
   const totalWattage = panelWattage * noOfPanels
   const panelWarrantyEnd = formData.get('panelWarrantyEnd') ? new Date(formData.get('panelWarrantyEnd') as string) : null
 
+  // Server-side validations
+  if (!disco.trim()) throw new Error('DISCO Utility Company is required.')
+  if (!discoRefNo.trim()) throw new Error('Consumer Reference # is required.')
+  if (!inverterBrand.trim()) throw new Error('Inverter Brand is required.')
+  if (!inverterSize.trim()) throw new Error('Inverter Size/Capacity is required.')
+  if (inverterSerials.length === 0 || inverterSerials.some((s: string) => !s || !s.trim())) {
+    throw new Error('All Inverter Unit Serial numbers must be provided.')
+  }
+  if (!panelBrand.trim()) throw new Error('Solar PV Panel Brand is required.')
+  if (panelWattage <= 0) throw new Error('Valid Solar Panel Wattage is required.')
+  if (noOfPanels <= 0) throw new Error('Valid Number of Solar Panels is required.')
+
   // Battery Energy Storage System (BESS)
   const batteryBrand = (formData.get('batteryBrand') as string) || ''
   const batteryType = (formData.get('batteryType') as string) || 'Lithium-ion'

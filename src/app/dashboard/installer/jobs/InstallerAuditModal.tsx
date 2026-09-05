@@ -70,21 +70,6 @@ export function InstallerAuditModal({
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
 
-  const handleGoNext = () => {
-    setError(null)
-    setActiveTab('audit')
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' })
-    }
-  }
-
-  const handleBackToSpecs = () => {
-    setActiveTab('specs')
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' })
-    }
-  }
-
   // 1. DISCO Utility & Meter Connection
   const [disco, setDisco] = React.useState(solar.disco || '')
   const [discoRefNo, setDiscoRefNo] = React.useState(solar.discoRefNo || '')
@@ -303,8 +288,79 @@ export function InstallerAuditModal({
     }
   }
 
+  const validateSpecs = (): string | null => {
+    if (!disco?.trim()) {
+      return 'Please specify the DISCO Utility Company in Section 1.'
+    }
+    if (!discoRefNo?.trim()) {
+      return 'Please enter the Consumer Reference # in Section 1.'
+    }
+    if (!inverterBrand?.trim()) {
+      return 'Please enter or select the Inverter Brand in Section 2.'
+    }
+    if (!inverterSize?.trim()) {
+      return 'Please enter the Inverter Capacity / Size in Section 2.'
+    }
+    for (let i = 0; i < noOfInverters; i++) {
+      if (!inverterSerials[i]?.trim()) {
+        return `Please provide the Serial Number for Inverter Unit ${i + 1} in Section 2.`
+      }
+    }
+    if (!panelBrand?.trim()) {
+      return 'Please enter or select the Solar Panel Brand in Section 3.'
+    }
+    if (!panelWattage || Number(panelWattage) <= 0) {
+      return 'Please enter a valid Panel Wattage (W) in Section 3.'
+    }
+    if (!noOfPanels || Number(noOfPanels) <= 0) {
+      return 'Please enter the Number of Solar Panels in Section 3.'
+    }
+    return null
+  }
+
+  const handleGoNext = () => {
+    const valErr = validateSpecs()
+    if (valErr) {
+      setError(valErr)
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' })
+      }
+      return
+    }
+    setError(null)
+    setActiveTab('audit')
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+
+  const handleBackToSpecs = () => {
+    setError(null)
+    setActiveTab('specs')
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+
+    // If Enter key was pressed while on Specs step, advance to next step instead of submitting
+    if (activeTab === 'specs') {
+      handleGoNext()
+      return
+    }
+
+    const valErr = validateSpecs()
+    if (valErr) {
+      setError(valErr)
+      setActiveTab('specs')
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' })
+      }
+      return
+    }
+
     setIsSubmitting(true)
     setError(null)
 
@@ -444,17 +500,23 @@ export function InstallerAuditModal({
               <Sun className="h-3.5 w-3.5" />
               Part 2: Solar Hardware Specs
             </button>
-            <div
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 select-none ${
+            <button
+              type="button"
+              onClick={() => {
+                if (activeTab === 'specs') {
+                  handleGoNext()
+                }
+              }}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === 'audit'
-                  ? 'bg-[#002868] text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-400 opacity-80 cursor-not-allowed'
+                  ? 'bg-[#002868] text-white shadow-xs cursor-default'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer'
               }`}
-              title="Click 'Save & Go Next' to proceed to Audit Checklist"
+              title="Proceed to Part 3: 7-Point Audit Checklist"
             >
               <ShieldCheck className="h-3.5 w-3.5" />
               Part 3: 7-Point Audit Checklist
-            </div>
+            </button>
           </div>
         </DialogHeader>
 
