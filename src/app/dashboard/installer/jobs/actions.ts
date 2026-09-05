@@ -246,3 +246,62 @@ export async function submitInstallerAudit(formData: FormData) {
 
   return { success: true, nextAuditDate }
 }
+
+export async function activateIpNocConnection(formData: FormData) {
+  const customerId = formData.get('customerId') as string
+  const ipNocNotes = (formData.get('ipNocNotes') as string) || ''
+  const ipNocUser = (formData.get('ipNocUser') as string) || 'IP NOC Executive'
+
+  if (!customerId) throw new Error('Customer ID is required')
+
+  const customer = await prisma.customer.findUnique({
+    where: { id: customerId },
+    include: { packagePlan: true }
+  })
+
+  if (!customer) throw new Error('Customer not found')
+
+  const activationDate = new Date()
+  const bType = customer.packagePlan?.billingType || 'Monthly'
+  const nextBillingDate = new Date(activationDate)
+  if (bType === 'Quarterly') nextBillingDate.setMonth(nextBillingDate.getMonth() + 3)
+  else if (bType === 'Half Yearly') nextBillingDate.setMonth(nextBillingDate.getMonth() + 6)
+  else if (bType === 'Yearly') nextBillingDate.setMonth(nextBillingDate.getMonth() + 12)
+  else nextBillingDate.setMonth(nextBillingDate.getMonth() + 1)
+
+  await prisma.customer.update({
+    where: { id: customerId },
+    data: {
+      status: 'CONNECTION_ACTIVE',
+      activationDate,
+      ...(customer.packagePlan ? {
+        packagePlan: {
+          update: {
+            nextBillingDate
+          }
+        }
+      } : {})
+    }
+  })
+
+  await prisma.customerHistory.create({
+    data: {
+      customerId,
+      customerCode: customer.customerCode || customerId,
+      customerName: customer.fullName,
+      actionType: 'CONNECTION_ACTIVE',
+      oldStatus: customer.status,
+      newStatus: 'CONNECTION_ACTIVE',
+      notes: `IP NOC Connection Configured & Activated by ${ipNocUser}.${ipNocNotes ? ' Notes: ' + ipNocNotes : ''}`,
+      performedBy: ipNocUser
+    }
+  })
+
+  revalidatePath('/dashboard/installer/jobs')
+  revalidatePath('/dashboard/sales/pending')
+  revalidatePath(`/dashboard/customers/${customerId}`)
+  revalidatePath('/dashboard/customers')
+  revalidatePath('/dashboard/reports')
+
+  return { success: true }
+}

@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Search, Wrench, CheckCircle2, Eye, Sun, RotateCcw, Download, ShieldCheck, MapPin } from 'lucide-react'
 import { InstallerAuditModal } from './InstallerAuditModal'
+import { activateIpNocConnection } from './actions'
 import { useRouter } from 'next/navigation'
 import { SectionHeader } from '@/components/ui/section-header'
 
@@ -30,6 +31,7 @@ export function InstallerJobsView({
   const [selectedCustomer, setSelectedCustomer] = React.useState<any | null>(null)
   const [isModalOpen, setIsModalOpen] = React.useState(false)
   const [filterTab, setFilterTab] = React.useState<'ALL' | 'PENDING' | 'COMPLETED'>('ALL')
+  const [isActivatingId, setIsActivatingId] = React.useState<string | null>(null)
 
   const isIPNOC = userRole === 'IP_NOC_EXECUTIVE'
   const isOMManager = userRole === 'OM_MANAGER'
@@ -328,6 +330,31 @@ export function InstallerJobsView({
                             </Button>
                           </Link>
 
+                          {/* IP NOC Process to Activate Action */}
+                          {(c.status === 'PENDING_IP_NOC' || isIPNOC) && c.status !== 'CONNECTION_ACTIVE' && (
+                            <Button
+                              size="sm"
+                              disabled={isActivatingId === c.id}
+                              onClick={async () => {
+                                setIsActivatingId(c.id)
+                                try {
+                                  const fd = new FormData()
+                                  fd.append('customerId', c.id)
+                                  fd.append('ipNocUser', currentUserName)
+                                  await activateIpNocConnection(fd)
+                                  router.refresh()
+                                } finally {
+                                  setIsActivatingId(null)
+                                }
+                              }}
+                              className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs gap-1.5 shadow-xs cursor-pointer"
+                              title="Process to Activate in CRM"
+                            >
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                              {isActivatingId === c.id ? 'Activating...' : 'Process to Activate'}
+                            </Button>
+                          )}
+
                           <Button
                             size="sm"
                             onClick={() => {
@@ -337,7 +364,7 @@ export function InstallerJobsView({
                             className="h-8 bg-[#135d86] hover:bg-[#f16232] text-white font-bold text-xs gap-1.5 shadow-xs cursor-pointer"
                           >
                             <Wrench className="h-3.5 w-3.5 text-amber-400" />
-                            Edit Specs &amp; Audit
+                            {isIPNOC ? 'Review Specs' : 'Edit Specs & Audit'}
                           </Button>
                         </div>
                       </TableCell>
