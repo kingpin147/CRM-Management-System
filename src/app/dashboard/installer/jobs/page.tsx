@@ -22,12 +22,13 @@ export default async function InstallerJobsPage() {
 
   const isTechnician = userRole === 'INSTALLATION' || userRole === 'INSTALLER'
 
-  // Fetch jobs assigned to this installer (or all active jobs for O&M / Super Admin)
+  // Fetch jobs assigned to this installer (or pending installer audit, or all active jobs for O&M / Super Admin)
   const nameParts = (dbUser?.fullName || '').split(' ').filter(p => p.length > 2)
   const whereClause = isTechnician
     ? {
         OR: [
           { assignedInstallerId: dbUser.id },
+          { status: 'PENDING_INSTALLER_AUDIT' },
           ...(dbUser?.fullName ? [{ solarSystem: { is: { installerName: { contains: dbUser.fullName, mode: 'insensitive' as const } } } }] : []),
           ...nameParts.map(part => ({
             solarSystem: { is: { installerName: { contains: part, mode: 'insensitive' as const } } }

@@ -43,7 +43,7 @@ export function InstallerJobsView({
       } else if (isOMManager) {
         baseList = customers.filter((c: any) => c.status === 'PENDING_ACTIVATION');
       } else {
-        baseList = customers.filter((c: any) => !c.solarSystem?.lastAuditDate);
+        baseList = customers.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT' || !c.solarSystem?.lastAuditDate);
       }
     } else if (filterTab === 'COMPLETED') {
       if (isIPNOC) {
@@ -51,7 +51,7 @@ export function InstallerJobsView({
       } else if (isOMManager) {
         baseList = customers.filter((c: any) => ['PENDING_IP_NOC', 'CONNECTION_ACTIVE'].includes(c.status));
       } else {
-        baseList = customers.filter((c: any) => Boolean(c.solarSystem?.lastAuditDate));
+        baseList = customers.filter((c: any) => c.status !== 'PENDING_INSTALLER_AUDIT' && Boolean(c.solarSystem?.lastAuditDate));
       }
     }
 
@@ -75,13 +75,13 @@ export function InstallerJobsView({
     ? customers.filter((c: any) => c.status === 'PENDING_IP_NOC').length
     : isOMManager
     ? customers.filter((c: any) => c.status === 'PENDING_ACTIVATION').length
-    : customers.filter((c: any) => !c.solarSystem?.lastAuditDate).length
+    : customers.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT' || !c.solarSystem?.lastAuditDate).length
 
   const completedCount = isIPNOC
     ? customers.filter((c: any) => c.status === 'CONNECTION_ACTIVE').length
     : isOMManager
     ? customers.filter((c: any) => ['PENDING_IP_NOC', 'CONNECTION_ACTIVE'].includes(c.status)).length
-    : customers.filter((c: any) => Boolean(c.solarSystem?.lastAuditDate)).length
+    : customers.filter((c: any) => c.status !== 'PENDING_INSTALLER_AUDIT' && Boolean(c.solarSystem?.lastAuditDate)).length
 
   // Header dynamic details
   const headerTitle = isIPNOC 
@@ -231,7 +231,7 @@ export function InstallerJobsView({
                 </TableRow>
               ) : (
                 filteredCustomers.map((c: any) => {
-                  const hasAuditCompleted = Boolean(c.solarSystem?.lastAuditDate)
+                  const hasAuditCompleted = c.status !== 'PENDING_INSTALLER_AUDIT' && Boolean(c.solarSystem?.lastAuditDate)
                   const customerIdDisplay = c.customerCode?.replace(/\D/g, '') || c.customerCode || c.id
                   const crfDisplay = c.crfNumber || (c.customerCode ? `CRF-${c.customerCode.replace(/\D/g, '')}` : '—')
 

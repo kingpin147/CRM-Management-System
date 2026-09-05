@@ -115,6 +115,13 @@ export function MainNav({
                   Manager Approval
                 </Link>
               </DropdownMenuItem>
+              {(isOMManager || isSuperAdmin) && (
+                <DropdownMenuItem>
+                  <Link href="/dashboard/installer/jobs" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
+                    Assigned Jobs Queue
+                  </Link>
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
@@ -303,6 +310,11 @@ export function MainNav({
               {canViewApproval && (
                 <Link href="/dashboard/sales/pending" className={linkClass('/dashboard/sales/pending')}>
                   Manager Approval
+                </Link>
+              )}
+              {(isOMManager || isSuperAdmin) && (
+                <Link href="/dashboard/installer/jobs" className={linkClass('/dashboard/installer/jobs')}>
+                  Assigned Jobs Queue
                 </Link>
               )}
             </>
