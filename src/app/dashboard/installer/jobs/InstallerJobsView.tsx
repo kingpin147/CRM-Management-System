@@ -29,6 +29,7 @@ export function InstallerJobsView({
   const [searchQuery, setSearchQuery] = React.useState('')
   const [selectedCustomer, setSelectedCustomer] = React.useState<any | null>(null)
   const [isModalOpen, setIsModalOpen] = React.useState(false)
+  const [filterTab, setFilterTab] = React.useState<'ALL' | 'PENDING' | 'COMPLETED'>('ALL')
 
   const isIPNOC = userRole === 'IP_NOC_EXECUTIVE'
   const isOMManager = userRole === 'OM_MANAGER'
@@ -36,8 +37,22 @@ export function InstallerJobsView({
   const filteredCustomers = React.useMemo(() => {
     let baseList = customers;
 
-    if (!isIPNOC && !isOMManager) {
-      baseList = customers.filter((c: any) => !Boolean(c.solarSystem?.lastAuditDate || c.solarSystem?.inverterBrand));
+    if (filterTab === 'PENDING') {
+      if (isIPNOC) {
+        baseList = customers.filter((c: any) => c.status === 'PENDING_IP_NOC');
+      } else if (isOMManager) {
+        baseList = customers.filter((c: any) => c.status === 'PENDING_ACTIVATION');
+      } else {
+        baseList = customers.filter((c: any) => !c.solarSystem?.lastAuditDate);
+      }
+    } else if (filterTab === 'COMPLETED') {
+      if (isIPNOC) {
+        baseList = customers.filter((c: any) => c.status === 'CONNECTION_ACTIVE');
+      } else if (isOMManager) {
+        baseList = customers.filter((c: any) => ['PENDING_IP_NOC', 'CONNECTION_ACTIVE'].includes(c.status));
+      } else {
+        baseList = customers.filter((c: any) => Boolean(c.solarSystem?.lastAuditDate));
+      }
     }
 
     if (!searchQuery.trim()) return baseList;
@@ -49,22 +64,24 @@ export function InstallerJobsView({
       c.crfNumber?.toLowerCase().includes(q) ||
       c.contactNumber?.toLowerCase().includes(q) ||
       c.city?.toLowerCase().includes(q) ||
-      c.area?.toLowerCase().includes(q)
+      c.area?.toLowerCase().includes(q) ||
+      c.address?.toLowerCase().includes(q) ||
+      c.solarSystem?.installerName?.toLowerCase().includes(q)
     )
-  }, [customers, searchQuery, isIPNOC, isOMManager])
+  }, [customers, searchQuery, isIPNOC, isOMManager, filterTab])
 
   // KPIs dynamically rendered based on user role
   const pendingCount = isIPNOC
     ? customers.filter((c: any) => c.status === 'PENDING_IP_NOC').length
     : isOMManager
     ? customers.filter((c: any) => c.status === 'PENDING_ACTIVATION').length
-    : customers.filter((c: any) => !c.solarSystem?.lastAuditDate || c.status === 'PENDING_INSTALLER_AUDIT').length
+    : customers.filter((c: any) => !c.solarSystem?.lastAuditDate).length
 
   const completedCount = isIPNOC
     ? customers.filter((c: any) => c.status === 'CONNECTION_ACTIVE').length
     : isOMManager
     ? customers.filter((c: any) => ['PENDING_IP_NOC', 'CONNECTION_ACTIVE'].includes(c.status)).length
-    : customers.filter((c: any) => c.solarSystem?.lastAuditDate).length
+    : customers.filter((c: any) => Boolean(c.solarSystem?.lastAuditDate)).length
 
   // Header dynamic details
   const headerTitle = isIPNOC 
@@ -108,14 +125,26 @@ export function InstallerJobsView({
 
         {/* Quick KPI Count */}
         <div className="flex items-center gap-3">
-          <div className="bg-amber-50 border border-amber-200 px-4 py-2 rounded-xl text-center">
+          <button
+            type="button"
+            onClick={() => setFilterTab(filterTab === 'PENDING' ? 'ALL' : 'PENDING')}
+            className={`bg-amber-50 border px-4 py-2 rounded-xl text-center transition-all cursor-pointer hover:shadow-xs ${
+              filterTab === 'PENDING' ? 'border-amber-500 ring-2 ring-amber-400 bg-amber-100/70' : 'border-amber-200'
+            }`}
+          >
             <p className="text-[10px] font-bold uppercase text-amber-800">{pendingLabel}</p>
             <p className="text-xl font-bold font-mono text-amber-950">{pendingCount}</p>
-          </div>
-          <div className="bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-xl text-center">
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterTab(filterTab === 'COMPLETED' ? 'ALL' : 'COMPLETED')}
+            className={`bg-emerald-50 border px-4 py-2 rounded-xl text-center transition-all cursor-pointer hover:shadow-xs ${
+              filterTab === 'COMPLETED' ? 'border-emerald-500 ring-2 ring-emerald-400 bg-emerald-100/70' : 'border-emerald-200'
+            }`}
+          >
             <p className="text-[10px] font-bold uppercase text-emerald-800">{completedLabel}</p>
             <p className="text-xl font-bold font-mono text-emerald-950">{completedCount}</p>
-          </div>
+          </button>
         </div>
       </div>
 
@@ -125,14 +154,47 @@ export function InstallerJobsView({
       </SectionHeader>
       <Card className="shadow-sm border-line bg-white overflow-hidden">
         <CardHeader className="py-4 bg-slate-50/70 border-b border-line flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-          <div>
-            <CardTitle className="text-base font-bold text-[#002868] flex items-center gap-2">
-              <Sun className="h-4 w-4 text-amber-600" />
-              Assigned Customer Jobs Queue ({filteredCustomers.length})
-            </CardTitle>
-            <CardDescription className="text-xs text-slate-500">
-              Click &quot;Edit Solar &amp; Audit Specs&quot; to input technical parameters and submit to O&amp;M Manager.
-            </CardDescription>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div>
+              <CardTitle className="text-base font-bold text-[#002868] flex items-center gap-2">
+                <Sun className="h-4 w-4 text-amber-600" />
+                Assigned Customer Jobs Queue ({filteredCustomers.length})
+              </CardTitle>
+              <CardDescription className="text-xs text-slate-500">
+                Click &quot;Edit Solar &amp; Audit Specs&quot; to input technical parameters and submit to O&amp;M Manager.
+              </CardDescription>
+            </div>
+
+            {/* Filter Tabs */}
+            <div className="flex items-center gap-1 bg-slate-200/70 p-0.5 rounded-lg text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setFilterTab('ALL')}
+                className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                  filterTab === 'ALL' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                All ({customers.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterTab('PENDING')}
+                className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                  filterTab === 'PENDING' ? 'bg-amber-500 text-white shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Pending ({pendingCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterTab('COMPLETED')}
+                className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                  filterTab === 'COMPLETED' ? 'bg-emerald-600 text-white shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Completed ({completedCount})
+              </button>
+            </div>
           </div>
 
           {/* Search Input */}
@@ -169,7 +231,7 @@ export function InstallerJobsView({
                 </TableRow>
               ) : (
                 filteredCustomers.map((c: any) => {
-                  const hasAuditCompleted = Boolean(c.solarSystem?.lastAuditDate || c.solarSystem?.inverterBrand)
+                  const hasAuditCompleted = Boolean(c.solarSystem?.lastAuditDate)
                   const customerIdDisplay = c.customerCode?.replace(/\D/g, '') || c.customerCode || c.id
                   const crfDisplay = c.crfNumber || (c.customerCode ? `CRF-${c.customerCode.replace(/\D/g, '')}` : '—')
 

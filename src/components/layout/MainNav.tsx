@@ -54,12 +54,13 @@ export function MainNav({
     return `${base} ${layout} text-[var(--color-slate-custom)] hover:bg-black/5 hover:text-[var(--color-ink)]`
   }
 
-  const isSuperAdmin = ['SUPER_ADMIN', 'ADMIN'].includes(role)
-  const isSalesManager = ['SALES_MANAGER', 'BILLING_MANAGER', 'MANAGER'].includes(role)
-  const isOMManager = role === 'OM_MANAGER'
-  const isInstaller = role === 'INSTALLATION'
-  const isSalesExec = role === 'SALES'
-  const isIpNoc = role === 'IP_NOC_EXECUTIVE'
+  const normalizedRole = (role || '').toUpperCase().trim()
+  const isSuperAdmin = ['SUPER_ADMIN', 'ADMIN'].includes(normalizedRole)
+  const isSalesManager = ['SALES_MANAGER', 'BILLING_MANAGER', 'MANAGER'].includes(normalizedRole)
+  const isOMManager = normalizedRole === 'OM_MANAGER'
+  const isInstaller = normalizedRole === 'INSTALLATION' || normalizedRole === 'INSTALLER'
+  const isSalesExec = normalizedRole === 'SALES'
+  const isIpNoc = normalizedRole === 'IP_NOC_EXECUTIVE'
 
   const canViewAdmin = isSuperAdmin
   const canViewApproval = isSuperAdmin || isSalesManager || isOMManager

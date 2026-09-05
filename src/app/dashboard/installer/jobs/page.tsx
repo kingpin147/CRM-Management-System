@@ -13,28 +13,28 @@ export default async function InstallerJobsPage() {
     select: { id: true, fullName: true, role: true }
   })
 
-  if (!dbUser?.role || !['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'OM_MANAGER', 'INSTALLATION', 'IP_NOC_EXECUTIVE'].includes(dbUser.role)) {
+  const userRole = (dbUser?.role || '').toUpperCase().trim()
+  const allowedRoles = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES_MANAGER', 'BILLING_MANAGER', 'OM_MANAGER', 'INSTALLATION', 'INSTALLER', 'IP_NOC_EXECUTIVE']
+
+  if (!dbUser || !userRole || !allowedRoles.includes(userRole)) {
     redirect('/dashboard/customers')
   }
 
-  const isTechnician = dbUser.role === 'INSTALLATION'
+  const isTechnician = userRole === 'INSTALLATION' || userRole === 'INSTALLER'
 
-  // Fetch jobs assigned to this installer (or all jobs for O&M / Super Admin)
+  // Fetch jobs assigned to this installer (or all active jobs for O&M / Super Admin)
+  const nameParts = (dbUser?.fullName || '').split(' ').filter(p => p.length > 2)
   const whereClause = isTechnician
     ? {
-        AND: [
-          { status: { in: ['PENDING_INSTALLER_AUDIT', 'PENDING_ACTIVATION', 'PENDING_PAYMENT_VERIFICATION', 'CONNECTION_ACTIVE'] } },
-          {
-            OR: [
-              { assignedInstallerId: dbUser.id },
-              { solarSystem: { is: { installerName: { contains: dbUser.fullName, mode: 'insensitive' } } } }
-            ]
-          }
+        OR: [
+          { assignedInstallerId: dbUser.id },
+          ...(dbUser?.fullName ? [{ solarSystem: { is: { installerName: { contains: dbUser.fullName, mode: 'insensitive' as const } } } }] : []),
+          ...nameParts.map(part => ({
+            solarSystem: { is: { installerName: { contains: part, mode: 'insensitive' as const } } }
+          }))
         ]
       }
-    : {
-        status: { in: ['PENDING_INSTALLER_AUDIT', 'PENDING_ACTIVATION', 'PENDING_PAYMENT_VERIFICATION', 'CONNECTION_ACTIVE'] }
-      }
+    : {}
 
   const rawCustomers = await prisma.customer.findMany({
     where: whereClause as any,
@@ -54,8 +54,8 @@ export default async function InstallerJobsPage() {
       <InstallerJobsView 
         customers={customers} 
         currentUserId={dbUser.id}
-        currentUserName={dbUser.fullName}
-        userRole={dbUser.role} 
+        currentUserName={dbUser.fullName || 'Installer'}
+        userRole={userRole} 
       />
     </div>
   )
