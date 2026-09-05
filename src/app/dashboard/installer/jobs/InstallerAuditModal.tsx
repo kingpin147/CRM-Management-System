@@ -41,6 +41,8 @@ import {
   Trash2,
   ImageIcon,
   MapPin,
+  ArrowRight,
+  ArrowLeft,
 } from 'lucide-react'
 
 const AUDIT_STATUSES = ['Excellent', 'Good', 'Fair', 'Service Required', 'Replacement Required']
@@ -63,9 +65,25 @@ export function InstallerAuditModal({
   const solar = customer?.solarSystem || {}
   const plan = customer?.packagePlan || {}
 
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null)
   const [activeTab, setActiveTab] = React.useState<'specs' | 'audit'>('specs')
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+
+  const handleGoNext = () => {
+    setError(null)
+    setActiveTab('audit')
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+
+  const handleBackToSpecs = () => {
+    setActiveTab('specs')
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
 
   // 1. DISCO Utility & Meter Connection
   const [disco, setDisco] = React.useState(solar.disco || '')
@@ -365,7 +383,7 @@ export function InstallerAuditModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto bg-white p-6 rounded-2xl shadow-2xl">
+      <DialogContent ref={scrollContainerRef} className="max-w-4xl max-h-[92vh] overflow-y-auto bg-white p-6 rounded-2xl shadow-2xl">
         <DialogHeader className="border-b border-line pb-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
@@ -412,32 +430,31 @@ export function InstallerAuditModal({
             </div>
           </div>
 
-          {/* Sub Tab Switcher */}
-          <div className="flex gap-2 pt-3">
+          {/* Step Progression Tabs (Part 3 unlocked via Save & Go Next) */}
+          <div className="flex items-center gap-2 pt-3">
             <button
               type="button"
-              onClick={() => setActiveTab('specs')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              onClick={handleBackToSpecs}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === 'specs'
-                  ? 'bg-[#002868] text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  ? 'bg-[#002868] text-white shadow-xs cursor-default'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer'
               }`}
             >
               <Sun className="h-3.5 w-3.5" />
               Part 2: Solar Hardware Specs
             </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('audit')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+            <div
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 select-none ${
                 activeTab === 'audit'
                   ? 'bg-[#002868] text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  : 'bg-slate-100 text-slate-400 opacity-80 cursor-not-allowed'
               }`}
+              title="Click 'Save & Go Next' to proceed to Audit Checklist"
             >
               <ShieldCheck className="h-3.5 w-3.5" />
               Part 3: 7-Point Audit Checklist
-            </button>
+            </div>
           </div>
         </DialogHeader>
 
@@ -1115,24 +1132,48 @@ export function InstallerAuditModal({
           )}
 
           <DialogFooter className="border-t border-line pt-4 flex flex-col sm:flex-row justify-between items-center gap-2">
-            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting} className="text-xs">
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="bg-[#135d86] hover:bg-[#f16232] text-white font-bold text-xs gap-2 px-6 shadow-md cursor-pointer"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> Submitting to O&amp;M Manager...
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="h-4 w-4 text-emerald-400" /> Submit Audit to O&amp;M Manager
-                </>
+            <div className="flex items-center gap-2">
+              <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting} className="text-xs">
+                Cancel
+              </Button>
+              {activeTab === 'audit' && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleBackToSpecs}
+                  disabled={isSubmitting}
+                  className="text-xs font-semibold text-slate-700 hover:bg-slate-100 border-slate-300 gap-1.5"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5" /> Back to Specs
+                </Button>
               )}
-            </Button>
+            </div>
+
+            {activeTab === 'specs' ? (
+              <Button
+                type="button"
+                onClick={handleGoNext}
+                className="bg-[#135d86] hover:bg-[#f16232] text-white font-bold text-xs gap-2 px-6 shadow-md cursor-pointer transition-colors"
+              >
+                Save &amp; Go Next <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="bg-[#135d86] hover:bg-[#f16232] text-white font-bold text-xs gap-2 px-6 shadow-md cursor-pointer transition-colors"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Submitting to O&amp;M Manager...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-4 w-4 text-emerald-400" /> Submit Audit to O&amp;M Manager
+                  </>
+                )}
+              </Button>
+            )}
           </DialogFooter>
         </form>
       </DialogContent>

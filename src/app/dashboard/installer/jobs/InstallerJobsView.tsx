@@ -44,16 +44,12 @@ export function InstallerJobsView({
     } else if (filterTab === 'PENDING') {
       if (isIPNOC) {
         baseList = customers.filter((c: any) => c.status === 'PENDING_IP_NOC');
-      } else if (isOMManager) {
-        baseList = customers.filter((c: any) => c.status === 'PENDING_ACTIVATION');
       } else {
         baseList = customers.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT' || !c.solarSystem?.lastAuditDate);
       }
     } else if (filterTab === 'COMPLETED') {
       if (isIPNOC) {
         baseList = customers.filter((c: any) => c.status === 'CONNECTION_ACTIVE');
-      } else if (isOMManager) {
-        baseList = customers.filter((c: any) => ['PENDING_IP_NOC', 'CONNECTION_ACTIVE'].includes(c.status));
       } else {
         baseList = customers.filter((c: any) => c.status !== 'PENDING_INSTALLER_AUDIT' && Boolean(c.solarSystem?.lastAuditDate));
       }
@@ -70,6 +66,7 @@ export function InstallerJobsView({
       c.city?.toLowerCase().includes(q) ||
       c.area?.toLowerCase().includes(q) ||
       c.address?.toLowerCase().includes(q) ||
+      c.assignedInstaller?.fullName?.toLowerCase().includes(q) ||
       c.solarSystem?.installerName?.toLowerCase().includes(q)
     )
   }, [customers, searchQuery, isIPNOC, isOMManager, isInstaller, filterTab])
@@ -77,14 +74,10 @@ export function InstallerJobsView({
   // KPIs dynamically rendered based on user role
   const pendingCount = isIPNOC
     ? customers.filter((c: any) => c.status === 'PENDING_IP_NOC').length
-    : isOMManager
-    ? customers.filter((c: any) => c.status === 'PENDING_ACTIVATION').length
     : customers.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT' || !c.solarSystem?.lastAuditDate).length
 
   const completedCount = isIPNOC
     ? customers.filter((c: any) => c.status === 'CONNECTION_ACTIVE').length
-    : isOMManager
-    ? customers.filter((c: any) => ['PENDING_IP_NOC', 'CONNECTION_ACTIVE'].includes(c.status)).length
     : customers.filter((c: any) => c.status !== 'PENDING_INSTALLER_AUDIT' && Boolean(c.solarSystem?.lastAuditDate)).length
 
   // Header dynamic details
@@ -103,11 +96,11 @@ export function InstallerJobsView({
   const subtitleLabel = isIPNOC 
     ? "Setup IP NOC & Configure Connection." 
     : isOMManager 
-    ? "Review Audits & Approve Jobs for IP NOC."
+    ? "Monitor Installer Field Audits & Push Pending Jobs to Completion."
     : "Fill Solar Hardware Specs (Part 2) & 7-Point System Audit (Part 3)."
 
-  const pendingLabel = isIPNOC ? "Pending Setup" : isOMManager ? "Pending Approvals" : "Pending Audits"
-  const completedLabel = isIPNOC ? "Connections Active" : isOMManager ? "Approved Jobs" : "Completed"
+  const pendingLabel = isIPNOC ? "Pending Setup" : "Pending Audits"
+  const completedLabel = isIPNOC ? "Connections Active" : "Completed"
 
   return (
     <div className="space-y-6">
@@ -258,7 +251,15 @@ export function InstallerJobsView({
                       {/* Customer Name & Contact */}
                       <TableCell className="border-r">
                         <span className="font-bold text-slate-900 block">{c.fullName}</span>
-                        <span className="text-[11px] text-slate-500 font-mono">{c.contactNumber}</span>
+                        <span className="text-[11px] text-slate-500 font-mono block">{c.contactNumber}</span>
+                        {!isInstaller && (
+                          <div className="mt-1 flex items-center gap-1 text-[11px]">
+                            <span className="text-slate-500 font-medium">Installer:</span>
+                            <span className="font-bold text-amber-900 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                              {c.assignedInstaller?.fullName || c.solarSystem?.installerName || 'Unassigned'}
+                            </span>
+                          </div>
+                        )}
                       </TableCell>
 
                       {/* System Capacity & Tier */}

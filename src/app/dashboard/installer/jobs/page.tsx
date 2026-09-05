@@ -43,7 +43,7 @@ export default async function InstallerJobsPage() {
       }
     : isOMManager
     ? {
-        status: { in: ['PENDING_ACTIVATION', 'PENDING_IP_NOC', 'CONNECTION_ACTIVE'] }
+        status: { in: ['PENDING_INSTALLER_AUDIT', 'PENDING_ACTIVATION', 'PENDING_IP_NOC', 'CONNECTION_ACTIVE'] }
       }
     : {}
 
