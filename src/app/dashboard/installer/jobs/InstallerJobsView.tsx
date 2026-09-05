@@ -33,11 +33,15 @@ export function InstallerJobsView({
 
   const isIPNOC = userRole === 'IP_NOC_EXECUTIVE'
   const isOMManager = userRole === 'OM_MANAGER'
+  const isInstaller = userRole === 'INSTALLATION' || userRole === 'INSTALLER'
 
   const filteredCustomers = React.useMemo(() => {
     let baseList = customers;
 
-    if (filterTab === 'PENDING') {
+    if (isInstaller) {
+      // Installers only see jobs pending their audit
+      baseList = customers.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT' && !c.solarSystem?.lastAuditDate);
+    } else if (filterTab === 'PENDING') {
       if (isIPNOC) {
         baseList = customers.filter((c: any) => c.status === 'PENDING_IP_NOC');
       } else if (isOMManager) {
@@ -68,7 +72,7 @@ export function InstallerJobsView({
       c.address?.toLowerCase().includes(q) ||
       c.solarSystem?.installerName?.toLowerCase().includes(q)
     )
-  }, [customers, searchQuery, isIPNOC, isOMManager, filterTab])
+  }, [customers, searchQuery, isIPNOC, isOMManager, isInstaller, filterTab])
 
   // KPIs dynamically rendered based on user role
   const pendingCount = isIPNOC
@@ -127,24 +131,26 @@ export function InstallerJobsView({
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => setFilterTab(filterTab === 'PENDING' ? 'ALL' : 'PENDING')}
-            className={`bg-amber-50 border px-4 py-2 rounded-xl text-center transition-all cursor-pointer hover:shadow-xs ${
-              filterTab === 'PENDING' ? 'border-amber-500 ring-2 ring-amber-400 bg-amber-100/70' : 'border-amber-200'
+            onClick={() => !isInstaller && setFilterTab(filterTab === 'PENDING' ? 'ALL' : 'PENDING')}
+            className={`bg-amber-50 border px-4 py-2 rounded-xl text-center transition-all ${
+              isInstaller ? 'cursor-default border-amber-300' : 'cursor-pointer hover:shadow-xs ' + (filterTab === 'PENDING' ? 'border-amber-500 ring-2 ring-amber-400 bg-amber-100/70' : 'border-amber-200')
             }`}
           >
             <p className="text-[10px] font-bold uppercase text-amber-800">{pendingLabel}</p>
             <p className="text-xl font-bold font-mono text-amber-950">{pendingCount}</p>
           </button>
-          <button
-            type="button"
-            onClick={() => setFilterTab(filterTab === 'COMPLETED' ? 'ALL' : 'COMPLETED')}
-            className={`bg-emerald-50 border px-4 py-2 rounded-xl text-center transition-all cursor-pointer hover:shadow-xs ${
-              filterTab === 'COMPLETED' ? 'border-emerald-500 ring-2 ring-emerald-400 bg-emerald-100/70' : 'border-emerald-200'
-            }`}
-          >
-            <p className="text-[10px] font-bold uppercase text-emerald-800">{completedLabel}</p>
-            <p className="text-xl font-bold font-mono text-emerald-950">{completedCount}</p>
-          </button>
+          {!isInstaller && (
+            <button
+              type="button"
+              onClick={() => setFilterTab(filterTab === 'COMPLETED' ? 'ALL' : 'COMPLETED')}
+              className={`bg-emerald-50 border px-4 py-2 rounded-xl text-center transition-all cursor-pointer hover:shadow-xs ${
+                filterTab === 'COMPLETED' ? 'border-emerald-500 ring-2 ring-emerald-400 bg-emerald-100/70' : 'border-emerald-200'
+              }`}
+            >
+              <p className="text-[10px] font-bold uppercase text-emerald-800">{completedLabel}</p>
+              <p className="text-xl font-bold font-mono text-emerald-950">{completedCount}</p>
+            </button>
+          )}
         </div>
       </div>
 
@@ -165,36 +171,38 @@ export function InstallerJobsView({
               </CardDescription>
             </div>
 
-            {/* Filter Tabs */}
-            <div className="flex items-center gap-1 bg-slate-200/70 p-0.5 rounded-lg text-xs font-semibold">
-              <button
-                type="button"
-                onClick={() => setFilterTab('ALL')}
-                className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
-                  filterTab === 'ALL' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                All ({customers.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setFilterTab('PENDING')}
-                className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
-                  filterTab === 'PENDING' ? 'bg-amber-500 text-white shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Pending ({pendingCount})
-              </button>
-              <button
-                type="button"
-                onClick={() => setFilterTab('COMPLETED')}
-                className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
-                  filterTab === 'COMPLETED' ? 'bg-emerald-600 text-white shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Completed ({completedCount})
-              </button>
-            </div>
+            {/* Filter Tabs (only for managers/admins/NOC, installers only have pending active queue) */}
+            {!isInstaller && (
+              <div className="flex items-center gap-1 bg-slate-200/70 p-0.5 rounded-lg text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => setFilterTab('ALL')}
+                  className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                    filterTab === 'ALL' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  All ({customers.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterTab('PENDING')}
+                  className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                    filterTab === 'PENDING' ? 'bg-amber-500 text-white shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Pending ({pendingCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterTab('COMPLETED')}
+                  className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                    filterTab === 'COMPLETED' ? 'bg-emerald-600 text-white shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Completed ({completedCount})
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Search Input */}

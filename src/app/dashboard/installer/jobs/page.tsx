@@ -21,19 +21,29 @@ export default async function InstallerJobsPage() {
   }
 
   const isTechnician = userRole === 'INSTALLATION' || userRole === 'INSTALLER'
+  const isIPNOC = userRole === 'IP_NOC_EXECUTIVE'
+  const isOMManager = userRole === 'OM_MANAGER'
 
-  // Fetch jobs assigned to this installer (or pending installer audit, or all active jobs for O&M / Super Admin)
+  // Fetch jobs assigned to this installer (pending installer audit)
   const nameParts = (dbUser?.fullName || '').split(' ').filter(p => p.length > 2)
   const whereClause = isTechnician
     ? {
+        status: 'PENDING_INSTALLER_AUDIT',
         OR: [
           { assignedInstallerId: dbUser.id },
-          { status: 'PENDING_INSTALLER_AUDIT' },
           ...(dbUser?.fullName ? [{ solarSystem: { is: { installerName: { contains: dbUser.fullName, mode: 'insensitive' as const } } } }] : []),
           ...nameParts.map(part => ({
             solarSystem: { is: { installerName: { contains: part, mode: 'insensitive' as const } } }
           }))
         ]
+      }
+    : isIPNOC
+    ? {
+        status: { in: ['PENDING_IP_NOC', 'CONNECTION_ACTIVE'] }
+      }
+    : isOMManager
+    ? {
+        status: { in: ['PENDING_ACTIVATION', 'PENDING_IP_NOC', 'CONNECTION_ACTIVE'] }
       }
     : {}
 
