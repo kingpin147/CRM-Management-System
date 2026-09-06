@@ -46,17 +46,30 @@ export async function submitInstallerAudit(formData: FormData) {
   const totalWattage = panelWattage * noOfPanels
   const panelWarrantyEnd = formData.get('panelWarrantyEnd') ? new Date(formData.get('panelWarrantyEnd') as string) : null
 
-  // Server-side validations
-  if (!disco.trim()) throw new Error('DISCO Utility Company is required.')
-  if (!discoRefNo.trim()) throw new Error('Consumer Reference # is required.')
-  if (!inverterBrand.trim()) throw new Error('Inverter Brand is required.')
-  if (!inverterSize.trim()) throw new Error('Inverter Size/Capacity is required.')
+  // Server-side validations for Part 2 (Solar Hardware Specs)
+  if (!disco.trim()) throw new Error('DISCO Utility Company is required in Section 1.')
+  if (!discoRefNo.trim()) throw new Error('Consumer Reference # is required in Section 1.')
+  if (!meterType.trim()) throw new Error('Meter Type is required in Section 1.')
+  if (!meterPhase.trim()) throw new Error('Meter Phase is required in Section 1.')
+  if (!inverterBrand.trim()) throw new Error('Inverter Brand is required in Section 2.')
+  if (!inverterSize.trim()) throw new Error('Inverter Size/Capacity is required in Section 2.')
+  if (!inverterType.trim()) throw new Error('Inverter Type is required in Section 2.')
+  if (!inverterPhase.trim()) throw new Error('Inverter Phase is required in Section 2.')
+  if (!inverterCategory.trim()) throw new Error('Inverter Category is required in Section 2.')
   if (inverterSerials.length === 0 || inverterSerials.some((s: string) => !s || !s.trim())) {
-    throw new Error('All Inverter Unit Serial numbers must be provided.')
+    throw new Error('All Inverter Unit Serial numbers must be provided in Section 2.')
   }
-  if (!panelBrand.trim()) throw new Error('Solar PV Panel Brand is required.')
-  if (panelWattage <= 0) throw new Error('Valid Solar Panel Wattage is required.')
-  if (noOfPanels <= 0) throw new Error('Valid Number of Solar Panels is required.')
+  if (inverterWarrantyEnds.length === 0 || inverterWarrantyEnds.some((d: any) => !d || isNaN(d.getTime()) || d.getFullYear() <= 1970)) {
+    throw new Error('All Inverter Unit Warranty Expiry Dates must be provided in Section 2.')
+  }
+  if (!panelBrand.trim()) throw new Error('Solar PV Panel Brand is required in Section 3.')
+  if (!panelTechnology.trim()) throw new Error('Solar PV Panel Technology is required in Section 3.')
+  if (!panelType.trim()) throw new Error('Solar PV Panel Type is required in Section 3.')
+  if (panelWattage <= 0) throw new Error('Valid Solar Panel Wattage is required in Section 3.')
+  if (noOfPanels <= 0) throw new Error('Valid Number of Solar Panels is required in Section 3.')
+  if (!panelWarrantyEnd || isNaN(panelWarrantyEnd.getTime())) {
+    throw new Error('Solar Panel Warranty Expiry Date is required in Section 3.')
+  }
 
   // Battery Energy Storage System (BESS)
   const batteryBrand = (formData.get('batteryBrand') as string) || ''
@@ -72,27 +85,69 @@ export async function submitInstallerAudit(formData: FormData) {
     ? JSON.parse(batteryWarrantyEndsStr).map((d: string) => d ? new Date(d) : new Date('1970-01-01')) 
     : []
 
+  if (noOfBatteries > 0) {
+    if (!batteryBrand.trim() || batteryBrand.trim().toUpperCase() === 'N/A') {
+      throw new Error('Battery Brand is required in Section 4 when number of batteries is greater than 0.')
+    }
+    if (batterySerials.length === 0 || batterySerials.some((s: string) => !s || !s.trim())) {
+      throw new Error('All Battery Unit Serial numbers must be provided in Section 4.')
+    }
+    if (batteryWarrantyEnds.length === 0 || batteryWarrantyEnds.some((d: any) => !d || isNaN(d.getTime()) || d.getFullYear() <= 1970)) {
+      throw new Error('All Battery Unit Warranty Expiry Dates must be provided in Section 4.')
+    }
+  }
+
   // Mounting Structure, Protection & Installation Details
   const structureType = (formData.get('structureType') as string) || 'Elevated GI Structure'
   const structureMaterial = (formData.get('structureMaterial') as string) || 'Hot Dip Galvanized (HDG)'
   const ingressProtection = (formData.get('ingressProtection') as string) || 'IP65'
-  const breakerName = (formData.get('breakerName') as string) || 'Standard DC/AC Breakers'
+  const breakerName = (formData.get('breakerName') as string) || ''
   const earthing = (formData.get('earthing') as string) || 'Both'
   const systemInstallationDate = formData.get('systemInstallationDate') ? new Date(formData.get('systemInstallationDate') as string) : null
 
-  // Part 3: 7-Point Audit Checklist
-  const inverterStatus = (formData.get('inverterStatus') as string) || 'Good'
-  const panelStatus = (formData.get('panelStatus') as string) || 'Good'
-  const batteryStatus = (formData.get('batteryStatus') as string) || 'Good'
-  const structureStatus = (formData.get('structureStatus') as string) || 'Good'
-  const cableStatus = (formData.get('cableStatus') as string) || 'Good'
-  const earthingStatus = (formData.get('earthingStatus') as string) || 'Good'
-  const breakerStatus = (formData.get('breakerStatus') as string) || 'Good'
+  if (!structureType.trim()) throw new Error('Structure Type is required in Section 5.')
+  if (!structureMaterial.trim()) throw new Error('Structure Material is required in Section 5.')
+  if (!ingressProtection.trim()) throw new Error('Ingress Protection rating is required in Section 5.')
+  if (!breakerName.trim()) throw new Error('Breaker & Switchgear Specification is required in Section 5.')
+  if (!earthing.trim()) throw new Error('Earthing Protection Type is required in Section 5.')
+  if (!systemInstallationDate || isNaN(systemInstallationDate.getTime())) {
+    throw new Error('System Installation Date is required in Section 5.')
+  }
+
+  // Part 3: 7-Point Audit Checklist Validations
+  const inverterStatus = (formData.get('inverterStatus') as string) || ''
+  const panelStatus = (formData.get('panelStatus') as string) || ''
+  const batteryStatus = (formData.get('batteryStatus') as string) || ''
+  const structureStatus = (formData.get('structureStatus') as string) || ''
+  const cableStatus = (formData.get('cableStatus') as string) || ''
+  const earthingStatus = (formData.get('earthingStatus') as string) || ''
+  const breakerStatus = (formData.get('breakerStatus') as string) || ''
+
+  if (!inverterStatus.trim()) throw new Error('Inverter Operating Condition is required in Part 3 Checklist.')
+  if (!panelStatus.trim()) throw new Error('Solar PV Panels Status is required in Part 3 Checklist.')
+  if (!batteryStatus.trim()) throw new Error('Battery Storage Health Status is required in Part 3 Checklist.')
+  if (!structureStatus.trim()) throw new Error('Mounting Structure Status is required in Part 3 Checklist.')
+  if (!cableStatus.trim()) throw new Error('Cabling & Conduits Status is required in Part 3 Checklist.')
+  if (!earthingStatus.trim()) throw new Error('Earthing & Protection Status is required in Part 3 Checklist.')
+  if (!breakerStatus.trim()) throw new Error('Breakers & Switchgear Status is required in Part 3 Checklist.')
 
   // Safety Parameters
-  const earthingAcOhms = formData.get('earthingAcOhms') ? Number(formData.get('earthingAcOhms')) : null
-  const earthingDcOhms = formData.get('earthingDcOhms') ? Number(formData.get('earthingDcOhms')) : null
-  const earthingLastCheck = formData.get('earthingLastCheck') ? new Date(formData.get('earthingLastCheck') as string) : new Date()
+  const earthingAcOhmsRaw = formData.get('earthingAcOhms') as string
+  const earthingDcOhmsRaw = formData.get('earthingDcOhms') as string
+  if (earthingAcOhmsRaw === null || earthingAcOhmsRaw === undefined || earthingAcOhmsRaw.trim() === '' || isNaN(Number(earthingAcOhmsRaw)) || Number(earthingAcOhmsRaw) < 0) {
+    throw new Error('Valid AC Earthing Resistance (Ω) is required in Part 3.')
+  }
+  if (earthingDcOhmsRaw === null || earthingDcOhmsRaw === undefined || earthingDcOhmsRaw.trim() === '' || isNaN(Number(earthingDcOhmsRaw)) || Number(earthingDcOhmsRaw) < 0) {
+    throw new Error('Valid DC Earthing Resistance (Ω) is required in Part 3.')
+  }
+  const earthingAcOhms = Number(earthingAcOhmsRaw)
+  const earthingDcOhms = Number(earthingDcOhmsRaw)
+
+  const earthingLastCheckStr = formData.get('earthingLastCheck') as string
+  if (!earthingLastCheckStr) throw new Error('Earthing Inspection Date is required in Part 3.')
+  const earthingLastCheck = new Date(earthingLastCheckStr)
+  if (isNaN(earthingLastCheck.getTime())) throw new Error('Valid Earthing Inspection Date is required in Part 3.')
+
   const lightningProtection = formData.get('lightningProtection') === 'true' || formData.get('lightningProtection') === 'Installed'
 
   const installerName = (formData.get('installerName') as string) || undefined

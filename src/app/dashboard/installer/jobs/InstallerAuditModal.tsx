@@ -289,25 +289,60 @@ export function InstallerAuditModal({
   }
 
   const validateSpecs = (): string | null => {
+    // Section 1: DISCO Utility & Meter Connection
     if (!disco?.trim()) {
       return 'Please specify the DISCO Utility Company in Section 1.'
     }
     if (!discoRefNo?.trim()) {
       return 'Please enter the Consumer Reference # in Section 1.'
     }
+    if (!meterType?.trim()) {
+      return 'Please select the Meter Type in Section 1.'
+    }
+    if (!meterPhase?.trim()) {
+      return 'Please select the Meter Phase in Section 1.'
+    }
+    if (!zeroExportDevice?.trim()) {
+      return 'Please select the Zero Export Device status in Section 1.'
+    }
+
+    // Section 2: Inverter Unit Specifications
     if (!inverterBrand?.trim()) {
       return 'Please enter or select the Inverter Brand in Section 2.'
     }
     if (!inverterSize?.trim()) {
       return 'Please enter the Inverter Capacity / Size in Section 2.'
     }
+    if (!inverterType?.trim()) {
+      return 'Please select the Inverter Type in Section 2.'
+    }
+    if (!inverterPhase?.trim()) {
+      return 'Please select the Inverter Phase in Section 2.'
+    }
+    if (!inverterCategory?.trim()) {
+      return 'Please select the Inverter Category in Section 2.'
+    }
+    if (!noOfInverters || Number(noOfInverters) <= 0) {
+      return 'Please enter a valid Number of Inverters (at least 1) in Section 2.'
+    }
     for (let i = 0; i < noOfInverters; i++) {
       if (!inverterSerials[i]?.trim()) {
         return `Please provide the Serial Number for Inverter Unit ${i + 1} in Section 2.`
       }
+      if (!inverterWarrantyEnds[i]?.trim()) {
+        return `Please select the Warranty Expiry Date for Inverter Unit ${i + 1} in Section 2.`
+      }
     }
+
+    // Section 3: Solar PV Panels Specifications
     if (!panelBrand?.trim()) {
       return 'Please enter or select the Solar Panel Brand in Section 3.'
+    }
+    if (!panelTechnology?.trim()) {
+      return 'Please select the Panel Technology in Section 3.'
+    }
+    if (!panelType?.trim()) {
+      return 'Please select the Panel Type in Section 3.'
     }
     if (!panelWattage || Number(panelWattage) <= 0) {
       return 'Please enter a valid Panel Wattage (W) in Section 3.'
@@ -315,6 +350,76 @@ export function InstallerAuditModal({
     if (!noOfPanels || Number(noOfPanels) <= 0) {
       return 'Please enter the Number of Solar Panels in Section 3.'
     }
+    if (!panelWarrantyEnd?.trim()) {
+      return 'Please select the Panel Warranty Expiry Date in Section 3.'
+    }
+
+    // Section 4: Battery Energy Storage System (BESS)
+    if (noOfBatteries > 0) {
+      if (!batteryBrand?.trim() || batteryBrand.trim().toUpperCase() === 'N/A') {
+        return 'Please specify the Battery Brand in Section 4 since number of batteries is greater than 0.'
+      }
+      if (!batteryType?.trim() || batteryType === 'None') {
+        return 'Please select the Battery Chemistry / Type in Section 4.'
+      }
+      if (!batteryCategory?.trim() || batteryCategory === 'N/A') {
+        return 'Please select the Battery Category in Section 4.'
+      }
+      for (let i = 0; i < noOfBatteries; i++) {
+        if (!batterySerials[i]?.trim()) {
+          return `Please provide the Serial Number for Battery Unit ${i + 1} in Section 4.`
+        }
+        if (!batteryWarrantyEnds[i]?.trim()) {
+          return `Please select the Warranty Expiry Date for Battery Unit ${i + 1} in Section 4.`
+        }
+      }
+    }
+
+    // Section 5: Mounting Structure, Earthing & Protection Specs
+    if (!structureType?.trim()) {
+      return 'Please select the Structure Type in Section 5.'
+    }
+    if (!structureMaterial?.trim()) {
+      return 'Please select the Structure Material in Section 5.'
+    }
+    if (!ingressProtection?.trim()) {
+      return 'Please select the Ingress Protection (IP) rating in Section 5.'
+    }
+    if (!breakerName?.trim()) {
+      return 'Please enter the Breaker & Switchgear specification in Section 5.'
+    }
+    if (!earthing?.trim()) {
+      return 'Please select the Earthing Protection Type in Section 5.'
+    }
+    if (!systemInstallationDate?.trim()) {
+      return 'Please select the System Installation Date in Section 5.'
+    }
+
+    return null
+  }
+
+  const validateAudit = (): string | null => {
+    if (!inverterStatus?.trim()) return 'Please select Inverter Operating Condition in Part 3.'
+    if (!panelStatus?.trim()) return 'Please select Solar PV Panels Status in Part 3.'
+    if (!batteryStatus?.trim()) return 'Please select Battery Storage Health Status in Part 3.'
+    if (!structureStatus?.trim()) return 'Please select Mounting Structure & GI Material Status in Part 3.'
+    if (!cableStatus?.trim()) return 'Please select Cabling & Conduits Status in Part 3.'
+    if (!earthingStatus?.trim()) return 'Please select Earthing & Protection Status in Part 3.'
+    if (!breakerStatus?.trim()) return 'Please select Breakers & Switchgear Status in Part 3.'
+
+    if (earthingAcOhms === '' || earthingAcOhms === null || isNaN(Number(earthingAcOhms)) || Number(earthingAcOhms) < 0) {
+      return 'Please enter a valid AC Earthing resistance (Ω) in Part 3.'
+    }
+    if (earthingDcOhms === '' || earthingDcOhms === null || isNaN(Number(earthingDcOhms)) || Number(earthingDcOhms) < 0) {
+      return 'Please enter a valid DC Earthing resistance (Ω) in Part 3.'
+    }
+    if (!earthingLastCheck?.trim()) {
+      return 'Please select the Earthing Inspection Date in Part 3.'
+    }
+    if (!lightningProtection?.trim()) {
+      return 'Please select the Lightning Protection status in Part 3.'
+    }
+
     return null
   }
 
@@ -351,10 +456,19 @@ export function InstallerAuditModal({
       return
     }
 
-    const valErr = validateSpecs()
-    if (valErr) {
-      setError(valErr)
+    const valSpecsErr = validateSpecs()
+    if (valSpecsErr) {
+      setError(valSpecsErr)
       setActiveTab('specs')
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' })
+      }
+      return
+    }
+
+    const valAuditErr = validateAudit()
+    if (valAuditErr) {
+      setError(valAuditErr)
       if (scrollContainerRef.current) {
         scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' })
       }
@@ -486,7 +600,7 @@ export function InstallerAuditModal({
             </div>
           </div>
 
-          {/* Step Progression Tabs (Part 3 unlocked via Save & Go Next) */}
+          {/* Step Progression Indicators (Non-clickable forward jump) */}
           <div className="flex items-center gap-2 pt-3">
             <button
               type="button"
@@ -498,25 +612,19 @@ export function InstallerAuditModal({
               }`}
             >
               <Sun className="h-3.5 w-3.5" />
-              Part 2: Solar Hardware Specs
+              <span>Step 1: Solar Hardware Specs</span>
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (activeTab === 'specs') {
-                  handleGoNext()
-                }
-              }}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+            <div
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 select-none ${
                 activeTab === 'audit'
                   ? 'bg-[#002868] text-white shadow-xs cursor-default'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer'
+                  : 'bg-slate-100 text-slate-400 cursor-not-allowed opacity-80'
               }`}
-              title="Proceed to Part 3: 7-Point Audit Checklist"
+              title={activeTab === 'specs' ? 'Complete Step 1 and click "Save & Go Next" to unlock Step 2' : 'Step 2: 7-Point Technical Audit Checklist'}
             >
               <ShieldCheck className="h-3.5 w-3.5" />
-              Part 3: 7-Point Audit Checklist
-            </button>
+              <span>Step 2: 7-Point Audit Checklist</span>
+            </div>
           </div>
         </DialogHeader>
 
@@ -537,7 +645,7 @@ export function InstallerAuditModal({
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
                   <div className="space-y-1 sm:col-span-1">
-                    <Label className="text-xs font-semibold">DISCO Utility Company</Label>
+                    <Label className="text-xs font-semibold">DISCO Utility Company <span className="text-red-500">*</span></Label>
                     <AutoSuggestInput
                       value={disco}
                       onChange={setDisco}
@@ -547,7 +655,7 @@ export function InstallerAuditModal({
                     />
                   </div>
                   <div className="space-y-1 sm:col-span-1">
-                    <Label className="text-xs font-semibold">Consumer Reference #</Label>
+                    <Label className="text-xs font-semibold">Consumer Reference # <span className="text-red-500">*</span></Label>
                     <Input
                       value={discoRefNo}
                       onChange={(e) => setDiscoRefNo(formatDiscoRefNo(e.target.value))}
@@ -556,7 +664,7 @@ export function InstallerAuditModal({
                     />
                   </div>
                   <div className="space-y-1 sm:col-span-1">
-                    <Label className="text-xs font-semibold">Meter Type</Label>
+                    <Label className="text-xs font-semibold">Meter Type <span className="text-red-500">*</span></Label>
                     <Select value={meterType} onValueChange={(val) => setMeterType(val || 'Green Meter')}>
                       <SelectTrigger className="h-9 text-xs bg-white">
                         <SelectValue />
@@ -569,7 +677,7 @@ export function InstallerAuditModal({
                     </Select>
                   </div>
                   <div className="space-y-1 sm:col-span-1">
-                    <Label className="text-xs font-semibold">Meter Phase</Label>
+                    <Label className="text-xs font-semibold">Meter Phase <span className="text-red-500">*</span></Label>
                     <Select value={meterPhase} onValueChange={(val) => setMeterPhase(val || 'Three Phase')}>
                       <SelectTrigger className="h-9 text-xs bg-white">
                         <SelectValue />
@@ -581,7 +689,7 @@ export function InstallerAuditModal({
                     </Select>
                   </div>
                   <div className="space-y-1 sm:col-span-1">
-                    <Label className="text-xs font-semibold">Zero Export Device</Label>
+                    <Label className="text-xs font-semibold">Zero Export Device <span className="text-red-500">*</span></Label>
                     <Select value={zeroExportDevice} onValueChange={(val) => setZeroExportDevice(val || 'Not Installed')}>
                       <SelectTrigger className="h-9 text-xs bg-white">
                         <SelectValue />
@@ -608,7 +716,7 @@ export function InstallerAuditModal({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Inverter Brand *</Label>
+                    <Label className="text-xs font-semibold">Inverter Brand <span className="text-red-500">*</span></Label>
                     <AutoSuggestInput
                       value={inverterBrand}
                       onChange={setInverterBrand}
@@ -618,7 +726,7 @@ export function InstallerAuditModal({
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Inverter Capacity / Size</Label>
+                    <Label className="text-xs font-semibold">Inverter Capacity / Size <span className="text-red-500">*</span></Label>
                     <AutoSuggestInput
                       value={inverterSize}
                       onChange={setInverterSize}
@@ -628,7 +736,7 @@ export function InstallerAuditModal({
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Inverter Type</Label>
+                    <Label className="text-xs font-semibold">Inverter Type <span className="text-red-500">*</span></Label>
                     <Select value={inverterType} onValueChange={(val) => setInverterType(val || 'Hybrid')}>
                       <SelectTrigger className="h-9 text-xs bg-white">
                         <SelectValue />
@@ -642,7 +750,7 @@ export function InstallerAuditModal({
                     </Select>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Inverter Phase</Label>
+                    <Label className="text-xs font-semibold">Inverter Phase <span className="text-red-500">*</span></Label>
                     <Select value={inverterPhase} onValueChange={(val) => setInverterPhase(val || 'Three Phase')}>
                       <SelectTrigger className="h-9 text-xs bg-white">
                         <SelectValue />
@@ -657,7 +765,7 @@ export function InstallerAuditModal({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Inverter Category</Label>
+                    <Label className="text-xs font-semibold">Inverter Category <span className="text-red-500">*</span></Label>
                     <Select value={inverterCategory} onValueChange={(val) => setInverterCategory(val || 'Low Voltage')}>
                       <SelectTrigger className="h-9 text-xs bg-white">
                         <SelectValue />
@@ -670,7 +778,7 @@ export function InstallerAuditModal({
                     </Select>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">No. of Inverters</Label>
+                    <Label className="text-xs font-semibold">No. of Inverters <span className="text-red-500">*</span></Label>
                     <Input
                       type="number"
                       min={1}
@@ -692,7 +800,7 @@ export function InstallerAuditModal({
                     
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
                       <div className="space-y-1">
-                        <Label className="text-xs font-semibold">Inverter {index + 1} Serial # *</Label>
+                        <Label className="text-xs font-semibold">Inverter {index + 1} Serial # <span className="text-red-500">*</span></Label>
                         <Input
                           value={inverterSerials[index] || ''}
                           onChange={(e) => {
@@ -707,7 +815,7 @@ export function InstallerAuditModal({
                       </div>
                       
                       <div className="space-y-1">
-                        <Label className="text-xs font-semibold text-amber-900">Warranty Expiry Date</Label>
+                        <Label className="text-xs font-semibold text-amber-900">Warranty Expiry Date <span className="text-red-500">*</span></Label>
                         <DateInput
                           value={inverterWarrantyEnds[index] || ''}
                           onChange={(e) => {
@@ -772,7 +880,7 @@ export function InstallerAuditModal({
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Panel Brand *</Label>
+                    <Label className="text-xs font-semibold">Panel Brand <span className="text-red-500">*</span></Label>
                     <AutoSuggestInput
                       value={panelBrand}
                       onChange={setPanelBrand}
@@ -782,7 +890,7 @@ export function InstallerAuditModal({
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Panel Technology</Label>
+                    <Label className="text-xs font-semibold">Panel Technology <span className="text-red-500">*</span></Label>
                     <Select value={panelTechnology} onValueChange={(val) => setPanelTechnology(val || 'Topcon')}>
                       <SelectTrigger className="h-9 text-xs bg-white">
                         <SelectValue />
@@ -798,7 +906,7 @@ export function InstallerAuditModal({
                     </Select>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Panel Type</Label>
+                    <Label className="text-xs font-semibold">Panel Type <span className="text-red-500">*</span></Label>
                     <Select value={panelType} onValueChange={(val) => setPanelType(val || 'Tier-1 Monofacial')}>
                       <SelectTrigger className="h-9 text-xs bg-white">
                         <SelectValue />
@@ -815,7 +923,7 @@ export function InstallerAuditModal({
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Panel Wattage (W)</Label>
+                    <Label className="text-xs font-semibold">Panel Wattage (W) <span className="text-red-500">*</span></Label>
                     <Input
                       type="number"
                       min={0}
@@ -826,7 +934,7 @@ export function InstallerAuditModal({
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">No. of Panels</Label>
+                    <Label className="text-xs font-semibold">No. of Panels <span className="text-red-500">*</span></Label>
                     <Input
                       type="number"
                       min={0}
@@ -847,7 +955,7 @@ export function InstallerAuditModal({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-200 items-end">
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-amber-900">Panel Warranty Expiry Date</Label>
+                    <Label className="text-xs font-semibold text-amber-900">Panel Warranty Expiry Date <span className="text-red-500">*</span></Label>
                     <DateInput
                       value={panelWarrantyEnd}
                       onChange={(e) => setPanelWarrantyEnd(e.target.value)}
@@ -902,7 +1010,7 @@ export function InstallerAuditModal({
 
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Battery Brand</Label>
+                    <Label className="text-xs font-semibold">Battery Brand {noOfBatteries > 0 && <span className="text-red-500">*</span>}</Label>
                     <AutoSuggestInput
                       value={batteryBrand}
                       onChange={setBatteryBrand}
@@ -912,7 +1020,7 @@ export function InstallerAuditModal({
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Battery Chemistry / Type</Label>
+                    <Label className="text-xs font-semibold">Battery Chemistry / Type {noOfBatteries > 0 && <span className="text-red-500">*</span>}</Label>
                     <Select value={batteryType} onValueChange={(val) => setBatteryType(val || 'Lithium-ion')}>
                       <SelectTrigger className="h-9 text-xs bg-white">
                         <SelectValue />
@@ -927,7 +1035,7 @@ export function InstallerAuditModal({
                     </Select>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Battery Category</Label>
+                    <Label className="text-xs font-semibold">Battery Category {noOfBatteries > 0 && <span className="text-red-500">*</span>}</Label>
                     <Select value={batteryCategory} onValueChange={(val) => setBatteryCategory(val || 'Low Voltage (LV)')}>
                       <SelectTrigger className="h-9 text-xs bg-white">
                         <SelectValue />
@@ -962,7 +1070,7 @@ export function InstallerAuditModal({
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
                       <div className="space-y-1">
-                        <Label className="text-xs font-semibold">Battery {index + 1} Serial #</Label>
+                        <Label className="text-xs font-semibold">Battery {index + 1} Serial # <span className="text-red-500">*</span></Label>
                         <Input
                           value={batterySerials[index] || ''}
                           onChange={(e) => {
@@ -970,12 +1078,13 @@ export function InstallerAuditModal({
                             newSerials[index] = e.target.value;
                             setBatterySerials(newSerials);
                           }}
-                          placeholder="e.g. SN-BAT-092819 (Optional)"
+                          placeholder="e.g. SN-BAT-092819"
                           className="h-9 text-xs font-mono bg-white"
+                          required
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-xs font-semibold text-amber-900">Warranty Expiry Date</Label>
+                        <Label className="text-xs font-semibold text-amber-900">Warranty Expiry Date <span className="text-red-500">*</span></Label>
                         <DateInput
                           value={batteryWarrantyEnds[index] || ''}
                           onChange={(e) => {
@@ -1035,7 +1144,7 @@ export function InstallerAuditModal({
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Structure Type</Label>
+                    <Label className="text-xs font-semibold">Structure Type <span className="text-red-500">*</span></Label>
                     <Select value={structureType} onValueChange={(val) => setStructureType(val || 'Elevated')}>
                       <SelectTrigger className="h-9 text-xs bg-white">
                         <SelectValue />
@@ -1048,7 +1157,7 @@ export function InstallerAuditModal({
                     </Select>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Structure Material</Label>
+                    <Label className="text-xs font-semibold">Structure Material <span className="text-red-500">*</span></Label>
                     <Select value={structureMaterial} onValueChange={(val) => setStructureMaterial(val || 'Hot Dip Galvanized')}>
                       <SelectTrigger className="h-9 text-xs bg-white">
                         <SelectValue />
@@ -1061,7 +1170,7 @@ export function InstallerAuditModal({
                     </Select>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Ingress Protection (IP)</Label>
+                    <Label className="text-xs font-semibold">Ingress Protection (IP) <span className="text-red-500">*</span></Label>
                     <Select value={ingressProtection} onValueChange={(val) => setIngressProtection(val || 'IP65')}>
                       <SelectTrigger className="h-9 text-xs bg-white">
                         <SelectValue />
@@ -1077,7 +1186,7 @@ export function InstallerAuditModal({
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Breaker &amp; Switchgear Spec</Label>
+                    <Label className="text-xs font-semibold">Breaker &amp; Switchgear Spec <span className="text-red-500">*</span></Label>
                     <Input
                       value={breakerName}
                       onChange={(e) => setBreakerName(e.target.value)}
@@ -1086,7 +1195,7 @@ export function InstallerAuditModal({
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Earthing Protection Type</Label>
+                    <Label className="text-xs font-semibold">Earthing Protection Type <span className="text-red-500">*</span></Label>
                     <Select value={earthing} onValueChange={(val) => setEarthing(val || 'Both')}>
                       <SelectTrigger className="h-9 text-xs bg-white">
                         <SelectValue />
@@ -1099,7 +1208,7 @@ export function InstallerAuditModal({
                     </Select>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-amber-900">System Installation Date</Label>
+                    <Label className="text-xs font-semibold text-amber-900">System Installation Date <span className="text-red-500">*</span></Label>
                     <DateInput
                       value={systemInstallationDate}
                       onChange={(e) => setSystemInstallationDate(e.target.value)}
@@ -1126,7 +1235,7 @@ export function InstallerAuditModal({
                     { label: '7. Breakers, Isolators & Switchgear', val: breakerStatus, set: setBreakerStatus },
                   ].map((item, idx) => (
                     <div key={idx} className="space-y-1">
-                      <Label className="text-xs font-semibold text-slate-700">{item.label}</Label>
+                      <Label className="text-xs font-semibold text-slate-700">{item.label} <span className="text-red-500">*</span></Label>
                       <Select value={item.val} onValueChange={(val) => item.set(val || 'Good')}>
                         <SelectTrigger className="h-9 text-xs bg-white font-medium">
                           <SelectValue />
@@ -1147,7 +1256,7 @@ export function InstallerAuditModal({
                 <p className="text-xs font-bold text-[#002868] uppercase tracking-wide">Earthing Resistance &amp; Safety Parameters</p>
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">AC Earthing (Ω)</Label>
+                    <Label className="text-xs font-semibold">AC Earthing (Ω) <span className="text-red-500">*</span></Label>
                     <Input
                       type="number"
                       step="0.1"
@@ -1158,7 +1267,7 @@ export function InstallerAuditModal({
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">DC Earthing (Ω)</Label>
+                    <Label className="text-xs font-semibold">DC Earthing (Ω) <span className="text-red-500">*</span></Label>
                     <Input
                       type="number"
                       step="0.1"
@@ -1169,7 +1278,7 @@ export function InstallerAuditModal({
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Earthing Inspection Date</Label>
+                    <Label className="text-xs font-semibold">Earthing Inspection Date <span className="text-red-500">*</span></Label>
                     <DateInput
                       value={earthingLastCheck}
                       onChange={(e) => setEarthingLastCheck(e.target.value)}
@@ -1177,7 +1286,7 @@ export function InstallerAuditModal({
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Lightning Protection</Label>
+                    <Label className="text-xs font-semibold">Lightning Protection <span className="text-red-500">*</span></Label>
                     <Select value={lightningProtection} onValueChange={(val) => setLightningProtection(val || 'Installed')}>
                       <SelectTrigger className="h-9 text-xs bg-white">
                         <SelectValue />
