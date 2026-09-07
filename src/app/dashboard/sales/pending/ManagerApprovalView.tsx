@@ -116,9 +116,14 @@ export function ManagerApprovalView({
     )
   }, [customers, selectedStage, searchQuery, stage1Customers, stage2Customers, stage3Customers])
 
-  const handleAdvance = async (e: React.FormEvent<HTMLFormElement>, customerId: string) => {
+  const handleAdvance = async (e: React.FormEvent<HTMLFormElement>, customer: CustomerRecord) => {
     e.preventDefault()
-    setIsSubmittingId(customerId)
+    if (!customer.assignedInstallerId && !customer.solarSystem?.installerName) {
+      setEditingCustomer(customer)
+      alert('Please assign an Installer / Field Specialist before approving the job so it will be routed to their account.')
+      return
+    }
+    setIsSubmittingId(customer.id)
     const formData = new FormData(e.currentTarget)
     try {
       await onAdvanceWorkflow(formData)
@@ -328,7 +333,7 @@ export function ManagerApprovalView({
                           </Button>
 
                           {/* 2. Direct Stage Approval Button */}
-                          <form onSubmit={(e) => handleAdvance(e, c.id)} className="inline-block">
+                          <form onSubmit={(e) => handleAdvance(e, c)} className="inline-block">
                             <input type="hidden" name="customerId" value={c.id} />
                             <input type="hidden" name="currentStatus" value={c.status} />
                             <Button 

@@ -24,7 +24,7 @@ export default async function InstallerJobsPage() {
   const isIPNOC = userRole === 'IP_NOC_EXECUTIVE'
   const isOMManager = userRole === 'OM_MANAGER'
 
-  // Fetch jobs assigned to this installer (pending installer audit)
+  // Fetch jobs assigned specifically to this installer
   const nameParts = (dbUser?.fullName || '').split(' ').filter(p => p.length > 2)
   const whereClause = isTechnician
     ? {

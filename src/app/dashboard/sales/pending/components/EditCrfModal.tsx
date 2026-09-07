@@ -136,9 +136,17 @@ export function EditCrfModal({
     : 'Save & Approve (O&M Manager)'
 
   const handleSubmit = async (shouldAdvance: boolean) => {
+    if (shouldAdvance && !assignedInstallerId) {
+      alert('Please assign an Installer / Field Specialist before approving the job so it will appear in their account.')
+      return
+    }
+
     setIsSaving(true)
     setSaveMode(shouldAdvance ? 'SAVE_AND_APPROVE' : 'SAVE')
     try {
+      const selectedInstaller = installers?.find(i => i.id === assignedInstallerId)
+      const selectedInstallerName = selectedInstaller ? selectedInstaller.fullName : (customer.solarSystem?.installerName || '')
+
       const formData = new FormData()
       formData.append('customerId', customer.id)
       formData.append('currentStatus', customer.status)
@@ -155,6 +163,7 @@ export function EditCrfModal({
       formData.append('city', city)
       formData.append('coordinates', coordinates)
       formData.append('assignedInstallerId', assignedInstallerId)
+      formData.append('installerName', selectedInstallerName)
 
       formData.append('systemSizeKw', systemSizeKw)
       formData.append('packageTier', packageTier)
@@ -609,7 +618,6 @@ export function EditCrfModal({
           )}
 
           {/* Section 4: O&M Field Installer Allocation */}
-          {!isStage1 && (
           <div className="space-y-3 bg-amber-50/40 p-3.5 rounded-xl border border-amber-200/70">
             <div className="flex items-center gap-2 text-sm font-bold text-[#002868]">
               <User className="h-4 w-4 text-amber-700" />
@@ -617,7 +625,9 @@ export function EditCrfModal({
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label className="text-xs font-bold text-amber-950">Assign Installer / Field Specialist</Label>
+                <Label className="text-xs font-bold text-amber-950 flex items-center gap-1">
+                  Assign Installer / Field Specialist <span className="text-red-500 font-bold">*</span>
+                </Label>
                 <Select value={assignedInstallerId} onValueChange={(val) => setAssignedInstallerId(val || '')}>
                   <SelectTrigger className="h-9 text-xs bg-white border-amber-300 font-semibold">
                     <SelectValue placeholder="Select Technician..." />
@@ -634,10 +644,12 @@ export function EditCrfModal({
                     )}
                   </SelectContent>
                 </Select>
+                <p className="text-[10px] text-amber-900/80 font-medium">
+                  * Required for the job to appear in the assigned installer&apos;s queue.
+                </p>
               </div>
             </div>
           </div>
-          )}
         </div>
 
         <DialogFooter className="border-t border-line pt-4 flex flex-col sm:flex-row justify-between items-center gap-3">

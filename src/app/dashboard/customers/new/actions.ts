@@ -152,6 +152,18 @@ export async function createCustomer(formData: FormData) {
     else if (billingType === 'Half Yearly') nextBillingDate.setMonth(nextBillingDate.getMonth() + 6)
     else if (billingType === 'Yearly') nextBillingDate.setMonth(nextBillingDate.getMonth() + 12)
 
+    let matchedInstallerId: string | null = null
+    if (installerName) {
+      const matchedUser = await prisma.user.findFirst({
+        where: {
+          fullName: { equals: installerName, mode: 'insensitive' },
+          role: { in: ['INSTALLATION', 'OM_MANAGER'] }
+        },
+        select: { id: true }
+      })
+      if (matchedUser) matchedInstallerId = matchedUser.id
+    }
+
     const newCustomer = await prisma.customer.create({
       data: {
         customerCode,
@@ -178,6 +190,7 @@ export async function createCustomer(formData: FormData) {
         signupDate: signUpDate,
         activationDate: null,
         accountExecutiveId,
+        assignedInstallerId: matchedInstallerId,
         packagePlan: {
           create: {
             systemSizeKw,
