@@ -118,7 +118,7 @@ export function ManagerApprovalView({
 
   const handleAdvance = async (e: React.FormEvent<HTMLFormElement>, customer: CustomerRecord) => {
     e.preventDefault()
-    if (!customer.assignedInstallerId && !customer.solarSystem?.installerName) {
+    if ((customer.status === 'SIGNUP_GENERATED' || customer.status === 'PENDING_PAYMENT_VERIFICATION') && !customer.assignedInstallerId && !customer.solarSystem?.installerName && !customer.assignedInstaller?.fullName) {
       setEditingCustomer(customer)
       alert('Please assign an Installer / Field Specialist before approving the job so it will be routed to their account.')
       return
@@ -310,9 +310,9 @@ export function ManagerApprovalView({
                         <span className="font-semibold text-slate-800 block">
                           {isStage1 ? 'Sales Manager' : isStage2 ? 'Billing Manager' : 'O&M Manager'}
                         </span>
-                        {c.assignedInstaller && (
+                        {(c.assignedInstaller?.fullName || c.solarSystem?.installerName) && (
                           <Badge variant="outline" className="bg-emerald-50 text-emerald-800 border-emerald-300 text-[10px] font-medium mt-0.5">
-                            Assigned: {c.assignedInstaller.fullName}
+                            Assigned: {c.assignedInstaller?.fullName || c.solarSystem?.installerName}
                           </Badge>
                         )}
                       </TableCell>

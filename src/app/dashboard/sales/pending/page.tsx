@@ -26,6 +26,7 @@ export default async function PendingSalesPage() {
         packagePlan: true,
         solarSystem: true,
         accountExecutive: true,
+        assignedInstaller: true,
         invoices: {
           orderBy: { createdAt: 'desc' },
           take: 3
@@ -39,7 +40,7 @@ export default async function PendingSalesPage() {
     }),
     prisma.user.findMany({
       where: {
-        role: { in: ['INSTALLATION', 'OM_MANAGER'] },
+        role: { in: ['INSTALLATION', 'OM_MANAGER', 'MANAGER', 'SUPER_ADMIN', 'ADMIN'] },
         isActive: true
       },
       select: { id: true, fullName: true, role: true, email: true },
@@ -51,7 +52,7 @@ export default async function PendingSalesPage() {
   const installerMap = new Map(rawInstallers.map(i => [i.id, i]))
   const pendingCustomers = JSON.parse(JSON.stringify(rawPendingCustomers)).map((c: any) => ({
     ...c,
-    assignedInstaller: c.assignedInstallerId ? installerMap.get(c.assignedInstallerId) || null : null
+    assignedInstaller: c.assignedInstaller || (c.assignedInstallerId ? installerMap.get(c.assignedInstallerId) || null : null)
   }))
   const installers = JSON.parse(JSON.stringify(rawInstallers))
 
@@ -188,6 +189,7 @@ export default async function PendingSalesPage() {
     const installerEmail = (formData.get('installerEmail') as string) || undefined
     
     const lastAuditDateStr = formData.get('lastAuditDate') as string
+    const earthingLastCheckStr = formData.get('earthingLastCheck') as string
     const inverterStatus = (formData.get('inverterStatus') as string) || undefined
     const panelStatus = (formData.get('panelStatus') as string) || undefined
     const batteryStatus = (formData.get('batteryStatus') as string) || undefined
@@ -283,6 +285,7 @@ export default async function PendingSalesPage() {
     const batWarrantyEnd = batteryWarrantyEndStr ? new Date(batteryWarrantyEndStr) : undefined
     const sysInstDate = systemInstallationDateStr ? new Date(systemInstallationDateStr) : undefined
     const lastAuditDt = lastAuditDateStr ? new Date(lastAuditDateStr) : undefined
+    const earthingLastDt = earthingLastCheckStr ? new Date(earthingLastCheckStr) : undefined
 
     await prisma.solarSystem.upsert({
       where: { customerId },
@@ -319,6 +322,7 @@ export default async function PendingSalesPage() {
         batteryWarrantyEnd: batWarrantyEnd,
         
         earthing: earthingType || 'Both',
+        earthingLastCheck: earthingLastDt,
         earthingAcOhms: acOhms || 0,
         earthingDcOhms: dcOhms || 0,
         lightningProtection: lightningProtection ?? false,
@@ -375,6 +379,7 @@ export default async function PendingSalesPage() {
         ...(batWarrantyEnd !== undefined ? { batteryWarrantyEnd: batWarrantyEnd } : {}),
         
         ...(earthingType !== undefined ? { earthing: earthingType } : {}),
+        ...(earthingLastDt !== undefined ? { earthingLastCheck: earthingLastDt } : {}),
         ...(acOhms !== undefined ? { earthingAcOhms: acOhms } : {}),
         ...(dcOhms !== undefined ? { earthingDcOhms: dcOhms } : {}),
         ...(lightningProtection !== undefined ? { lightningProtection } : {}),
