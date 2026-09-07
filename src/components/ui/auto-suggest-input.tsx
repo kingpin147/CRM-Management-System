@@ -25,18 +25,21 @@ export function AutoSuggestInput({
   disabled = false,
 }: AutoSuggestInputProps) {
   const [isOpen, setIsOpen] = React.useState(false)
+  const [isTyping, setIsTyping] = React.useState(false)
   const containerRef = React.useRef<HTMLDivElement>(null)
 
   const filteredOptions = React.useMemo(() => {
+    if (!isTyping) return options
     if (!value || !value.trim()) return options
     const query = value.trim().toLowerCase()
     return options.filter((opt) => opt.toLowerCase().includes(query))
-  }, [value, options])
+  }, [value, options, isTyping])
 
   React.useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false)
+        setIsTyping(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -47,6 +50,7 @@ export function AutoSuggestInput({
     onChange(selected)
     if (onSelectOption) onSelectOption(selected)
     setIsOpen(false)
+    setIsTyping(false)
   }
 
   return (
@@ -57,17 +61,24 @@ export function AutoSuggestInput({
           value={value || ''}
           disabled={disabled}
           onChange={(e) => {
+            setIsTyping(true)
             onChange(e.target.value)
             if (!isOpen) setIsOpen(true)
           }}
-          onFocus={() => setIsOpen(true)}
+          onFocus={() => {
+            setIsTyping(false)
+            setIsOpen(true)
+          }}
           placeholder={placeholder}
           className={`pr-8 ${className}`}
         />
         <button
           type="button"
           tabIndex={-1}
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={() => {
+            setIsTyping(false)
+            setIsOpen(!isOpen)
+          }}
           className="absolute right-2 text-slate-400 hover:text-slate-600 focus:outline-none p-1 cursor-pointer"
         >
           <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180 text-amber-600' : ''}`} />
