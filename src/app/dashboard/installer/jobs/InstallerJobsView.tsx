@@ -42,12 +42,12 @@ export function InstallerJobsView({
 
     if (isInstaller) {
       // Installers only see jobs pending their audit
-      baseList = customers.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT' && !c.solarSystem?.lastAuditDate);
+      baseList = customers.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT');
     } else if (filterTab === 'PENDING') {
       if (isIPNOC) {
         baseList = customers.filter((c: any) => c.status === 'PENDING_IP_NOC');
       } else {
-        baseList = customers.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT' || !c.solarSystem?.lastAuditDate);
+        baseList = customers.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT');
       }
     } else if (filterTab === 'COMPLETED') {
       if (isIPNOC) {
@@ -76,7 +76,7 @@ export function InstallerJobsView({
   // KPIs dynamically rendered based on user role
   const pendingCount = isIPNOC
     ? customers.filter((c: any) => c.status === 'PENDING_IP_NOC').length
-    : customers.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT' || !c.solarSystem?.lastAuditDate).length
+    : customers.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT').length
 
   const completedCount = isIPNOC
     ? customers.filter((c: any) => c.status === 'CONNECTION_ACTIVE').length
