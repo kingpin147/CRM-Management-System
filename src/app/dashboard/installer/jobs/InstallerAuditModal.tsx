@@ -1322,6 +1322,7 @@ export function InstallerAuditModal({
 
             {activeTab === 'specs' ? (
               <Button
+                key="next-btn"
                 type="button"
                 onClick={handleGoNext}
                 className="bg-[#135d86] hover:bg-[#f16232] text-white font-bold text-xs gap-2 px-6 shadow-md cursor-pointer transition-colors"
@@ -1330,6 +1331,7 @@ export function InstallerAuditModal({
               </Button>
             ) : (
               <Button
+                key="submit-btn"
                 type="submit"
                 disabled={isSubmitting}
                 className="bg-[#135d86] hover:bg-[#f16232] text-white font-bold text-xs gap-2 px-6 shadow-md cursor-pointer transition-colors"
