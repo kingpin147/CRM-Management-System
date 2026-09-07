@@ -67,6 +67,8 @@ export function InstallerAuditModal({
 
   const scrollContainerRef = React.useRef<HTMLDivElement>(null)
   const [activeTab, setActiveTab] = React.useState<'specs' | 'audit'>('specs')
+  const lastTabChangeTime = React.useRef<number>(0)
+
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
 
@@ -434,6 +436,7 @@ export function InstallerAuditModal({
     }
     setError(null)
     setActiveTab('audit')
+    lastTabChangeTime.current = Date.now()
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' })
     }
@@ -453,6 +456,11 @@ export function InstallerAuditModal({
     // If Enter key was pressed while on Specs step, advance to next step instead of submitting
     if (activeTab === 'specs') {
       handleGoNext()
+      return
+    }
+
+    // Prevent accidental double-click / key-bounce submissions
+    if (Date.now() - lastTabChangeTime.current < 500) {
       return
     }
 
