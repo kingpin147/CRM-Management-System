@@ -63,9 +63,9 @@ export default async function PendingSalesPage() {
 
     let nextStatus = currentStatus
     if (currentStatus === 'SIGNUP_GENERATED') {
-      nextStatus = 'PENDING_PAYMENT_VERIFICATION' // Approved by Sales Manager -> Sent to Billing Manager
+      nextStatus = 'PENDING_PAYMENT_VERIFICATION' // Approved by Sales Manager -> Sent to Payment Verification
     } else if (currentStatus === 'PENDING_PAYMENT_VERIFICATION') {
-      nextStatus = 'PENDING_INSTALLER_AUDIT' // Payment verified by Billing Manager -> Sent to Installer
+      nextStatus = 'PENDING_INSTALLER_AUDIT' // Payment verified -> Sent to Installer
     } else if (currentStatus === 'PENDING_ACTIVATION') {
       nextStatus = 'PENDING_IP_NOC' // Approved by O&M Manager -> IP NOC Executive
     }
@@ -201,7 +201,7 @@ export default async function PendingSalesPage() {
       if (currentStatus === 'SIGNUP_GENERATED') {
         nextStatus = 'PENDING_PAYMENT_VERIFICATION' // Sales Manager Approval
       } else if (currentStatus === 'PENDING_PAYMENT_VERIFICATION') {
-        nextStatus = 'PENDING_INSTALLER_AUDIT' // Billing Manager Approval
+        nextStatus = 'PENDING_INSTALLER_AUDIT' // Payment Verified -> Sent to Installer
       } else if (currentStatus === 'PENDING_ACTIVATION') {
         nextStatus = 'PENDING_IP_NOC' // O&M Manager Approval
       }

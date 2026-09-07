@@ -61,7 +61,15 @@ export function getBaseMonthlyRate(
   packageTier?: string | null,
   monitoringTime?: string | null
 ): number {
-  const windowKey = (monitoringTime === 'Grid Tied' ? 'Grid Tied' : 'Hybrid') as 'Hybrid' | 'Grid Tied'
+  let windowKey: 'Hybrid' | 'Grid Tied' = 'Hybrid'
+  if (monitoringTime === '12 Hours') {
+    windowKey = 'Hybrid'
+  } else if (monitoringTime === '24 Hours') {
+    windowKey = 'Grid Tied'
+  } else if (monitoringTime === 'Grid Tied') {
+    windowKey = 'Grid Tied'
+  }
+
   const sizeKey = systemSizeKw || '1 - 5 kW'
   const tierKey = (packageTier || 'Basic') as 'Basic' | 'Moderate' | 'Comprehensive'
 
