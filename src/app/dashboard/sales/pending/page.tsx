@@ -5,56 +5,6 @@ import { ManagerApprovalView } from './ManagerApprovalView'
 
 // Re-evaluated Prisma schema
 export default async function PendingSalesPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const dbUser = user ? await prisma.user.findUnique({ where: { supabaseId: user.id }, select: { role: true } }) : null
-  const userRole = dbUser?.role || ''
-
-  // Fetch all customer sales in pending pipeline stages and available installer users
-  const [rawPendingCustomers, rawInstallers] = await Promise.all([
-    prisma.customer.findMany({
-      where: {
-        status: {
-          in: [
-            'SIGNUP_GENERATED',
-            'PENDING_PAYMENT_VERIFICATION',
-            'PENDING_ACTIVATION',
-          ]
-        }
-      },
-      include: {
-        packagePlan: true,
-        solarSystem: true,
-        accountExecutive: true,
-        assignedInstaller: true,
-        invoices: {
-          orderBy: { createdAt: 'desc' },
-          take: 3
-        },
-        ledgerEntries: {
-          orderBy: { createdAt: 'desc' },
-          take: 1
-        }
-      },
-      orderBy: { signupDate: 'desc' }
-    }),
-    prisma.user.findMany({
-      where: {
-        role: { in: ['INSTALLATION', 'OM_MANAGER', 'MANAGER', 'SUPER_ADMIN', 'ADMIN'] },
-        isActive: true
-      },
-      select: { id: true, fullName: true, role: true, email: true },
-      orderBy: { fullName: 'asc' }
-    })
-  ])
-
-  // Sanitize Prisma types and map assigned installer details
-  const installerMap = new Map(rawInstallers.map(i => [i.id, i]))
-  const pendingCustomers = JSON.parse(JSON.stringify(rawPendingCustomers)).map((c: any) => ({
-    ...c,
-    assignedInstaller: c.assignedInstaller || (c.assignedInstallerId ? installerMap.get(c.assignedInstallerId) || null : null)
-  }))
-  const installers = JSON.parse(JSON.stringify(rawInstallers))
 
   // Action for advancing workflow status across stages
   async function advanceWorkflow(formData: FormData) {
