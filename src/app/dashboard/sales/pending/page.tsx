@@ -251,7 +251,7 @@ export default async function PendingSalesPage() {
           systemSizeKw: systemSizeKw || '1-10 kW',
           packageTier: packageTier || 'Basic',
           billingType: billingType || 'Monthly',
-          monitoringTime: monitoringTime || '12 Hours',
+          monitoringTime: monitoringTime || 'Hybrid',
           monthlyBasePrice: monthlyBasePrice ?? 0,
           appliedDiscount: appliedDiscount ?? 0,
           salesTaxAmount: salesTaxAmount ?? 0,
@@ -406,20 +406,35 @@ export default async function PendingSalesPage() {
       }
     })
 
-    // 4. Create Transaction if paymentAmount and paymentMode are provided
+    // 4. Upsert Transaction if paymentAmount and paymentMode are provided
     const paymentAmount = paymentAmountStr !== '' && paymentAmountStr !== null ? parseFloat(paymentAmountStr) : undefined
-    if (paymentAmount && paymentAmount > 0 && paymentMode) {
+    if (paymentAmount !== undefined && paymentMode) {
       const methodStr = paymentDescription
         ? `${paymentMode} | ${paymentDescription}`
         : paymentMode
-      await prisma.transaction.create({
-        data: {
-          customerId,
-          amount: paymentAmount,
-          paymentMethod: methodStr,
-          status: 'COMPLETED',
-        }
+      
+      const existingTransaction = await prisma.transaction.findFirst({
+        where: { customerId }
       })
+
+      if (existingTransaction) {
+        await prisma.transaction.update({
+          where: { id: existingTransaction.id },
+          data: {
+            amount: paymentAmount,
+            paymentMethod: methodStr,
+          }
+        })
+      } else if (paymentAmount > 0) {
+        await prisma.transaction.create({
+          data: {
+            customerId,
+            amount: paymentAmount,
+            paymentMethod: methodStr,
+            status: 'COMPLETED',
+          }
+        })
+      }
     }
 
     revalidatePath('/dashboard/sales/pending')
@@ -427,13 +442,83 @@ export default async function PendingSalesPage() {
     revalidatePath(`/dashboard/customers/${customerId}`)
   }
 
-  return (
-    <ManagerApprovalView 
-      customers={pendingCustomers}
-      installers={installers}
-      userRole={userRole}
-      onAdvanceWorkflow={advanceWorkflow}
-      onUpdateCrfWorkflow={updateCrfAndAdvance}
-    />
-  )
+  try {
+    const supabase = await createClient()
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    // Fetch user role from Prisma DB to determine navigation options
+    const dbUser = user ? await prisma.user.findUnique({ where: { supabaseId: user.id }, select: { role: true } }) : null
+    const userRole = dbUser?.role || ''
+
+    // Fetch all customer sales in pending pipeline stages and available installer users
+    const [rawPendingCustomers, rawInstallers] = await Promise.all([
+      prisma.customer.findMany({
+        where: {
+          status: {
+            in: [
+              'SIGNUP_GENERATED',
+              'PENDING_PAYMENT_VERIFICATION',
+              'PENDING_ACTIVATION',
+            ]
+          }
+        },
+        include: {
+          packagePlan: true,
+          solarSystem: true,
+          accountExecutive: true,
+          assignedInstaller: true,
+          invoices: {
+            orderBy: { createdAt: 'desc' },
+            take: 3
+          },
+          ledgerEntries: {
+            orderBy: { createdAt: 'desc' },
+            take: 1
+          },
+          transactions: {
+            orderBy: { createdAt: 'desc' },
+            take: 1
+          }
+        },
+        orderBy: { signupDate: 'desc' }
+      }),
+      prisma.user.findMany({
+        where: {
+          role: { in: ['INSTALLATION', 'OM_MANAGER', 'MANAGER', 'SUPER_ADMIN', 'ADMIN'] },
+          isActive: true
+        },
+        select: { id: true, fullName: true, role: true, email: true },
+        orderBy: { fullName: 'asc' }
+      })
+    ])
+
+    // Sanitize Prisma types and map assigned installer details
+    const installerMap = new Map(rawInstallers.map(i => [i.id, i]))
+    const pendingCustomers = JSON.parse(JSON.stringify(rawPendingCustomers)).map((c: any) => ({
+      ...c,
+      assignedInstaller: c.assignedInstaller || (c.assignedInstallerId ? installerMap.get(c.assignedInstallerId) || null : null)
+    }))
+    const installers = JSON.parse(JSON.stringify(rawInstallers))
+
+    return (
+      <ManagerApprovalView 
+        customers={pendingCustomers}
+        installers={installers}
+        userRole={userRole}
+        onAdvanceWorkflow={advanceWorkflow}
+        onUpdateCrfWorkflow={updateCrfAndAdvance}
+      />
+    )
+  } catch (error: any) {
+    return (
+      <div className="p-8 text-red-500 border border-red-500 rounded bg-red-50">
+        <h1 className="text-xl font-bold mb-4">Server Error Detailed Log</h1>
+        <pre className="whitespace-pre-wrap text-sm">{error?.message || String(error)}</pre>
+        {error?.stack && <pre className="whitespace-pre-wrap text-xs mt-4 text-gray-700">{error.stack}</pre>}
+      </div>
+    )
+  }
 }

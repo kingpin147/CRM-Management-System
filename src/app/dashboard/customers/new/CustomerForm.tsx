@@ -891,8 +891,8 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="12 Hours">12 Hours Daytime</SelectItem>
-                              <SelectItem value="24 Hours">24 Hours Continuous</SelectItem>
+                              <SelectItem value="Hybrid">Hybrid</SelectItem>
+                              <SelectItem value="Grid Tied">Grid Tied</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />

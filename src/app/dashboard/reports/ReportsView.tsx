@@ -1118,7 +1118,7 @@ export function ReportsView({
           `"${c.customerType ? (c.customerType.charAt(0).toUpperCase() + c.customerType.slice(1).toLowerCase()) : 'Residential'}"`,
           `"${c.packagePlan?.systemSizeKw || c.solarSystem?.inverterSize || '-'}"`,
           `"${c.packagePlan?.billingType || 'Monthly'}"`,
-          `"${c.packagePlan?.monitoringTime || '12 Hours'}"`,
+          `"${c.packagePlan?.monitoringTime || 'Hybrid'}"`,
           `"${c.status ? c.status.replace(/_/g, ' ') : 'Active'}"`,
           `"${fin.adjustmentText}"`,
           `"${fin.arrears90}"`,
@@ -1943,7 +1943,7 @@ export function ReportsView({
                           </TableCell>
                           <TableCell className="whitespace-nowrap font-medium">{c.packagePlan?.systemSizeKw || c.solarSystem?.inverterSize || '-'}</TableCell>
                           <TableCell className="whitespace-nowrap">{c.packagePlan?.billingType || 'Monthly'}</TableCell>
-                          <TableCell className="whitespace-nowrap text-gray-700">{c.packagePlan?.monitoringTime || '12 Hours'}</TableCell>
+                          <TableCell className="whitespace-nowrap text-gray-700">{c.packagePlan?.monitoringTime || 'Hybrid'}</TableCell>
                           <TableCell className="whitespace-nowrap">
                             <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-semibold text-[10px]">
                               {c.status ? c.status.replace(/_/g, ' ') : 'Active'}

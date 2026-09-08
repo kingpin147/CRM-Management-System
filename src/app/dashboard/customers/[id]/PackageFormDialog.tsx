@@ -117,8 +117,8 @@ export function PackageFormDialog({ customerId, initialData, inline = false }: {
                 <SelectValue placeholder="Select Monitoring Window" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="12 Hours">12 Hours (Daytime)</SelectItem>
-                <SelectItem value="24 Hours">24 Hours (Round-the-clock)</SelectItem>
+                <SelectItem value="Hybrid">Hybrid</SelectItem>
+                <SelectItem value="Grid Tied">Grid Tied</SelectItem>
               </SelectContent>
             </Select>
           </div>

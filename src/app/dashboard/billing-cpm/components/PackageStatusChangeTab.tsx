@@ -17,10 +17,10 @@ import { calculatePackageBreakdown } from '@/lib/pricing'
 
 const PACKAGES = ['Basic', 'Moderate', 'Comprehensive']
 const BILLING_TYPES = ['Monthly', 'Quarterly', 'Half Yearly', 'Yearly']
-const MONITORING_TIMES = ['12 Hours', '24 Hours']
+const MONITORING_TIMES = ['Hybrid', 'Grid Tied']
 
 // Standard pricing matrix helper using official revised rates
-function estimatePlanPrice(size: string, tier: string, billing: string, window: string = '12 Hours'): number {
+function estimatePlanPrice(size: string, tier: string, billing: string, window: string = 'Hybrid'): number {
   const b = calculatePackageBreakdown(size, tier, billing, window)
   return b.priceAfterDiscount + b.salesTax // Recurring recurring subscription amount (without one-time onboarding fee)
 }
@@ -35,7 +35,7 @@ export function PackageStatusChangeTab() {
   const [systemSize, setSystemSize] = React.useState('10-20 kW')
   const [packageTier, setPackageTier] = React.useState('Basic')
   const [billingType, setBillingType] = React.useState('Monthly')
-  const [monitoringTime, setMonitoringTime] = React.useState('12 Hours')
+  const [monitoringTime, setMonitoringTime] = React.useState('Hybrid')
   const [status, setStatus] = React.useState('CONNECTION_ACTIVE')
   const [customAmount, setCustomAmount] = React.useState<number>(0)
   const [notes, setNotes] = React.useState('')

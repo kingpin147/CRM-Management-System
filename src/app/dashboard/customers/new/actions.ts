@@ -61,7 +61,7 @@ export async function createCustomer(formData: FormData) {
   const systemSizeKw = (formData.get('systemSizeKw') as string) || '10-20 kW'
   const packageTier = (formData.get('packageTier') as string) || 'Comprehensive'
   const billingType = (formData.get('billingType') as string) || 'Yearly'
-  const monitoringTime = (formData.get('monitoringTime') as string) || '24 Hours'
+  const monitoringTime = (formData.get('monitoringTime') as string) || 'Grid Tied'
   const monthlyBasePrice = Number(formData.get('monthlyBasePrice') || 0)
   const appliedDiscount = Number(formData.get('appliedDiscount') || 0)
   const salesTaxAmount = Number(formData.get('salesTaxAmount') || 0)

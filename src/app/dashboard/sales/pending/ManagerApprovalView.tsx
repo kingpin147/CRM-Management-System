@@ -36,6 +36,7 @@ type CustomerRecord = {
     totalAmount?: number | string | null
   } | null
   solarSystem: any | null
+  transactions?: any[]
 }
 
 interface ManagerApprovalViewProps {

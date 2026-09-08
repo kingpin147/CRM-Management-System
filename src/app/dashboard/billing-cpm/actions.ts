@@ -233,7 +233,7 @@ export async function updateCustomerPackageAndStatus(formData: FormData) {
         systemSizeKw: systemSizeKw || '10-20 kW',
         packageTier: packageTier || 'Basic',
         billingType: billingType || 'Monthly',
-        monitoringTime: monitoringTime || '12 Hours',
+        monitoringTime: monitoringTime || 'Hybrid',
         monthlyBasePrice: basePrice,
         appliedDiscount: 0,
         salesTaxAmount: tax,

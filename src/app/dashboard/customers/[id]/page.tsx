@@ -344,7 +344,7 @@ export default async function CustomerDetailPage({
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Monitoring Time</TableCell>
                           <TableCell className="text-xs">
                             <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
-                              {customer.packagePlan?.monitoringTime || '12 Hours'}
+                              {customer.packagePlan?.monitoringTime || 'Hybrid'}
                             </Badge>
                           </TableCell>
                         </TableRow>
@@ -1175,7 +1175,7 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Monitoring Time:</TableCell>
                           <TableCell className="text-xs font-semibold text-[var(--color-ink)]">
-                            {customer.packagePlan?.monitoringTime || '12 Hours'}
+                            {customer.packagePlan?.monitoringTime || 'Hybrid'}
                           </TableCell>
                         </TableRow>
                         <TableRow className="hover:bg-transparent">

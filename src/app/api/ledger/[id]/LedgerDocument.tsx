@@ -217,7 +217,7 @@ export function LedgerDocument({ customer, ledgerEntries, logoSrc }: LedgerDocum
   const customerIdDigits = customer?.customerCode ? customer.customerCode.replace(/^[A-Za-z]+-/, '') : (customer?.id || '9742')
   const systemType = customer?.packagePlan?.systemSizeKw || customer?.solarSystem?.inverterSize || '1-10 kW'
   const packageTier = customer?.packagePlan?.packageTier || 'Moderate'
-  const monitoringTime = customer?.packagePlan?.monitoringTime || '12 Hours'
+  const monitoringTime = customer?.packagePlan?.monitoringTime || 'Hybrid'
   const billingType = customer?.packagePlan?.billingType || 'Quarterly'
 
   const todayStr = formatDate(new Date())

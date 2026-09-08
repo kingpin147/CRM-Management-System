@@ -270,7 +270,7 @@ export function InstallerJobsView({
                           {c.packagePlan?.systemSizeKw || c.solarSystem?.inverterSize || '1-10 kW'}
                         </span>
                         <span className="text-[11px] text-slate-600 font-medium">
-                          {c.packagePlan?.packageTier || 'Moderate'} ({c.packagePlan?.monitoringTime || '12 Hours'})
+                          {c.packagePlan?.packageTier || 'Moderate'} ({c.packagePlan?.monitoringTime || 'Hybrid'})
                         </span>
                       </TableCell>
 

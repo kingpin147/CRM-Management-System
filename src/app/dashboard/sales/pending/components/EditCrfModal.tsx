@@ -229,6 +229,20 @@ export function EditCrfModal({
         setInstallerName(s.installerName || '')
         setInstallerCompany(s.installerCompany || 'EnergyGurus Technical Operations')
       }
+
+      if ((customer as any).transactions && (customer as any).transactions.length > 0) {
+        const tx = (customer as any).transactions[0]
+        setPaymentAmount(tx.amount ? String(tx.amount) : '')
+        if (tx.paymentMethod) {
+          const parts = tx.paymentMethod.split(' | ')
+          setPaymentMode(parts[0] || 'Cash')
+          setPaymentDescription(parts.slice(1).join(' | ') || '')
+        }
+      } else {
+        setPaymentAmount('')
+        setPaymentMode('Cash')
+        setPaymentDescription('')
+      }
     }
   }, [customer])
 

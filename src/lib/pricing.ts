@@ -62,11 +62,9 @@ export function getBaseMonthlyRate(
   monitoringTime?: string | null
 ): number {
   let windowKey: 'Hybrid' | 'Grid Tied' = 'Hybrid'
-  if (monitoringTime === '12 Hours') {
+  if (monitoringTime === '12 Hours' || monitoringTime === 'Hybrid') {
     windowKey = 'Hybrid'
-  } else if (monitoringTime === '24 Hours') {
-    windowKey = 'Grid Tied'
-  } else if (monitoringTime === 'Grid Tied') {
+  } else if (monitoringTime === '24 Hours' || monitoringTime === 'Grid Tied') {
     windowKey = 'Grid Tied'
   }
 
