@@ -706,6 +706,16 @@ export function EditCrfModal({
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-slate-700">Zero Export Device *</Label>
+                  <Select value={zeroExportDevice} onValueChange={(v) => setZeroExportDevice(v || 'No')}>
+                    <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Yes" className="text-xs">Installed</SelectItem>
+                      <SelectItem value="No" className="text-xs">Not Installed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
 
@@ -746,6 +756,26 @@ export function EditCrfModal({
                   </Select>
                 </div>
                 <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-slate-700">Inverter Phase *</Label>
+                  <Select value={inverterPhase} onValueChange={(v) => setInverterPhase(v || 'Three Phase')}>
+                    <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Three Phase" className="text-xs">Three Phase</SelectItem>
+                      <SelectItem value="Single Phase" className="text-xs">Single Phase</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-slate-700">Inverter Category *</Label>
+                  <Select value={inverterCategory} onValueChange={(v) => setInverterCategory(v || 'Low Voltage')}>
+                    <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Low Voltage" className="text-xs">Low Voltage</SelectItem>
+                      <SelectItem value="High Voltage" className="text-xs">High Voltage</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
                   <Label className="text-xs font-semibold text-slate-700">No. of Inverters</Label>
                   <Input 
                     type="number" 
@@ -770,6 +800,16 @@ export function EditCrfModal({
                     value={inverterWarrantyEnd} 
                     onChange={(e) => setInverterWarrantyEnd(e.target.value)} 
                     className="h-9 text-xs"
+                  />
+                </div>
+                <div className="space-y-1 sm:col-span-2 md:col-span-4">
+                  <Label className="text-[11px] font-bold text-amber-900 block mb-1">
+                    📷 Inverter Photo
+                  </Label>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    className="h-9 text-xs border-amber-300 bg-amber-50/20 file:bg-amber-100 file:text-amber-900 file:border-0 file:rounded file:px-2 file:py-1 file:text-xs file:font-semibold cursor-pointer"
                   />
                 </div>
               </div>
@@ -820,6 +860,12 @@ export function EditCrfModal({
                     placeholder="e.g. 18"
                   />
                 </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-slate-700">Total PV Capacity</Label>
+                  <div className="h-9 w-full flex items-center px-3 rounded-md border border-amber-300 bg-amber-50 text-amber-900 text-xs font-bold font-mono">
+                    {((Number(panelWattage) || 0) * (Number(panelQuantity) || 0) / 1000).toFixed(2)} kW
+                  </div>
+                </div>
                 <div className="space-y-1 sm:col-span-2">
                   <Label className="text-xs font-semibold text-slate-700">Panel Type</Label>
                   <Select value={panelType} onValueChange={(v) => setPanelType(v || 'Tier-1 Monofacial')}>
@@ -838,6 +884,16 @@ export function EditCrfModal({
                     value={panelWarrantyEnd} 
                     onChange={(e) => setPanelWarrantyEnd(e.target.value)} 
                     className="h-9 text-xs"
+                  />
+                </div>
+                <div className="space-y-1 sm:col-span-2 md:col-span-4">
+                  <Label className="text-[11px] font-bold text-amber-900 block mb-1">
+                    📷 Panel Photo
+                  </Label>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    className="h-9 text-xs border-amber-300 bg-amber-50/20 file:bg-amber-100 file:text-amber-900 file:border-0 file:rounded file:px-2 file:py-1 file:text-xs file:font-semibold cursor-pointer"
                   />
                 </div>
               </div>
@@ -880,6 +936,42 @@ export function EditCrfModal({
                     </SelectContent>
                   </Select>
                 </div>
+                
+                {Number(batteryQty) > 0 && (
+                  <div className="sm:col-span-2 md:col-span-4 p-3 bg-white rounded-lg border border-slate-200 shadow-2xs space-y-3 mt-2">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                      <span className="text-xs font-bold text-slate-800">Battery Unit 1</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-600 block mb-1">Battery 1 Serial #</label>
+                        <Input
+                          value={batterySerial}
+                          onChange={(e) => setBatterySerial(e.target.value)}
+                          className="h-9 text-xs font-mono"
+                          placeholder="e.g. SN-BAT-892319"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-600 block mb-1">Warranty Expiry Date</label>
+                        <Input
+                          type="date"
+                          value={batteryWarrantyEnd}
+                          onChange={(e) => setBatteryWarrantyEnd(e.target.value)}
+                          className="h-9 text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-bold text-amber-900 block mb-1">📷 Battery Hardware Photo</label>
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          className="h-9 text-xs border-amber-300 bg-amber-50/20 file:bg-amber-100 file:text-amber-900 file:border-0 file:rounded file:px-2 file:py-1 file:text-xs file:font-semibold cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div className="space-y-1">
                   <Label className="text-xs font-semibold text-slate-700">Structure Type</Label>
                   <AutoSuggestInput 
