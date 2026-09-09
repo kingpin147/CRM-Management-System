@@ -108,7 +108,7 @@ export function InstallerAuditModal({
   const [uploadingPanel, setUploadingPanel] = React.useState(false)
 
   // 4. Battery Energy Storage System (BESS)
-  const [batteryBrand, setBatteryBrand] = React.useState(solar.batteryBrand || (solar.noOfBatteries ? '' : 'N/A'))
+  const [batteryBrand, setBatteryBrand] = React.useState(solar.batteryBrand || '')
   const [batteryType, setBatteryType] = React.useState(solar.batteryType || 'Lithium-ion')
   const [batteryCategory, setBatteryCategory] = React.useState(solar.batteryCategory || 'Low Voltage (LV)')
   const [noOfBatteries, setNoOfBatteries] = React.useState<number>(solar.noOfBatteries != null ? Number(solar.noOfBatteries) : 0)
@@ -181,7 +181,7 @@ export function InstallerAuditModal({
       setPanelImageUrl(s.panelImages?.[0] || '')
 
       // Section 4
-      setBatteryBrand(s.batteryBrand || (s.noOfBatteries ? '' : 'N/A'))
+      setBatteryBrand(s.batteryBrand || '')
       setBatteryType(s.batteryType || 'Lithium-ion')
       setBatteryCategory(s.batteryCategory || 'Low Voltage (LV)')
       setNoOfBatteries(s.noOfBatteries != null ? Number(s.noOfBatteries) : 0)
@@ -358,7 +358,7 @@ export function InstallerAuditModal({
 
     // Section 4: Battery Energy Storage System (BESS)
     if (noOfBatteries > 0) {
-      if (!batteryBrand?.trim() || batteryBrand.trim().toUpperCase() === 'N/A') {
+      if (!batteryBrand?.trim()) {
         return 'Please specify the Battery Brand in Section 4 since number of batteries is greater than 0.'
       }
       if (!batteryType?.trim() || batteryType === 'None') {
@@ -1022,8 +1022,8 @@ export function InstallerAuditModal({
                     <AutoSuggestInput
                       value={batteryBrand}
                       onChange={setBatteryBrand}
-                      options={['N/A', ...BATTERY_BRANDS]}
-                      placeholder="e.g. Narada, Pylontech, N/A"
+                      options={BATTERY_BRANDS}
+                      placeholder="e.g. Narada, Pylontech"
                       className="h-9 text-xs bg-white"
                     />
                   </div>

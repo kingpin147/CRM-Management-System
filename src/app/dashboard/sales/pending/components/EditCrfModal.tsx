@@ -130,6 +130,10 @@ export function EditCrfModal({
   const [installerName, setInstallerName] = React.useState('')
   const [installerCompany, setInstallerCompany] = React.useState('')
 
+  const [inverterImageUrl, setInverterImageUrl] = React.useState('')
+  const [panelImageUrl, setPanelImageUrl] = React.useState('')
+  const [batteryImageUrl, setBatteryImageUrl] = React.useState('')
+
   // Dynamic pricing breakdown
   const breakdown = React.useMemo(() => {
     return calculatePackageBreakdown(systemSizeKw, packageTier, billingType, monitoringTime)
@@ -228,6 +232,10 @@ export function EditCrfModal({
         setEarthingLastCheck(s.earthingLastCheck ? new Date(s.earthingLastCheck).toISOString().split('T')[0] : '')
         setInstallerName(s.installerName || '')
         setInstallerCompany(s.installerCompany || 'EnergyGurus Technical Operations')
+
+        setInverterImageUrl(s.inverterImages?.[0] || s.inverterPhoto || '')
+        setPanelImageUrl(s.panelImages?.[0] || s.panelPhoto || '')
+        setBatteryImageUrl(s.batteryImages?.[0] || s.batteryPhoto || '')
       }
 
       if ((customer as any).transactions && (customer as any).transactions.length > 0) {
@@ -806,6 +814,14 @@ export function EditCrfModal({
                   <Label className="text-[11px] font-bold text-amber-900 block mb-1">
                     📷 Inverter Photo
                   </Label>
+                  {inverterImageUrl && (
+                    <div className="mb-2 relative h-32 w-32 rounded-md overflow-hidden border border-slate-200">
+                      <img src={inverterImageUrl} alt="Inverter" className="object-cover w-full h-full" />
+                      <a href={inverterImageUrl} target="_blank" rel="noreferrer" className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
+                        <span className="bg-white/90 text-xs font-bold px-2 py-1 rounded shadow-sm">View Full</span>
+                      </a>
+                    </div>
+                  )}
                   <Input
                     type="file"
                     accept="image/*"
@@ -890,6 +906,14 @@ export function EditCrfModal({
                   <Label className="text-[11px] font-bold text-amber-900 block mb-1">
                     📷 Panel Photo
                   </Label>
+                  {panelImageUrl && (
+                    <div className="mb-2 relative h-32 w-32 rounded-md overflow-hidden border border-slate-200">
+                      <img src={panelImageUrl} alt="Panel" className="object-cover w-full h-full" />
+                      <a href={panelImageUrl} target="_blank" rel="noreferrer" className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
+                        <span className="bg-white/90 text-xs font-bold px-2 py-1 rounded shadow-sm">View Full</span>
+                      </a>
+                    </div>
+                  )}
                   <Input
                     type="file"
                     accept="image/*"
@@ -912,7 +936,7 @@ export function EditCrfModal({
                     value={batteryBrand}
                     onChange={setBatteryBrand}
                     options={BATTERY_BRANDS}
-                    placeholder="e.g. Narada, Pylontech, N/A"
+                    placeholder="e.g. Narada, Pylontech"
                   />
                 </div>
                 <div className="space-y-1">
@@ -963,6 +987,14 @@ export function EditCrfModal({
                       </div>
                       <div>
                         <label className="text-[11px] font-bold text-amber-900 block mb-1">📷 Battery Hardware Photo</label>
+                        {batteryImageUrl && (
+                          <div className="mb-2 relative h-32 w-32 rounded-md overflow-hidden border border-slate-200">
+                            <img src={batteryImageUrl} alt="Battery" className="object-cover w-full h-full" />
+                            <a href={batteryImageUrl} target="_blank" rel="noreferrer" className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
+                              <span className="bg-white/90 text-xs font-bold px-2 py-1 rounded shadow-sm">View Full</span>
+                            </a>
+                          </div>
+                        )}
                         <Input
                           type="file"
                           accept="image/*"
