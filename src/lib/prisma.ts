@@ -13,9 +13,9 @@ declare const globalThis: {
 const pool = globalThis.pgPoolGlobal ?? new Pool({
   connectionString,
   ssl: { rejectUnauthorized: false },
-  max: 10,
-  idleTimeoutMillis: 60000,
-  connectionTimeoutMillis: 30000,
+  max: 5,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
   keepAlive: true,
   keepAliveInitialDelayMillis: 10000,
 })
@@ -24,21 +24,18 @@ pool.on('error', (err) => {
   console.warn('Prisma pg connection warning (handled):', err.message)
 })
 
-if (process.env.NODE_ENV !== 'production') {
-  globalThis.pgPoolGlobal = pool
-}
+// Cache in ALL environments — critical for production serverless
+// Without this, each Vercel function invocation creates a new Pool,
+// quickly exhausting the database connection limit (pool_size: 15)
+globalThis.pgPoolGlobal = pool
 
 const adapter = globalThis.adapterGlobal ?? new PrismaPg(pool)
 
-if (process.env.NODE_ENV !== 'production') {
-  globalThis.adapterGlobal = adapter
-}
+globalThis.adapterGlobal = adapter
 
 const prisma = globalThis.prismaGlobal ?? new PrismaClient({ adapter })
 
-if (process.env.NODE_ENV !== 'production') {
-  globalThis.prismaGlobal = prisma
-}
+globalThis.prismaGlobal = prisma
 
 export default prisma
 
