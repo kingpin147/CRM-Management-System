@@ -40,9 +40,11 @@ export function UserNav({
     }
   }
 
-  // Display full name primarily, fallback to email prefix
-  const displayText = fullName || email?.split('@')[0] || 'User'
-  const initial = (displayText).charAt(0).toUpperCase()
+  // Display the actual logged-in person's name
+  const displayText = fullName?.trim() 
+    || (email ? email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'User')
+  
+  const initial = displayText.charAt(0).toUpperCase()
 
   return (
     <div className="flex items-center gap-2">
@@ -58,7 +60,7 @@ export function UserNav({
           <div className="w-7 h-7 rounded-full bg-[#002868] flex items-center justify-center text-white font-bold text-xs shadow-xs">
             {initial}
           </div>
-          <span className="text-xs font-bold text-slate-800 max-w-[150px] truncate hidden sm:inline-block">
+          <span className="text-xs font-bold text-slate-800 max-w-[180px] truncate hidden sm:inline-block">
             {displayText}
           </span>
           <ChevronDown className="h-3.5 w-3.5 text-slate-400" />

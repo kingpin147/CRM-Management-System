@@ -14,9 +14,15 @@ export default async function ReportsPage({
 
   const dbUser = await prisma.user.findUnique({
     where: { supabaseId: user.id },
-    select: { role: true }
+    select: { role: true, fullName: true, designation: true }
   })
-  if (!dbUser?.role || !['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES_MANAGER', 'BILLING_MANAGER', 'OM_MANAGER', 'SALES'].includes(dbUser.role)) {
+
+  const isHayat = (dbUser?.fullName || '').toLowerCase().includes('hayat') || 
+                  (dbUser?.designation || '').toLowerCase().includes('executive o & m') ||
+                  (dbUser?.designation || '').toLowerCase().includes('executive o&m') ||
+                  (dbUser?.designation || '').toLowerCase().includes('sr executive o & m')
+
+  if (isHayat || !dbUser?.role || !['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES_MANAGER', 'BILLING_MANAGER', 'OM_MANAGER', 'SALES'].includes(dbUser.role)) {
     redirect('/dashboard/customers')
   }
   const userRole = dbUser.role

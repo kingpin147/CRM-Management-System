@@ -13,10 +13,14 @@ import {
 
 export function MainNav({ 
   role = 'SALES_MANAGER', 
-  orientation = 'vertical' 
+  orientation = 'vertical',
+  fullName = '',
+  designation = ''
 }: { 
   role?: string;
-  orientation?: 'horizontal' | 'vertical'
+  orientation?: 'horizontal' | 'vertical';
+  fullName?: string;
+  designation?: string;
 }) {
   const pathname = usePathname()
 
@@ -62,10 +66,16 @@ export function MainNav({
   const isSalesExec = normalizedRole === 'SALES'
   const isIpNoc = normalizedRole === 'IP_NOC_EXECUTIVE'
 
+  // Exclude Muhammad Hayat / Sr Executive O & M from Reports access
+  const isHayat = (fullName || '').toLowerCase().includes('hayat') || 
+                  (designation || '').toLowerCase().includes('executive o & m') ||
+                  (designation || '').toLowerCase().includes('executive o&m') ||
+                  (designation || '').toLowerCase().includes('sr executive o & m')
+
   const canViewAdmin = isSuperAdmin
   const canViewApproval = isSuperAdmin || isSalesManager || isOMManager
   const canViewBilling = isSuperAdmin || isSalesManager
-  const canViewReports = isSuperAdmin || isSalesManager || isOMManager || isSalesExec
+  const canViewReports = !isHayat && (isSuperAdmin || isSalesManager || isOMManager || isSalesExec)
   const canViewAssignedJobs = isInstaller || isIpNoc
 
   if (orientation === 'horizontal') {

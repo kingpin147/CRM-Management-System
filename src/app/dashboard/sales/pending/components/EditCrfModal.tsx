@@ -56,6 +56,8 @@ export function EditCrfModal({
   // Form State - Customer
   const [fullName, setFullName] = React.useState('')
   const [cnic, setCnic] = React.useState('')
+  const [passportNumber, setPassportNumber] = React.useState('')
+  const [ntnNumber, setNtnNumber] = React.useState('')
   const [contactNumber, setContactNumber] = React.useState('')
   const [pocNumber, setPocNumber] = React.useState('')
   const [email, setEmail] = React.useState('')
@@ -149,6 +151,8 @@ export function EditCrfModal({
     if (customer) {
       setFullName(customer.fullName || '')
       setCnic(customer.cnic || '')
+      setPassportNumber((customer as any).passportNumber || '')
+      setNtnNumber((customer as any).ntnNumber || '')
       setContactNumber(customer.contactNumber || '')
       setPocNumber((customer as any).pocNumber || '')
       setEmail(customer.email || '')
@@ -293,6 +297,8 @@ export function EditCrfModal({
 
       formData.append('fullName', fullName)
       formData.append('cnic', cnic)
+      formData.append('passportNumber', passportNumber)
+      formData.append('ntnNumber', ntnNumber)
       formData.append('contactNumber', contactNumber)
       formData.append('pocNumber', pocNumber)
       formData.append('email', email)
@@ -431,6 +437,24 @@ export function EditCrfModal({
                   onChange={(e) => setCnic(e.target.value)} 
                   className="h-9 text-xs font-mono"
                   placeholder="35202-1234567-1"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold text-slate-700">Passport #</Label>
+                <Input 
+                  value={passportNumber} 
+                  onChange={(e) => setPassportNumber(e.target.value)} 
+                  className="h-9 text-xs font-mono"
+                  placeholder="Optional Passport #"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold text-slate-700">NTN Number</Label>
+                <Input 
+                  value={ntnNumber} 
+                  onChange={(e) => setNtnNumber(e.target.value)} 
+                  className="h-9 text-xs font-mono"
+                  placeholder="Optional NTN #"
                 />
               </div>
               <div className="space-y-1">

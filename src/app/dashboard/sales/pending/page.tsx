@@ -65,9 +65,10 @@ export default async function PendingSalesPage() {
     const currentStatus = formData.get('currentStatus') as string
     const shouldAdvance = formData.get('shouldAdvance') === 'true'
 
-    // Customer basic fields
     const fullName = (formData.get('fullName') as string) || undefined
     const cnic = (formData.get('cnic') as string) || undefined
+    const passportNumber = (formData.get('passportNumber') as string) || undefined
+    const ntnNumber = (formData.get('ntnNumber') as string) || undefined
     const contactNumber = (formData.get('contactNumber') as string) || undefined
     const email = (formData.get('email') as string) || undefined
     const address = (formData.get('address') as string) || undefined
@@ -179,6 +180,8 @@ export default async function PendingSalesPage() {
       data: {
         fullName,
         cnic,
+        passportNumber,
+        ntnNumber,
         contactNumber,
         email,
         address,

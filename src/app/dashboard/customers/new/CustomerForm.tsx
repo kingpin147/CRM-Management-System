@@ -23,8 +23,7 @@ import { formatDiscoRefNo } from '@/lib/utils'
 import { SYSTEM_SIZES, INVERTER_SIZES, INVERTER_BRANDS, PANEL_BRANDS, BATTERY_BRANDS, IP_LIST, DISCO_LIST, STRUCTURE_TYPES, STRUCTURE_MATERIALS } from '@/lib/solar-constants'
 import { calculatePackageBreakdown } from '@/lib/pricing'
 import { SectionHeader } from '@/components/ui/section-header'
-
-
+import { CnicCameraCapture } from '@/components/ui/CnicCameraCapture'
 
 import { customerSchema } from '@/schemas/customer'
 
@@ -357,6 +356,11 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
         cnicFrontUrl = await uploadFileToR2(cnicFrontFile, 'cnics')
       }
 
+      let cnicBackUrl = null
+      if (cnicBackFile) {
+        cnicBackUrl = await uploadFileToR2(cnicBackFile, 'cnics')
+      }
+
       const formData = new FormData()
       Object.entries(values).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== '' && value !== 'none') formData.append(key, value.toString())
@@ -405,7 +409,13 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
       formData.append('salesTaxAmount',  Math.round(salesTax).toString())
       formData.append('onboardingFee',   Math.round(onboardingFee).toString())
       formData.append('totalAmount',     Math.round(grandTotal).toString())
-      if (cnicFrontUrl) formData.append('cnicImageUrl', cnicFrontUrl)
+      if (cnicFrontUrl) {
+        formData.append('cnicFrontUrl', cnicFrontUrl)
+        formData.append('cnicImageUrl', cnicFrontUrl)
+      }
+      if (cnicBackUrl) {
+        formData.append('cnicBackUrl', cnicBackUrl)
+      }
 
       const result = await createCustomer(formData)
 
@@ -771,7 +781,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-xs font-semibold">Passport #</FormLabel>
-                          <FormControl><Input placeholder="Optional" {...field} className="h-10 text-xs" /></FormControl>
+                          <FormControl><Input placeholder="e.g. AB1234567" {...field} className="h-10 text-xs font-mono" /></FormControl>
                         </FormItem>
                       )}
                     />
@@ -783,34 +793,26 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-xs font-semibold">NTN Number</FormLabel>
-                          <FormControl><Input placeholder="Optional" {...field} className="h-10 text-xs" /></FormControl>
+                          <FormControl><Input placeholder="e.g. 1234567-8" {...field} className="h-10 text-xs font-mono" /></FormControl>
                         </FormItem>
                       )}
                     />
 
-                    {/* CNIC Snapshots (One Line) */}
-                    <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-5">
-                      {/* Upload CNIC Front */}
-                      <div className="space-y-1.5">
-                        <FormLabel className="text-xs font-semibold">Upload CNIC Front</FormLabel>
-                        <Input
-                          type="file"
-                          accept="image/*"
-                          className="h-10 text-xs file:bg-transparent file:text-xs file:font-semibold border-[var(--color-line)]"
-                          onChange={(e) => setCnicFrontFile(e.target.files?.[0] || null)}
-                        />
-                      </div>
+                    {/* CNIC Snapshots with Live Camera & File Upload (Full Width 4 Columns) */}
+                    <div className="md:col-span-4 grid grid-cols-1 md:grid-cols-2 gap-5 pt-1">
+                      <CnicCameraCapture
+                        label="CNIC Front"
+                        cardSide="front"
+                        file={cnicFrontFile}
+                        onFileSelect={setCnicFrontFile}
+                      />
 
-                      {/* Upload CNIC Back */}
-                      <div className="space-y-1.5">
-                        <FormLabel className="text-xs font-semibold">Upload CNIC Back</FormLabel>
-                        <Input
-                          type="file"
-                          accept="image/*"
-                          className="h-10 text-xs file:bg-transparent file:text-xs file:font-semibold border-[var(--color-line)]"
-                          onChange={(e) => setCnicBackFile(e.target.files?.[0] || null)}
-                        />
-                      </div>
+                      <CnicCameraCapture
+                        label="CNIC Back"
+                        cardSide="back"
+                        file={cnicBackFile}
+                        onFileSelect={setCnicBackFile}
+                      />
                     </div>
                   </div>
                 </CardContent>

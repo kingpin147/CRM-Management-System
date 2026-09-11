@@ -28,14 +28,28 @@ export default async function DashboardLayout({
     redirect('/login')
   }
 
-  // Fetch user role from Prisma DB to determine navigation options
-  const dbUser = await prisma.user.findUnique({
-    where: { supabaseId: user.id },
-    select: { role: true, fullName: true, designation: true }
+  // Fetch user role and name from Prisma DB to determine navigation options and header profile
+  const dbUser = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { supabaseId: user.id },
+        ...(user.email ? [{ email: { equals: user.email, mode: 'insensitive' as const } }] : [])
+      ]
+    },
+    select: { id: true, supabaseId: true, role: true, fullName: true, designation: true, email: true }
   })
+
+  // If supabaseId was not linked yet, auto-sync it
+  if (dbUser && !dbUser.supabaseId && user.id) {
+    await prisma.user.update({
+      where: { id: dbUser.id },
+      data: { supabaseId: user.id }
+    }).catch(() => {})
+  }
+
   const userRole = dbUser?.role || ''
   const userDesignation = dbUser?.designation || ''
-  const userFullName = dbUser?.fullName || ''
+  const userFullName = dbUser?.fullName || (user.user_metadata?.full_name as string) || (user.user_metadata?.name as string) || ''
 
   return (
     <div className="flex min-h-screen w-full bg-background">
@@ -59,7 +73,7 @@ export default async function DashboardLayout({
                   className="h-16 px-6 border-b border-line shadow-sm hover:opacity-80 transition-opacity"
                 />
                 <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-                  <MainNav role={userRole} orientation="vertical" />
+                  <MainNav role={userRole} fullName={userFullName} designation={userDesignation} orientation="vertical" />
                 </nav>
               </SheetContent>
             </Sheet>
@@ -70,7 +84,7 @@ export default async function DashboardLayout({
           <div className="hidden md:flex items-center flex-1 gap-2 lg:gap-4 xl:gap-6 min-w-0">
             <Logo href="/dashboard/customers" iconSize={28} className="hover:opacity-80 transition-opacity" />
             <div className="flex-1 min-w-0 overflow-x-auto no-scrollbar">
-              <MainNav role={userRole} orientation="horizontal" />
+              <MainNav role={userRole} fullName={userFullName} designation={userDesignation} orientation="horizontal" />
             </div>
           </div>
 
