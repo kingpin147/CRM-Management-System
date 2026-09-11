@@ -40,9 +40,9 @@ export function UserNav({
     }
   }
 
-  // Display designation primarily as requested, fallback to full name or email prefix
-  const displayText = designation || fullName || email?.split('@')[0] || 'User'
-  const initial = (fullName || displayText || 'U').charAt(0).toUpperCase()
+  // Display full name primarily, fallback to email prefix
+  const displayText = fullName || email?.split('@')[0] || 'User'
+  const initial = (displayText).charAt(0).toUpperCase()
 
   return (
     <div className="flex items-center gap-2">
