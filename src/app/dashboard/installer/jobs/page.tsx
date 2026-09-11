@@ -14,7 +14,7 @@ export default async function InstallerJobsPage() {
   })
 
   const userRole = (dbUser?.role || '').toUpperCase().trim()
-  const allowedRoles = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES_MANAGER', 'BILLING_MANAGER', 'OM_MANAGER', 'INSTALLATION', 'INSTALLER', 'IP_NOC_EXECUTIVE']
+  const allowedRoles = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES_MANAGER', 'SALES', 'BILLING_MANAGER', 'OM_MANAGER', 'INSTALLATION', 'INSTALLER', 'IP_NOC_EXECUTIVE']
 
   if (!dbUser || !userRole || !allowedRoles.includes(userRole)) {
     redirect('/dashboard/customers')

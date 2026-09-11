@@ -103,19 +103,17 @@ export function MainNav({
               <ChevronDown className="h-3 w-3 xl:h-3.5 xl:w-3.5 opacity-70 shrink-0 ml-0.5" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-48 bg-white p-1.5 shadow-lg border-line rounded-xl animate-in fade-in-50 zoom-in-95">
-              {!isOMManager && (
                 <DropdownMenuItem>
                   <Link href="/dashboard/customers/new" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
                     Create Sale
                   </Link>
                 </DropdownMenuItem>
-              )}
               <DropdownMenuItem>
                 <Link href="/dashboard/sales/pending" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
                   Manager Approval
                 </Link>
               </DropdownMenuItem>
-              {(isOMManager || isSuperAdmin) && (
+              {(isOMManager || isSuperAdmin || isSalesManager || isSalesExec) && (
                 <DropdownMenuItem>
                   <Link href="/dashboard/installer/jobs" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
                     Assigned Jobs Queue
@@ -302,17 +300,15 @@ export function MainNav({
             </Link>
           ) : (
             <>
-              {!isOMManager && (
                 <Link href="/dashboard/customers/new" className={linkClass('/dashboard/customers/new')}>
                   Create Sale
                 </Link>
-              )}
               {canViewApproval && (
                 <Link href="/dashboard/sales/pending" className={linkClass('/dashboard/sales/pending')}>
                   Manager Approval
                 </Link>
               )}
-              {(isOMManager || isSuperAdmin) && (
+              {(isOMManager || isSuperAdmin || isSalesManager || isSalesExec) && (
                 <Link href="/dashboard/installer/jobs" className={linkClass('/dashboard/installer/jobs')}>
                   Assigned Jobs Queue
                 </Link>

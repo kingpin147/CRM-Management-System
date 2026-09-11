@@ -20,7 +20,7 @@ export default async function NewCustomerPage() {
     redirect('/dashboard/installer/jobs')
   }
 
-  if (!dbUser?.role || !['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES_MANAGER', 'SALES'].includes(dbUser.role)) {
+  if (!dbUser?.role || !['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES_MANAGER', 'SALES', 'OM_MANAGER'].includes(dbUser.role)) {
     redirect('/dashboard/customers')
   }
   const userRole = dbUser.role
