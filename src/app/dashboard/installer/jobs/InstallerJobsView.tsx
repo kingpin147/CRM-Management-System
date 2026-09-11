@@ -36,6 +36,7 @@ export function InstallerJobsView({
   const isIPNOC = userRole === 'IP_NOC_EXECUTIVE'
   const isOMManager = userRole === 'OM_MANAGER'
   const isInstaller = userRole === 'INSTALLATION' || userRole === 'INSTALLER'
+  const isSales = userRole === 'SALES'
 
   const filteredCustomers = React.useMemo(() => {
     let baseList = customers;
@@ -87,18 +88,24 @@ export function InstallerJobsView({
     ? "IP NOC Operations & Assigned Jobs" 
     : isOMManager 
     ? "O&M Management & Assigned Jobs" 
+    : isSales
+    ? "Sales Operations & Assigned Jobs"
     : "Installer Field Operations & Assigned Jobs"
     
   const portalBadge = isIPNOC 
     ? "IP NOC Portal" 
     : isOMManager 
     ? "O&M Portal" 
+    : isSales
+    ? "Sales Portal"
     : "Installer Portal"
     
   const subtitleLabel = isIPNOC 
     ? "Setup IP NOC & Configure Connection." 
     : isOMManager 
     ? "Monitor Installer Field Audits & Push Pending Jobs to Completion."
+    : isSales
+    ? "Collect Solar System Hardware Specs (Part 2) & Audit Details (Part 3)."
     : "Fill Solar Hardware Specs (Part 2) & 7-Point System Audit (Part 3)."
 
   const pendingLabel = isIPNOC ? "Pending Setup" : "Pending Audits"

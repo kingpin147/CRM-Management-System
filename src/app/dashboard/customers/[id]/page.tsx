@@ -84,7 +84,7 @@ export default async function CustomerDetailPage({
 
   const canViewLedger = userRole ? ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'BILLING_MANAGER', 'SALES_MANAGER', 'SALES'].includes(userRole) : false
   const canEditProfile = userRole ? ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES_MANAGER', 'SALES'].includes(userRole) : false
-  const canEditSolarSpecs = userRole ? ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'OM_MANAGER', 'INSTALLATION'].includes(userRole) : false
+  const canEditSolarSpecs = userRole ? ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'OM_MANAGER', 'INSTALLATION', 'INSTALLER', 'SALES'].includes(userRole) : false
   const canRecordPayment = userRole ? ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'BILLING_MANAGER', 'SALES_MANAGER', 'SALES'].includes(userRole) : false
 
   const smsLogs = (customer.communicationLogs || []).filter((l: any) => l.channel === 'SMS')

@@ -23,8 +23,9 @@ export default async function InstallerJobsPage() {
   const isTechnician = userRole === 'INSTALLATION' || userRole === 'INSTALLER'
   const isIPNOC = userRole === 'IP_NOC_EXECUTIVE'
   const isOMManager = userRole === 'OM_MANAGER'
+  const isSales = userRole === 'SALES'
 
-  // Fetch jobs assigned specifically to this installer
+  // Fetch jobs assigned specifically to this installer or sales specialist
   const nameParts = (dbUser?.fullName || '').split(' ').filter(p => p.length > 2)
   const whereClause = isTechnician
     ? {
@@ -44,6 +45,22 @@ export default async function InstallerJobsPage() {
     : isOMManager
     ? {
         status: { in: ['PENDING_INSTALLER_AUDIT', 'PENDING_ACTIVATION', 'PENDING_IP_NOC', 'CONNECTION_ACTIVE'] }
+      }
+    : isSales
+    ? {
+        OR: [
+          { accountExecutiveId: dbUser.id },
+          { assignedInstallerId: dbUser.id },
+          ...(dbUser?.fullName ? [
+            { accountExecutiveName: { contains: dbUser.fullName, mode: 'insensitive' as const } },
+            { solarSystem: { is: { installerName: { contains: dbUser.fullName, mode: 'insensitive' as const } } } }
+          ] : []),
+          ...nameParts.flatMap(part => [
+            { accountExecutiveName: { contains: part, mode: 'insensitive' as const } },
+            { solarSystem: { is: { installerName: { contains: part, mode: 'insensitive' as const } } } }
+          ]),
+          { status: { in: ['PENDING_INSTALLER_AUDIT', 'PENDING_ACTIVATION', 'PENDING_IP_NOC', 'CONNECTION_ACTIVE'] } }
+        ]
       }
     : {}
 
