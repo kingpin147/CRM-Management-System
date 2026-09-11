@@ -98,7 +98,7 @@ export default async function CustomerDetailPage({
     { id: 'ticket', label: 'Create Ticket', allowed: true },
     { id: 'complaints', label: `Complaints Details (${customer.tickets?.length || 0})`, allowed: true },
     { id: 'history', label: 'Customer History', allowed: true },
-    { id: 'sms-history', label: `SMS History (${smsLogs.length})`, allowed: true },
+    { id: 'sms-history', label: `WhatsApp History (${smsLogs.length})`, allowed: true },
     { id: 'email-history', label: `Email History (${emailLogs.length})`, allowed: true },
   ]
 
@@ -190,9 +190,17 @@ export default async function CustomerDetailPage({
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Email:</TableCell>
                           <TableCell className="text-xs text-[var(--color-ink)]">{customer.email || '—'}</TableCell>
                         </TableRow>
-                        <TableRow className="hover:bg-transparent">
+                        <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">CNIC #:</TableCell>
                           <TableCell className="text-xs font-mono text-[var(--color-ink)]">{customer.cnic || '—'}</TableCell>
+                        </TableRow>
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Passport #:</TableCell>
+                          <TableCell className="text-xs font-mono text-[var(--color-ink)]">{customer.passportNumber || '—'}</TableCell>
+                        </TableRow>
+                        <TableRow className="hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">NTN Number:</TableCell>
+                          <TableCell className="text-xs font-mono text-[var(--color-ink)]">{customer.ntnNumber || '—'}</TableCell>
                         </TableRow>
                       </TableBody>
                     </Table>

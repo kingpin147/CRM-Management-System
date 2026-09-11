@@ -13,6 +13,8 @@ export async function updateCustomer(formData: FormData) {
   const pocNumber = formData.get('pocNumber') as string || null
   const email = formData.get('email') as string || null
   const cnic = formData.get('cnic') as string
+  const passportNumber = formData.get('passportNumber') as string || null
+  const ntnNumber = formData.get('ntnNumber') as string || null
   const customerType = formData.get('customerType') as CustomerType
   const status = formData.get('status') as CustomerStatus
   const address = formData.get('address') as string
@@ -69,6 +71,8 @@ export async function updateCustomer(formData: FormData) {
         pocNumber,
         email,
         cnic,
+        passportNumber,
+        ntnNumber,
         customerType,
         status,
         ...(isNowActive ? { activationDate } : {}),

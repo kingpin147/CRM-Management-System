@@ -9,6 +9,8 @@ export const customerSchema = z.object({
   email: z.string().email('Invalid email').optional().or(z.literal('')),
   cnic: z.string().min(13, 'CNIC number is required'),
   cnicExpiry: z.string().optional(),
+  passportNumber: z.string().optional(),
+  ntnNumber: z.string().optional(),
   houseNo: z.string().optional(),
   streetNo: z.string().optional(),
   block: z.string().optional(),

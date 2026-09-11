@@ -36,9 +36,43 @@ export async function GET(request: NextRequest) {
       const alreadyInvoicedThisMonth = lastInvoice && new Date(lastInvoice.createdAt) >= currentMonthStart
 
       if (!alreadyInvoicedThisMonth) {
-        const totalAmount = Number(plan.totalAmount)
-        const basePrice = Number(plan.monthlyBasePrice)
-        const salesTax = Number(plan.salesTaxAmount || 0)
+        let totalAmount = Number(plan.totalAmount)
+        let basePrice = Number(plan.monthlyBasePrice)
+        let salesTax = Number(plan.salesTaxAmount || 0)
+        let isProrated = false
+        let narration = `Automated Monthly O&M Invoice (${plan.packageTier} Plan)`
+
+        // Calculate initial cycle end date
+        const activationDate = customer.activationDate ? new Date(customer.activationDate) : new Date(customer.signupDate || new Date())
+        const initialCycleEnd = new Date(activationDate)
+        initialCycleEnd.setMonth(initialCycleEnd.getMonth() + 1)
+        initialCycleEnd.setDate(initialCycleEnd.getDate() - 1)
+
+        const nextMonthStart = new Date(currentMonthStart)
+        nextMonthStart.setMonth(nextMonthStart.getMonth() + 1)
+
+        if (initialCycleEnd >= currentMonthStart && initialCycleEnd < nextMonthStart) {
+          // Prorated month
+          const proratedStartDate = new Date(initialCycleEnd)
+          proratedStartDate.setDate(proratedStartDate.getDate() + 1)
+          
+          const proratedEndDate = new Date(proratedStartDate.getFullYear(), proratedStartDate.getMonth() + 1, 0)
+          
+          const msPerDay = 1000 * 60 * 60 * 24
+          const daysToBill = Math.round((proratedEndDate.getTime() - proratedStartDate.getTime()) / msPerDay) + 1
+          const daysInMonth = proratedEndDate.getDate()
+          
+          // Apply proration
+          basePrice = Number(((basePrice / daysInMonth) * daysToBill).toFixed(2))
+          salesTax = Number(((salesTax / daysInMonth) * daysToBill).toFixed(2))
+          totalAmount = basePrice + salesTax
+          isProrated = true
+          
+          narration = `Prorated O&M Invoice (${daysToBill} days: ${proratedStartDate.toLocaleDateString()} to ${proratedEndDate.toLocaleDateString()})`
+        } else if (now < initialCycleEnd) {
+          // Still in the prepaid first month
+          continue
+        }
 
         const invoiceNumber = `INV-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}-${customer.customerCode}`
         const dueDate = new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000)
@@ -74,7 +108,7 @@ export async function GET(request: NextRequest) {
               customerId: customer.id,
               invoiceId: invoice.id,
               refNumber: invoiceNumber,
-              narration: `Automated Monthly O&M Invoice (${plan.packageTier} Plan)`,
+              narration: narration,
               debit: totalAmount,
               credit: 0,
               balance: newBal

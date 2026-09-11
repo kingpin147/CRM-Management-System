@@ -436,6 +436,8 @@ export function ReceiptDocument({
 
           {/* Bottom Blue Bar */}
           <View style={styles.footerBlueBar}>
+            <Text style={styles.footerBarText}>WhatsApp +923009433303</Text>
+            <Text style={{ color: '#FFF', fontSize: 7.2 }}>|</Text>
             <Text style={styles.footerBarText}>www.energygurus.online</Text>
             <Text style={{ color: '#FFF', fontSize: 7.2 }}>|</Text>
             <Text style={styles.footerBarText}>facebook.com/energygurus.online</Text>

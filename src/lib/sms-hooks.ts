@@ -4,7 +4,7 @@
  */
 
 import { notificationService } from './notification-service';
-import { prisma } from './prisma';
+import prisma from './prisma';
 
 export class SMSHooks {
   /**

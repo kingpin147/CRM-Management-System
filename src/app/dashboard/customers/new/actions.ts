@@ -31,6 +31,8 @@ export async function createCustomer(formData: FormData) {
   const email = (formData.get('email') as string) || null
   const cnic = formData.get('cnic') as string
   const cnicExpiry = parseDate(formData.get('cnicExpiry'))
+  const passportNumber = (formData.get('passportNumber') as string) || null
+  const ntnNumber = (formData.get('ntnNumber') as string) || null
   const houseNumber = (formData.get('houseNo') as string) || null
   const streetNumber = (formData.get('streetNo') as string) || null
   const block = (formData.get('block') as string) || null
@@ -175,6 +177,8 @@ export async function createCustomer(formData: FormData) {
         email,
         cnic,
         cnicExpiry,
+        passportNumber,
+        ntnNumber,
         cnicFrontUrl,
         cnicBackUrl,
         houseNumber,

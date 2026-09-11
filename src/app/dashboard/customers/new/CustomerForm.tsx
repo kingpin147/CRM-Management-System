@@ -52,6 +52,8 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
       email: '',
       cnic: '',
       cnicExpiry: '',
+      passportNumber: '',
+      ntnNumber: '',
       houseNo: '',
       streetNo: '',
       block: '',
@@ -274,7 +276,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
   function onInvalid(errors: any) {
     const errorKeys = Object.keys(errors)
     const tab1Fields = [
-      'fullName', 'customerType', 'contactNumber', 'email', 'cnic', 'cnicExpiry',
+      'fullName', 'customerType', 'contactNumber', 'email', 'cnic', 'cnicExpiry', 'passportNumber', 'ntnNumber',
       'houseNo', 'streetNo', 'block', 'subArea', 'area', 'city', 'address', 'signUpDate', 'accountExecutiveId',
       'systemSizeKw', 'packageTier', 'billingType', 'monitoringTime'
     ]
@@ -755,9 +757,33 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                       control={form.control}
                       name="cnicExpiry"
                       render={({ field }) => (
-                        <FormItem className="md:col-span-2">
+                        <FormItem>
                           <FormLabel className="text-xs font-semibold">CNIC Expiry Date</FormLabel>
                           <FormControl><DateInput value={field.value || ''} onChange={field.onChange} className="h-10" /></FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Passport # */}
+                    <FormField
+                      control={form.control}
+                      name="passportNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs font-semibold">Passport #</FormLabel>
+                          <FormControl><Input placeholder="Optional" {...field} className="h-10 text-xs" /></FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* NTN Number */}
+                    <FormField
+                      control={form.control}
+                      name="ntnNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs font-semibold">NTN Number</FormLabel>
+                          <FormControl><Input placeholder="Optional" {...field} className="h-10 text-xs" /></FormControl>
                         </FormItem>
                       )}
                     />
@@ -851,7 +877,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                       )}
                     />
 
-                    {/* Billing Type (Revised Discounts: 10% Quarterly, 20% Half Yearly, 40% Yearly) */}
+                    {/* Billing Type (Revised Discounts: 7% Quarterly, 15% Half Yearly, 30% Yearly) */}
                     <FormField
                       control={form.control}
                       name="billingType"
@@ -866,9 +892,9 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                             </FormControl>
                             <SelectContent>
                               <SelectItem value="Monthly">Monthly</SelectItem>
-                              <SelectItem value="Quarterly">Quarterly (10% Off)</SelectItem>
-                              <SelectItem value="Half Yearly">Half Yearly (20% Off)</SelectItem>
-                              <SelectItem value="Yearly">Yearly (40% Off)</SelectItem>
+                              <SelectItem value="Quarterly">Quarterly (7% Off)</SelectItem>
+                              <SelectItem value="Half Yearly">Half Yearly (15% Off)</SelectItem>
+                              <SelectItem value="Yearly">Yearly (30% Off)</SelectItem>
                               <SelectItem value="FOC">FOC (Free of Cost)</SelectItem>
                             </SelectContent>
                           </Select>

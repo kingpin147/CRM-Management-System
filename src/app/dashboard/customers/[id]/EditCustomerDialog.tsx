@@ -30,6 +30,8 @@ export function EditCustomerDialog({ customer }: { customer: Customer }) {
   const [pocNumber, setPocNumber] = React.useState((customer as any).pocNumber || '')
   const [email, setEmail] = React.useState(customer.email || '')
   const [cnic, setCnic] = React.useState(customer.cnic || '')
+  const [passportNumber, setPassportNumber] = React.useState(customer.passportNumber || '')
+  const [ntnNumber, setNtnNumber] = React.useState(customer.ntnNumber || '')
   const [customerType, setCustomerType] = React.useState<string>(customer.customerType)
   const [status, setStatus] = React.useState<string>(customer.status)
   const [address, setAddress] = React.useState(customer.address || '')
@@ -52,6 +54,8 @@ export function EditCustomerDialog({ customer }: { customer: Customer }) {
     formData.append('pocNumber', pocNumber)
     formData.append('email', email)
     formData.append('cnic', cnic)
+    formData.append('passportNumber', passportNumber)
+    formData.append('ntnNumber', ntnNumber)
     formData.append('customerType', customerType)
     formData.append('status', status)
     formData.append('address', address)
@@ -167,6 +171,24 @@ export function EditCustomerDialog({ customer }: { customer: Customer }) {
                     required
                     value={cnic}
                     onChange={(e) => setCnic(e.target.value)}
+                    className="border-[var(--color-line)] focus-visible:ring-[var(--color-amber)] bg-white"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-[var(--color-ink)]">Passport #</Label>
+                  <Input
+                    value={passportNumber}
+                    onChange={(e) => setPassportNumber(e.target.value)}
+                    className="border-[var(--color-line)] focus-visible:ring-[var(--color-amber)] bg-white"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-[var(--color-ink)]">NTN Number</Label>
+                  <Input
+                    value={ntnNumber}
+                    onChange={(e) => setNtnNumber(e.target.value)}
                     className="border-[var(--color-line)] focus-visible:ring-[var(--color-amber)] bg-white"
                   />
                 </div>

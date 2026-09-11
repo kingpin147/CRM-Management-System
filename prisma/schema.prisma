@@ -42,6 +42,8 @@ model Customer {
   email          String?
   cnic           String         @unique
   cnicExpiry     DateTime?
+  passportNumber String?
+  ntnNumber      String?
   crfNumber      String?        @unique // Auto-generated at signup submission
   status         CustomerStatus
   activationDate DateTime?

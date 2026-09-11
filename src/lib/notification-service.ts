@@ -1,4 +1,4 @@
-import { prisma } from './prisma';
+import prisma from './prisma';
 import { SMSTemplateService, SMSTemplateContext, SMSTemplateType } from './sms-service';
 import { createSMSService, SendSMSRequest } from './sms-api';
 import { Customer, Invoice, Ticket, Transaction, SolarSystem } from '@prisma/client';
