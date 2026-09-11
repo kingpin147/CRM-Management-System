@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/sheet"
 import { UserNav } from '@/components/layout/UserNav'
 import { Logo } from '@/components/ui/logo'
+import { SessionTimeout } from '@/components/auth/SessionTimeout'
 
 export default async function DashboardLayout({
   children,
@@ -53,6 +54,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex min-h-screen w-full bg-background">
+      <SessionTimeout timeoutMinutes={20} />
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header className="h-16 flex items-center justify-between px-3 sm:px-4 lg:px-6 border-b border-[var(--color-line)] bg-white/90 backdrop-blur-md sticky top-0 z-30 shadow-2xs shrink-0">

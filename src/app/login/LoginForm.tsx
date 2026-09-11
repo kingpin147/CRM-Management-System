@@ -17,9 +17,10 @@ const initialState: LoginActionState = {
 interface LoginFormProps {
   initialError?: string
   initialSuccess?: string
+  initialReason?: string
 }
 
-export function LoginForm({ initialError, initialSuccess }: LoginFormProps) {
+export function LoginForm({ initialError, initialSuccess, initialReason }: LoginFormProps) {
   const router = useRouter()
   const [state, formAction, isPending] = useActionState(loginAction, initialState)
   const [showPassword, setShowPassword] = useState(false)
@@ -33,10 +34,18 @@ export function LoginForm({ initialError, initialSuccess }: LoginFormProps) {
 
   const errorMessage = state?.error || initialError
   const successMessage = state?.success ? 'Signing in...' : initialSuccess
+  const isSessionExpired = initialReason === 'session_expired'
 
   return (
     <form action={formAction}>
       <CardContent className="space-y-4">
+        {isSessionExpired && !errorMessage && (
+          <div className="p-3 text-xs bg-amber-50 border border-amber-200 text-amber-900 rounded-lg flex items-center gap-2 font-medium animate-in fade-in-50">
+            <AlertCircle className="w-4 h-4 shrink-0 text-amber-600" />
+            <span>Your session expired due to 20 minutes of inactivity. Please log in again.</span>
+          </div>
+        )}
+
         {successMessage && (
           <div className="p-3 text-sm bg-sky-500/10 border border-sky-500/20 text-sky-700 dark:text-sky-300 rounded-lg flex items-center gap-2 font-medium">
             <CheckCircle2 className="w-4 h-4 shrink-0 text-sky-600" />

@@ -5,7 +5,7 @@ import { Logo } from '@/components/ui/logo'
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; success?: string }>
+  searchParams: Promise<{ error?: string; success?: string; reason?: string }>
 }) {
   const resolvedParams = await searchParams
 
@@ -28,6 +28,7 @@ export default async function LoginPage({
         <LoginForm 
           initialError={resolvedParams?.error} 
           initialSuccess={resolvedParams?.success} 
+          initialReason={resolvedParams?.reason}
         />
       </Card>
     </div>

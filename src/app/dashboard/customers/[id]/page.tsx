@@ -1566,10 +1566,10 @@ export default async function CustomerDetailPage({
           <Card className="shadow-sm border-slate-200 overflow-hidden bg-white">
             <SectionHeader
               leftAction={
-                <MessageSquare className="h-4 w-4 text-amber-500 shrink-0" />
+                <MessageSquare className="h-4 w-4 text-emerald-600 shrink-0" />
               }
             >
-              SMS Communication History
+              WhatsApp Communication History
             </SectionHeader>
 
             <CardContent className="p-0">
@@ -1588,7 +1588,7 @@ export default async function CustomerDetailPage({
                   {(!smsLogs || smsLogs.length === 0) ? (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-10 text-xs text-slate-500">
-                        No SMS logs found for this customer. SMS notifications will be logged here automatically upon invoice creation or reminders.
+                        No WhatsApp logs found for this customer. WhatsApp notifications will be logged here automatically upon invoice creation or reminders.
                       </TableCell>
                     </TableRow>
                   ) : (

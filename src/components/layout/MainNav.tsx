@@ -66,16 +66,19 @@ export function MainNav({
   const isSalesExec = normalizedRole === 'SALES'
   const isIpNoc = normalizedRole === 'IP_NOC_EXECUTIVE'
 
-  // Exclude Muhammad Hayat / Sr Executive O & M from Reports access
+  // Exclude Muhammad Hayat / O & M team from Reports access
   const isHayat = (fullName || '').toLowerCase().includes('hayat') || 
-                  (designation || '').toLowerCase().includes('executive o & m') ||
-                  (designation || '').toLowerCase().includes('executive o&m') ||
-                  (designation || '').toLowerCase().includes('sr executive o & m')
+                  (fullName || '').toLowerCase().includes('o & m') ||
+                  (fullName || '').toLowerCase().includes('executive') ||
+                  (designation || '').toLowerCase().includes('executive') ||
+                  (designation || '').toLowerCase().includes('o & m') ||
+                  (designation || '').toLowerCase().includes('o&m') ||
+                  (designation || '').toLowerCase().includes('sr executive')
 
   const canViewAdmin = isSuperAdmin
   const canViewApproval = isSuperAdmin || isSalesManager || isOMManager
   const canViewBilling = isSuperAdmin || isSalesManager
-  const canViewReports = !isHayat && (isSuperAdmin || isSalesManager || isOMManager || isSalesExec)
+  const canViewReports = (isSuperAdmin || (isSalesManager && !isHayat)) && !isOMManager && !isHayat && !isInstaller && !isIpNoc
   const canViewAssignedJobs = isInstaller || isIpNoc
 
   if (orientation === 'horizontal') {

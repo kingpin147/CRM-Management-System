@@ -204,9 +204,5 @@ export function createSMSService(): SMSApiService {
     sender: process.env.SMS_SENDER_NAME || 'EnergyGuru'
   };
 
-  if (!config.apiKey) {
-    throw new Error('SMS_API_KEY environment variable is required');
-  }
-
   return new SMSApiService(config);
 }
