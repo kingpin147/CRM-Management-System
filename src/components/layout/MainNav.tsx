@@ -79,7 +79,7 @@ export function MainNav({
   const canViewApproval = isSuperAdmin || isSalesManager || isOMManager
   const canViewBilling = isSuperAdmin || isSalesManager
   const canViewReports = !isInstaller && !isOMManager
-  const canViewAssignedJobs = isInstaller || isIpNoc || isSalesExec
+  const canViewAssignedJobs = isInstaller || isIpNoc
 
   if (orientation === 'horizontal') {
     return (
@@ -119,7 +119,7 @@ export function MainNav({
               {!isOMManager && (
                 <DropdownMenuItem>
                   <Link href="/dashboard/customers/new" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
-                    Create Sale
+                    Create Sales
                   </Link>
                 </DropdownMenuItem>
               )}
@@ -133,7 +133,7 @@ export function MainNav({
               {(isOMManager || isSuperAdmin || isSalesManager || isSalesExec) && (
                 <DropdownMenuItem>
                   <Link href="/dashboard/installer/jobs" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
-                    Assigned Jobs Queue
+                    {isSalesExec ? 'Assigned Jobs' : 'Assigned Jobs Queue'}
                   </Link>
                 </DropdownMenuItem>
               )}
@@ -318,7 +318,7 @@ export function MainNav({
           ) : (
             <>
                 <Link href="/dashboard/customers/new" className={linkClass('/dashboard/customers/new')}>
-                  Create Sale
+                  Create Sales
                 </Link>
               {canViewApproval && (
                 <Link href="/dashboard/sales/pending" className={linkClass('/dashboard/sales/pending')}>
@@ -327,7 +327,7 @@ export function MainNav({
               )}
               {(isOMManager || isSuperAdmin || isSalesManager || isSalesExec) && (
                 <Link href="/dashboard/installer/jobs" className={linkClass('/dashboard/installer/jobs')}>
-                  Assigned Jobs Queue
+                  {isSalesExec ? 'Assigned Jobs' : 'Assigned Jobs Queue'}
                 </Link>
               )}
             </>
