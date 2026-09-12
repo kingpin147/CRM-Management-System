@@ -80,7 +80,7 @@ export function MainNav({
                           (designation || '').toLowerCase().includes('o&m')
 
   const canViewAdmin = isSuperAdmin
-  const canViewApproval = isSuperAdmin || isSalesManager || isOMManager
+  const canViewApproval = isSuperAdmin || isSalesManager
   const canViewBilling = isSuperAdmin || isSalesManager
   const canViewReports = !isOMOrFieldTeam && !isOMManager && !isInstaller && !isIpNoc
   const canViewAssignedJobs = isInstaller || isIpNoc
@@ -132,7 +132,7 @@ export function MainNav({
               <span>Assigned Jobs</span>
             </span>
           </Link>
-        ) : canViewApproval ? (
+        ) : (canViewApproval || isOMManager || isSuperAdmin || isSalesManager) ? (
           <DropdownMenu>
             <DropdownMenuTrigger className={triggerClass(pathname.startsWith('/dashboard/sales') || pathname === '/dashboard/customers/new' || pathname.startsWith('/dashboard/installer/jobs'))}>
               <span className="flex items-center gap-1 xl:gap-1.5">
@@ -142,14 +142,12 @@ export function MainNav({
               <ChevronDown className="h-3 w-3 xl:h-3.5 xl:w-3.5 opacity-70 shrink-0 ml-0.5" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-48 bg-white p-1.5 shadow-lg border-line rounded-xl animate-in fade-in-50 zoom-in-95">
-              {!isOMManager && (
-                <DropdownMenuItem>
-                  <Link href="/dashboard/customers/new" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
-                    Create Sales
-                  </Link>
-                </DropdownMenuItem>
-              )}
-              {canViewApproval && (
+              <DropdownMenuItem>
+                <Link href="/dashboard/customers/new" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
+                  Create Sales
+                </Link>
+              </DropdownMenuItem>
+              {canViewApproval && !isOMManager && (
                 <DropdownMenuItem>
                   <Link href="/dashboard/sales/pending" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
                     Manager Approval
@@ -352,12 +350,10 @@ export function MainNav({
             </Link>
           ) : (
             <>
-              {!isOMManager && (
-                <Link href="/dashboard/customers/new" className={linkClass('/dashboard/customers/new')}>
-                  Create Sales
-                </Link>
-              )}
-              {canViewApproval && (
+              <Link href="/dashboard/customers/new" className={linkClass('/dashboard/customers/new')}>
+                Create Sales
+              </Link>
+              {canViewApproval && !isOMManager && (
                 <Link href="/dashboard/sales/pending" className={linkClass('/dashboard/sales/pending')}>
                   Manager Approval
                 </Link>

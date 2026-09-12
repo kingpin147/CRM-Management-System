@@ -44,6 +44,7 @@ import {
   ArrowRight,
   ArrowLeft,
 } from 'lucide-react'
+import { CameraPhotoCapture } from '@/components/ui/CameraPhotoCapture'
 
 const AUDIT_STATUSES = ['Excellent', 'Good', 'Fair', 'Service Required', 'Replacement Required']
 
@@ -834,42 +835,44 @@ export function InstallerAuditModal({
                           className="h-9"
                         />
                       </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs font-bold text-slate-800 flex items-center gap-1">
-                          <Camera className="h-3.5 w-3.5 text-amber-600" />
-                          Hardware Photo
-                        </Label>
-                        <div className="relative flex items-center gap-2">
-                          <Input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => handleInverterPhoto(e, index)}
-                            disabled={uploadingInverterIndex === index}
-                            className="h-9 text-xs bg-white border-amber-200 file:bg-amber-100 file:text-amber-900 file:border-0 file:rounded file:px-2 file:py-1 file:text-xs file:font-semibold cursor-pointer"
-                          />
-                          {uploadingInverterIndex === index && (
-                            <div className="absolute right-3 flex items-center gap-1 text-xs text-amber-700 font-semibold bg-white/90 px-1.5 rounded">
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading...
-                            </div>
-                          )}
-                          {inverterImageUrls[index] && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                const newUrls = [...inverterImageUrls];
-                                newUrls[index] = '';
-                                setInverterImageUrls(newUrls);
-                              }}
-                              className="h-9 px-2 text-red-600 hover:bg-red-50 text-xs shrink-0"
-                              title="Remove Photo"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-200 space-y-3">
+                      <CameraPhotoCapture
+                        label={`Inverter #${index + 1} Hardware Photo`}
+                        badge={`INV #${index + 1}`}
+                        guideType="equipment"
+                        compact
+                        value={inverterImageUrls[index] || null}
+                        onValueChange={(url) => {
+                          setInverterImageUrls(prev => {
+                            const newUrls = [...prev]
+                            newUrls[index] = url || ''
+                            return newUrls
+                          })
+                        }}
+                        onUpload={async (file) => {
+                          setUploadingInverterIndex(index)
+                          try {
+                            const url = await uploadEquipmentPhoto(file, 'equipment/inverters')
+                            if (url) {
+                              setInverterImageUrls(prev => {
+                                const newUrls = [...prev]
+                                newUrls[index] = url
+                                return newUrls
+                              })
+                              return url
+                            }
+                          } catch (err: any) {
+                            setError(`Inverter Photo Upload Error: ${err.message}`)
+                          } finally {
+                            setUploadingInverterIndex(null)
+                          }
+                        }}
+                        disabled={uploadingInverterIndex === index}
+                        fileNamePrefix={`inverter_${index + 1}`}
+                        subtext={`Take photo of Inverter #${index + 1} or upload from gallery.`}
+                      />
                     </div>
                   </div>
                 ))}
@@ -961,7 +964,7 @@ export function InstallerAuditModal({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-200 items-end">
+                <div className="pt-2 border-t border-slate-200 space-y-3">
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold text-amber-900">Panel Warranty Expiry Date <span className="text-red-500">*</span></Label>
                     <DateInput
@@ -970,38 +973,32 @@ export function InstallerAuditModal({
                       className="h-9"
                     />
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-bold text-slate-800 flex items-center gap-1">
-                      <Camera className="h-3.5 w-3.5 text-teal-600" />
-                      Solar Array Picture
-                    </Label>
-                    <div className="relative flex items-center gap-2">
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={handlePanelPhoto}
-                        disabled={uploadingPanel}
-                        className="h-9 text-xs bg-white border-teal-200 file:bg-teal-100 file:text-teal-900 file:border-0 file:rounded file:px-2 file:py-1 file:text-xs file:font-semibold cursor-pointer"
-                      />
-                      {uploadingPanel && (
-                        <div className="absolute right-3 flex items-center gap-1 text-xs text-teal-700 font-semibold bg-white/90 px-1.5 rounded">
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading...
-                        </div>
-                      )}
-                      {panelImageUrl && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setPanelImageUrl('')}
-                          className="h-9 px-2 text-red-600 hover:bg-red-50 text-xs shrink-0"
-                          title="Remove Photo"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
+
+                  <CameraPhotoCapture
+                    label="Solar PV Panels Array Photo"
+                    badge="PV PANELS"
+                    guideType="equipment"
+                    compact
+                    value={panelImageUrl || null}
+                    onValueChange={(url) => setPanelImageUrl(url || '')}
+                    onUpload={async (file) => {
+                      setUploadingPanel(true)
+                      try {
+                        const url = await uploadEquipmentPhoto(file, 'equipment/panels')
+                        if (url) {
+                          setPanelImageUrl(url)
+                          return url
+                        }
+                      } catch (err: any) {
+                        setError(`Panel Photo Upload Error: ${err.message}`)
+                      } finally {
+                        setUploadingPanel(false)
+                      }
+                    }}
+                    disabled={uploadingPanel}
+                    fileNamePrefix="solar_panels"
+                    subtext="Take photo of installed solar PV panels array or upload from gallery."
+                  />
                 </div>
               </div>
 
@@ -1076,7 +1073,7 @@ export function InstallerAuditModal({
                       </h4>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
                       <div className="space-y-1">
                         <Label className="text-xs font-semibold">Battery {index + 1} Serial # <span className="text-red-500">*</span></Label>
                         <Input
@@ -1103,43 +1100,44 @@ export function InstallerAuditModal({
                           className="h-9"
                         />
                       </div>
+                    </div>
 
-                      <div className="space-y-1">
-                        <Label className="text-xs font-bold text-slate-800 flex items-center gap-1">
-                          <Camera className="h-3.5 w-3.5 text-sky-600" />
-                          Battery Hardware Photo
-                        </Label>
-                        <div className="relative flex items-center gap-2">
-                          <Input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => handleBatteryPhoto(e, index)}
-                            disabled={uploadingBatteryIndex === index}
-                            className="h-9 text-xs bg-white border-slate-300 file:bg-slate-100 file:text-slate-900 file:border-0 file:rounded file:px-2 file:py-1 file:text-xs file:font-semibold cursor-pointer"
-                          />
-                          {uploadingBatteryIndex === index && (
-                            <div className="absolute right-3 flex items-center gap-1 text-xs text-sky-700 font-semibold bg-white/90 px-1.5 rounded">
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading...
-                            </div>
-                          )}
-                          {batteryImageUrls[index] && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                const newUrls = [...batteryImageUrls];
-                                newUrls[index] = '';
-                                setBatteryImageUrls(newUrls);
-                              }}
-                              className="h-9 px-2 text-red-600 hover:bg-red-50 text-xs shrink-0"
-                              title="Remove Photo"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
+                    <div className="pt-2 border-t border-slate-200 space-y-3">
+                      <CameraPhotoCapture
+                        label={`Battery #${index + 1} Hardware Photo`}
+                        badge={`BATTERY #${index + 1}`}
+                        guideType="equipment"
+                        compact
+                        value={batteryImageUrls[index] || null}
+                        onValueChange={(url) => {
+                          setBatteryImageUrls(prev => {
+                            const newUrls = [...prev]
+                            newUrls[index] = url || ''
+                            return newUrls
+                          })
+                        }}
+                        onUpload={async (file) => {
+                          setUploadingBatteryIndex(index)
+                          try {
+                            const url = await uploadEquipmentPhoto(file, 'equipment/batteries')
+                            if (url) {
+                              setBatteryImageUrls(prev => {
+                                const newUrls = [...prev]
+                                newUrls[index] = url
+                                return newUrls
+                              })
+                              return url
+                            }
+                          } catch (err: any) {
+                            setError(`Battery Photo Upload Error: ${err.message}`)
+                          } finally {
+                            setUploadingBatteryIndex(null)
+                          }
+                        }}
+                        disabled={uploadingBatteryIndex === index}
+                        fileNamePrefix={`battery_${index + 1}`}
+                        subtext={`Take photo of Battery #${index + 1} or upload from gallery.`}
+                      />
                     </div>
                   </div>
                 ))}

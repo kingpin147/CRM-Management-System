@@ -24,6 +24,7 @@ import { SYSTEM_SIZES, INVERTER_SIZES, INVERTER_BRANDS, PANEL_BRANDS, BATTERY_BR
 import { calculatePackageBreakdown } from '@/lib/pricing'
 import { SectionHeader } from '@/components/ui/section-header'
 import { CnicCameraCapture } from '@/components/ui/CnicCameraCapture'
+import { CameraPhotoCapture } from '@/components/ui/CameraPhotoCapture'
 
 import { customerSchema } from '@/schemas/customer'
 
@@ -34,6 +35,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
   const [uploading, setUploading] = useState(false)
   const [cnicFrontFile, setCnicFrontFile] = useState<File | null>(null)
   const [cnicBackFile, setCnicBackFile] = useState<File | null>(null)
+  const [panelPhoto, setPanelPhoto] = useState<File | null>(null)
   const [successModalData, setSuccessModalData] = useState<{
     customerId: string
     fullName: string
@@ -398,11 +400,21 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
         }
       }
 
+      // Upload solar panel photo to Cloudflare R2 Cloud
+      let panelUrl = null
+      if (panelPhoto) {
+        panelUrl = await uploadFileToR2(panelPhoto, 'equipment/panels')
+      }
+
       if (inverterImageUrls.length > 0) {
         formData.append('inverterImages', JSON.stringify(inverterImageUrls))
       }
       if (batteryImageUrls.length > 0) {
         formData.append('batteryImages', JSON.stringify(batteryImageUrls))
+      }
+      if (panelUrl) {
+        formData.append('panelImageUrl', panelUrl)
+        formData.append('panelImageUrls', JSON.stringify([panelUrl]))
       }
 
       formData.append('appliedDiscount', Math.round(discountAmount).toString())
@@ -1331,7 +1343,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
 
                     <div className="space-y-3">
                       {(inverterList.length > 0 ? inverterList : [{ brand: form.watch('inverterBrand') || '', serial: form.watch('inverterSerial') || '', warrantyExpiry: form.watch('inverterWarrantyExpiry') || '' }]).map((inv, idx) => (
-                        <div key={idx} className="p-4 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-3">
+                        <div key={idx} className="p-4 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-3.5">
                           <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                             <span className="text-xs font-bold text-slate-800">Inverter #{idx + 1} Configuration &amp; Photo</span>
                             {inverterPhotos[idx] && (
@@ -1340,7 +1352,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                               </span>
                             )}
                           </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
                             <div>
                               <label className="text-[11px] font-bold text-slate-600 block mb-1">
                                 Inverter #{idx + 1} Brand *
@@ -1374,24 +1386,25 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                                 className="h-9"
                               />
                             </div>
-                            <div>
-                              <label className="text-[11px] font-bold text-amber-900 block mb-1">
-                                📷 Upload Inverter #{idx + 1} Photo
-                              </label>
-                              <Input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0] || null
-                                  setInverterPhotos(prev => {
-                                    const updated = [...prev]
-                                    updated[idx] = file
-                                    return updated
-                                  })
-                                }}
-                                className="h-9 text-xs border-amber-300 bg-amber-50/20 file:bg-amber-100 file:text-amber-900 file:border-0 file:rounded file:px-2 file:py-1 file:text-xs file:font-semibold cursor-pointer"
-                              />
-                            </div>
+                          </div>
+
+                          <div className="pt-2 border-t border-slate-100">
+                            <CameraPhotoCapture
+                              label={`Inverter #${idx + 1} Hardware Photo`}
+                              badge={`INV #${idx + 1}`}
+                              guideType="equipment"
+                              compact
+                              file={inverterPhotos[idx] || null}
+                              onFileSelect={(file) => {
+                                setInverterPhotos(prev => {
+                                  const updated = [...prev]
+                                  updated[idx] = file
+                                  return updated
+                                })
+                              }}
+                              fileNamePrefix={`inverter_${idx + 1}`}
+                              subtext={`Take a photo of Inverter #${idx + 1} showing model & serial label, or upload from gallery.`}
+                            />
                           </div>
                         </div>
                       ))}
@@ -1510,6 +1523,20 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                         </FormControl>
                       </FormItem>
                     )} />
+                  </div>
+
+                  {/* Solar Panel Photo Capture */}
+                  <div className="pt-2">
+                    <CameraPhotoCapture
+                      label="Solar PV Panels Array Photo"
+                      badge="PV PANELS"
+                      guideType="equipment"
+                      compact
+                      file={panelPhoto}
+                      onFileSelect={setPanelPhoto}
+                      fileNamePrefix="solar_panels"
+                      subtext="Take a photo of installed solar PV panels array, or upload from gallery."
+                    />
                   </div>
                 </div>
 
@@ -1631,45 +1658,43 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {batteryWarrantyList.map((expiry, idx) => (
-                          <div key={idx} className="p-4 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-3">
+                          <div key={idx} className="p-4 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-3.5">
                             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                              <span className="text-xs font-bold text-slate-800">Battery #{idx + 1} Warranty &amp; Photo</span>
+                              <span className="text-xs font-bold text-slate-800">Battery #{idx + 1} Configuration &amp; Photo</span>
                               {batteryPhotos[idx] && (
                                 <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded flex items-center gap-1">
                                   <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Photo Selected
                                 </span>
                               )}
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
-                              <div>
-                                <label className="text-[11px] font-bold text-slate-600 block mb-1">
-                                  Battery #{idx + 1} Warranty End Date
-                                </label>
-                                <DateInput
-                                  value={expiry || ''}
-                                  onChange={(e) => handleBatteryWarrantyChange(idx, e.target.value)}
-                                  className="h-9"
-                                />
-                              </div>
+                            <div className="space-y-1">
+                              <label className="text-[11px] font-bold text-slate-600 block">
+                                Battery #{idx + 1} Warranty End Date
+                              </label>
+                              <DateInput
+                                value={expiry || ''}
+                                onChange={(e) => handleBatteryWarrantyChange(idx, e.target.value)}
+                                className="h-9"
+                              />
+                            </div>
 
-                              <div>
-                                <label className="text-[11px] font-bold text-amber-900 block mb-1">
-                                  📷 Upload Battery #{idx + 1} Photo
-                                </label>
-                                <Input
-                                  type="file"
-                                  accept="image/*"
-                                  onChange={(e) => {
-                                    const file = e.target.files?.[0] || null
-                                    setBatteryPhotos(prev => {
-                                      const updated = [...prev]
-                                      updated[idx] = file
-                                      return updated
-                                    })
-                                  }}
-                                  className="h-9 text-xs border-amber-300 bg-amber-50/20 file:bg-amber-100 file:text-amber-900 file:border-0 file:rounded file:px-2 file:py-1 file:text-xs file:font-semibold cursor-pointer"
-                                />
-                              </div>
+                            <div className="pt-2 border-t border-slate-100">
+                              <CameraPhotoCapture
+                                label={`Battery #${idx + 1} Hardware Photo`}
+                                badge={`BATTERY #${idx + 1}`}
+                                guideType="equipment"
+                                compact
+                                file={batteryPhotos[idx] || null}
+                                onFileSelect={(file) => {
+                                  setBatteryPhotos(prev => {
+                                    const updated = [...prev]
+                                    updated[idx] = file
+                                    return updated
+                                  })
+                                }}
+                                fileNamePrefix={`battery_${idx + 1}`}
+                                subtext={`Take a photo of Battery #${idx + 1} showing serial & specs, or upload from gallery.`}
+                              />
                             </div>
                           </div>
                         ))}

@@ -15,6 +15,7 @@ import { uploadFile } from '@/utils/supabase/storage'
 import { CustomerSearchAutoSuggest } from '@/app/dashboard/billing-cpm/components/CustomerSearchAutoSuggest'
 import { Check } from 'lucide-react'
 import { TICKET_SUBTYPES, TECHNICAL_CATEGORIES, CATEGORIZED_FAULTS, ESCALATION_MATRIX } from '@/lib/ticket-constants'
+import { CameraPhotoCapture } from '@/components/ui/CameraPhotoCapture'
 
 import { ticketSchema, TicketType } from '@/schemas/ticket'
 
@@ -274,12 +275,14 @@ export function TicketForm({ customers }: { customers: { id: string, fullName: s
           />
 
           <div className="space-y-2 md:col-span-2">
-            <FormLabel>Attach Photo / Proof (Optional)</FormLabel>
-            <Input 
-              type="file" 
-              accept="image/*,.pdf"
-              className="file:bg-transparent file:text-sm file:font-medium border-[var(--color-line)]"
-              onChange={(e) => setAttachment(e.target.files?.[0] || null)}
+            <CameraPhotoCapture
+              label="Attach Photo / Proof (Optional)"
+              badge="TICKET ATTACHMENT"
+              guideType="general"
+              file={attachment}
+              onFileSelect={setAttachment}
+              fileNamePrefix="ticket_proof"
+              subtext="Take a photo of the issue or upload proof from gallery."
             />
           </div>
         </div>

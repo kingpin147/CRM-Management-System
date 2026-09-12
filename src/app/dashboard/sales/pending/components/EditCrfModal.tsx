@@ -29,6 +29,7 @@ import {
 import { CheckCircle2, Edit3, Loader2, Save, FileText, User, Zap, Wrench, ShieldCheck, Sun, Battery, HardHat } from 'lucide-react'
 import { SectionHeader } from '@/components/ui/section-header'
 import { calculatePackageBreakdown } from '@/lib/pricing'
+import { CameraPhotoCapture } from '@/components/ui/CameraPhotoCapture'
 
 const PACKAGES = ['Basic', 'Moderate', 'Comprehensive']
 const BILLING_TYPES = ['Monthly', 'Quarterly', 'Half Yearly', 'Yearly']
@@ -376,16 +377,29 @@ export function EditCrfModal({
       formData.append('earthingStatus', earthingStatus)
       formData.append('breakerStatus', breakerStatus)
 
-      formData.append('earthingAcOhms', earthingAcOhms)
       formData.append('earthingDcOhms', earthingDcOhms)
       formData.append('earthingLastCheck', earthingLastCheck)
       formData.append('installerCompany', installerCompany)
+
+      if (inverterImageUrl) formData.append('inverterImages', JSON.stringify([inverterImageUrl]))
+      if (panelImageUrl) formData.append('panelImageUrls', JSON.stringify([panelImageUrl]))
+      if (batteryImageUrl) formData.append('batteryImages', JSON.stringify([batteryImageUrl]))
 
       await onSaveCrf(formData)
       onClose()
     } finally {
       setIsSaving(false)
     }
+  }
+
+  async function uploadEquipmentPhoto(file: File, folder: string): Promise<string | null> {
+    const data = new FormData()
+    data.append('file', file)
+    data.append('folder', folder)
+    const res = await fetch('/api/upload/r2', { method: 'POST', body: data })
+    if (!res.ok) throw new Error('Upload failed')
+    const result = await res.json()
+    return result.url
   }
 
   return (
@@ -834,22 +848,17 @@ export function EditCrfModal({
                     className="h-9 text-xs"
                   />
                 </div>
-                <div className="space-y-1 sm:col-span-2 md:col-span-4">
-                  <Label className="text-[11px] font-bold text-amber-900 block mb-1">
-                    📷 Inverter Photo
-                  </Label>
-                  {inverterImageUrl && (
-                    <div className="mb-2 relative h-32 w-32 rounded-md overflow-hidden border border-slate-200">
-                      <img src={inverterImageUrl} alt="Inverter" className="object-cover w-full h-full" />
-                      <a href={inverterImageUrl} target="_blank" rel="noreferrer" className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
-                        <span className="bg-white/90 text-xs font-bold px-2 py-1 rounded shadow-sm">View Full</span>
-                      </a>
-                    </div>
-                  )}
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    className="h-9 text-xs border-amber-300 bg-amber-50/20 file:bg-amber-100 file:text-amber-900 file:border-0 file:rounded file:px-2 file:py-1 file:text-xs file:font-semibold cursor-pointer"
+                <div className="space-y-1 sm:col-span-2 md:col-span-4 pt-2 border-t border-slate-200/80">
+                  <CameraPhotoCapture
+                    label="Inverter Hardware Photo"
+                    badge="INVERTER"
+                    guideType="equipment"
+                    compact
+                    value={inverterImageUrl || null}
+                    onValueChange={(url) => setInverterImageUrl(url || '')}
+                    onUpload={(file) => uploadEquipmentPhoto(file, 'equipment/inverters')}
+                    fileNamePrefix="inverter"
+                    subtext="Take photo of inverter showing model & serial label, or upload from gallery."
                   />
                 </div>
               </div>
@@ -926,22 +935,17 @@ export function EditCrfModal({
                     className="h-9 text-xs"
                   />
                 </div>
-                <div className="space-y-1 sm:col-span-2 md:col-span-4">
-                  <Label className="text-[11px] font-bold text-amber-900 block mb-1">
-                    📷 Panel Photo
-                  </Label>
-                  {panelImageUrl && (
-                    <div className="mb-2 relative h-32 w-32 rounded-md overflow-hidden border border-slate-200">
-                      <img src={panelImageUrl} alt="Panel" className="object-cover w-full h-full" />
-                      <a href={panelImageUrl} target="_blank" rel="noreferrer" className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
-                        <span className="bg-white/90 text-xs font-bold px-2 py-1 rounded shadow-sm">View Full</span>
-                      </a>
-                    </div>
-                  )}
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    className="h-9 text-xs border-amber-300 bg-amber-50/20 file:bg-amber-100 file:text-amber-900 file:border-0 file:rounded file:px-2 file:py-1 file:text-xs file:font-semibold cursor-pointer"
+                <div className="space-y-1 sm:col-span-2 md:col-span-4 pt-2 border-t border-slate-200/80">
+                  <CameraPhotoCapture
+                    label="Solar PV Panels Array Photo"
+                    badge="PV PANELS"
+                    guideType="equipment"
+                    compact
+                    value={panelImageUrl || null}
+                    onValueChange={(url) => setPanelImageUrl(url || '')}
+                    onUpload={(file) => uploadEquipmentPhoto(file, 'equipment/panels')}
+                    fileNamePrefix="solar_panels"
+                    subtext="Take photo of installed solar PV panels array, or upload from gallery."
                   />
                 </div>
               </div>
@@ -990,7 +994,7 @@ export function EditCrfModal({
                     <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                       <span className="text-xs font-bold text-slate-800">Battery Unit 1</span>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="text-[11px] font-bold text-slate-600 block mb-1">Battery 1 Serial #</label>
                         <Input
@@ -1009,22 +1013,19 @@ export function EditCrfModal({
                           className="h-9 text-xs"
                         />
                       </div>
-                      <div>
-                        <label className="text-[11px] font-bold text-amber-900 block mb-1">📷 Battery Hardware Photo</label>
-                        {batteryImageUrl && (
-                          <div className="mb-2 relative h-32 w-32 rounded-md overflow-hidden border border-slate-200">
-                            <img src={batteryImageUrl} alt="Battery" className="object-cover w-full h-full" />
-                            <a href={batteryImageUrl} target="_blank" rel="noreferrer" className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
-                              <span className="bg-white/90 text-xs font-bold px-2 py-1 rounded shadow-sm">View Full</span>
-                            </a>
-                          </div>
-                        )}
-                        <Input
-                          type="file"
-                          accept="image/*"
-                          className="h-9 text-xs border-amber-300 bg-amber-50/20 file:bg-amber-100 file:text-amber-900 file:border-0 file:rounded file:px-2 file:py-1 file:text-xs file:font-semibold cursor-pointer"
-                        />
-                      </div>
+                    </div>
+                    <div className="pt-2 border-t border-slate-200/80">
+                      <CameraPhotoCapture
+                        label="Battery Hardware Photo"
+                        badge="BATTERY"
+                        guideType="equipment"
+                        compact
+                        value={batteryImageUrl || null}
+                        onValueChange={(url) => setBatteryImageUrl(url || '')}
+                        onUpload={(file) => uploadEquipmentPhoto(file, 'equipment/batteries')}
+                        fileNamePrefix="battery"
+                        subtext="Take photo of battery unit showing serial & specs, or upload from gallery."
+                      />
                     </div>
                   </div>
                 )}

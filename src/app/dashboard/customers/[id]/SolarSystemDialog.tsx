@@ -20,6 +20,7 @@ import { AutoSuggestInput } from '@/components/ui/auto-suggest-input'
 import { formatDiscoRefNo } from '@/lib/utils'
 import { INVERTER_SIZES, INVERTER_BRANDS, PANEL_BRANDS, BATTERY_BRANDS } from '@/lib/solar-constants'
 import { Camera, UploadCloud, Loader2, Image as ImageIcon, CheckCircle2, Trash2 } from 'lucide-react'
+import { CameraPhotoCapture } from '@/components/ui/CameraPhotoCapture'
 
 const DISCO_LIST = ['LESCO', 'IESCO', 'K-Electric', 'FESCO', 'MEPCO', 'PESCO', 'GEPCO', 'QESCO', 'HESCO', 'SEPCO', 'TESCO', 'Other']
 
@@ -433,7 +434,7 @@ export function SolarSystemDialog({
                       />
                     </div>
                     
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end pt-2 border-t border-slate-200/80">
+                    <div className="pt-2 border-t border-slate-200/80 space-y-3">
                       <div className="space-y-1">
                         <Label className="text-xs font-semibold text-amber-900">Warranty End Date</Label>
                         <DateInput
@@ -447,47 +448,38 @@ export function SolarSystemDialog({
                         />
                       </div>
 
-                      <div className="space-y-1">
-                        <Label className="text-xs font-bold text-slate-800">📷 Upload Inverter Photo</Label>
-                        <div className="relative">
-                          <Input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => handleInverterFileChange(e, index)}
-                            disabled={uploadingInverterIndex === index}
-                            className="h-9 text-xs border-amber-200 bg-white file:bg-amber-100 file:text-amber-900 file:border-0 file:rounded file:px-2 file:py-1 file:text-xs file:font-semibold cursor-pointer"
-                          />
-                          {uploadingInverterIndex === index && (
-                            <div className="absolute right-2 top-2 flex items-center gap-1 text-xs text-amber-700 font-semibold bg-white/90 px-1.5 rounded">
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading...
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                      <CameraPhotoCapture
+                        label={`Inverter #${index + 1} Hardware Photo`}
+                        badge={`INV #${index + 1}`}
+                        guideType="equipment"
+                        compact
+                        value={inverterImageUrls[index] || null}
+                        onValueChange={(url) => {
+                          const newUrls = [...inverterImageUrls]
+                          newUrls[index] = url || ''
+                          setInverterImageUrls(newUrls)
+                        }}
+                        onUpload={async (file) => {
+                          setUploadingInverterIndex(index)
+                          try {
+                            const url = await uploadToR2Cloud(file, 'equipment/inverters')
+                            if (url) {
+                              const newUrls = [...inverterImageUrls]
+                              newUrls[index] = url
+                              setInverterImageUrls(newUrls)
+                              return url
+                            }
+                          } catch (err: any) {
+                            setError(`Inverter Photo Upload Error: ${err.message}`)
+                          } finally {
+                            setUploadingInverterIndex(null)
+                          }
+                        }}
+                        disabled={uploadingInverterIndex === index}
+                        fileNamePrefix={`inverter_${index + 1}`}
+                        subtext={`Take photo of Inverter #${index + 1} or upload from gallery.`}
+                      />
                     </div>
-
-                    {inverterImageUrls[index] && (
-                      <div className="relative w-full h-36 rounded-lg border border-amber-200 overflow-hidden bg-slate-900 flex items-center justify-center group mt-2">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={inverterImageUrls[index]} alt={`Inverter ${index + 1} Photo`} className="w-full h-full object-contain" />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-between p-3 text-white text-xs font-medium backdrop-blur-xs">
-                          <span className="flex items-center gap-1"><ImageIcon className="w-4 h-4 text-amber-400" /> Inverter Photo</span>
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => {
-                              const newUrls = [...inverterImageUrls];
-                              newUrls[index] = '';
-                              setInverterImageUrls(newUrls);
-                            }}
-                            className="h-7 text-xs px-2 shadow-xs cursor-pointer gap-1"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" /> Remove
-                          </Button>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 ))}
                 </div>
@@ -551,7 +543,7 @@ export function SolarSystemDialog({
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end pt-2 border-t border-slate-200/80 mt-2">
+                <div className="pt-2 border-t border-slate-200/80 mt-2 space-y-3">
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold text-amber-900">Panel Warranty End Date</Label>
                     <DateInput
@@ -561,43 +553,32 @@ export function SolarSystemDialog({
                     />
                   </div>
 
-                  <div className="space-y-1">
-                    <Label className="text-xs font-bold text-slate-800">📷 Upload Panel Picture</Label>
-                    <div className="relative">
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={handlePanelFileChange}
-                        disabled={uploadingPanel}
-                        className="h-9 text-xs border-teal-200 bg-white file:bg-teal-100 file:text-teal-900 file:border-0 file:rounded file:px-2 file:py-1 file:text-xs file:font-semibold cursor-pointer"
-                      />
-                      {uploadingPanel && (
-                        <div className="absolute right-2 top-2 flex items-center gap-1 text-xs text-teal-700 font-semibold bg-white/90 px-1.5 rounded">
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading...
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  <CameraPhotoCapture
+                    label="Solar PV Panels Array Photo"
+                    badge="PV PANELS"
+                    guideType="equipment"
+                    compact
+                    value={panelImageUrl || null}
+                    onValueChange={(url) => setPanelImageUrl(url || '')}
+                    onUpload={async (file) => {
+                      setUploadingPanel(true)
+                      try {
+                        const url = await uploadToR2Cloud(file, 'equipment/panels')
+                        if (url) {
+                          setPanelImageUrl(url)
+                          return url
+                        }
+                      } catch (err: any) {
+                        setError(`Panel Photo Upload Error: ${err.message}`)
+                      } finally {
+                        setUploadingPanel(false)
+                      }
+                    }}
+                    disabled={uploadingPanel}
+                    fileNamePrefix="solar_panels"
+                    subtext="Take photo of installed solar PV panels array or upload from gallery."
+                  />
                 </div>
-
-                {panelImageUrl && (
-                  <div className="relative w-full h-36 rounded-lg border border-teal-200 overflow-hidden bg-slate-900 flex items-center justify-center group mt-2">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={panelImageUrl} alt="Panel Photo" className="w-full h-full object-contain" />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-between p-3 text-white text-xs font-medium backdrop-blur-xs">
-                      <span className="flex items-center gap-1"><ImageIcon className="w-4 h-4 text-teal-400" /> Panel Photo</span>
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => setPanelImageUrl('')}
-                        className="h-7 text-xs px-2 shadow-xs cursor-pointer gap-1"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" /> Remove
-                      </Button>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
 
@@ -706,7 +687,7 @@ export function SolarSystemDialog({
                       />
                     </div>
                     
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end pt-2 border-t border-slate-200/80">
+                    <div className="pt-2 border-t border-slate-200/80 space-y-3">
                       <div className="space-y-1">
                         <Label className="text-xs font-semibold text-amber-900">Warranty End Date</Label>
                         <DateInput
@@ -720,47 +701,38 @@ export function SolarSystemDialog({
                         />
                       </div>
 
-                      <div className="space-y-1">
-                        <Label className="text-xs font-bold text-slate-800">📷 Upload Battery Photo</Label>
-                        <div className="relative">
-                          <Input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => handleBatteryFileChange(e, index)}
-                            disabled={uploadingBatteryIndex === index}
-                            className="h-9 text-xs border-slate-300 bg-white file:bg-slate-100 file:text-slate-900 file:border-0 file:rounded file:px-2 file:py-1 file:text-xs file:font-semibold cursor-pointer"
-                          />
-                          {uploadingBatteryIndex === index && (
-                            <div className="absolute right-2 top-2 flex items-center gap-1 text-xs text-slate-700 font-semibold bg-white/90 px-1.5 rounded">
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading...
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                      <CameraPhotoCapture
+                        label={`Battery #${index + 1} Hardware Photo`}
+                        badge={`BATTERY #${index + 1}`}
+                        guideType="equipment"
+                        compact
+                        value={batteryImageUrls[index] || null}
+                        onValueChange={(url) => {
+                          const newUrls = [...batteryImageUrls]
+                          newUrls[index] = url || ''
+                          setBatteryImageUrls(newUrls)
+                        }}
+                        onUpload={async (file) => {
+                          setUploadingBatteryIndex(index)
+                          try {
+                            const url = await uploadToR2Cloud(file, 'equipment/batteries')
+                            if (url) {
+                              const newUrls = [...batteryImageUrls]
+                              newUrls[index] = url
+                              setBatteryImageUrls(newUrls)
+                              return url
+                            }
+                          } catch (err: any) {
+                            setError(`Battery Photo Upload Error: ${err.message}`)
+                          } finally {
+                            setUploadingBatteryIndex(null)
+                          }
+                        }}
+                        disabled={uploadingBatteryIndex === index}
+                        fileNamePrefix={`battery_${index + 1}`}
+                        subtext={`Take photo of Battery #${index + 1} or upload from gallery.`}
+                      />
                     </div>
-
-                    {batteryImageUrls[index] && (
-                      <div className="relative w-full h-36 rounded-lg border border-slate-200 overflow-hidden bg-slate-900 flex items-center justify-center group mt-2">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={batteryImageUrls[index]} alt={`Battery ${index + 1} Photo`} className="w-full h-full object-contain" />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-between p-3 text-white text-xs font-medium backdrop-blur-xs">
-                          <span className="flex items-center gap-1"><ImageIcon className="w-4 h-4 text-sky-400" /> Battery Photo</span>
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => {
-                              const newUrls = [...batteryImageUrls];
-                              newUrls[index] = '';
-                              setBatteryImageUrls(newUrls);
-                            }}
-                            className="h-7 text-xs px-2 shadow-xs cursor-pointer gap-1"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" /> Remove
-                          </Button>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
