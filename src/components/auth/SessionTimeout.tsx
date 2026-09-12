@@ -67,7 +67,7 @@ export function SessionTimeout({ timeoutMinutes = 20 }: SessionTimeoutProps) {
         } catch (e) {
           console.error('Session timeout sign out error:', e)
         }
-        router.push('/login?reason=session_expired')
+        router.push('/login')
       }
     }, 10000)
 
