@@ -28,6 +28,8 @@ export function ChangePasswordForm() {
     }
   }
 
+  if (isSuccess) return null
+
   return (
     <Card className="shadow-sm border-line">
       <CardHeader>
@@ -38,30 +40,6 @@ export function ChangePasswordForm() {
         <CardDescription>Update your account password. You will need your current password to make changes.</CardDescription>
       </CardHeader>
       <CardContent>
-        {isSuccess ? (
-          <div className="py-6 px-4 bg-emerald-50/80 border border-emerald-200 rounded-xl flex flex-col items-center justify-center text-center space-y-3 animate-in fade-in zoom-in-95 duration-200">
-            <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shadow-xs">
-              <CheckCircle2 className="w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-emerald-900">Password Changed Successfully!</h3>
-              <p className="text-xs text-emerald-700 mt-1">Your account password has been updated and is active now.</p>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setIsSuccess(false)
-                setErrorMessage(null)
-              }}
-              className="mt-2 text-xs font-semibold text-emerald-800 border-emerald-300 hover:bg-emerald-100 gap-1.5 cursor-pointer"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              Change Password Again
-            </Button>
-          </div>
-        ) : (
           <form id="change-password-form" action={handleSubmit} className="space-y-4">
             {errorMessage && (
               <div className="p-2.5 text-xs rounded-lg text-center font-medium bg-destructive/10 border border-destructive/20 text-destructive">
@@ -84,7 +62,6 @@ export function ChangePasswordForm() {
               {loading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Updating...</> : 'Update Password'}
             </Button>
           </form>
-        )}
       </CardContent>
     </Card>
   )
