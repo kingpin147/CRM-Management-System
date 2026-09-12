@@ -61,24 +61,28 @@ export function MainNav({
   const normalizedRole = (role || '').toUpperCase().trim()
   const isSuperAdmin = ['SUPER_ADMIN', 'ADMIN'].includes(normalizedRole)
   const isSalesManager = ['SALES_MANAGER', 'BILLING_MANAGER', 'MANAGER'].includes(normalizedRole)
-  const isOMManager = normalizedRole === 'OM_MANAGER'
+  const isOMManager = normalizedRole === 'OM_MANAGER' || 
+                      (designation || '').toLowerCase().includes('o & m') ||
+                      (designation || '').toLowerCase().includes('o&m') ||
+                      (designation || '').toLowerCase().includes('operations & maintenance')
   const isInstaller = normalizedRole === 'INSTALLATION' || normalizedRole === 'INSTALLER'
-  const isSalesExec = normalizedRole === 'SALES'
+  const isSalesExec = normalizedRole === 'SALES' || 
+                      (designation || '').toLowerCase().includes('account executive')
   const isIpNoc = normalizedRole === 'IP_NOC_EXECUTIVE'
 
-  // Exclude Muhammad Hayat / O & M team from Reports access
-  const isHayat = (fullName || '').toLowerCase().includes('hayat') || 
-                  (fullName || '').toLowerCase().includes('o & m') ||
-                  (fullName || '').toLowerCase().includes('executive') ||
-                  (designation || '').toLowerCase().includes('executive') ||
-                  (designation || '').toLowerCase().includes('o & m') ||
-                  (designation || '').toLowerCase().includes('o&m') ||
-                  (designation || '').toLowerCase().includes('sr executive')
+  // Exclude O&M team / Installers / IP NOC from Reports access
+  const isOMOrFieldTeam = isOMManager || 
+                          isInstaller || 
+                          isIpNoc ||
+                          (fullName || '').toLowerCase().includes('hayat') || 
+                          (fullName || '').toLowerCase().includes('ahsan ali') ||
+                          (designation || '').toLowerCase().includes('o & m') ||
+                          (designation || '').toLowerCase().includes('o&m')
 
   const canViewAdmin = isSuperAdmin
   const canViewApproval = isSuperAdmin || isSalesManager || isOMManager
   const canViewBilling = isSuperAdmin || isSalesManager
-  const canViewReports = !isInstaller && !isOMManager
+  const canViewReports = !isOMOrFieldTeam && !isOMManager && !isInstaller && !isIpNoc
   const canViewAssignedJobs = isInstaller || isIpNoc
 
   if (orientation === 'horizontal') {
@@ -95,8 +99,30 @@ export function MainNav({
           </span>
         </Link>
 
-        {/* 1. Sales / Assigned Jobs Tab */}
-        {canViewAssignedJobs ? (
+        {/* 1. Account Executive Sales: Direct 'Create Sales' and 'Assigned Jobs' tabs */}
+        {isSalesExec ? (
+          <>
+            <Link 
+              href="/dashboard/customers/new" 
+              className={linkClass('/dashboard/customers/new')}
+            >
+              <span className="flex items-center gap-1 xl:gap-1.5 font-semibold">
+                <ShoppingBag className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
+                <span>Create Sales</span>
+              </span>
+            </Link>
+
+            <Link 
+              href="/dashboard/installer/jobs" 
+              className={linkClass('/dashboard/installer/jobs')}
+            >
+              <span className="flex items-center gap-1 xl:gap-1.5 font-semibold">
+                <ShoppingBag className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
+                <span>Assigned Jobs</span>
+              </span>
+            </Link>
+          </>
+        ) : canViewAssignedJobs ? (
           <Link 
             href="/dashboard/installer/jobs" 
             className={linkClass('/dashboard/installer/jobs')}
@@ -106,7 +132,7 @@ export function MainNav({
               <span>Assigned Jobs</span>
             </span>
           </Link>
-        ) : (canViewApproval || isSalesExec) ? (
+        ) : canViewApproval ? (
           <DropdownMenu>
             <DropdownMenuTrigger className={triggerClass(pathname.startsWith('/dashboard/sales') || pathname === '/dashboard/customers/new' || pathname.startsWith('/dashboard/installer/jobs'))}>
               <span className="flex items-center gap-1 xl:gap-1.5">
@@ -130,10 +156,10 @@ export function MainNav({
                   </Link>
                 </DropdownMenuItem>
               )}
-              {(isOMManager || isSuperAdmin || isSalesManager || isSalesExec) && (
+              {(isOMManager || isSuperAdmin || isSalesManager) && (
                 <DropdownMenuItem>
                   <Link href="/dashboard/installer/jobs" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
-                    {isSalesExec ? 'Assigned Jobs' : 'Assigned Jobs Queue'}
+                    Assigned Jobs Queue
                   </Link>
                 </DropdownMenuItem>
               )}
@@ -146,7 +172,7 @@ export function MainNav({
           >
             <span className="flex items-center gap-1 xl:gap-1.5 font-semibold">
               <ShoppingBag className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
-              <span>Create Sale</span>
+              <span>Create Sales</span>
             </span>
           </Link>
         )}
@@ -308,26 +334,37 @@ export function MainNav({
 
       <div>
         <p className="px-3 text-xs font-bold text-[var(--color-slate-custom)] uppercase tracking-wider mb-1">
-          {canViewAssignedJobs ? 'Assigned Jobs' : 'Sales'}
+          {canViewAssignedJobs ? 'Assigned Jobs' : 'Sales Operations'}
         </p>
         <div className="space-y-0.5">
-          {canViewAssignedJobs ? (
+          {isSalesExec ? (
+            <>
+              <Link href="/dashboard/customers/new" className={linkClass('/dashboard/customers/new')}>
+                Create Sales
+              </Link>
+              <Link href="/dashboard/installer/jobs" className={linkClass('/dashboard/installer/jobs')}>
+                Assigned Jobs
+              </Link>
+            </>
+          ) : canViewAssignedJobs ? (
             <Link href="/dashboard/installer/jobs" className={linkClass('/dashboard/installer/jobs')}>
               Assigned Jobs
             </Link>
           ) : (
             <>
+              {!isOMManager && (
                 <Link href="/dashboard/customers/new" className={linkClass('/dashboard/customers/new')}>
                   Create Sales
                 </Link>
+              )}
               {canViewApproval && (
                 <Link href="/dashboard/sales/pending" className={linkClass('/dashboard/sales/pending')}>
                   Manager Approval
                 </Link>
               )}
-              {(isOMManager || isSuperAdmin || isSalesManager || isSalesExec) && (
+              {(isOMManager || isSuperAdmin || isSalesManager) && (
                 <Link href="/dashboard/installer/jobs" className={linkClass('/dashboard/installer/jobs')}>
-                  {isSalesExec ? 'Assigned Jobs' : 'Assigned Jobs Queue'}
+                  Assigned Jobs Queue
                 </Link>
               )}
             </>

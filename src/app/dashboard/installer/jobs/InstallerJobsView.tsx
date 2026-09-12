@@ -47,12 +47,16 @@ export function InstallerJobsView({
     } else if (filterTab === 'PENDING') {
       if (isIPNOC) {
         baseList = customers.filter((c: any) => c.status === 'PENDING_IP_NOC');
+      } else if (isSales) {
+        baseList = customers.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT' || c.status === 'SIGNUP_GENERATED' || c.status === 'PENDING_PAYMENT_VERIFICATION' || !c.solarSystem?.lastAuditDate);
       } else {
         baseList = customers.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT');
       }
     } else if (filterTab === 'COMPLETED') {
       if (isIPNOC) {
         baseList = customers.filter((c: any) => c.status === 'CONNECTION_ACTIVE');
+      } else if (isSales) {
+        baseList = customers.filter((c: any) => Boolean(c.solarSystem?.lastAuditDate));
       } else {
         baseList = customers.filter((c: any) => c.status !== 'PENDING_INSTALLER_AUDIT' && Boolean(c.solarSystem?.lastAuditDate));
       }
@@ -72,15 +76,19 @@ export function InstallerJobsView({
       c.assignedInstaller?.fullName?.toLowerCase().includes(q) ||
       c.solarSystem?.installerName?.toLowerCase().includes(q)
     )
-  }, [customers, searchQuery, isIPNOC, isOMManager, isInstaller, filterTab])
+  }, [customers, searchQuery, isIPNOC, isOMManager, isInstaller, isSales, filterTab])
 
   // KPIs dynamically rendered based on user role
   const pendingCount = isIPNOC
     ? customers.filter((c: any) => c.status === 'PENDING_IP_NOC').length
+    : isSales
+    ? customers.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT' || c.status === 'SIGNUP_GENERATED' || c.status === 'PENDING_PAYMENT_VERIFICATION' || !c.solarSystem?.lastAuditDate).length
     : customers.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT').length
 
   const completedCount = isIPNOC
     ? customers.filter((c: any) => c.status === 'CONNECTION_ACTIVE').length
+    : isSales
+    ? customers.filter((c: any) => Boolean(c.solarSystem?.lastAuditDate)).length
     : customers.filter((c: any) => c.status !== 'PENDING_INSTALLER_AUDIT' && Boolean(c.solarSystem?.lastAuditDate)).length
 
   // Header dynamic details

@@ -8,9 +8,14 @@ export default async function InstallerJobsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const dbUser = await prisma.user.findUnique({
-    where: { supabaseId: user.id },
-    select: { id: true, fullName: true, role: true }
+  const dbUser = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { supabaseId: user.id },
+        ...(user.email ? [{ email: { equals: user.email, mode: 'insensitive' as const } }] : [])
+      ]
+    },
+    select: { id: true, fullName: true, role: true, designation: true }
   })
 
   const userRole = (dbUser?.role || '').toUpperCase().trim()
@@ -22,8 +27,8 @@ export default async function InstallerJobsPage() {
 
   const isTechnician = userRole === 'INSTALLATION' || userRole === 'INSTALLER'
   const isIPNOC = userRole === 'IP_NOC_EXECUTIVE'
-  const isOMManager = userRole === 'OM_MANAGER'
-  const isSales = userRole === 'SALES'
+  const isOMManager = userRole === 'OM_MANAGER' || (dbUser?.designation || '').toLowerCase().includes('o & m') || (dbUser?.designation || '').toLowerCase().includes('o&m')
+  const isSales = userRole === 'SALES' || (dbUser?.designation || '').toLowerCase().includes('sales') || (dbUser?.designation || '').toLowerCase().includes('account executive')
 
   // Fetch jobs assigned specifically to this installer or sales specialist
   const nameParts = (dbUser?.fullName || '').split(' ').filter(p => p.length > 2)
@@ -52,14 +57,14 @@ export default async function InstallerJobsPage() {
           { accountExecutiveId: dbUser.id },
           { assignedInstallerId: dbUser.id },
           ...(dbUser?.fullName ? [
-            { accountExecutiveName: { contains: dbUser.fullName, mode: 'insensitive' as const } },
+            { accountExecutive: { is: { fullName: { contains: dbUser.fullName, mode: 'insensitive' as const } } } },
             { solarSystem: { is: { installerName: { contains: dbUser.fullName, mode: 'insensitive' as const } } } }
           ] : []),
           ...nameParts.flatMap(part => [
-            { accountExecutiveName: { contains: part, mode: 'insensitive' as const } },
+            { accountExecutive: { is: { fullName: { contains: part, mode: 'insensitive' as const } } } },
             { solarSystem: { is: { installerName: { contains: part, mode: 'insensitive' as const } } } }
           ]),
-          { status: { in: ['PENDING_INSTALLER_AUDIT', 'PENDING_ACTIVATION', 'PENDING_IP_NOC', 'CONNECTION_ACTIVE'] } }
+          { status: { in: ['SIGNUP_GENERATED', 'PENDING_PAYMENT_VERIFICATION', 'PENDING_INSTALLER_AUDIT', 'PENDING_ACTIVATION', 'PENDING_IP_NOC', 'CONNECTION_ACTIVE'] } }
         ]
       }
     : {}

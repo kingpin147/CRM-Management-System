@@ -12,17 +12,23 @@ export default async function ReportsPage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const dbUser = await prisma.user.findUnique({
-    where: { supabaseId: user.id },
+  const dbUser = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { supabaseId: user.id },
+        ...(user.email ? [{ email: { equals: user.email, mode: 'insensitive' as const } }] : [])
+      ]
+    },
     select: { role: true, fullName: true, designation: true }
   })
 
-  const isHayat = (dbUser?.fullName || '').toLowerCase().includes('hayat') || 
-                  (dbUser?.designation || '').toLowerCase().includes('executive o & m') ||
-                  (dbUser?.designation || '').toLowerCase().includes('executive o&m') ||
-                  (dbUser?.designation || '').toLowerCase().includes('sr executive o & m')
+  const isOMOrFieldTeam = (dbUser?.role === 'OM_MANAGER' || dbUser?.role === 'INSTALLATION' || dbUser?.role === 'IP_NOC_EXECUTIVE') ||
+                  (dbUser?.fullName || '').toLowerCase().includes('hayat') || 
+                  (dbUser?.fullName || '').toLowerCase().includes('ahsan ali') ||
+                  (dbUser?.designation || '').toLowerCase().includes('o & m') ||
+                  (dbUser?.designation || '').toLowerCase().includes('o&m')
 
-  if (isHayat || !dbUser?.role || !['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES_MANAGER', 'BILLING_MANAGER', 'OM_MANAGER', 'SALES'].includes(dbUser.role)) {
+  if (isOMOrFieldTeam || !dbUser?.role || !['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES_MANAGER', 'BILLING_MANAGER', 'SALES'].includes(dbUser.role)) {
     redirect('/dashboard/customers')
   }
   const userRole = dbUser.role
