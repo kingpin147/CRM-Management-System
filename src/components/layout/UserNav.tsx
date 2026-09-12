@@ -40,19 +40,6 @@ export function UserNav({
     }
   }
 
-  // Known name dictionary fallback by email for highest reliability
-  const emailNameMap: Record<string, string> = {
-    'm.hayat@energygurus.online': 'Muhammad Hayat',
-    'm.ajmal@energygurus.online': 'Muhammad Ajmal',
-    'nomiking0072012@gmail.com': 'Muhammad Nouman Attique',
-    'ak@energygurus.online': 'Aafaaq Ali Khan',
-    'ahsan.ali@energygurus.online': 'Ahsan Ali',
-    'faisal.imran@energygurus.online': 'Faisal Imran',
-    'adnan.khan@energygurus.online': 'Adnan Khan',
-    'abdul.ahad@energygurus.online': 'Abdul Ahad',
-    'ipnoc@energygurus.online': 'IP NOC Executive',
-  }
-
   // Check if fullName is mistakenly set to a designation title
   const isDesignationString = (str?: string) => {
     if (!str) return false
@@ -61,14 +48,12 @@ export function UserNav({
   }
 
   const cleanFullName = (fullName && !isDesignationString(fullName)) ? fullName.trim() : null
-  const emailLower = (email || '').toLowerCase()
-  const mappedName = emailNameMap[emailLower]
 
   // Display the actual logged-in person's name
   const displayText = cleanFullName 
-    || mappedName
     || (fullName?.trim())
     || (email ? email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'User')
+
   
   const initial = displayText.charAt(0).toUpperCase()
 
