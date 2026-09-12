@@ -42,8 +42,8 @@ type CustomerRecord = {
   ledgerEntries: any[]
   customerHistory?: any[]
   transactions: any[]
-  accountExecutive?: { fullName: string } | null
-  assignedInstaller?: { fullName: string } | null
+  accountExecutive?: { id?: string; fullName: string; role?: string } | null
+  assignedInstaller?: { id?: string; fullName: string; role?: string } | null
   accountExecutiveName?: string
 }
 
@@ -357,15 +357,17 @@ export function ReportsView({
 
   const aeOptions = React.useMemo(() => {
     const names = new Set(
-      customers
-        .map((c) => c.accountExecutive?.fullName || c.accountExecutiveName)
-        .filter((name): name is string => Boolean(name && name.trim()))
+      users
+        .filter((u) => u.role === 'SALES' && u.fullName && u.fullName.trim())
+        .map((u) => u.fullName.trim())
     )
-    users.forEach(u => {
-      if (u.role === 'SALES' || u.role === 'SALES_MANAGER') {
-        if (u.fullName) names.add(u.fullName)
-      }
-    })
+    if (names.size === 0) {
+      customers.forEach((c) => {
+        if (c.accountExecutive?.role === 'SALES' && c.accountExecutive?.fullName) {
+          names.add(c.accountExecutive.fullName.trim())
+        }
+      })
+    }
     return Array.from(names).sort()
   }, [customers, users])
 
@@ -825,40 +827,27 @@ export function ReportsView({
     const sourceCustomers = hasSearched ? filteredCustomers : customers.filter(c => c.packagePlan)
 
     sourceCustomers.forEach((c) => {
-      const aeName = c.accountExecutive?.fullName || c.accountExecutiveName || 'Unassigned'
-      if (!map.has(aeName)) {
-        map.set(aeName, {
-          name: aeName,
-          salesTarget: 0,
-          newSaleActive: 0,
-          tempBlocked: 0,
-          permBlocked: 0,
-          nonPaymentBlocked: 0,
-          totalBlocked: 0,
-          balanceTarget: 0,
-          amountPayable: 0,
-          paidAmount: 0,
-        })
+      const aeName = c.accountExecutive?.fullName || c.accountExecutiveName || ''
+      if (aeName && map.has(aeName)) {
+        const item = map.get(aeName)
+        const st = (c.status || '').toUpperCase()
+
+        if (['CONNECTION_ACTIVE', 'FOC_CONNECTION', 'IN_HOUSE_CONNECTION'].includes(st)) {
+          item.newSaleActive++
+        } else if (st === 'TEMPORARY_BLOCKED') {
+          item.tempBlocked++
+          item.totalBlocked++
+        } else if (st === 'PERMANENT_DISCONNECTION') {
+          item.permBlocked++
+          item.totalBlocked++
+        } else if (st === 'NON_PAYMENT_BLOCKED') {
+          item.nonPaymentBlocked++
+          item.totalBlocked++
+        }
+
+        item.amountPayable += Number(c.packagePlan?.totalAmount || 0)
+        item.paidAmount += Number(c.packagePlan?.paidAmount || 0)
       }
-
-      const item = map.get(aeName)
-      const st = (c.status || '').toUpperCase()
-
-      if (['CONNECTION_ACTIVE', 'FOC_CONNECTION', 'IN_HOUSE_CONNECTION'].includes(st)) {
-        item.newSaleActive++
-      } else if (st === 'TEMPORARY_BLOCKED') {
-        item.tempBlocked++
-        item.totalBlocked++
-      } else if (st === 'PERMANENT_DISCONNECTION') {
-        item.permBlocked++
-        item.totalBlocked++
-      } else if (st === 'NON_PAYMENT_BLOCKED') {
-        item.nonPaymentBlocked++
-        item.totalBlocked++
-      }
-
-      item.amountPayable += Number(c.packagePlan?.totalAmount || 0)
-      item.paidAmount += Number(c.packagePlan?.paidAmount || 0)
     })
 
     return Array.from(map.values()).map((ae) => {
