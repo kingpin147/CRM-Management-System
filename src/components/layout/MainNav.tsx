@@ -78,7 +78,7 @@ export function MainNav({
   const canViewAdmin = isSuperAdmin
   const canViewApproval = isSuperAdmin || isSalesManager || isOMManager
   const canViewBilling = isSuperAdmin || isSalesManager
-  const canViewReports = !isInstaller
+  const canViewReports = !isInstaller && !isOMManager
   const canViewAssignedJobs = isInstaller || isIpNoc || isSalesExec
 
   if (orientation === 'horizontal') {
