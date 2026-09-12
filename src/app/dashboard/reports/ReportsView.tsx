@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { SectionHeader } from '@/components/ui/section-header'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Search, RotateCcw, Zap, Receipt, Users, CheckCircle2, Clock, AlertTriangle, FileSpreadsheet, ChevronDown } from 'lucide-react'
+import { Search, RotateCcw, Zap, Receipt, Users, CheckCircle2, Clock, AlertTriangle, FileSpreadsheet, ChevronDown, Cpu, Battery, Sun } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
 type CustomerRecord = {
@@ -74,6 +74,26 @@ function formatCrf(crf?: string | null, code?: string | null): string {
     if (digits) return `CRF-${digits}`
   }
   return ''
+}
+
+function getInverterSerials(c: CustomerRecord): string[] {
+  if (c.solarSystem?.inverterSerials && Array.isArray(c.solarSystem.inverterSerials) && c.solarSystem.inverterSerials.length > 0) {
+    return c.solarSystem.inverterSerials.filter(Boolean)
+  }
+  if (c.solarSystem?.inverterSerial) {
+    return c.solarSystem.inverterSerial.split(',').map((s: string) => s.trim()).filter(Boolean)
+  }
+  return []
+}
+
+function getBatterySerials(c: CustomerRecord): string[] {
+  if (c.solarSystem?.batterySerials && Array.isArray(c.solarSystem.batterySerials) && c.solarSystem.batterySerials.length > 0) {
+    return c.solarSystem.batterySerials.filter(Boolean)
+  }
+  if (c.solarSystem?.batterySerial) {
+    return c.solarSystem.batterySerial.split(',').map((s: string) => s.trim()).filter(Boolean)
+  }
+  return []
 }
 
 /**
@@ -285,9 +305,17 @@ export function ReportsView({
       case 'om-incentive': return 'OM_INCENTIVE'
       case 'register': return 'REGISTER'
       case 'connectivity': return 'CONNECTIVITY'
+      case 'inverter-brands':
+      case 'inverter_brands': return 'INVERTER_BRANDS'
+      case 'battery-brands':
+      case 'battery_brands': return 'BATTERY_BRANDS'
+      case 'panel-brands':
+      case 'panel_brands': return 'PANEL_BRANDS'
       default: return 'STATUS'
     }
   }, [viewParam])
+
+  const isBrandReport = ['INVERTER_BRANDS', 'BATTERY_BRANDS', 'PANEL_BRANDS'].includes(activeCategory)
 
   const [hasSearched, setHasSearched] = React.useState(false)
   const [selectedStatus, setSelectedStatus] = React.useState<string>('ALL')
@@ -391,6 +419,9 @@ export function ReportsView({
       BILLING: customers.filter((c) => Boolean(c.packagePlan)).length,
       SALES_INCENTIVE: customers.filter((c) => Boolean(c.packagePlan)).length,
       OM_INCENTIVE: customers.filter((c) => Boolean(c.solarSystem?.lastAuditDate)).length,
+      INVERTER_BRANDS: customers.filter((c) => Boolean(c.solarSystem?.inverterBrand)).length,
+      BATTERY_BRANDS: customers.filter((c) => Boolean(c.solarSystem?.batteryBrand)).length,
+      PANEL_BRANDS: customers.filter((c) => Boolean(c.solarSystem?.panelBrand)).length,
       REGISTER: customers.length,
     }
   }, [customers])
@@ -498,6 +529,9 @@ export function ReportsView({
     return customers.filter((c) => {
       // Category-specific base conditions
       if (activeCategory === 'SALES' && !c.packagePlan) return false
+      if (activeCategory === 'INVERTER_BRANDS' && !c.solarSystem?.inverterBrand) return false
+      if (activeCategory === 'BATTERY_BRANDS' && !c.solarSystem?.batteryBrand) return false
+      if (activeCategory === 'PANEL_BRANDS' && !c.solarSystem?.panelBrand) return false
       
       if (activeCategory === 'RECEIVABLE') {
         // RECEIVABLE: only CONNECTION_ACTIVE customers
@@ -529,55 +563,58 @@ export function ReportsView({
       // Status Dropdown Filter
       if ((activeCategory !== 'SALES' && activeCategory !== 'CONNECTIVITY') && activeCategory !== 'RECEIVABLE' && appliedFilters.status !== 'ALL' && c.status !== appliedFilters.status) return false
 
-      // Customer Type Dropdown Filter
-      if ((activeCategory !== 'SALES' && activeCategory !== 'CONNECTIVITY') && activeCategory !== 'RECEIVABLE' && appliedFilters.customerType !== 'ALL' && c.customerType?.toUpperCase() !== appliedFilters.customerType.toUpperCase()) return false
-
-      // Account Executive Filter
-      if ((activeCategory !== 'SALES' && activeCategory !== 'CONNECTIVITY') && activeCategory !== 'RECEIVABLE' && appliedFilters.accountExecutive !== 'ALL') {
-        const name = (c.accountExecutive?.fullName || c.accountExecutiveName || 'Unassigned').toLowerCase()
-        if (name !== appliedFilters.accountExecutive.toLowerCase()) return false
-      }
-
       // Location filters
       if (appliedFilters.city !== 'ALL' && c.city?.toLowerCase() !== appliedFilters.city.toLowerCase()) return false
       if (appliedFilters.area !== 'ALL' && c.area?.toLowerCase() !== appliedFilters.area.toLowerCase()) return false
       if (appliedFilters.subArea !== 'ALL' && c.subArea?.toLowerCase() !== appliedFilters.subArea.toLowerCase()) return false
 
-      // Date filter (only for non-RECEIVABLE categories)
-      if (activeCategory !== 'RECEIVABLE') {
-        // For SALES, filter by signupDate or activationDate
-        const refDate = c.signupDate || c.activationDate
-        if (appliedFilters.dateFrom && refDate) {
-          if (new Date(refDate) < new Date(appliedFilters.dateFrom)) return false
-        }
-        if (appliedFilters.dateTo && refDate) {
-          const to = new Date(appliedFilters.dateTo)
-          to.setHours(23, 59, 59, 999)
-          if (new Date(refDate) > to) return false
-        }
-      }
+      // Filters only for non-brand categories
+      if (!isBrandReport) {
+        // Customer Type Dropdown Filter
+        if ((activeCategory !== 'SALES' && activeCategory !== 'CONNECTIVITY') && activeCategory !== 'RECEIVABLE' && appliedFilters.customerType !== 'ALL' && c.customerType?.toUpperCase() !== appliedFilters.customerType.toUpperCase()) return false
 
-      // Search query
-      if ((activeCategory !== 'SALES' && activeCategory !== 'CONNECTIVITY') && activeCategory !== 'RECEIVABLE' && appliedFilters.searchQuery.trim()) {
-        const q = appliedFilters.searchQuery.toLowerCase().trim()
-        const match =
-          c.fullName?.toLowerCase().includes(q) ||
-          c.customerCode?.toLowerCase().includes(q) ||
-          c.crfNumber?.toLowerCase().includes(q) ||
-          c.contactNumber?.toLowerCase().includes(q) ||
-          c.pocNumber?.toLowerCase().includes(q) ||
-          c.cnic?.toLowerCase().includes(q) ||
-          c.address?.toLowerCase().includes(q) ||
-          c.city?.toLowerCase().includes(q) ||
-          c.area?.toLowerCase().includes(q) ||
-          c.customerType?.toLowerCase().includes(q) ||
-          c.packagePlan?.packageTier?.toLowerCase().includes(q)
-        if (!match) return false
+        // Account Executive Filter
+        if ((activeCategory !== 'SALES' && activeCategory !== 'CONNECTIVITY') && activeCategory !== 'RECEIVABLE' && appliedFilters.accountExecutive !== 'ALL') {
+          const name = (c.accountExecutive?.fullName || c.accountExecutiveName || 'Unassigned').toLowerCase()
+          if (name !== appliedFilters.accountExecutive.toLowerCase()) return false
+        }
+
+        // Date filter (only for non-RECEIVABLE categories)
+        if (activeCategory !== 'RECEIVABLE') {
+          // For SALES, filter by signupDate or activationDate
+          const refDate = c.signupDate || c.activationDate
+          if (appliedFilters.dateFrom && refDate) {
+            if (new Date(refDate) < new Date(appliedFilters.dateFrom)) return false
+          }
+          if (appliedFilters.dateTo && refDate) {
+            const to = new Date(appliedFilters.dateTo)
+            to.setHours(23, 59, 59, 999)
+            if (new Date(refDate) > to) return false
+          }
+        }
+
+        // Search query
+        if ((activeCategory !== 'SALES' && activeCategory !== 'CONNECTIVITY') && activeCategory !== 'RECEIVABLE' && appliedFilters.searchQuery.trim()) {
+          const q = appliedFilters.searchQuery.toLowerCase().trim()
+          const match =
+            c.fullName?.toLowerCase().includes(q) ||
+            c.customerCode?.toLowerCase().includes(q) ||
+            c.crfNumber?.toLowerCase().includes(q) ||
+            c.contactNumber?.toLowerCase().includes(q) ||
+            c.pocNumber?.toLowerCase().includes(q) ||
+            c.cnic?.toLowerCase().includes(q) ||
+            c.address?.toLowerCase().includes(q) ||
+            c.city?.toLowerCase().includes(q) ||
+            c.area?.toLowerCase().includes(q) ||
+            c.customerType?.toLowerCase().includes(q) ||
+            c.packagePlan?.packageTier?.toLowerCase().includes(q)
+          if (!match) return false
+        }
       }
 
       return true
     })
-  }, [customers, activeCategory, hasSearched, appliedFilters])
+  }, [customers, activeCategory, hasSearched, appliedFilters, isBrandReport])
 
   const filteredAdjustmentRows = React.useMemo((): AdjustmentRow[] => {
     if (!hasSearched || activeCategory !== 'ADJUSTMENT') return []
@@ -895,6 +932,50 @@ export function ReportsView({
     )
   }, [aeSummaryList])
 
+  const topBrands = React.useMemo(() => {
+    if (!['INVERTER_BRANDS', 'BATTERY_BRANDS', 'PANEL_BRANDS'].includes(activeCategory)) return []
+    const brandCountMap = new Map<string, number>()
+    const sourceList = hasSearched ? filteredCustomers : customers
+    sourceList.forEach(c => {
+      let brand = ''
+      if (activeCategory === 'INVERTER_BRANDS') brand = c.solarSystem?.inverterBrand
+      else if (activeCategory === 'BATTERY_BRANDS') brand = c.solarSystem?.batteryBrand
+      else if (activeCategory === 'PANEL_BRANDS') brand = c.solarSystem?.panelBrand
+      if (brand && brand.trim() && brand !== '-' && brand.toLowerCase() !== 'n/a') {
+        const clean = brand.trim()
+        brandCountMap.set(clean, (brandCountMap.get(clean) || 0) + 1)
+      }
+    })
+    return Array.from(brandCountMap.entries())
+      .map(([brand, count]) => ({ brand, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10)
+  }, [customers, filteredCustomers, hasSearched, activeCategory])
+
+  const dynamicInverterSerialCount = React.useMemo(() => {
+    if (activeCategory !== 'INVERTER_BRANDS') return 1
+    const sourceList = hasSearched ? filteredCustomers : customers
+    let max = 1
+    sourceList.forEach(c => {
+      const serials = getInverterSerials(c)
+      const num = Number(c.solarSystem?.noOfInverters || 0)
+      max = Math.max(max, num, serials.length)
+    })
+    return Math.max(1, Math.min(max, 10))
+  }, [customers, filteredCustomers, hasSearched, activeCategory])
+
+  const dynamicBatterySerialCount = React.useMemo(() => {
+    if (activeCategory !== 'BATTERY_BRANDS') return 1
+    const sourceList = hasSearched ? filteredCustomers : customers
+    let max = 1
+    sourceList.forEach(c => {
+      const serials = getBatterySerials(c)
+      const num = Number(c.solarSystem?.noOfBatteries || 0)
+      max = Math.max(max, num, serials.length)
+    })
+    return Math.max(1, Math.min(max, 4))
+  }, [customers, filteredCustomers, hasSearched, activeCategory])
+
   function handleSearch(e?: React.FormEvent) {
     if (e) e.preventDefault()
     setAppliedFilters({
@@ -955,6 +1036,9 @@ export function ReportsView({
       { id: 'BILLING', label: 'Billing Report', icon: FileSpreadsheet, count: categoryCounts.BILLING },
       { id: 'SALES_INCENTIVE', label: 'Incentive Disbursement Report (Sales)', icon: Receipt, count: categoryCounts.SALES_INCENTIVE },
       { id: 'OM_INCENTIVE', label: 'Incentive Disbursement Report (O & M)', icon: CheckCircle2, count: categoryCounts.OM_INCENTIVE },
+      { id: 'INVERTER_BRANDS', label: 'Customers Inverter Brands', icon: Cpu, count: categoryCounts.INVERTER_BRANDS },
+      { id: 'BATTERY_BRANDS', label: 'Customers Battery Brands', icon: Battery, count: categoryCounts.BATTERY_BRANDS },
+      { id: 'PANEL_BRANDS', label: 'Customers Panel Brands', icon: Sun, count: categoryCounts.PANEL_BRANDS },
       { id: 'REGISTER', label: 'Customer Register', icon: Users, count: categoryCounts.REGISTER },
     ]
     if (userRole === 'SALES') {
@@ -967,7 +1051,8 @@ export function ReportsView({
 
   const handleTabChange = (categoryId: string) => {
     setHasSearched(false)
-    router.push(`/dashboard/reports?view=${categoryId.toLowerCase()}`, { scroll: false })
+    const viewSlug = categoryId.toLowerCase().replace(/_/g, '-')
+    router.push(`/dashboard/reports?view=${viewSlug}`, { scroll: false })
   }
 
   // Export to Excel / CSV matching the active category columns
@@ -1168,6 +1253,88 @@ export function ReportsView({
         `"${t.createdAt ? formatDate(t.createdAt) : '-'}"`,
         `"${t.updatedBy || '-'}"`,
       ])
+    } else if (activeCategory === 'INVERTER_BRANDS') {
+      const serialHeaders = Array.from({ length: dynamicInverterSerialCount }, (_, i) => `Sr # ${i + 1}`)
+      headers = [
+        'Customer ID', 'Customer Name', 'Customer Address', 'Contact #', 'Sub Area', 'Area',
+        'Account Executive', 'City', 'Package', 'Customer Type', 'System Type:', 'Billing Type',
+        'Inverter Brand', 'No of Inverters', ...serialHeaders, 'Installer Name'
+      ]
+      rows = filteredCustomers.map((c) => {
+        const serials = getInverterSerials(c)
+        const serialCells = Array.from({ length: dynamicInverterSerialCount }, (_, i) => `"${serials[i] || '-'}"`)
+        return [
+          `"${formatCustomerId(c.customerCode || c.id)}"`,
+          `"${c.fullName}"`,
+          `"${c.address}"`,
+          `"${c.contactNumber}"`,
+          `"${c.subArea || '-'}"`,
+          `"${c.area || '-'}"`,
+          `"${c.accountExecutive?.fullName || c.accountExecutiveName || '-'}"`,
+          `"${c.city}"`,
+          `"${c.packagePlan?.packageTier || 'Basic'}"`,
+          `"${c.customerType ? (c.customerType.charAt(0).toUpperCase() + c.customerType.slice(1).toLowerCase()) : 'Residential'}"`,
+          `"${c.solarSystem?.inverterType || c.packagePlan?.systemSizeKw || c.solarSystem?.inverterSize || '-'}"`,
+          `"${c.packagePlan?.billingType || '-'}"`,
+          `"${c.solarSystem?.inverterBrand || '-'}"`,
+          `"${c.solarSystem?.noOfInverters || (c.solarSystem?.inverterBrand ? 1 : 0)}"`,
+          ...serialCells,
+          `"${c.assignedInstaller?.fullName || c.solarSystem?.installerName || '-'}"`,
+        ]
+      })
+    } else if (activeCategory === 'BATTERY_BRANDS') {
+      const serialHeaders = Array.from({ length: dynamicBatterySerialCount }, (_, i) => `Sr # ${i + 1}`)
+      headers = [
+        'Customer ID', 'Customer Name', 'Customer Address', 'Contact #', 'Sub Area', 'Area',
+        'Account Executive', 'City', 'Package', 'Customer Type', 'System Type:', 'Billing Type',
+        'Battery Brand', 'No of Batteries', ...serialHeaders, 'Installer Name'
+      ]
+      rows = filteredCustomers.map((c) => {
+        const serials = getBatterySerials(c)
+        const serialCells = Array.from({ length: dynamicBatterySerialCount }, (_, i) => `"${serials[i] || '-'}"`)
+        return [
+          `"${formatCustomerId(c.customerCode || c.id)}"`,
+          `"${c.fullName}"`,
+          `"${c.address}"`,
+          `"${c.contactNumber}"`,
+          `"${c.subArea || '-'}"`,
+          `"${c.area || '-'}"`,
+          `"${c.accountExecutive?.fullName || c.accountExecutiveName || '-'}"`,
+          `"${c.city}"`,
+          `"${c.packagePlan?.packageTier || 'Basic'}"`,
+          `"${c.customerType ? (c.customerType.charAt(0).toUpperCase() + c.customerType.slice(1).toLowerCase()) : 'Residential'}"`,
+          `"${c.solarSystem?.inverterType || c.packagePlan?.systemSizeKw || c.solarSystem?.inverterSize || '-'}"`,
+          `"${c.packagePlan?.billingType || '-'}"`,
+          `"${c.solarSystem?.batteryBrand || '-'}"`,
+          `"${c.solarSystem?.noOfBatteries || (c.solarSystem?.batteryBrand ? 1 : 0)}"`,
+          ...serialCells,
+          `"${c.assignedInstaller?.fullName || c.solarSystem?.installerName || '-'}"`,
+        ]
+      })
+    } else if (activeCategory === 'PANEL_BRANDS') {
+      headers = [
+        'Customer ID', 'Customer Name', 'Customer Address', 'Contact #', 'Sub Area', 'Area',
+        'Account Executive', 'City', 'Package', 'Customer Type', 'System Type:', 'Billing Type',
+        'Panel Brand', 'No of Panels', 'Total Wattage', 'Installer Name'
+      ]
+      rows = filteredCustomers.map((c) => [
+        `"${formatCustomerId(c.customerCode || c.id)}"`,
+        `"${c.fullName}"`,
+        `"${c.address}"`,
+        `"${c.contactNumber}"`,
+        `"${c.subArea || '-'}"`,
+        `"${c.area || '-'}"`,
+        `"${c.accountExecutive?.fullName || c.accountExecutiveName || '-'}"`,
+        `"${c.city}"`,
+        `"${c.packagePlan?.packageTier || 'Basic'}"`,
+        `"${c.customerType ? (c.customerType.charAt(0).toUpperCase() + c.customerType.slice(1).toLowerCase()) : 'Residential'}"`,
+        `"${c.solarSystem?.inverterType || c.packagePlan?.systemSizeKw || c.solarSystem?.inverterSize || '-'}"`,
+        `"${c.packagePlan?.billingType || '-'}"`,
+        `"${c.solarSystem?.panelBrand || '-'}"`,
+        `"${c.solarSystem?.noOfPanels || '-'}"`,
+        `"${c.solarSystem?.totalWattage ? `${c.solarSystem.totalWattage} W` : (c.solarSystem?.panelWattage ? `${c.solarSystem.panelWattage} W` : '-')}"`,
+        `"${c.assignedInstaller?.fullName || c.solarSystem?.installerName || '-'}"`,
+      ])
     } else {
       // REGISTER
       headers = [
@@ -1297,7 +1464,7 @@ export function ReportsView({
               </div>
             )}
 
-            {activeCategory !== 'REGISTER' && (activeCategory !== 'SALES' && activeCategory !== 'CONNECTIVITY') && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'PAYMENTS' && activeCategory !== 'BILLING' && (
+            {!isBrandReport && activeCategory !== 'REGISTER' && (activeCategory !== 'SALES' && activeCategory !== 'CONNECTIVITY') && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'PAYMENTS' && activeCategory !== 'BILLING' && (
               <div className="space-y-1">
                 <Label className="text-xs font-semibold text-[var(--color-ink)]">Account Executive Sales</Label>                <select
                   value={selectedAccountExecutive}
@@ -1312,7 +1479,7 @@ export function ReportsView({
               </div>
             )}
 
-            {activeCategory !== 'REGISTER' && (activeCategory !== 'SALES' && activeCategory !== 'CONNECTIVITY') && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'PAYMENTS' && activeCategory !== 'BILLING' && (
+            {!isBrandReport && activeCategory !== 'REGISTER' && (activeCategory !== 'SALES' && activeCategory !== 'CONNECTIVITY') && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'PAYMENTS' && activeCategory !== 'BILLING' && (
               <div className="space-y-1">
                 <Label className="text-xs font-semibold text-[var(--color-ink)]">Customer Type</Label>
                 <select
@@ -1333,7 +1500,7 @@ export function ReportsView({
               </div>
             )}
 
-            {activeCategory !== 'REGISTER' && (activeCategory !== 'SALES' && activeCategory !== 'CONNECTIVITY') && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'PAYMENTS' && activeCategory !== 'BILLING' && (
+            {(isBrandReport || (activeCategory !== 'REGISTER' && (activeCategory !== 'SALES' && activeCategory !== 'CONNECTIVITY') && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'PAYMENTS' && activeCategory !== 'BILLING')) && (
               <div className="space-y-1">
                 <Label className="text-xs font-semibold text-[var(--color-ink)]">Select Status Filter</Label>
                 <select
@@ -1349,7 +1516,7 @@ export function ReportsView({
               </div>
             )}
 
-            {activeCategory !== 'RECEIVABLE' && (
+            {!isBrandReport && activeCategory !== 'RECEIVABLE' && (
               <div className="space-y-1">
                 <Label className="text-xs font-semibold text-[var(--color-ink)]">Calendar Date From</Label>
                 <DateInput
@@ -1360,7 +1527,7 @@ export function ReportsView({
               </div>
             )}
 
-            {activeCategory !== 'RECEIVABLE' && (
+            {!isBrandReport && activeCategory !== 'RECEIVABLE' && (
               <div className="space-y-1">
                 <Label className="text-xs font-semibold text-[var(--color-ink)]">Calendar Date To</Label>
                 <DateInput
@@ -1405,8 +1572,8 @@ export function ReportsView({
           </div>
 
           {/* Search bar & Action Buttons */}
-          <div className={`flex flex-col md:flex-row ${(activeCategory === 'SALES' || activeCategory === 'RECEIVABLE' || activeCategory === 'ADJUSTMENT' || activeCategory === 'STATUS' || activeCategory === 'REGISTER' || activeCategory === 'SALES_INCENTIVE' || activeCategory === 'OM_INCENTIVE' || activeCategory === 'CONNECTIVITY') ? 'justify-end' : 'justify-between'} items-stretch md:items-center gap-3 pt-4 border-t border-gray-100`}>
-            {activeCategory !== 'REGISTER' && (activeCategory !== 'SALES' && activeCategory !== 'CONNECTIVITY') && activeCategory !== 'RECEIVABLE' && activeCategory !== 'STATUS' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'SALES_INCENTIVE' && activeCategory !== 'OM_INCENTIVE' && (
+          <div className={`flex flex-col md:flex-row ${(isBrandReport || activeCategory === 'SALES' || activeCategory === 'RECEIVABLE' || activeCategory === 'ADJUSTMENT' || activeCategory === 'STATUS' || activeCategory === 'REGISTER' || activeCategory === 'SALES_INCENTIVE' || activeCategory === 'OM_INCENTIVE' || activeCategory === 'CONNECTIVITY') ? 'justify-end' : 'justify-between'} items-stretch md:items-center gap-3 pt-4 border-t border-gray-100`}>
+            {!isBrandReport && activeCategory !== 'REGISTER' && (activeCategory !== 'SALES' && activeCategory !== 'CONNECTIVITY') && activeCategory !== 'RECEIVABLE' && activeCategory !== 'STATUS' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'SALES_INCENTIVE' && activeCategory !== 'OM_INCENTIVE' && (
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-[var(--color-slate-custom)]" />
                 <Input
@@ -1463,6 +1630,49 @@ export function ReportsView({
           </div>
         </CardContent>
       </Card>
+
+      {/* Top 10 Brands KPI Header for Equipment Brand Reports */}
+      {isBrandReport && (
+        <Card className="shadow-sm border-line bg-white p-4 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+            <div className="flex items-center gap-2">
+              <span className="font-extrabold text-xs text-[#002868] uppercase tracking-wider">
+                {activeCategory === 'INVERTER_BRANDS' && 'Top 10 Highest Inverter Brands'}
+                {activeCategory === 'BATTERY_BRANDS' && 'Top 10 Highest Battery Brands'}
+                {activeCategory === 'PANEL_BRANDS' && 'Top 10 Highest Panel Brands'}
+              </span>
+              <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-800 border-amber-200 font-bold">
+                Brand Volume Rankings
+              </Badge>
+            </div>
+            <div className="text-xs text-slate-500 font-medium">
+              Unique Brands Identified: <strong className="text-slate-900 font-bold">{topBrands.length}</strong>
+            </div>
+          </div>
+
+          {topBrands.length === 0 ? (
+            <div className="text-xs text-slate-400 py-3 text-center">
+              No brand data found. Click &quot;Search / Apply Filters&quot; to view top brand rankings.
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-3 items-center">
+              {topBrands.map((item) => (
+                <div
+                  key={item.brand}
+                  className="flex flex-col items-center justify-center min-w-[105px] px-3.5 py-2 rounded-xl border border-amber-200/80 bg-amber-50/50 shadow-2xs hover:shadow-xs transition-all text-center"
+                >
+                  <span className="text-[10px] font-bold text-amber-900 uppercase tracking-tight truncate max-w-[120px]" title={item.brand}>
+                    {item.brand}
+                  </span>
+                  <span className="text-lg font-black font-mono text-emerald-950 mt-0.5">
+                    {item.count}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      )}
 
       {/* Dynamic Report Table */}
       <Card className="shadow-sm border-line overflow-hidden bg-white">
@@ -2200,6 +2410,255 @@ export function ReportsView({
                           </Badge>
                         </TableCell>
                         <TableCell>{c.accountExecutive?.fullName || c.accountExecutiveName || '-'}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </>
+            )}
+
+            {/* 7. CUSTOMERS INVERTER BRANDS TABLE */}
+            {activeCategory === 'INVERTER_BRANDS' && (
+              <>
+                <TableHeader className="bg-[#002868] text-white border-b-2 border-[#f26522]">
+                  <TableRow className="border-b border-[#001d4a] font-bold text-xs">
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Customer ID</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Customer Name</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Customer Address</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Contact #</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Sub Area</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Area</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Account Executive</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">City</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Package</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Customer Type</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">System Type:</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Billing Type</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Inverter Brand</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap text-center">No of Inverters</TableHead>
+                    {Array.from({ length: dynamicInverterSerialCount }).map((_, i) => (
+                      <TableHead key={i} className="font-extrabold text-xs text-white whitespace-nowrap">
+                        Sr # {i + 1}
+                      </TableHead>
+                    ))}
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Installer Name</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {!hasSearched ? (
+                    <TableRow>
+                      <TableCell colSpan={14 + dynamicInverterSerialCount} className="h-32 text-center text-xs text-[var(--color-slate-custom)] font-medium">
+                        Select filters and click &quot;Search / Apply Filters&quot; to load report data.
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredCustomers.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={14 + dynamicInverterSerialCount} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">
+                        No customer records found matching the selected inverter brand filters.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredCustomers.map((c) => {
+                      const serials = getInverterSerials(c)
+                      return (
+                        <TableRow key={c.id} className="hover:bg-[var(--color-paper)]/50 text-xs">
+                          <TableCell className="font-mono font-bold text-[var(--color-ink)] whitespace-nowrap">
+                            <Link href={`/dashboard/customers/${c.id}`} className="hover:underline text-amber-900">
+                              {formatCustomerId(c.customerCode || c.id)}
+                            </Link>
+                          </TableCell>
+                          <TableCell className="font-semibold text-gray-900 whitespace-nowrap">{c.fullName}</TableCell>
+                          <TableCell className="text-gray-600 max-w-xs truncate">{c.address}</TableCell>
+                          <TableCell className="font-mono whitespace-nowrap">
+                            <div>{c.contactNumber}</div>
+                            {c.pocNumber && <div className="text-[10px] text-gray-400">POC: {c.pocNumber}</div>}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">{c.subArea || '—'}</TableCell>
+                          <TableCell className="whitespace-nowrap">{c.area || '—'}</TableCell>
+                          <TableCell className="whitespace-nowrap">{c.accountExecutive?.fullName || c.accountExecutiveName || '—'}</TableCell>
+                          <TableCell className="whitespace-nowrap font-medium">{c.city}</TableCell>
+                          <TableCell className="whitespace-nowrap">{c.packagePlan?.packageTier || 'Basic'}</TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <Badge variant="outline" className="bg-slate-100 text-slate-800 text-[10px]">
+                              {c.customerType ? (c.customerType.charAt(0).toUpperCase() + c.customerType.slice(1).toLowerCase()) : 'Residential'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">{c.solarSystem?.inverterType || c.packagePlan?.systemSizeKw || c.solarSystem?.inverterSize || '—'}</TableCell>
+                          <TableCell className="whitespace-nowrap">{c.packagePlan?.billingType || '—'}</TableCell>
+                          <TableCell className="font-bold text-[#002868] whitespace-nowrap">{c.solarSystem?.inverterBrand || '—'}</TableCell>
+                          <TableCell className="font-mono text-center font-bold text-slate-800">
+                            {c.solarSystem?.noOfInverters || (c.solarSystem?.inverterBrand ? 1 : 0)}
+                          </TableCell>
+                          {Array.from({ length: dynamicInverterSerialCount }).map((_, i) => (
+                            <TableCell key={i} className="font-mono text-gray-700 whitespace-nowrap">
+                              {serials[i] || '—'}
+                            </TableCell>
+                          ))}
+                          <TableCell className="whitespace-nowrap">{c.assignedInstaller?.fullName || c.solarSystem?.installerName || '—'}</TableCell>
+                        </TableRow>
+                      )
+                    })
+                  )}
+                </TableBody>
+              </>
+            )}
+
+            {/* 8. CUSTOMERS BATTERY BRANDS TABLE */}
+            {activeCategory === 'BATTERY_BRANDS' && (
+              <>
+                <TableHeader className="bg-[#002868] text-white border-b-2 border-[#f26522]">
+                  <TableRow className="border-b border-[#001d4a] font-bold text-xs">
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Customer ID</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Customer Name</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Customer Address</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Contact #</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Sub Area</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Area</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Account Executive</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">City</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Package</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Customer Type</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">System Type:</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Billing Type</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Battery Brand</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap text-center">No of Batteries</TableHead>
+                    {Array.from({ length: dynamicBatterySerialCount }).map((_, i) => (
+                      <TableHead key={i} className="font-extrabold text-xs text-white whitespace-nowrap">
+                        Sr # {i + 1}
+                      </TableHead>
+                    ))}
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Installer Name</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {!hasSearched ? (
+                    <TableRow>
+                      <TableCell colSpan={14 + dynamicBatterySerialCount} className="h-32 text-center text-xs text-[var(--color-slate-custom)] font-medium">
+                        Select filters and click &quot;Search / Apply Filters&quot; to load report data.
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredCustomers.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={14 + dynamicBatterySerialCount} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">
+                        No customer records found matching the selected battery brand filters.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredCustomers.map((c) => {
+                      const serials = getBatterySerials(c)
+                      return (
+                        <TableRow key={c.id} className="hover:bg-[var(--color-paper)]/50 text-xs">
+                          <TableCell className="font-mono font-bold text-[var(--color-ink)] whitespace-nowrap">
+                            <Link href={`/dashboard/customers/${c.id}`} className="hover:underline text-amber-900">
+                              {formatCustomerId(c.customerCode || c.id)}
+                            </Link>
+                          </TableCell>
+                          <TableCell className="font-semibold text-gray-900 whitespace-nowrap">{c.fullName}</TableCell>
+                          <TableCell className="text-gray-600 max-w-xs truncate">{c.address}</TableCell>
+                          <TableCell className="font-mono whitespace-nowrap">
+                            <div>{c.contactNumber}</div>
+                            {c.pocNumber && <div className="text-[10px] text-gray-400">POC: {c.pocNumber}</div>}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">{c.subArea || '—'}</TableCell>
+                          <TableCell className="whitespace-nowrap">{c.area || '—'}</TableCell>
+                          <TableCell className="whitespace-nowrap">{c.accountExecutive?.fullName || c.accountExecutiveName || '—'}</TableCell>
+                          <TableCell className="whitespace-nowrap font-medium">{c.city}</TableCell>
+                          <TableCell className="whitespace-nowrap">{c.packagePlan?.packageTier || 'Basic'}</TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <Badge variant="outline" className="bg-slate-100 text-slate-800 text-[10px]">
+                              {c.customerType ? (c.customerType.charAt(0).toUpperCase() + c.customerType.slice(1).toLowerCase()) : 'Residential'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">{c.solarSystem?.inverterType || c.packagePlan?.systemSizeKw || c.solarSystem?.inverterSize || '—'}</TableCell>
+                          <TableCell className="whitespace-nowrap">{c.packagePlan?.billingType || '—'}</TableCell>
+                          <TableCell className="font-bold text-[#002868] whitespace-nowrap">{c.solarSystem?.batteryBrand || '—'}</TableCell>
+                          <TableCell className="font-mono text-center font-bold text-slate-800">
+                            {c.solarSystem?.noOfBatteries || (c.solarSystem?.batteryBrand ? 1 : 0)}
+                          </TableCell>
+                          {Array.from({ length: dynamicBatterySerialCount }).map((_, i) => (
+                            <TableCell key={i} className="font-mono text-gray-700 whitespace-nowrap">
+                              {serials[i] || '—'}
+                            </TableCell>
+                          ))}
+                          <TableCell className="whitespace-nowrap">{c.assignedInstaller?.fullName || c.solarSystem?.installerName || '—'}</TableCell>
+                        </TableRow>
+                      )
+                    })
+                  )}
+                </TableBody>
+              </>
+            )}
+
+            {/* 9. CUSTOMERS PANEL BRANDS TABLE */}
+            {activeCategory === 'PANEL_BRANDS' && (
+              <>
+                <TableHeader className="bg-[#002868] text-white border-b-2 border-[#f26522]">
+                  <TableRow className="border-b border-[#001d4a] font-bold text-xs">
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Customer ID</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Customer Name</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Customer Address</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Contact #</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Sub Area</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Area</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Account Executive</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">City</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Package</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Customer Type</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">System Type:</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Billing Type</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Panel Brand</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap text-center">No of Panels</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap text-right">Total Wattage</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Installer Name</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {!hasSearched ? (
+                    <TableRow>
+                      <TableCell colSpan={16} className="h-32 text-center text-xs text-[var(--color-slate-custom)] font-medium">
+                        Select filters and click &quot;Search / Apply Filters&quot; to load report data.
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredCustomers.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={16} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">
+                        No customer records found matching the selected panel brand filters.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredCustomers.map((c) => (
+                      <TableRow key={c.id} className="hover:bg-[var(--color-paper)]/50 text-xs">
+                        <TableCell className="font-mono font-bold text-[var(--color-ink)] whitespace-nowrap">
+                          <Link href={`/dashboard/customers/${c.id}`} className="hover:underline text-amber-900">
+                            {formatCustomerId(c.customerCode || c.id)}
+                          </Link>
+                        </TableCell>
+                        <TableCell className="font-semibold text-gray-900 whitespace-nowrap">{c.fullName}</TableCell>
+                        <TableCell className="text-gray-600 max-w-xs truncate">{c.address}</TableCell>
+                        <TableCell className="font-mono whitespace-nowrap">
+                          <div>{c.contactNumber}</div>
+                          {c.pocNumber && <div className="text-[10px] text-gray-400">POC: {c.pocNumber}</div>}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">{c.subArea || '—'}</TableCell>
+                        <TableCell className="whitespace-nowrap">{c.area || '—'}</TableCell>
+                        <TableCell className="whitespace-nowrap">{c.accountExecutive?.fullName || c.accountExecutiveName || '—'}</TableCell>
+                        <TableCell className="whitespace-nowrap font-medium">{c.city}</TableCell>
+                        <TableCell className="whitespace-nowrap">{c.packagePlan?.packageTier || 'Basic'}</TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <Badge variant="outline" className="bg-slate-100 text-slate-800 text-[10px]">
+                            {c.customerType ? (c.customerType.charAt(0).toUpperCase() + c.customerType.slice(1).toLowerCase()) : 'Residential'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">{c.solarSystem?.inverterType || c.packagePlan?.systemSizeKw || c.solarSystem?.inverterSize || '—'}</TableCell>
+                        <TableCell className="whitespace-nowrap">{c.packagePlan?.billingType || '—'}</TableCell>
+                        <TableCell className="font-bold text-[#002868] whitespace-nowrap">{c.solarSystem?.panelBrand || '—'}</TableCell>
+                        <TableCell className="font-mono text-center font-bold text-slate-800">
+                          {c.solarSystem?.noOfPanels || '—'}
+                        </TableCell>
+                        <TableCell className="font-mono text-right font-semibold text-emerald-800 whitespace-nowrap">
+                          {c.solarSystem?.totalWattage ? `${c.solarSystem.totalWattage} W` : (c.solarSystem?.panelWattage ? `${c.solarSystem.panelWattage} W` : '—')}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">{c.assignedInstaller?.fullName || c.solarSystem?.installerName || '—'}</TableCell>
                       </TableRow>
                     ))
                   )}
