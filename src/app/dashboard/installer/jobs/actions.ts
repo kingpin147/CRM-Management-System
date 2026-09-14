@@ -37,6 +37,10 @@ export async function submitInstallerAudit(formData: FormData) {
     ? JSON.parse(inverterWarrantyEndsStr).map((d: string) => d ? new Date(d) : new Date('1970-01-01')) 
     : []
 
+  const inverterUsername = (formData.get('inverterUsername') as string) || null
+  const inverterPassword = (formData.get('inverterPassword') as string) || null
+  const inverterInvoiceUrl = (formData.get('inverterInvoiceUrl') as string) || null
+
   // Solar PV Panels Specifications
   const panelBrand = (formData.get('panelBrand') as string) || ''
   const panelType = (formData.get('panelType') as string) || 'Tier-1 Monofacial'
@@ -229,6 +233,9 @@ export async function submitInstallerAudit(formData: FormData) {
       lastAuditDate,
       inverterImages: finalInverterImages,
       batteryImages: finalBatteryImages,
+      inverterUsername,
+      inverterPassword,
+      inverterInvoiceUrl,
     },
     update: {
       meterType,
@@ -283,6 +290,9 @@ export async function submitInstallerAudit(formData: FormData) {
       lastAuditDate,
       inverterImages: finalInverterImages,
       batteryImages: finalBatteryImages,
+      inverterUsername,
+      inverterPassword,
+      inverterInvoiceUrl,
     }
   })
 

@@ -663,6 +663,34 @@ export default async function CustomerDetailPage({
                             </TableCell>
                           </TableRow>
 
+                          {/* Inverter User Name */}
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter User Name</TableCell>
+                            <TableCell className="font-mono text-xs font-semibold text-[var(--color-ink)]">
+                              {customer.solarSystem?.inverterUsername || '—'}
+                            </TableCell>
+                          </TableRow>
+
+                          {/* Inverter Password */}
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Password</TableCell>
+                            <TableCell className="font-mono text-xs font-semibold text-[var(--color-ink)]">
+                              {customer.solarSystem?.inverterPassword || '—'}
+                            </TableCell>
+                          </TableRow>
+
+                          {/* Inverter Invoice Snapshot */}
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter Invoice Snapshot</TableCell>
+                            <TableCell className="text-xs">
+                              <EquipmentPhotoViewer
+                                imageUrl={customer.solarSystem?.inverterInvoiceUrl}
+                                title={`${customer.solarSystem?.inverterBrand || 'Inverter'} Invoice Snapshot`}
+                                buttonLabel="View Invoice Snapshot"
+                              />
+                            </TableCell>
+                          </TableRow>
+
                           {/* Earthing / OHMs */}
                           <TableRow className="border-b hover:bg-transparent">
                             <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Earthing & OHMs</TableCell>

@@ -19,7 +19,7 @@ import { saveSolarSystem } from './actions'
 import { AutoSuggestInput } from '@/components/ui/auto-suggest-input'
 import { formatDiscoRefNo } from '@/lib/utils'
 import { INVERTER_SIZES, INVERTER_BRANDS, PANEL_BRANDS, BATTERY_BRANDS } from '@/lib/solar-constants'
-import { Camera, UploadCloud, Loader2, Image as ImageIcon, CheckCircle2, Trash2 } from 'lucide-react'
+import { Camera, UploadCloud, Loader2, Image as ImageIcon, CheckCircle2, Trash2, ShieldCheck } from 'lucide-react'
 import { CameraPhotoCapture } from '@/components/ui/CameraPhotoCapture'
 
 const DISCO_LIST = ['LESCO', 'IESCO', 'K-Electric', 'FESCO', 'MEPCO', 'PESCO', 'GEPCO', 'QESCO', 'HESCO', 'SEPCO', 'TESCO', 'Other']
@@ -49,6 +49,10 @@ export function SolarSystemDialog({
       ? solarSystem.inverterWarrantyEnds.map((d: any) => d ? new Date(d).toISOString().split('T')[0] : '')
       : [solarSystem?.inverterWarrantyEnd ? new Date(solarSystem.inverterWarrantyEnd).toISOString().split('T')[0] : '']
   )
+  const [inverterUsername, setInverterUsername] = React.useState(solarSystem?.inverterUsername || '')
+  const [inverterPassword, setInverterPassword] = React.useState(solarSystem?.inverterPassword || '')
+  const [inverterInvoiceUrl, setInverterInvoiceUrl] = React.useState(solarSystem?.inverterInvoiceUrl || '')
+  const [uploadingInverterInvoice, setUploadingInverterInvoice] = React.useState(false)
 
   // Panels Specs
   const [panelBrand, setPanelBrand] = React.useState(solarSystem?.panelBrand || '')
@@ -103,6 +107,10 @@ export function SolarSystemDialog({
       setDisco(solarSystem.disco || '')
       setDiscoRefNo(solarSystem.discoRefNo || '')
       setMeterType(solarSystem.meterType || '')
+
+      setInverterUsername(solarSystem.inverterUsername || '')
+      setInverterPassword(solarSystem.inverterPassword || '')
+      setInverterInvoiceUrl(solarSystem.inverterInvoiceUrl || '')
 
       setInverterImageUrls(solarSystem.inverterImages?.length ? solarSystem.inverterImages : [])
       setBatteryImageUrls(solarSystem.batteryImages?.length ? solarSystem.batteryImages : [])
@@ -241,6 +249,9 @@ export function SolarSystemDialog({
       formData.append('inverterSerials', JSON.stringify(inverterSerials.slice(0, noOfInverters)))
       formData.append('noOfInverters', String(noOfInverters))
       formData.append('inverterWarrantyEnds', JSON.stringify(inverterWarrantyEnds.slice(0, noOfInverters)))
+      formData.append('inverterUsername', inverterUsername)
+      formData.append('inverterPassword', inverterPassword)
+      formData.append('inverterInvoiceUrl', inverterInvoiceUrl)
 
       formData.append('panelBrand', panelBrand)
       formData.append('panelType', panelType)
@@ -482,6 +493,70 @@ export function SolarSystemDialog({
                     </div>
                   </div>
                 ))}
+
+                {/* Inverter Credentials & Invoice Snapshot (For centralized monitoring migration) */}
+                <div className="mt-4 p-4 rounded-xl border border-sky-200 bg-sky-50/40 space-y-4">
+                  <div className="flex items-center justify-between pb-2 border-b border-sky-200">
+                    <div>
+                      <h4 className="text-xs font-bold text-[#002868] uppercase tracking-wide flex items-center gap-2">
+                        <ShieldCheck className="h-4 w-4 text-sky-600" />
+                        Inverter Credentials &amp; Invoice Snapshot
+                      </h4>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        Required to remove existing manufacturer setup and register on Centralized Monitoring.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-[#002868]">Inverter User Name</Label>
+                      <Input
+                        value={inverterUsername}
+                        onChange={(e) => setInverterUsername(e.target.value)}
+                        placeholder="e.g. customer@gmail.com or GoodWe username"
+                        className="h-9 text-xs bg-white"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-[#002868]">Inverter Password</Label>
+                      <Input
+                        value={inverterPassword}
+                        onChange={(e) => setInverterPassword(e.target.value)}
+                        placeholder="e.g. Inverter portal password"
+                        className="h-9 text-xs bg-white font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-sky-200/60">
+                    <CameraPhotoCapture
+                      label="Inverter Invoice Snapshot"
+                      badge="Invoice Proof"
+                      guideType="general"
+                      compact
+                      value={inverterInvoiceUrl || null}
+                      onValueChange={(url) => setInverterInvoiceUrl(url || '')}
+                      onUpload={async (file) => {
+                        setUploadingInverterInvoice(true)
+                        try {
+                          const url = await uploadToR2Cloud(file, 'equipment/inverter-invoices')
+                          if (url) {
+                            setInverterInvoiceUrl(url)
+                            return url
+                          }
+                        } catch (err: any) {
+                          setError(`Inverter Invoice Upload Error: ${err.message}`)
+                        } finally {
+                          setUploadingInverterInvoice(false)
+                        }
+                      }}
+                      disabled={uploadingInverterInvoice}
+                      fileNamePrefix="inverter_invoice"
+                      subtext="Take clear snapshot or upload purchase invoice / warranty card."
+                    />
+                  </div>
+                </div>
                 </div>
               </div>
 

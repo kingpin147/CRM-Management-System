@@ -95,6 +95,10 @@ export function InstallerAuditModal({
   )
   const [inverterImageUrls, setInverterImageUrls] = React.useState<string[]>(solar.inverterImages?.length ? solar.inverterImages : [])
   const [uploadingInverterIndex, setUploadingInverterIndex] = React.useState<number | null>(null)
+  const [inverterUsername, setInverterUsername] = React.useState(solar.inverterUsername || '')
+  const [inverterPassword, setInverterPassword] = React.useState(solar.inverterPassword || '')
+  const [inverterInvoiceUrl, setInverterInvoiceUrl] = React.useState(solar.inverterInvoiceUrl || '')
+  const [uploadingInverterInvoice, setUploadingInverterInvoice] = React.useState(false)
 
   // 3. Solar PV Panels Specifications
   const [panelBrand, setPanelBrand] = React.useState(solar.panelBrand || '')
@@ -171,6 +175,9 @@ export function InstallerAuditModal({
       setInverterSerials(s.inverterSerials?.length ? s.inverterSerials : [s.inverterSerial || ''])
       setInverterWarrantyEnds(s.inverterWarrantyEnds?.length ? s.inverterWarrantyEnds.map((d: any) => d ? new Date(d).toISOString().split('T')[0] : '') : [s.inverterWarrantyEnd ? new Date(s.inverterWarrantyEnd).toISOString().split('T')[0] : ''])
       setInverterImageUrls(s.inverterImages?.length ? s.inverterImages : [])
+      setInverterUsername(s.inverterUsername || '')
+      setInverterPassword(s.inverterPassword || '')
+      setInverterInvoiceUrl(s.inverterInvoiceUrl || '')
 
       // Section 3
       setPanelBrand(s.panelBrand || '')
@@ -505,6 +512,9 @@ export function InstallerAuditModal({
       formData.append('inverterSerials', JSON.stringify(inverterSerials.slice(0, noOfInverters)))
       formData.append('inverterWarrantyEnds', JSON.stringify(inverterWarrantyEnds.slice(0, noOfInverters)))
       formData.append('inverterImageUrls', JSON.stringify(inverterImageUrls.slice(0, noOfInverters)))
+      formData.append('inverterUsername', inverterUsername)
+      formData.append('inverterPassword', inverterPassword)
+      formData.append('inverterInvoiceUrl', inverterInvoiceUrl)
 
       formData.append('panelBrand', panelBrand)
       formData.append('panelTechnology', panelTechnology)
@@ -794,6 +804,70 @@ export function InstallerAuditModal({
                       value={noOfInverters}
                       onChange={(e) => setNoOfInverters(Math.max(1, Number(e.target.value) || 1))}
                       className="h-9 text-xs font-mono bg-white font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Inverter Credentials & Invoice Snapshot (For centralized monitoring migration) */}
+                <div className="mt-4 p-4 rounded-xl border border-sky-200 bg-sky-50/40 space-y-4">
+                  <div className="flex items-center justify-between pb-2 border-b border-sky-200">
+                    <div>
+                      <h4 className="text-xs font-bold text-[#002868] uppercase tracking-wide flex items-center gap-2">
+                        <ShieldCheck className="h-4 w-4 text-sky-600" />
+                        Inverter Credentials &amp; Invoice Snapshot
+                      </h4>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        Required to remove existing manufacturer setup and register on Centralized Monitoring.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-[#002868]">Inverter User Name</Label>
+                      <Input
+                        value={inverterUsername}
+                        onChange={(e) => setInverterUsername(e.target.value)}
+                        placeholder="e.g. customer@gmail.com or GoodWe username"
+                        className="h-9 text-xs bg-white"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-[#002868]">Inverter Password</Label>
+                      <Input
+                        value={inverterPassword}
+                        onChange={(e) => setInverterPassword(e.target.value)}
+                        placeholder="e.g. Inverter portal password"
+                        className="h-9 text-xs bg-white font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-sky-200/60">
+                    <CameraPhotoCapture
+                      label="Inverter Invoice Snapshot"
+                      badge="Invoice Proof"
+                      guideType="general"
+                      compact
+                      value={inverterInvoiceUrl || null}
+                      onValueChange={(url) => setInverterInvoiceUrl(url || '')}
+                      onUpload={async (file) => {
+                        setUploadingInverterInvoice(true)
+                        try {
+                          const url = await uploadEquipmentPhoto(file, 'equipment/inverter-invoices')
+                          if (url) {
+                            setInverterInvoiceUrl(url)
+                            return url
+                          }
+                        } catch (err: any) {
+                          setError(`Inverter Invoice Upload Error: ${err.message}`)
+                        } finally {
+                          setUploadingInverterInvoice(false)
+                        }
+                      }}
+                      disabled={uploadingInverterInvoice}
+                      fileNamePrefix="inverter_invoice"
+                      subtext="Take a photo of the Inverter Purchase Invoice or upload document from gallery."
                     />
                   </div>
                 </div>

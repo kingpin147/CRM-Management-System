@@ -162,6 +162,9 @@ export async function saveSolarSystem(formData: FormData) {
   const inverterCategory = formData.get('inverterCategory') as string || 'Low Voltage'
   const inverterSize = formData.get('inverterSize') as string || '10 kW'
   const noOfInverters = Number(formData.get('noOfInverters')) || 1
+  const inverterUsername = formData.get('inverterUsername') as string || null
+  const inverterPassword = formData.get('inverterPassword') as string || null
+  const inverterInvoiceUrl = formData.get('inverterInvoiceUrl') as string || null
   
   let inverterSerial = formData.get('inverterSerial') as string || 'SN-INV-' + Date.now().toString().slice(-6)
   let inverterWarrantyRaw = formData.get('inverterWarrantyEnd') as string
@@ -319,6 +322,9 @@ export async function saveSolarSystem(formData: FormData) {
         structureType,
         installerName,
         installerCompany,
+        inverterUsername,
+        inverterPassword,
+        inverterInvoiceUrl,
         inverterImages: finalInverterImages,
         batteryImages: finalBatteryImages,
       },
@@ -362,6 +368,9 @@ export async function saveSolarSystem(formData: FormData) {
         structureType,
         installerName,
         installerCompany,
+        inverterUsername,
+        inverterPassword,
+        inverterInvoiceUrl,
         inverterImages: finalInverterImages,
         batteryImages: finalBatteryImages,
       },

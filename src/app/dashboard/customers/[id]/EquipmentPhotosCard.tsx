@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
-import { Camera, Eye, Zap, Battery, Image as ImageIcon, Sparkles, CheckCircle2 } from 'lucide-react'
+import { Camera, Eye, Zap, Battery, Image as ImageIcon, Sparkles, CheckCircle2, FileText } from 'lucide-react'
 import { SectionHeader } from '@/components/ui/section-header'
 import { SolarSystemDialog } from './SolarSystemDialog'
 
@@ -180,6 +180,55 @@ export function EquipmentPhotosCard({ customerId, solarSystem, canEdit }: Equipm
               </div>
             );
           })}
+
+          {/* Inverter Invoice Snapshot Card */}
+          {solarSystem?.inverterInvoiceUrl && (
+            <div className="rounded-xl border border-sky-200 bg-gradient-to-b from-sky-50/60 to-slate-50/50 p-4 space-y-3 shadow-2xs relative">
+              <div className="flex items-center justify-between border-b border-sky-100 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-sky-600 text-white flex items-center justify-center font-bold shadow-2xs">
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-[#002868]">Inverter Invoice Snapshot</h4>
+                    <p className="text-[11px] text-slate-500 font-mono">
+                      Purchase Proof &amp; Warranty Document
+                    </p>
+                  </div>
+                </div>
+
+                <Badge variant="outline" className="bg-emerald-100 text-emerald-950 border-emerald-300 font-bold text-[10px] flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Invoice Uploaded
+                </Badge>
+              </div>
+
+              <div
+                onClick={() => setActiveImage({ url: solarSystem.inverterInvoiceUrl, title: `${solarSystem?.inverterBrand || 'Inverter'} Invoice Snapshot` })}
+                className="group relative w-full h-56 rounded-lg overflow-hidden border border-sky-200 bg-slate-950 flex items-center justify-center cursor-pointer shadow-inner transition-all hover:border-sky-400"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={solarSystem.inverterInvoiceUrl}
+                  alt="Inverter Invoice Snapshot"
+                  className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1.5 backdrop-blur-xs">
+                  <Eye className="w-4 h-4 text-sky-300" /> View Full Invoice Snapshot
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-slate-200/60 font-mono">
+                <div className="bg-white/80 p-2 rounded border border-slate-200/60">
+                  <span className="text-[10px] text-slate-500 block">User Name:</span>
+                  <span className="font-bold text-[#002868] truncate block">{solarSystem?.inverterUsername || '—'}</span>
+                </div>
+                <div className="bg-white/80 p-2 rounded border border-slate-200/60">
+                  <span className="text-[10px] text-slate-500 block">Password:</span>
+                  <span className="font-bold text-slate-800 font-mono truncate block">{solarSystem?.inverterPassword ? '••••••••' : '—'}</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Lightbox Preview Modal */}

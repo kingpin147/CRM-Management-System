@@ -156,6 +156,9 @@ model SolarSystem {
   breakerStatus          String?
   inverterImages         String[]  @default([])
   batteryImages          String[]  @default([])
+  inverterUsername       String?
+  inverterPassword       String?
+  inverterInvoiceUrl     String?
 }
 
 model PackagePlan {

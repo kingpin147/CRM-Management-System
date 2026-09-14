@@ -87,6 +87,9 @@ export async function createCustomer(formData: FormData) {
   const noOfInverters = Number(formData.get('noOfInverters') || 0)
   const inverterSerial = (formData.get('inverterSerial') as string) || ''
   const inverterWarrantyEnd = parseDate(formData.get('inverterWarrantyExpiry'))
+  const inverterUsername = (formData.get('inverterUsername') as string) || null
+  const inverterPassword = (formData.get('inverterPassword') as string) || null
+  const inverterInvoiceUrl = (formData.get('inverterInvoiceUrl') as string) || null
   const panelBrand = (formData.get('panelBrand') as string) || ''
   const panelType = (formData.get('panelType') as string) || ''
   const panelTechnology = (formData.get('panelTechnology') as string) || ''
@@ -258,6 +261,9 @@ export async function createCustomer(formData: FormData) {
             breakerStatus,
             breakerName: (formData.get('breakerName') as string) || '',
             lightningProtection: formData.get('lightningProtection') === 'true' || formData.get('lightningProtection') === 'Installed',
+            inverterUsername,
+            inverterPassword,
+            inverterInvoiceUrl,
             inverterImages,
             batteryImages,
           }
