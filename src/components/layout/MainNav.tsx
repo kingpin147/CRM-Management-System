@@ -292,18 +292,8 @@ export function MainNav({
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem>
-                    <Link href="/dashboard/reports?view=inverter-brands" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
-                      Customers Inverter Brands
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Link href="/dashboard/reports?view=battery-brands" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
-                      Customers Battery Brands
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Link href="/dashboard/reports?view=panel-brands" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
-                      Customers Panel Brands
+                    <Link href="/dashboard/reports?view=system-brands" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
+                      Customer System Brands
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem>
@@ -448,14 +438,8 @@ export function MainNav({
                 <Link href="/dashboard/reports?view=om-incentive" className={linkClass('/dashboard/reports?view=om-incentive')}>
                   Incentive Disbursement Report (O &amp; M)
                 </Link>
-                <Link href="/dashboard/reports?view=inverter-brands" className={linkClass('/dashboard/reports?view=inverter-brands')}>
-                  Customers Inverter Brands
-                </Link>
-                <Link href="/dashboard/reports?view=battery-brands" className={linkClass('/dashboard/reports?view=battery-brands')}>
-                  Customers Battery Brands
-                </Link>
-                <Link href="/dashboard/reports?view=panel-brands" className={linkClass('/dashboard/reports?view=panel-brands')}>
-                  Customers Panel Brands
+                <Link href="/dashboard/reports?view=system-brands" className={linkClass('/dashboard/reports?view=system-brands')}>
+                  Customer System Brands
                 </Link>
                 <Link href="/dashboard/reports?view=register" className={linkClass('/dashboard/reports?view=register')}>
                   Customer Register
