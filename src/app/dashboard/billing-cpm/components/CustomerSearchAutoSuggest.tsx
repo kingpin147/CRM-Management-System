@@ -12,7 +12,7 @@ interface CustomerSuggestion {
   customerCode: string
   fullName: string
   contactNumber: string
-  cnic: string
+  cnic?: string | null
   crfNumber?: string | null
   status?: string | null
   city?: string | null

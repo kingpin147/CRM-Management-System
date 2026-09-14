@@ -35,6 +35,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
   const [uploading, setUploading] = useState(false)
   const [cnicFrontFile, setCnicFrontFile] = useState<File | null>(null)
   const [cnicBackFile, setCnicBackFile] = useState<File | null>(null)
+  const [ntnDocFile, setNtnDocFile] = useState<File | null>(null)
   const [panelPhoto, setPanelPhoto] = useState<File | null>(null)
   const [successModalData, setSuccessModalData] = useState<{
     customerId: string
@@ -313,9 +314,22 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
   async function handleNextTab(targetTab: number) {
     if (targetTab === 2) {
       const isTab1Valid = await form.trigger([
-        'fullName', 'customerType', 'contactNumber', 'cnic', 'city', 'address',
+        'fullName', 'customerType', 'contactNumber', 'city', 'address',
         'systemSizeKw', 'packageTier', 'billingType', 'monitoringTime'
       ])
+
+      const cnicVal = form.getValues('cnic')
+      const ntnVal = form.getValues('ntnNumber')
+      const hasCnic = typeof cnicVal === 'string' && cnicVal.trim().length >= 5
+      const hasNtn = typeof ntnVal === 'string' && ntnVal.trim().length >= 4
+
+      if (!hasCnic && !hasNtn) {
+        form.setError('cnic', { message: 'Either CNIC number or NTN number is required' })
+        setError('Please provide either CNIC number or NTN number in Customer Details (Tab 1).')
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+        return
+      }
+
       if (isTab1Valid) {
         setError(null)
         setActiveTab(2)
@@ -361,6 +375,11 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
       let cnicBackUrl = null
       if (cnicBackFile) {
         cnicBackUrl = await uploadFileToR2(cnicBackFile, 'cnics')
+      }
+
+      let ntnDocumentUrl = null
+      if (ntnDocFile) {
+        ntnDocumentUrl = await uploadFileToR2(ntnDocFile, 'ntn-documents')
       }
 
       const formData = new FormData()
@@ -427,6 +446,9 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
       }
       if (cnicBackUrl) {
         formData.append('cnicBackUrl', cnicBackUrl)
+      }
+      if (ntnDocumentUrl) {
+        formData.append('ntnDocumentUrl', ntnDocumentUrl)
       }
 
       const result = await createCustomer(formData)
@@ -767,7 +789,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                       name="cnic"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-xs font-semibold">CNIC # *</FormLabel>
+                          <FormLabel className="text-xs font-semibold">CNIC # (or NTN)</FormLabel>
                           <FormControl><Input placeholder="35201-0000000-0" {...field} className="h-10 text-xs" /></FormControl>
                           <FormMessage />
                         </FormItem>
@@ -804,27 +826,46 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                       name="ntnNumber"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-xs font-semibold">NTN Number</FormLabel>
+                          <FormLabel className="text-xs font-semibold">NTN Number (for Company / Corporate)</FormLabel>
                           <FormControl><Input placeholder="e.g. 1234567-8" {...field} className="h-10 text-xs font-mono" /></FormControl>
                         </FormItem>
                       )}
                     />
 
-                    {/* CNIC Snapshots with Live Camera & File Upload (Full Width 4 Columns) */}
-                    <div className="md:col-span-4 grid grid-cols-1 md:grid-cols-2 gap-5 pt-1">
-                      <CnicCameraCapture
-                        label="CNIC Front"
-                        cardSide="front"
-                        file={cnicFrontFile}
-                        onFileSelect={setCnicFrontFile}
-                      />
+                    {/* Identity & Verification Documents (CNIC / NTN) */}
+                    <div className="md:col-span-4 space-y-3 pt-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-t border-line pt-3">
+                        <span className="text-xs font-bold text-gray-800 uppercase tracking-wider">Identity & Verification Documents</span>
+                        <span className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md font-medium">
+                          Note: If NTN registration document is attached for companies, CNIC snapshots are optional.
+                        </span>
+                      </div>
 
-                      <CnicCameraCapture
-                        label="CNIC Back"
-                        cardSide="back"
-                        file={cnicBackFile}
-                        onFileSelect={setCnicBackFile}
-                      />
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <CnicCameraCapture
+                          label="CNIC Front"
+                          cardSide="front"
+                          file={cnicFrontFile}
+                          onFileSelect={setCnicFrontFile}
+                        />
+
+                        <CnicCameraCapture
+                          label="CNIC Back"
+                          cardSide="back"
+                          file={cnicBackFile}
+                          onFileSelect={setCnicBackFile}
+                        />
+
+                        <CameraPhotoCapture
+                          label="NTN Registration Document"
+                          badge="NTN CERTIFICATE"
+                          guideType="card"
+                          file={ntnDocFile}
+                          onFileSelect={setNtnDocFile}
+                          fileNamePrefix="ntn_certificate"
+                          subtext="Upload or snapshot NTN Registration Certificate."
+                        />
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -1050,29 +1091,43 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                     <FormField
                       control={form.control}
                       name="accountExecutiveId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs font-semibold">Account Executive Sales Name</FormLabel>
-                          <Select onValueChange={(val) => {
-                            field.onChange(val)
-                            const sel = users?.find(u => u.id === val)
-                            if (sel) form.setValue('accountExecutiveName', sel.fullName)
-                          }} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger className="h-10 text-xs"><SelectValue placeholder="Select Account Executive Sales" /></SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="none">Unassigned / Direct</SelectItem>
-                              {users?.map(user => (
-                                <SelectItem key={user.id} value={user.id}>
-                                  {user.fullName} ({user.role.replace('_', ' ')})
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      render={({ field }) => {
+                        const selectedUser = users?.find(u => u.id === field.value)
+                        return (
+                          <FormItem>
+                            <FormLabel className="text-xs font-semibold">Account Executive Sales Name</FormLabel>
+                            <Select
+                              onValueChange={(val) => {
+                                field.onChange(val)
+                                const sel = users?.find(u => u.id === val)
+                                if (sel) form.setValue('accountExecutiveName', sel.fullName)
+                              }}
+                              value={field.value || 'none'}
+                            >
+                              <FormControl>
+                                <SelectTrigger className="h-10 text-xs">
+                                  <SelectValue placeholder="Select Account Executive Sales">
+                                    {field.value === 'none' || !field.value
+                                      ? 'Unassigned / Direct'
+                                      : (selectedUser
+                                          ? `${selectedUser.fullName} (${selectedUser.role.replace('_', ' ')})`
+                                          : field.value)}
+                                  </SelectValue>
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="none">Unassigned / Direct</SelectItem>
+                                {users?.map(user => (
+                                  <SelectItem key={user.id} value={user.id}>
+                                    {user.fullName} ({user.role.replace('_', ' ')})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )
+                      }}
                     />
                   </div>
 

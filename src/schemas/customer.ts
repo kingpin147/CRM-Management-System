@@ -7,10 +7,11 @@ export const customerSchema = z.object({
   contactNumber: z.string().min(10, 'Contact number is required'),
   pocNumber: z.string().optional(),
   email: z.string().email('Invalid email').optional().or(z.literal('')),
-  cnic: z.string().min(13, 'CNIC number is required'),
-  cnicExpiry: z.string().optional(),
+  cnic: z.string().optional().or(z.literal('')),
+  cnicExpiry: z.string().optional().or(z.literal('')),
   passportNumber: z.string().optional(),
-  ntnNumber: z.string().optional(),
+  ntnNumber: z.string().optional().or(z.literal('')),
+  ntnDocumentUrl: z.string().optional().or(z.literal('')),
   houseNo: z.string().optional(),
   streetNo: z.string().optional(),
   block: z.string().optional(),
@@ -88,4 +89,14 @@ export const customerSchema = z.object({
   cableAuditStatus: z.string().optional(),
   earthingAuditStatus: z.string().optional(),
   breakersAuditStatus: z.string().optional(),
+}).superRefine((data, ctx) => {
+  const hasCnic = typeof data.cnic === 'string' && data.cnic.trim().length >= 5;
+  const hasNtn = typeof data.ntnNumber === 'string' && data.ntnNumber.trim().length >= 4;
+  if (!hasCnic && !hasNtn) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Either CNIC number or NTN number is required',
+      path: ['cnic'],
+    });
+  }
 });

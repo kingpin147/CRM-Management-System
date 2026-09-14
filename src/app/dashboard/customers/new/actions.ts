@@ -5,16 +5,22 @@ import { CustomerType, CustomerStatus } from '@prisma/client'
 import prisma from '@/lib/prisma'
 
 async function generateCustomerCode(): Promise<string> {
-  // Generate digits-only Customer ID (e.g. 9742)
-  for (let i = 0; i < 20; i++) {
-    const digits = Math.floor(1000 + Math.random() * 9000).toString()
-    const existing = await prisma.customer.findUnique({
-      where: { customerCode: digits }
-    })
-    if (!existing) return digits
+  // Fetch existing customer codes to determine the next sequential ID starting from 101
+  const existingCustomers = await prisma.customer.findMany({
+    select: { customerCode: true }
+  })
+  
+  const existingCodes = new Set(
+    existingCustomers
+      .map(c => c.customerCode?.trim())
+      .filter(Boolean)
+  )
+
+  let nextNum = 101
+  while (existingCodes.has(nextNum.toString())) {
+    nextNum++
   }
-  // Fallback to 5-digit number
-  return Math.floor(10000 + Math.random() * 90000).toString()
+  return nextNum.toString()
 }
 
 function parseDate(value: any): Date | null {
@@ -29,7 +35,7 @@ export async function createCustomer(formData: FormData) {
   const contactNumber = formData.get('contactNumber') as string
   const pocNumber = (formData.get('pocNumber') as string) || null
   const email = (formData.get('email') as string) || null
-  const cnic = formData.get('cnic') as string
+  const cnic = (formData.get('cnic') as string) || null
   const cnicExpiry = parseDate(formData.get('cnicExpiry'))
   const passportNumber = (formData.get('passportNumber') as string) || null
   const ntnNumber = (formData.get('ntnNumber') as string) || null
@@ -46,6 +52,7 @@ export async function createCustomer(formData: FormData) {
   const activationDate = parseDate(formData.get('activationDate'))
   const cnicFrontUrl = (formData.get('cnicFrontUrl') as string) || null
   const cnicBackUrl = (formData.get('cnicBackUrl') as string) || null
+  const ntnDocumentUrl = (formData.get('ntnDocumentUrl') as string) || null
 
   let accountExecutiveId = formData.get('accountExecutiveId') as string | null
   if (!accountExecutiveId || accountExecutiveId === '' || accountExecutiveId === 'none' || accountExecutiveId === 'undefined') {
@@ -184,6 +191,7 @@ export async function createCustomer(formData: FormData) {
         ntnNumber,
         cnicFrontUrl,
         cnicBackUrl,
+        ntnDocumentUrl,
         houseNumber,
         streetNumber,
         block,
