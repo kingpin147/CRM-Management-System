@@ -1162,7 +1162,7 @@ export function EditCrfModal({
                       {installers && installers.length > 0 ? (
                         installers.map((inst) => (
                           <SelectItem key={inst.id} value={inst.id} className="text-xs font-medium">
-                            {inst.fullName} ({inst.role === 'OM_MANAGER' ? 'O&M Manager' : inst.role === 'INSTALLATION' ? 'Installer' : inst.role})
+                            {inst.fullName} ({inst.role === 'OM_MANAGER' ? 'O&M Manager' : inst.role === 'INSTALLATION' ? 'Installer' : inst.role === 'SALES' ? 'Account Executive' : inst.role})
                           </SelectItem>
                         ))
                       ) : (

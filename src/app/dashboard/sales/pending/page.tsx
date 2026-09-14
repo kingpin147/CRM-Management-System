@@ -440,7 +440,7 @@ export default async function PendingSalesPage() {
       }),
       prisma.user.findMany({
         where: {
-          role: { in: ['INSTALLATION', 'OM_MANAGER', 'MANAGER', 'SUPER_ADMIN', 'ADMIN'] },
+          role: { in: ['INSTALLATION', 'OM_MANAGER', 'MANAGER', 'SUPER_ADMIN', 'ADMIN', 'SALES'] },
           isActive: true
         },
         select: { id: true, fullName: true, role: true, email: true },
