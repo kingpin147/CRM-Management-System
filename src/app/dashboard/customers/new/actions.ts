@@ -35,7 +35,7 @@ export async function createCustomer(formData: FormData) {
   const contactNumber = formData.get('contactNumber') as string
   const pocNumber = (formData.get('pocNumber') as string) || null
   const email = (formData.get('email') as string) || null
-  const cnic = (formData.get('cnic') as string) || null
+  const cnic = (formData.get('cnic') as string) || ''
   const cnicExpiry = parseDate(formData.get('cnicExpiry'))
   const passportNumber = (formData.get('passportNumber') as string) || null
   const ntnNumber = (formData.get('ntnNumber') as string) || null

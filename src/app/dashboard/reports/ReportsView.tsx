@@ -932,52 +932,73 @@ export function ReportsView({
 
   const topInverterBrands = React.useMemo(() => {
     if (activeCategory !== 'SYSTEM_BRANDS') return []
-    const brandCountMap = new Map<string, number>()
+    const brandMap = new Map<string, { brand: string; total: number; pendingAudits: number; completed: number }>()
     const sourceList = hasSearched ? filteredCustomers : customers
     sourceList.forEach(c => {
       const brand = c.solarSystem?.inverterBrand
       if (brand && brand.trim() && brand !== '-' && brand.toLowerCase() !== 'n/a') {
         const clean = brand.trim()
-        brandCountMap.set(clean, (brandCountMap.get(clean) || 0) + 1)
+        const existing = brandMap.get(clean) || { brand: clean, total: 0, pendingAudits: 0, completed: 0 }
+        existing.total += 1
+        const isCompleted = Boolean(c.solarSystem?.lastAuditDate) && c.status !== 'PENDING_INSTALLER_AUDIT'
+        if (isCompleted) {
+          existing.completed += 1
+        } else {
+          existing.pendingAudits += 1
+        }
+        brandMap.set(clean, existing)
       }
     })
-    return Array.from(brandCountMap.entries())
-      .map(([brand, count]) => ({ brand, count }))
-      .sort((a, b) => b.count - a.count)
+    return Array.from(brandMap.values())
+      .sort((a, b) => b.total - a.total)
       .slice(0, 10)
   }, [customers, filteredCustomers, hasSearched, activeCategory])
 
   const topBatteryBrands = React.useMemo(() => {
     if (activeCategory !== 'SYSTEM_BRANDS') return []
-    const brandCountMap = new Map<string, number>()
+    const brandMap = new Map<string, { brand: string; total: number; pendingAudits: number; completed: number }>()
     const sourceList = hasSearched ? filteredCustomers : customers
     sourceList.forEach(c => {
       const brand = c.solarSystem?.batteryBrand
       if (brand && brand.trim() && brand !== '-' && brand.toLowerCase() !== 'n/a') {
         const clean = brand.trim()
-        brandCountMap.set(clean, (brandCountMap.get(clean) || 0) + 1)
+        const existing = brandMap.get(clean) || { brand: clean, total: 0, pendingAudits: 0, completed: 0 }
+        existing.total += 1
+        const isCompleted = Boolean(c.solarSystem?.lastAuditDate) && c.status !== 'PENDING_INSTALLER_AUDIT'
+        if (isCompleted) {
+          existing.completed += 1
+        } else {
+          existing.pendingAudits += 1
+        }
+        brandMap.set(clean, existing)
       }
     })
-    return Array.from(brandCountMap.entries())
-      .map(([brand, count]) => ({ brand, count }))
-      .sort((a, b) => b.count - a.count)
+    return Array.from(brandMap.values())
+      .sort((a, b) => b.total - a.total)
       .slice(0, 10)
   }, [customers, filteredCustomers, hasSearched, activeCategory])
 
   const topPanelBrands = React.useMemo(() => {
     if (activeCategory !== 'SYSTEM_BRANDS') return []
-    const brandCountMap = new Map<string, number>()
+    const brandMap = new Map<string, { brand: string; total: number; pendingAudits: number; completed: number }>()
     const sourceList = hasSearched ? filteredCustomers : customers
     sourceList.forEach(c => {
       const brand = c.solarSystem?.panelBrand
       if (brand && brand.trim() && brand !== '-' && brand.toLowerCase() !== 'n/a') {
         const clean = brand.trim()
-        brandCountMap.set(clean, (brandCountMap.get(clean) || 0) + 1)
+        const existing = brandMap.get(clean) || { brand: clean, total: 0, pendingAudits: 0, completed: 0 }
+        existing.total += 1
+        const isCompleted = Boolean(c.solarSystem?.lastAuditDate) && c.status !== 'PENDING_INSTALLER_AUDIT'
+        if (isCompleted) {
+          existing.completed += 1
+        } else {
+          existing.pendingAudits += 1
+        }
+        brandMap.set(clean, existing)
       }
     })
-    return Array.from(brandCountMap.entries())
-      .map(([brand, count]) => ({ brand, count }))
-      .sort((a, b) => b.count - a.count)
+    return Array.from(brandMap.values())
+      .sort((a, b) => b.total - a.total)
       .slice(0, 10)
   }, [customers, filteredCustomers, hasSearched, activeCategory])
 
@@ -1583,116 +1604,143 @@ export function ReportsView({
 
       {/* Top 10 Brands KPI Header for Equipment Brand Reports */}
       {isBrandReport && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="space-y-4">
           {/* 1. Top Inverter Brands */}
-          <Card className="shadow-sm border-line bg-white p-4 space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
-              <div className="flex items-center gap-2">
+          <Card className="shadow-xs border-line bg-white overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-slate-50/60">
+              <div className="flex-1 flex items-center justify-center gap-2">
                 <Cpu className="h-4 w-4 text-[#002868]" />
                 <span className="font-extrabold text-xs text-[#002868] uppercase tracking-wider">
                   Top 10 Inverter Brands
                 </span>
               </div>
-              <div className="text-[11px] text-slate-500 font-medium">
+              <div className="text-[11px] text-slate-500 font-medium whitespace-nowrap">
                 Unique: <strong className="text-slate-900 font-bold">{topInverterBrands.length}</strong>
               </div>
             </div>
 
-            {topInverterBrands.length === 0 ? (
-              <div className="text-xs text-slate-400 py-3 text-center">
-                No inverter brand data found.
-              </div>
-            ) : (
-              <div className="flex flex-wrap gap-2 items-center">
-                {topInverterBrands.map((item) => (
-                  <div
-                    key={item.brand}
-                    className="flex flex-col items-center justify-center min-w-[80px] px-2.5 py-1.5 rounded-lg border border-amber-200/80 bg-amber-50/50 shadow-2xs hover:shadow-xs transition-all text-center"
-                  >
-                    <span className="text-[10px] font-bold text-amber-900 uppercase tracking-tight truncate max-w-[95px]" title={item.brand}>
-                      {item.brand}
-                    </span>
-                    <span className="text-sm font-black font-mono text-emerald-950 mt-0.5">
-                      {item.count}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
+            <CardContent className="p-4">
+              {topInverterBrands.length === 0 ? (
+                <div className="text-xs text-slate-400 py-3 text-center">
+                  No inverter brand data found.
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-4 items-center">
+                  {topInverterBrands.map((item) => (
+                    <div
+                      key={item.brand}
+                      className="flex flex-col items-center bg-slate-50/50 p-2 rounded-xl border border-slate-200/80 shadow-2xs hover:shadow-xs transition-all"
+                    >
+                      <span className="text-xs font-bold text-slate-800 uppercase tracking-tight mb-1.5 px-1 truncate max-w-[200px]" title={item.brand}>
+                        {item.brand}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <div className="bg-amber-50 border border-amber-200/90 px-3.5 py-1.5 rounded-lg text-center min-w-[80px]">
+                          <p className="text-[9px] font-bold uppercase text-amber-900 tracking-tight">Pending Audits</p>
+                          <p className="text-base font-extrabold font-mono text-amber-950 mt-0.5">{item.pendingAudits}</p>
+                        </div>
+                        <div className="bg-emerald-50 border border-emerald-200/90 px-3.5 py-1.5 rounded-lg text-center min-w-[80px]">
+                          <p className="text-[9px] font-bold uppercase text-emerald-900 tracking-tight">Completed</p>
+                          <p className="text-base font-extrabold font-mono text-emerald-950 mt-0.5">{item.completed}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
           </Card>
 
           {/* 2. Top Battery Brands */}
-          <Card className="shadow-sm border-line bg-white p-4 space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
-              <div className="flex items-center gap-2">
+          <Card className="shadow-xs border-line bg-white overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-slate-50/60">
+              <div className="flex-1 flex items-center justify-center gap-2">
                 <Battery className="h-4 w-4 text-[#002868]" />
                 <span className="font-extrabold text-xs text-[#002868] uppercase tracking-wider">
                   Top 10 Battery Brands
                 </span>
               </div>
-              <div className="text-[11px] text-slate-500 font-medium">
+              <div className="text-[11px] text-slate-500 font-medium whitespace-nowrap">
                 Unique: <strong className="text-slate-900 font-bold">{topBatteryBrands.length}</strong>
               </div>
             </div>
 
-            {topBatteryBrands.length === 0 ? (
-              <div className="text-xs text-slate-400 py-3 text-center">
-                No battery brand data found.
-              </div>
-            ) : (
-              <div className="flex flex-wrap gap-2 items-center">
-                {topBatteryBrands.map((item) => (
-                  <div
-                    key={item.brand}
-                    className="flex flex-col items-center justify-center min-w-[80px] px-2.5 py-1.5 rounded-lg border border-blue-200/80 bg-blue-50/50 shadow-2xs hover:shadow-xs transition-all text-center"
-                  >
-                    <span className="text-[10px] font-bold text-blue-900 uppercase tracking-tight truncate max-w-[95px]" title={item.brand}>
-                      {item.brand}
-                    </span>
-                    <span className="text-sm font-black font-mono text-emerald-950 mt-0.5">
-                      {item.count}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
+            <CardContent className="p-4">
+              {topBatteryBrands.length === 0 ? (
+                <div className="text-xs text-slate-400 py-3 text-center">
+                  No battery brand data found.
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-4 items-center">
+                  {topBatteryBrands.map((item) => (
+                    <div
+                      key={item.brand}
+                      className="flex flex-col items-center bg-slate-50/50 p-2 rounded-xl border border-slate-200/80 shadow-2xs hover:shadow-xs transition-all"
+                    >
+                      <span className="text-xs font-bold text-slate-800 uppercase tracking-tight mb-1.5 px-1 truncate max-w-[200px]" title={item.brand}>
+                        {item.brand}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <div className="bg-amber-50 border border-amber-200/90 px-3.5 py-1.5 rounded-lg text-center min-w-[80px]">
+                          <p className="text-[9px] font-bold uppercase text-amber-900 tracking-tight">Pending Audits</p>
+                          <p className="text-base font-extrabold font-mono text-amber-950 mt-0.5">{item.pendingAudits}</p>
+                        </div>
+                        <div className="bg-emerald-50 border border-emerald-200/90 px-3.5 py-1.5 rounded-lg text-center min-w-[80px]">
+                          <p className="text-[9px] font-bold uppercase text-emerald-900 tracking-tight">Completed</p>
+                          <p className="text-base font-extrabold font-mono text-emerald-950 mt-0.5">{item.completed}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
           </Card>
 
           {/* 3. Top Panel Brands */}
-          <Card className="shadow-sm border-line bg-white p-4 space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
-              <div className="flex items-center gap-2">
+          <Card className="shadow-xs border-line bg-white overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-slate-50/60">
+              <div className="flex-1 flex items-center justify-center gap-2">
                 <Sun className="h-4 w-4 text-[#002868]" />
                 <span className="font-extrabold text-xs text-[#002868] uppercase tracking-wider">
                   Top 10 Panel Brands
                 </span>
               </div>
-              <div className="text-[11px] text-slate-500 font-medium">
+              <div className="text-[11px] text-slate-500 font-medium whitespace-nowrap">
                 Unique: <strong className="text-slate-900 font-bold">{topPanelBrands.length}</strong>
               </div>
             </div>
 
-            {topPanelBrands.length === 0 ? (
-              <div className="text-xs text-slate-400 py-3 text-center">
-                No panel brand data found.
-              </div>
-            ) : (
-              <div className="flex flex-wrap gap-2 items-center">
-                {topPanelBrands.map((item) => (
-                  <div
-                    key={item.brand}
-                    className="flex flex-col items-center justify-center min-w-[80px] px-2.5 py-1.5 rounded-lg border border-orange-200/80 bg-orange-50/50 shadow-2xs hover:shadow-xs transition-all text-center"
-                  >
-                    <span className="text-[10px] font-bold text-orange-900 uppercase tracking-tight truncate max-w-[95px]" title={item.brand}>
-                      {item.brand}
-                    </span>
-                    <span className="text-sm font-black font-mono text-emerald-950 mt-0.5">
-                      {item.count}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
+            <CardContent className="p-4">
+              {topPanelBrands.length === 0 ? (
+                <div className="text-xs text-slate-400 py-3 text-center">
+                  No panel brand data found.
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-4 items-center">
+                  {topPanelBrands.map((item) => (
+                    <div
+                      key={item.brand}
+                      className="flex flex-col items-center bg-slate-50/50 p-2 rounded-xl border border-slate-200/80 shadow-2xs hover:shadow-xs transition-all"
+                    >
+                      <span className="text-xs font-bold text-slate-800 uppercase tracking-tight mb-1.5 px-1 truncate max-w-[200px]" title={item.brand}>
+                        {item.brand}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <div className="bg-amber-50 border border-amber-200/90 px-3.5 py-1.5 rounded-lg text-center min-w-[80px]">
+                          <p className="text-[9px] font-bold uppercase text-amber-900 tracking-tight">Pending Audits</p>
+                          <p className="text-base font-extrabold font-mono text-amber-950 mt-0.5">{item.pendingAudits}</p>
+                        </div>
+                        <div className="bg-emerald-50 border border-emerald-200/90 px-3.5 py-1.5 rounded-lg text-center min-w-[80px]">
+                          <p className="text-[9px] font-bold uppercase text-emerald-900 tracking-tight">Completed</p>
+                          <p className="text-base font-extrabold font-mono text-emerald-950 mt-0.5">{item.completed}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
           </Card>
         </div>
       )}
