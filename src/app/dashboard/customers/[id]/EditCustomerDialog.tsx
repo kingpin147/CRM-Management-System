@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/dialog'
 import { updateCustomer } from './actions'
 import { AutoSuggestInput } from '@/components/ui/auto-suggest-input'
-import { CITIES_LIST, getAreasForCity } from '@/lib/pakistan-cities-areas'
+import { CITIES_LIST, getAreasForCity, getSubAreasForArea } from '@/lib/pakistan-cities-areas'
 
 export function EditCustomerDialog({ customer }: { customer: Customer }) {
   const router = useRouter()
@@ -40,6 +40,7 @@ export function EditCustomerDialog({ customer }: { customer: Customer }) {
   const [streetNumber, setStreetNumber] = React.useState(customer.streetNumber || '')
   const [block, setBlock] = React.useState(customer.block || '')
   const [area, setArea] = React.useState(customer.area || '')
+  const [subArea, setSubArea] = React.useState(customer.subArea || '')
   const [coordinates, setCoordinates] = React.useState(customer.coordinates || '')
 
   async function handleSave(e: React.FormEvent) {
@@ -64,6 +65,7 @@ export function EditCustomerDialog({ customer }: { customer: Customer }) {
     formData.append('streetNumber', streetNumber)
     formData.append('block', block)
     formData.append('area', area)
+    formData.append('subArea', subArea)
     formData.append('coordinates', coordinates)
 
     const res = await updateCustomer(formData)
@@ -288,7 +290,22 @@ export function EditCustomerDialog({ customer }: { customer: Customer }) {
                     value={area}
                     onChange={setArea}
                     options={getAreasForCity(city)}
-                    placeholder="Select or type area/society..."
+                    placeholder="Select or type area/society (e.g. DHA, State Life, Cantt...)..."
+                    className="h-9 text-xs border-[var(--color-line)] bg-white"
+                  />
+                </div>
+
+                <div className="space-y-1 sm:col-span-2">
+                  <Label className="text-[11px] font-semibold text-[var(--color-ink)]">Sub Area / Phase / Sector</Label>
+                  <AutoSuggestInput
+                    value={subArea}
+                    onChange={setSubArea}
+                    options={getSubAreasForArea(area)}
+                    placeholder={
+                      getSubAreasForArea(area).length > 0
+                        ? `Select or type sub area (${getSubAreasForArea(area).length} available)...`
+                        : "e.g. Phase - 1, Phase - 2..."
+                    }
                     className="h-9 text-xs border-[var(--color-line)] bg-white"
                   />
                 </div>

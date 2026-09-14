@@ -26,6 +26,7 @@ import {
   STRUCTURE_MATERIALS,
   IP_LIST,
 } from '@/lib/solar-constants'
+import { CITIES_LIST, getAreasForCity, getSubAreasForArea } from '@/lib/pakistan-cities-areas'
 import { CheckCircle2, Edit3, Loader2, Save, FileText, User, Zap, Wrench, ShieldCheck, Sun, Battery, HardHat } from 'lucide-react'
 import { SectionHeader } from '@/components/ui/section-header'
 import { calculatePackageBreakdown } from '@/lib/pricing'
@@ -65,6 +66,7 @@ export function EditCrfModal({
   const [address, setAddress] = React.useState('')
   const [block, setBlock] = React.useState('')
   const [area, setArea] = React.useState('')
+  const [subArea, setSubArea] = React.useState('')
   const [city, setCity] = React.useState('')
   const [coordinates, setCoordinates] = React.useState('')
   const [assignedInstallerId, setAssignedInstallerId] = React.useState('')
@@ -160,6 +162,7 @@ export function EditCrfModal({
       setAddress(customer.address || '')
       setBlock(customer.block || '')
       setArea(customer.area || '')
+      setSubArea(customer.subArea || '')
       setCity(customer.city || '')
       setCoordinates(customer.coordinates || '')
       setAssignedInstallerId(customer.assignedInstallerId || '')
@@ -306,6 +309,7 @@ export function EditCrfModal({
       formData.append('address', address)
       formData.append('block', block)
       formData.append('area', area)
+      formData.append('subArea', subArea)
       formData.append('city', city)
       formData.append('coordinates', coordinates)
       formData.append('assignedInstallerId', assignedInstallerId)
@@ -501,10 +505,33 @@ export function EditCrfModal({
               </div>
               <div className="space-y-1">
                 <Label className="text-xs font-semibold text-slate-700">City *</Label>
-                <Input 
+                <AutoSuggestInput 
                   value={city} 
-                  onChange={(e) => setCity(e.target.value)} 
-                  className="h-9 text-xs"
+                  onChange={setCity} 
+                  options={CITIES_LIST}
+                  placeholder="Select city..."
+                />
+              </div>
+              <div className="space-y-1 sm:col-span-2">
+                <Label className="text-xs font-semibold text-slate-700">Area / Society</Label>
+                <AutoSuggestInput 
+                  value={area} 
+                  onChange={setArea} 
+                  options={getAreasForCity(city)}
+                  placeholder="Select or type area/society (e.g. DHA, State Life, Cantt...)..."
+                />
+              </div>
+              <div className="space-y-1 sm:col-span-2">
+                <Label className="text-xs font-semibold text-slate-700">Sub Area / Phase / Sector</Label>
+                <AutoSuggestInput 
+                  value={subArea} 
+                  onChange={setSubArea} 
+                  options={getSubAreasForArea(area)}
+                  placeholder={
+                    getSubAreasForArea(area).length > 0
+                      ? `Select or type sub area (${getSubAreasForArea(area).length} available)...`
+                      : "e.g. Phase - 1, Phase - 2..."
+                  }
                 />
               </div>
               <div className="space-y-1">
@@ -512,14 +539,6 @@ export function EditCrfModal({
                 <Input 
                   value={block} 
                   onChange={(e) => setBlock(e.target.value)} 
-                  className="h-9 text-xs"
-                />
-              </div>
-              <div className="space-y-1 sm:col-span-2">
-                <Label className="text-xs font-semibold text-slate-700">Area / Town</Label>
-                <Input 
-                  value={area} 
-                  onChange={(e) => setArea(e.target.value)} 
                   className="h-9 text-xs"
                 />
               </div>

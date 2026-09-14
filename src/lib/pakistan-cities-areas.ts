@@ -7,25 +7,42 @@ export const PAKISTAN_CITIES_AREAS: Record<string, CityData> = {
   'Lahore': {
     defaultDisco: 'LESCO',
     areas: [
-      'DHA Phase 1', 'DHA Phase 2', 'DHA Phase 3', 'DHA Phase 4', 'DHA Phase 5',
-      'DHA Phase 6', 'DHA Phase 7', 'DHA Phase 8', 'DHA Phase 9 Town', 'DHA Phase 9 Prism',
-      'DHA Rahbar', 'Bahria Town - Sector A', 'Bahria Town - Sector B', 'Bahria Town - Sector C',
-      'Bahria Town - Sector D', 'Bahria Town - Sector E', 'Bahria Town - Sector F',
-      'Johar Town - Block A', 'Johar Town - Block B', 'Johar Town - Block C', 'Johar Town - Block D',
-      'Johar Town - Block E', 'Johar Town - Block F', 'Johar Town - Block G', 'Johar Town - Block H',
-      'Johar Town - Block J', 'Johar Town - Block K', 'Johar Town - Block L', 'Johar Town - Block M',
-      'Johar Town - Block N', 'Johar Town - Block P', 'Johar Town - Block Q', 'Johar Town - Block R',
-      'Model Town', 'Gulberg I', 'Gulberg II', 'Gulberg III', 'Gulberg IV', 'Gulberg V',
-      'Askari 1', 'Askari 2', 'Askari 3', 'Askari 4', 'Askari 5', 'Askari 8', 'Askari 9', 'Askari 10', 'Askari 11',
-      'Lake City', 'Wapda Town', 'Paragon City', 'Valencia Town', 'Garden Town',
-      'State Life Housing Society', 'Bankers Housing Society', 'Executive Lodges', 'Cantt',
-      'Allama Iqbal Town', 'Green City', 'Park View City', 'Pine Avenue', 'Architect Housing Society',
-      'Eden City', 'Eden Gardens', 'PCSIR Phase 1', 'PCSIR Phase 2', 'Sabzazar', 'Faisal Town',
-      'Cavalry Ground', 'Divine Gardens', 'LDA City', 'Shadman', 'Samanabad', 'Township',
-      'Muslim Town', 'New Garden Town', 'Thokar Niaz Baig', 'Bedian Road', 'Barki Road',
-      'Raiwind Road', 'Multan Road', 'Ferozepur Road', 'Canal Bank Housing Scheme',
-      'Punjab Small Industries Society', 'NFC Phase 1', 'NFC Phase 2', 'Audit & Accounts Society',
-      'Tariq Gardens', 'Khayaban-e-Amin', 'Central Park', 'Sui Gas Society'
+      'Bankers Cooperative Housing Society',
+      'State Life Housing Society',
+      'Sui Gas Society',
+      'DHA',
+      'Askari - 1',
+      'Askari - 2',
+      'Askari - 5',
+      'Askari - 8',
+      'Askari - 9',
+      'Askari - 10',
+      'Askari - 11',
+      'Cantt',
+      'EME Society',
+      'Gosha e Ahbab Society',
+      'Gulberg - 2',
+      'Gulberg - 3',
+      'Tech Society',
+      'Alpha Society',
+      'Model Town',
+      'New Garden Town',
+      'Bahria Town',
+      'Johar Town',
+      'Lake City',
+      'Wapda Town',
+      'Paragon City',
+      'Valencia Town',
+      'Garden Town',
+      'Allama Iqbal Town',
+      'Park View City',
+      'Faisal Town',
+      'Cavalry Ground',
+      'Shadman',
+      'Township',
+      'Muslim Town',
+      'Raiwind Road',
+      'Central Park'
     ]
   },
   'Karachi': {
@@ -179,11 +196,84 @@ export const PAKISTAN_CITIES_AREAS: Record<string, CityData> = {
 
 export const CITIES_LIST = Object.keys(PAKISTAN_CITIES_AREAS)
 
-const DEFAULT_AREAS = [
-  'DHA', 'Bahria Town', 'Model Town', 'Gulberg', 'Askari', 'Johar Town',
-  'Cantt', 'Satellite Town', 'Civil Lines', 'Officers Colony', 'Peoples Colony',
-  'Garden Town', 'Wapda Town', 'Commercial Area', 'Main Market'
+export const DEFAULT_AREAS = [
+  'Bankers Cooperative Housing Society',
+  'State Life Housing Society',
+  'Sui Gas Society',
+  'DHA',
+  'Askari - 1',
+  'Askari - 2',
+  'Askari - 5',
+  'Askari - 8',
+  'Askari - 9',
+  'Askari - 10',
+  'Askari - 11',
+  'Cantt',
+  'EME Society',
+  'Gosha e Ahbab Society',
+  'Gulberg - 2',
+  'Gulberg - 3',
+  'Tech Society',
+  'Alpha Society',
+  'Model Town',
+  'New Garden Town',
+  'Bahria Town',
+  'Johar Town',
+  'Lake City',
+  'Wapda Town'
 ]
+
+export const AREA_SUBAREAS_MAP: Record<string, string[]> = {
+  'State Life Housing Society': [
+    'Phase - 1',
+    'Phase - 2'
+  ],
+  'State Life': [
+    'Phase - 1',
+    'Phase - 2'
+  ],
+  'DHA': [
+    'Phase - 1',
+    'Phase - 2',
+    'Phase - 3',
+    'Phase - 4',
+    'Phase - 5',
+    'Phase - 6',
+    'Phase - 7',
+    'Phase - 8'
+  ],
+  'Cantt': [
+    'Abid Majeed Road',
+    'Amjad Khursheed Road',
+    'Bridge Colony',
+    'Cavalry Ground',
+    'CMA Colony',
+    'Fortress',
+    'Guldasht Colony',
+    'Pakistan New Air Force Colony',
+    'Rangers HQ',
+    'Sarwar Road',
+    'St. Johns Park',
+    'Zafar Road'
+  ]
+}
+
+export function getSubAreasForArea(area?: string): string[] {
+  if (!area) return []
+  const normalized = area.trim()
+  if (AREA_SUBAREAS_MAP[normalized]) {
+    return AREA_SUBAREAS_MAP[normalized]
+  }
+  const lower = normalized.toLowerCase()
+  const foundKey = Object.keys(AREA_SUBAREAS_MAP).find((k) => {
+    const kLower = k.toLowerCase()
+    return kLower === lower || lower.includes(kLower) || kLower.includes(lower)
+  })
+  if (foundKey) {
+    return AREA_SUBAREAS_MAP[foundKey]
+  }
+  return []
+}
 
 export function getAreasForCity(city?: string): string[] {
   if (!city) return DEFAULT_AREAS
@@ -214,3 +304,4 @@ export function getDefaultDiscoForCity(city?: string): string | null {
   }
   return null
 }
+

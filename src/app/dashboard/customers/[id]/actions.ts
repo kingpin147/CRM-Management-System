@@ -23,6 +23,7 @@ export async function updateCustomer(formData: FormData) {
   const streetNumber = formData.get('streetNumber') as string || null
   const block = formData.get('block') as string || null
   const area = formData.get('area') as string || null
+  const subArea = formData.get('subArea') as string || null
   const coordinates = formData.get('coordinates') as string || null
 
   if (!customerId || !fullName || !contactNumber || !cnic) {
@@ -82,6 +83,7 @@ export async function updateCustomer(formData: FormData) {
         streetNumber,
         block,
         area,
+        subArea,
         coordinates,
         ...(calculatedNextBillingDate ? {
           packagePlan: {

@@ -18,7 +18,7 @@ import { CustomerType } from '@prisma/client'
 import { ChevronRight, ChevronLeft, CheckCircle2, Check, Sparkles, Loader2, AlertCircle, Download, FileText, Camera, UploadCloud, Image as ImageIcon, X, Users } from 'lucide-react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { AutoSuggestInput } from '@/components/ui/auto-suggest-input'
-import { CITIES_LIST, getAreasForCity, getDefaultDiscoForCity } from '@/lib/pakistan-cities-areas'
+import { CITIES_LIST, getAreasForCity, getDefaultDiscoForCity, getSubAreasForArea } from '@/lib/pakistan-cities-areas'
 import { formatDiscoRefNo } from '@/lib/utils'
 import { SYSTEM_SIZES, INVERTER_SIZES, INVERTER_BRANDS, PANEL_BRANDS, BATTERY_BRANDS, IP_LIST, DISCO_LIST, STRUCTURE_TYPES, STRUCTURE_MATERIALS } from '@/lib/solar-constants'
 import { calculatePackageBreakdown } from '@/lib/pricing'
@@ -644,30 +644,6 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                       )}
                     />
 
-                    {/* Block */}
-                    <FormField
-                      control={form.control}
-                      name="block"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs font-semibold">Block</FormLabel>
-                          <FormControl><Input placeholder="G" {...field} className="h-10 text-xs" /></FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Sub Area */}
-                    <FormField
-                      control={form.control}
-                      name="subArea"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs font-semibold">Sub Area</FormLabel>
-                          <FormControl><Input placeholder="Phase I" {...field} className="h-10 text-xs" /></FormControl>
-                        </FormItem>
-                      )}
-                    />
-
                     {/* Area / Society */}
                     <FormField
                       control={form.control}
@@ -680,10 +656,50 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                               value={field.value || ''}
                               onChange={field.onChange}
                               options={getAreasForCity(form.watch('city'))}
-                              placeholder="Type or select society (e.g. DHA, Bahria Town...)"
+                              placeholder="Type or select society (e.g. DHA, State Life, Cantt...)"
                               className="h-10 text-xs bg-white"
                             />
                           </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Sub Area */}
+                    <FormField
+                      control={form.control}
+                      name="subArea"
+                      render={({ field }) => {
+                        const areaVal = form.watch('area')
+                        const subAreaOptions = getSubAreasForArea(areaVal)
+                        return (
+                          <FormItem className="md:col-span-2">
+                            <FormLabel className="text-xs font-semibold">Sub Area / Phase / Sector</FormLabel>
+                            <FormControl>
+                              <AutoSuggestInput
+                                value={field.value || ''}
+                                onChange={field.onChange}
+                                options={subAreaOptions}
+                                placeholder={
+                                  subAreaOptions.length > 0
+                                    ? `Select or type sub area (${subAreaOptions.length} available)...`
+                                    : "Type or select sub area (e.g. Phase - 1)..."
+                                }
+                                className="h-10 text-xs bg-white"
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )
+                      }}
+                    />
+
+                    {/* Block */}
+                    <FormField
+                      control={form.control}
+                      name="block"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs font-semibold">Block</FormLabel>
+                          <FormControl><Input placeholder="G" {...field} className="h-10 text-xs" /></FormControl>
                         </FormItem>
                       )}
                     />

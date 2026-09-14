@@ -74,6 +74,7 @@ export default async function PendingSalesPage() {
     const address = (formData.get('address') as string) || undefined
     const block = (formData.get('block') as string) || undefined
     const area = (formData.get('area') as string) || undefined
+    const subArea = (formData.get('subArea') as string) || undefined
     const city = (formData.get('city') as string) || undefined
     const coordinates = (formData.get('coordinates') as string) || undefined
 
@@ -187,6 +188,7 @@ export default async function PendingSalesPage() {
         address,
         block,
         area,
+        subArea,
         city,
         coordinates,
         assignedInstallerId,
