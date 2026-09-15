@@ -394,9 +394,11 @@ export function EditCrfModal({
       formData.append('earthingLastCheck', earthingLastCheck)
       formData.append('installerCompany', installerCompany)
 
-      if (inverterImageUrl) formData.append('inverterImages', JSON.stringify([inverterImageUrl]))
-      if (panelImageUrl) formData.append('panelImageUrls', JSON.stringify([panelImageUrl]))
-      if (batteryImageUrl) formData.append('batteryImages', JSON.stringify([batteryImageUrl]))
+      formData.append('inverterImages', JSON.stringify(inverterImageUrl ? [inverterImageUrl] : []))
+      formData.append('panelImages', JSON.stringify(panelImageUrl ? [panelImageUrl] : []))
+      formData.append('panelImageUrls', JSON.stringify(panelImageUrl ? [panelImageUrl] : []))
+      formData.append('batteryImages', JSON.stringify(batteryImageUrl ? [batteryImageUrl] : []))
+      formData.append('inverterInvoiceUrl', inverterInvoiceUrl || '')
 
       await onSaveCrf(formData)
       onClose()

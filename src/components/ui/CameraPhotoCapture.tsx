@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import { Camera, UploadCloud, RefreshCw, X, CheckCircle2, SwitchCamera, Image as ImageIcon, Eye, Trash2, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { DraggableImageInspector, normalizeImageUrl } from './DraggableImageInspector'
 
 export interface CameraPhotoCaptureProps {
   label?: string
@@ -44,7 +45,7 @@ export function CameraPhotoCapture({
   className = '',
 }: CameraPhotoCaptureProps) {
   const [isLiveCameraOpen, setIsLiveCameraOpen] = useState(false)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(value || null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(normalizeImageUrl(value) || null)
   const [isUploading, setIsUploading] = useState(false)
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null)
   const [cameraError, setCameraError] = useState<string | null>(null)
@@ -73,7 +74,7 @@ export function CameraPhotoCapture({
       setPreviewUrl(url)
       return () => URL.revokeObjectURL(url)
     } else if (value) {
-      setPreviewUrl(value)
+      setPreviewUrl(normalizeImageUrl(value))
     } else {
       setPreviewUrl(null)
     }
@@ -438,61 +439,16 @@ export function CameraPhotoCapture({
         </div>
       )}
 
-      {/* Full Image Zoom Modal */}
-      {mounted && isZoomModalOpen && previewUrl && typeof document !== 'undefined' && createPortal(
-        <div 
-          className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 animate-in fade-in duration-150"
-          onClick={() => setIsZoomModalOpen(false)}
-        >
-          <div className="relative max-w-4xl max-h-[90vh] bg-slate-900 rounded-2xl overflow-hidden shadow-2xl border border-slate-700 p-3 w-full" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-2 border-b border-slate-800 mb-2">
-              <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                <ImageIcon className="w-4 h-4 text-amber-400" />
-                {label || 'Photo Preview'}
-              </span>
-              <button
-                type="button"
-                onClick={() => setIsZoomModalOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            
-            {imageError ? (
-              <div className="py-12 px-4 flex flex-col items-center justify-center text-center space-y-3">
-                <ImageIcon className="w-12 h-12 text-amber-400 opacity-60" />
-                <p className="text-sm font-semibold text-white">Image Preview Not Found on Server</p>
-                <p className="text-xs text-slate-400 max-w-md">
-                  This photo URL was saved under a remote domain or was not saved to local storage. Please click &quot;Retake&quot; or &quot;Change&quot; to upload a fresh image.
-                </p>
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={() => {
-                      setIsZoomModalOpen(false)
-                      galleryInputRef.current?.click()
-                    }}
-                    className="bg-amber-600 hover:bg-amber-700 text-white text-xs gap-1.5 cursor-pointer"
-                  >
-                    <UploadCloud className="w-4 h-4" />
-                    Upload Fresh Photo
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img 
-                src={previewUrl} 
-                alt={label || 'Full Photo'} 
-                onError={() => setImageError(true)}
-                className="max-h-[75vh] w-auto max-w-full object-contain mx-auto rounded-lg" 
-              />
-            )}
-          </div>
-        </div>,
-        document.body
+      {/* Movable Floating Side-by-Side Image Inspector */}
+      {mounted && isZoomModalOpen && previewUrl && (
+        <DraggableImageInspector
+          isOpen={isZoomModalOpen}
+          imageUrl={previewUrl}
+          title={label || 'Equipment Photo'}
+          badge={badge}
+          subtext={subtext}
+          onClose={() => setIsZoomModalOpen(false)}
+        />
       )}
 
       {/* Interactive Live Camera Modal Dialog */}

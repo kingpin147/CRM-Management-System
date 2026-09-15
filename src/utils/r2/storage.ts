@@ -82,14 +82,19 @@ async function saveToLocalUploads(fileBuffer: Buffer, key: string): Promise<stri
   }
 }
 
+export { getR2Client, bucketName, saveToLocalUploads }
+
 /**
- * Uploads a file buffer to Cloudflare R2 or Supabase Cloud Storage.
+ * Uploads a file buffer to Cloudflare R2, Supabase Cloud Storage, or Local storage.
  */
 export async function uploadToR2(
   fileBuffer: Buffer,
   key: string,
   contentType: string
 ): Promise<string | null> {
+  // Always save to local public/uploads for instant local availability
+  const localUrl = await saveToLocalUploads(fileBuffer, key)
+
   // 1. Try Cloudflare R2 if configured
   try {
     const client = getR2Client()
@@ -103,11 +108,12 @@ export async function uploadToR2(
 
       await client.send(command)
 
-      const baseUrl = publicDomain
-        ? publicDomain.replace(/\/$/, '')
-        : `https://${bucketName}.${accountId}.r2.dev`
+      if (publicDomain) {
+        return `${publicDomain.replace(/\/$/, '')}/${key}`
+      }
       
-      return `${baseUrl}/${key}`
+      // If no custom publicDomain is provided, return localUrl or internal proxy URL to avoid r2.dev subdomain 401/DNS failures
+      return localUrl || `/api/uploads/${key}`
     }
   } catch (r2Err: any) {
     console.warn('[R2 Storage Error, attempting Supabase fallback]:', r2Err?.message || r2Err)
@@ -120,7 +126,6 @@ export async function uploadToR2(
   }
 
   // 3. Fallback to local uploads (for offline/local dev)
-  const localUrl = await saveToLocalUploads(fileBuffer, key)
   if (localUrl) {
     return localUrl
   }
