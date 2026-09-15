@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { Camera, UploadCloud, RefreshCw, X, CheckCircle2, SwitchCamera, Image as ImageIcon, Eye, Trash2, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -58,6 +59,11 @@ export function CameraPhotoCapture({
   const nativeCameraInputRef = useRef<HTMLInputElement | null>(null)
 
   const [imageError, setImageError] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Manage preview URL from file or value
   useEffect(() => {
@@ -433,9 +439,9 @@ export function CameraPhotoCapture({
       )}
 
       {/* Full Image Zoom Modal */}
-      {isZoomModalOpen && previewUrl && (
+      {mounted && isZoomModalOpen && previewUrl && typeof document !== 'undefined' && createPortal(
         <div 
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 animate-in fade-in duration-150"
+          className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 animate-in fade-in duration-150"
           onClick={() => setIsZoomModalOpen(false)}
         >
           <div className="relative max-w-4xl max-h-[90vh] bg-slate-900 rounded-2xl overflow-hidden shadow-2xl border border-slate-700 p-3 w-full" onClick={e => e.stopPropagation()}>
@@ -468,7 +474,7 @@ export function CameraPhotoCapture({
                       setIsZoomModalOpen(false)
                       galleryInputRef.current?.click()
                     }}
-                    className="bg-amber-600 hover:bg-amber-700 text-white text-xs gap-1.5"
+                    className="bg-amber-600 hover:bg-amber-700 text-white text-xs gap-1.5 cursor-pointer"
                   >
                     <UploadCloud className="w-4 h-4" />
                     Upload Fresh Photo
@@ -485,12 +491,13 @@ export function CameraPhotoCapture({
               />
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Interactive Live Camera Modal Dialog */}
-      {isLiveCameraOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-3 sm:p-6 animate-in fade-in-0 duration-150">
+      {mounted && isLiveCameraOpen && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-3 sm:p-6 animate-in fade-in-0 duration-150">
           <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
             {/* Modal Header */}
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 bg-slate-950/80">
@@ -707,7 +714,8 @@ export function CameraPhotoCapture({
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
