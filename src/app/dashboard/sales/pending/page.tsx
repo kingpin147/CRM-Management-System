@@ -435,15 +435,23 @@ export default async function PendingSalesPage() {
     } = await supabase.auth.getUser()
 
     // Fetch user role from Prisma DB to determine navigation options
-    const dbUser = user ? await prisma.user.findFirst({ 
-      where: { 
-        OR: [
-          { supabaseId: user.id },
-          ...(user.email ? [{ email: { equals: user.email, mode: 'insensitive' as const } }] : [])
-        ]
-      }, 
-      select: { role: true, designation: true } 
-    }) : null
+    let dbUser: { role: string; designation?: string | null } | null = null
+    if (user) {
+      try {
+        dbUser = await prisma.user.findFirst({ 
+          where: { 
+            OR: [
+              { supabaseId: user.id },
+              ...(user.email ? [{ email: { equals: user.email, mode: 'insensitive' as const } }] : [])
+            ]
+          }, 
+          select: { role: true, designation: true } 
+        })
+      } catch (userErr) {
+        console.warn('Safe User lookup fallback:', userErr)
+      }
+    }
+
     const userRole = dbUser?.role || (
       (dbUser?.designation || '').toLowerCase().includes('o & m') || 
       (dbUser?.designation || '').toLowerCase().includes('o&m') ||
@@ -453,46 +461,97 @@ export default async function PendingSalesPage() {
     )
 
     // Fetch all customer sales in pending pipeline stages and available installer users
-    const [rawPendingCustomers, rawInstallers] = await Promise.all([
-      prisma.customer.findMany({
-        where: {
-          status: {
-            in: [
-              'SIGNUP_GENERATED',
-              'PENDING_PAYMENT_VERIFICATION',
-              'PENDING_ACTIVATION',
-            ]
-          }
-        },
-        include: {
-          packagePlan: true,
-          solarSystem: true,
-          accountExecutive: true,
-          assignedInstaller: true,
-          invoices: {
-            orderBy: { createdAt: 'desc' },
-            take: 3
+    let rawPendingCustomers: any[] = []
+    let rawInstallers: any[] = []
+
+    try {
+      const [custResult, instResult] = await Promise.all([
+        prisma.customer.findMany({
+          where: {
+            status: {
+              in: [
+                'SIGNUP_GENERATED',
+                'PENDING_PAYMENT_VERIFICATION',
+                'PENDING_ACTIVATION',
+              ]
+            }
           },
-          ledgerEntries: {
-            orderBy: { createdAt: 'desc' },
-            take: 1
+          include: {
+            packagePlan: true,
+            solarSystem: true,
+            accountExecutive: true,
+            assignedInstaller: true,
+            invoices: {
+              orderBy: { createdAt: 'desc' },
+              take: 3
+            },
+            ledgerEntries: {
+              orderBy: { createdAt: 'desc' },
+              take: 1
+            },
+            transactions: {
+              orderBy: { createdAt: 'desc' },
+              take: 1
+            }
           },
-          transactions: {
-            orderBy: { createdAt: 'desc' },
-            take: 1
-          }
-        },
-        orderBy: { signupDate: 'desc' }
-      }),
-      prisma.user.findMany({
-        where: {
-          role: { in: ['INSTALLATION', 'OM_MANAGER', 'MANAGER', 'SUPER_ADMIN', 'ADMIN', 'SALES'] },
-          isActive: true
-        },
-        select: { id: true, fullName: true, role: true, email: true },
-        orderBy: { fullName: 'asc' }
-      })
-    ])
+          orderBy: { signupDate: 'desc' }
+        }),
+        prisma.user.findMany({
+          where: {
+            role: { in: ['INSTALLATION', 'OM_MANAGER', 'MANAGER', 'SUPER_ADMIN', 'ADMIN', 'SALES'] },
+            isActive: true
+          },
+          select: { id: true, fullName: true, role: true, email: true },
+          orderBy: { fullName: 'asc' }
+        })
+      ])
+      rawPendingCustomers = custResult
+      rawInstallers = instResult
+    } catch (fetchErr) {
+      console.error('Pending page database query error, retrying sequentially:', fetchErr)
+      try {
+        rawPendingCustomers = await prisma.customer.findMany({
+          where: {
+            status: {
+              in: [
+                'SIGNUP_GENERATED',
+                'PENDING_PAYMENT_VERIFICATION',
+                'PENDING_ACTIVATION',
+              ]
+            }
+          },
+          include: {
+            packagePlan: true,
+            solarSystem: true,
+            accountExecutive: true,
+            assignedInstaller: true,
+            invoices: {
+              orderBy: { createdAt: 'desc' },
+              take: 3
+            },
+            ledgerEntries: {
+              orderBy: { createdAt: 'desc' },
+              take: 1
+            },
+            transactions: {
+              orderBy: { createdAt: 'desc' },
+              take: 1
+            }
+          },
+          orderBy: { signupDate: 'desc' }
+        })
+        rawInstallers = await prisma.user.findMany({
+          where: {
+            role: { in: ['INSTALLATION', 'OM_MANAGER', 'MANAGER', 'SUPER_ADMIN', 'ADMIN', 'SALES'] },
+            isActive: true
+          },
+          select: { id: true, fullName: true, role: true, email: true },
+          orderBy: { fullName: 'asc' }
+        })
+      } catch (retryErr) {
+        console.error('Fatal retry error in pending page:', retryErr)
+      }
+    }
 
     // Sanitize Prisma types and map assigned installer details
     const installerMap = new Map(rawInstallers.map(i => [i.id, i]))

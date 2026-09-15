@@ -922,11 +922,105 @@ export function EditCrfModal({
               </div>
             </div>
 
+            {/* 3.2 Solar PV Panels Specifications */}
+            <div className="p-3.5 bg-slate-50/60 rounded-xl border border-slate-200 space-y-2.5">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-[#002868] uppercase tracking-wider">
+                <Sun className="h-3.5 w-3.5 text-amber-500" />
+                3.2 Solar PV Panels Specifications
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-slate-700">Panel Brand</Label>
+                  <AutoSuggestInput 
+                    value={panelBrand}
+                    onChange={setPanelBrand}
+                    options={PANEL_BRANDS}
+                    placeholder="e.g. Longi, JA Solar, Jinko"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-slate-700">Panel Technology</Label>
+                  <Select value={panelTechnology} onValueChange={(v) => setPanelTechnology(v || 'Topcon')}>
+                    <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Topcon" className="text-xs">Topcon</SelectItem>
+                      <SelectItem value="Mono Perc" className="text-xs">Mono PERC</SelectItem>
+                      <SelectItem value="HJT" className="text-xs">HJT</SelectItem>
+                      <SelectItem value="ABC" className="text-xs">ABC</SelectItem>
+                      <SelectItem value="HIBC" className="text-xs">HIBC</SelectItem>
+                      <SelectItem value="Other" className="text-xs">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-slate-700">Wattage per Panel (W)</Label>
+                  <Input 
+                    type="number" 
+                    value={panelWattage} 
+                    onChange={(e) => setPanelWattage(e.target.value)} 
+                    className="h-9 text-xs font-mono font-semibold"
+                    placeholder="e.g. 585"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-slate-700">Panel Quantity</Label>
+                  <Input 
+                    type="number" 
+                    value={panelQuantity} 
+                    onChange={(e) => setPanelQuantity(e.target.value)} 
+                    className="h-9 text-xs font-mono font-semibold"
+                    placeholder="e.g. 16"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-slate-700">Total PV Capacity</Label>
+                  <div className="h-9 flex items-center justify-between px-3 bg-amber-50 rounded-md border border-amber-200 font-bold font-mono text-xs text-amber-950">
+                    <span>{((Number(panelWattage) || 0) * (Number(panelQuantity) || 0) / 1000).toFixed(2)} kW</span>
+                    <span className="text-[10px] text-amber-700 font-normal">({(Number(panelWattage) || 0) * (Number(panelQuantity) || 0)} W)</span>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-slate-700">Panel Type</Label>
+                  <Select value={panelType} onValueChange={(v) => setPanelType(v || 'Tier-1 Monofacial')}>
+                    <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Tier-1 Monofacial" className="text-xs">Tier-1 Monofacial</SelectItem>
+                      <SelectItem value="Tier-1 Bifacial" className="text-xs">Tier-1 Bifacial</SelectItem>
+                      <SelectItem value="Standard Monofacial" className="text-xs">Standard Monofacial</SelectItem>
+                      <SelectItem value="Standard Bifacial" className="text-xs">Standard Bifacial</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <Label className="text-xs font-semibold text-slate-700">Panel Warranty Expiry Date</Label>
+                  <Input 
+                    type="date" 
+                    value={panelWarrantyEnd} 
+                    onChange={(e) => setPanelWarrantyEnd(e.target.value)} 
+                    className="h-9 text-xs"
+                  />
+                </div>
+                <div className="space-y-1 sm:col-span-2 md:col-span-4 pt-2 border-t border-slate-200/80">
+                  <CameraPhotoCapture
+                    label="Solar PV Panels Array Photo"
+                    badge="PV PANELS"
+                    guideType="equipment"
+                    compact
+                    value={panelImageUrl || null}
+                    onValueChange={(url) => setPanelImageUrl(url || '')}
+                    onUpload={(file) => uploadEquipmentPhoto(file, 'equipment/panels')}
+                    fileNamePrefix="panels"
+                    subtext="Take photo of installed PV panels array, or upload from gallery."
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* 3.3 Battery Storage & Structure */}
             <div className="p-3.5 bg-slate-50/60 rounded-xl border border-slate-200 space-y-2.5">
               <div className="flex items-center gap-1.5 text-xs font-bold text-[#002868] uppercase tracking-wider">
                 <Battery className="h-3.5 w-3.5 text-amber-600" />
-                Battery Storage &amp; Mounting Structure
+                3.3 Battery Storage &amp; Mounting Structure
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="space-y-1">
