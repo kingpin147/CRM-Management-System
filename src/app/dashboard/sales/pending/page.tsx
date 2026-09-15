@@ -166,6 +166,39 @@ export default async function PendingSalesPage() {
     const earthingStatus = (formData.get('earthingStatus') as string) || undefined
     const breakerStatus = (formData.get('breakerStatus') as string) || undefined
 
+    const inverterImagesRaw = (formData.get('inverterImages') as string) || (formData.get('inverterImageUrls') as string) || (formData.get('inverterImageUrl') as string)
+    let inverterImages: string[] | undefined
+    if (inverterImagesRaw) {
+      try {
+        const parsed = JSON.parse(inverterImagesRaw)
+        inverterImages = Array.isArray(parsed) ? parsed.filter(Boolean) : [inverterImagesRaw]
+      } catch {
+        inverterImages = [inverterImagesRaw]
+      }
+    }
+
+    const panelImagesRaw = (formData.get('panelImages') as string) || (formData.get('panelImageUrls') as string) || (formData.get('panelImageUrl') as string)
+    let panelImages: string[] | undefined
+    if (panelImagesRaw) {
+      try {
+        const parsed = JSON.parse(panelImagesRaw)
+        panelImages = Array.isArray(parsed) ? parsed.filter(Boolean) : [panelImagesRaw]
+      } catch {
+        panelImages = [panelImagesRaw]
+      }
+    }
+
+    const batteryImagesRaw = (formData.get('batteryImages') as string) || (formData.get('batteryImageUrls') as string) || (formData.get('batteryImageUrl') as string)
+    let batteryImages: string[] | undefined
+    if (batteryImagesRaw) {
+      try {
+        const parsed = JSON.parse(batteryImagesRaw)
+        batteryImages = Array.isArray(parsed) ? parsed.filter(Boolean) : [batteryImagesRaw]
+      } catch {
+        batteryImages = [batteryImagesRaw]
+      }
+    }
+
     let nextStatus = currentStatus
     if (shouldAdvance) {
       if (currentStatus === 'SIGNUP_GENERATED') {
@@ -281,6 +314,7 @@ export default async function PendingSalesPage() {
         inverterUsername: inverterUsername || null,
         inverterPassword: inverterPassword || null,
         inverterInvoiceUrl: inverterInvoiceUrl || null,
+        inverterImages: inverterImages || [],
         
         panelBrand: panelBrand || '',
         panelType: panelType || 'Bifacial',
@@ -289,6 +323,7 @@ export default async function PendingSalesPage() {
         noOfPanels: pQty || 0,
         totalWattage: (pQty || 0) * (pWatt || 550),
         panelWarrantyEnd: panWarrantyEnd,
+        panelImages: panelImages || [],
         
         batteryCategory: batteryCategory || 'Low Voltage',
         batteryType: batteryType || 'Lithium',
@@ -298,6 +333,7 @@ export default async function PendingSalesPage() {
         batterySerials: batterySerials || (batterySerial ? [batterySerial] : []),
         batteryWarrantyEnd: batWarrantyEnd || (batteryWarrantyEnds?.[0] || null),
         batteryWarrantyEnds: batteryWarrantyEnds || (batWarrantyEnd ? [batWarrantyEnd] : []),
+        batteryImages: batteryImages || [],
         
         earthing: earthingType || 'Both',
         earthingLastCheck: earthingLastDt,
@@ -345,6 +381,7 @@ export default async function PendingSalesPage() {
         ...(inverterUsername !== undefined ? { inverterUsername } : {}),
         ...(inverterPassword !== undefined ? { inverterPassword } : {}),
         ...(inverterInvoiceUrl !== undefined ? { inverterInvoiceUrl } : {}),
+        ...(inverterImages !== undefined ? { inverterImages } : {}),
         
         panelBrand,
         panelType,
@@ -353,6 +390,7 @@ export default async function PendingSalesPage() {
         ...(pQty !== undefined ? { noOfPanels: pQty } : {}),
         ...(pQty !== undefined && pWatt !== undefined ? { totalWattage: pQty * pWatt } : {}),
         ...(panWarrantyEnd !== undefined ? { panelWarrantyEnd: panWarrantyEnd } : {}),
+        ...(panelImages !== undefined ? { panelImages } : {}),
         
         batteryCategory,
         batteryType,
@@ -362,6 +400,7 @@ export default async function PendingSalesPage() {
         ...(batterySerials !== undefined ? { batterySerials } : {}),
         ...(batWarrantyEnd !== undefined ? { batteryWarrantyEnd: batWarrantyEnd } : {}),
         ...(batteryWarrantyEnds !== undefined ? { batteryWarrantyEnds } : {}),
+        ...(batteryImages !== undefined ? { batteryImages } : {}),
         
         ...(earthingType !== undefined ? { earthing: earthingType } : {}),
         ...(earthingLastDt !== undefined ? { earthingLastCheck: earthingLastDt } : {}),

@@ -182,6 +182,12 @@ export async function submitInstallerAudit(formData: FormData) {
   const rawBatteryImageUrls = parseJsonArraySafe<string>(formData.get('batteryImageUrls') as string, [])
   const finalBatteryImages = rawBatteryImageUrls.length > 0 ? rawBatteryImageUrls : (currentSystem?.batteryImages || [])
 
+  const rawPanelImageUrls = parseJsonArraySafe<string>(formData.get('panelImageUrls') as string, [])
+  const singlePanelUrl = (formData.get('panelImageUrl') as string) || (formData.get('panelPhoto') as string) || ''
+  const finalPanelImages = rawPanelImageUrls.length > 0 
+    ? rawPanelImageUrls 
+    : (singlePanelUrl ? [singlePanelUrl] : (currentSystem?.panelImages || []))
+
   await prisma.solarSystem.upsert({
     where: { customerId },
     create: {
@@ -237,6 +243,7 @@ export async function submitInstallerAudit(formData: FormData) {
       installerCompany,
       lastAuditDate,
       inverterImages: finalInverterImages,
+      panelImages: finalPanelImages,
       batteryImages: finalBatteryImages,
       inverterUsername,
       inverterPassword,
@@ -294,6 +301,7 @@ export async function submitInstallerAudit(formData: FormData) {
       installerCompany,
       lastAuditDate,
       inverterImages: finalInverterImages,
+      panelImages: finalPanelImages,
       batteryImages: finalBatteryImages,
       inverterUsername,
       inverterPassword,
@@ -402,6 +410,12 @@ export async function saveSolarSpecsOnly(formData: FormData) {
   const rawBatteryImageUrls = parseJsonArraySafe<string>(formData.get('batteryImageUrls') as string, [])
   const finalBatteryImages = rawBatteryImageUrls.length > 0 ? rawBatteryImageUrls : (currentSystem?.batteryImages || [])
 
+  const rawPanelImageUrls = parseJsonArraySafe<string>(formData.get('panelImageUrls') as string, [])
+  const singlePanelUrl = (formData.get('panelImageUrl') as string) || (formData.get('panelPhoto') as string) || ''
+  const finalPanelImages = rawPanelImageUrls.length > 0 
+    ? rawPanelImageUrls 
+    : (singlePanelUrl ? [singlePanelUrl] : (currentSystem?.panelImages || []))
+
   await prisma.solarSystem.upsert({
     where: { customerId },
     create: {
@@ -444,6 +458,7 @@ export async function saveSolarSpecsOnly(formData: FormData) {
       structureMaterial,
       systemInstallationDate,
       inverterImages: finalInverterImages,
+      panelImages: finalPanelImages,
       batteryImages: finalBatteryImages,
       inverterUsername,
       inverterPassword,
@@ -488,6 +503,7 @@ export async function saveSolarSpecsOnly(formData: FormData) {
       structureMaterial,
       systemInstallationDate,
       inverterImages: finalInverterImages,
+      panelImages: finalPanelImages,
       batteryImages: finalBatteryImages,
       inverterUsername,
       inverterPassword,

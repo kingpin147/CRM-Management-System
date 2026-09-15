@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
-import { Camera, Eye, Zap, Battery, Image as ImageIcon, Sparkles, CheckCircle2, FileText } from 'lucide-react'
+import { Camera, Eye, Zap, Battery, Image as ImageIcon, Sparkles, CheckCircle2, FileText, Sun } from 'lucide-react'
 import { SectionHeader } from '@/components/ui/section-header'
 import { SolarSystemDialog } from './SolarSystemDialog'
 
@@ -17,8 +17,7 @@ interface EquipmentPhotosCardProps {
 export function EquipmentPhotosCard({ customerId, solarSystem, canEdit }: EquipmentPhotosCardProps) {
   const [activeImage, setActiveImage] = useState<{ url: string; title: string } | null>(null)
 
-  const inverterImage = solarSystem?.inverterImages?.[0]
-  const batteryImage = solarSystem?.batteryImages?.[0]
+  const panelImage = solarSystem?.panelImages?.[0] || solarSystem?.panelPhoto
 
   return (
     <Card className="shadow-sm border-slate-200 overflow-hidden bg-white">
@@ -107,6 +106,74 @@ export function EquipmentPhotosCard({ customerId, solarSystem, canEdit }: Equipm
               </div>
             );
           })}
+
+          {/* Solar PV Panels Array Photo Card */}
+          <div className="rounded-xl border border-amber-300/80 bg-gradient-to-b from-amber-50/50 to-orange-50/30 p-4 space-y-3 shadow-2xs relative">
+            <div className="flex items-center justify-between border-b border-amber-200 pb-2.5">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-amber-600 text-white flex items-center justify-center font-bold shadow-2xs">
+                  <Sun className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-[#002868]">Solar PV Panels Array Photo</h4>
+                  <p className="text-[11px] text-slate-500 font-mono">
+                    {solarSystem?.panelBrand ? `${solarSystem.panelBrand} (${solarSystem.noOfPanels || 0} Panels)` : 'Solar Panels Array'}
+                  </p>
+                </div>
+              </div>
+
+              {panelImage ? (
+                <Badge variant="outline" className="bg-emerald-100 text-emerald-950 border-emerald-300 font-bold text-[10px] flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Photo Uploaded
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="bg-amber-100 text-amber-900 border-amber-300 text-[10px] font-medium">
+                  No Image Uploaded
+                </Badge>
+              )}
+            </div>
+
+            {panelImage ? (
+              <div
+                onClick={() => setActiveImage({ url: panelImage, title: `${solarSystem?.panelBrand || 'Solar Panels'} Array Photo` })}
+                className="group relative w-full h-56 rounded-lg overflow-hidden border border-amber-300/90 bg-slate-950 flex items-center justify-center cursor-pointer shadow-inner transition-all hover:border-amber-500"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={panelImage}
+                  alt="Solar PV Panels Array Photo"
+                  className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1.5 backdrop-blur-xs">
+                  <Eye className="w-4 h-4 text-amber-300" /> View Full Panels Photo
+                </div>
+              </div>
+            ) : (
+              <div className="w-full h-56 rounded-lg border-2 border-dashed border-amber-300 bg-amber-50/40 flex flex-col items-center justify-center gap-2 text-center p-4">
+                <ImageIcon className="w-8 h-8 text-amber-500 opacity-60" />
+                <p className="text-xs font-semibold text-slate-700">No PV Panels Array Image Uploaded</p>
+                <p className="text-[11px] text-slate-500 max-w-xs">
+                  Upload a solar PV array photo in Solar Specs dialog.
+                </p>
+              </div>
+            )}
+
+            {/* Specs Summary Row */}
+            <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-slate-200/60 font-mono">
+              <div className="bg-white/80 p-2 rounded border border-slate-200/60">
+                <span className="text-[10px] text-slate-500 block">Technology / Type:</span>
+                <span className="font-bold text-[#002868] truncate block">
+                  {solarSystem?.panelTechnology || 'Topcon'} ({solarSystem?.panelType || 'Bifacial'})
+                </span>
+              </div>
+              <div className="bg-white/80 p-2 rounded border border-slate-200/60">
+                <span className="text-[10px] text-slate-500 block">Total PV Capacity:</span>
+                <span className="font-bold text-amber-900">
+                  {solarSystem?.totalWattage ? `${(Number(solarSystem.totalWattage) / 1000).toFixed(2)} kW` : '—'}
+                </span>
+              </div>
+            </div>
+          </div>
 
           {/* Battery Cards */}
           {Array.from({ length: solarSystem?.noOfBatteries || 0 }).map((_, i) => {

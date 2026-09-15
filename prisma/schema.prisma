@@ -156,6 +156,7 @@ model SolarSystem {
   earthingStatus         String?
   breakerStatus          String?
   inverterImages         String[]  @default([])
+  panelImages            String[]  @default([])
   batteryImages          String[]  @default([])
   inverterUsername       String?
   inverterPassword       String?

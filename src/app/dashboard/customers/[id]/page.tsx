@@ -802,6 +802,20 @@ export default async function CustomerDetailPage({
                             </TableCell>
                           </TableRow>
 
+                          {/* Panel Type */}
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Panel Type</TableCell>
+                            <TableCell className="text-xs">
+                              {customer.solarSystem?.panelType ? (
+                                <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                                  {customer.solarSystem.panelType}
+                                </Badge>
+                              ) : (
+                                <span className="text-slate-400 font-medium">—</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+
                           {/* Panel Wattage & No of Panels */}
                           <TableRow className="border-b hover:bg-transparent">
                             <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Panel Wattage</TableCell>
@@ -833,6 +847,18 @@ export default async function CustomerDetailPage({
                             <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Panel Warranty End Date</TableCell>
                             <TableCell className="font-mono text-xs font-semibold text-amber-900">
                               {formatDate(customer.solarSystem?.panelWarrantyEnd)}
+                            </TableCell>
+                          </TableRow>
+
+                          {/* Panel Photo */}
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">PV Panels Photo</TableCell>
+                            <TableCell className="text-xs">
+                              <EquipmentPhotoViewer
+                                imageUrl={customer.solarSystem?.panelImages?.[0]}
+                                title={`${customer.solarSystem?.panelBrand || 'Solar PV'} Array Photo`}
+                                buttonLabel="View Panels Photo"
+                              />
                             </TableCell>
                           </TableRow>
 

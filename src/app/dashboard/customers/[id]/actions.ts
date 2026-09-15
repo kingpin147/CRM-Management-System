@@ -248,14 +248,16 @@ export async function saveSolarSystem(formData: FormData) {
   const installerName = formData.get('installerName') as string || 'EnergyGurus Technical Team'
   const installerCompany = formData.get('installerCompany') as string || 'EnergyGurus Private Limited'
 
-  // Images (R2 text URLs)
-  const inverterImagesRaw = formData.get('inverterImages') as string || formData.get('inverterImageUrl') as string
-  const batteryImagesRaw = formData.get('batteryImages') as string || formData.get('batteryImageUrl') as string
+  // Images (R2 / Storage text URLs)
+  const inverterImagesRaw = formData.get('inverterImages') as string || formData.get('inverterImageUrls') as string || formData.get('inverterImageUrl') as string
+  const batteryImagesRaw = formData.get('batteryImages') as string || formData.get('batteryImageUrls') as string || formData.get('batteryImageUrl') as string
+  const panelImagesRaw = formData.get('panelImages') as string || formData.get('panelImageUrls') as string || formData.get('panelImageUrl') as string
 
   let inverterImages: string[] | undefined
   if (inverterImagesRaw) {
     try {
-      inverterImages = JSON.parse(inverterImagesRaw)
+      const parsed = JSON.parse(inverterImagesRaw)
+      inverterImages = Array.isArray(parsed) ? parsed.filter(Boolean) : [inverterImagesRaw]
     } catch {
       inverterImages = [inverterImagesRaw]
     }
@@ -264,9 +266,20 @@ export async function saveSolarSystem(formData: FormData) {
   let batteryImages: string[] | undefined
   if (batteryImagesRaw) {
     try {
-      batteryImages = JSON.parse(batteryImagesRaw)
+      const parsed = JSON.parse(batteryImagesRaw)
+      batteryImages = Array.isArray(parsed) ? parsed.filter(Boolean) : [batteryImagesRaw]
     } catch {
       batteryImages = [batteryImagesRaw]
+    }
+  }
+
+  let panelImages: string[] | undefined
+  if (panelImagesRaw) {
+    try {
+      const parsed = JSON.parse(panelImagesRaw)
+      panelImages = Array.isArray(parsed) ? parsed.filter(Boolean) : [panelImagesRaw]
+    } catch {
+      panelImages = [panelImagesRaw]
     }
   }
 
@@ -282,6 +295,10 @@ export async function saveSolarSystem(formData: FormData) {
     const finalBatteryImages = batteryImages !== undefined
       ? (batteryImages.length > 0 ? batteryImages : (currentSystem?.batteryImages || []))
       : (currentSystem?.batteryImages || [])
+
+    const finalPanelImages = panelImages !== undefined
+      ? (panelImages.length > 0 ? panelImages : (currentSystem?.panelImages || []))
+      : (currentSystem?.panelImages || [])
 
     await prisma.solarSystem.upsert({
       where: { customerId },
@@ -328,6 +345,7 @@ export async function saveSolarSystem(formData: FormData) {
         inverterPassword,
         inverterInvoiceUrl,
         inverterImages: finalInverterImages,
+        panelImages: finalPanelImages,
         batteryImages: finalBatteryImages,
       },
       create: {
@@ -374,8 +392,9 @@ export async function saveSolarSystem(formData: FormData) {
         inverterPassword,
         inverterInvoiceUrl,
         inverterImages: finalInverterImages,
+        panelImages: finalPanelImages,
         batteryImages: finalBatteryImages,
-      },
+      }
     })
 
     revalidatePath(`/dashboard/customers/${customerId}`)

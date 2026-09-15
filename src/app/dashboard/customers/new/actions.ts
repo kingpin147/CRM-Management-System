@@ -154,6 +154,16 @@ export async function createCustomer(formData: FormData) {
     }
   }
 
+  let panelImages: string[] = []
+  const panelImagesRaw = (formData.get('panelImages') as string) || (formData.get('panelImageUrls') as string) || (formData.get('panelImageUrl') as string)
+  if (panelImagesRaw && typeof panelImagesRaw === 'string') {
+    try {
+      panelImages = JSON.parse(panelImagesRaw)
+    } catch {
+      panelImages = [panelImagesRaw]
+    }
+  }
+
   try {
     const customerCode = await generateCustomerCode()
     const crfNumber = `CRF-${Math.floor(100000 + Math.random() * 900000)}`
@@ -273,6 +283,7 @@ export async function createCustomer(formData: FormData) {
             inverterPassword,
             inverterInvoiceUrl,
             inverterImages,
+            panelImages,
             batteryImages,
           }
         },
