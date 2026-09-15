@@ -87,7 +87,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
       inverterBrand: '',
       inverterType: '',
       inverterPhase: '',
-      noOfInverters: 0,
+      noOfInverters: 1,
       inverterSerial: '',
       inverterCategory: '',
       inverterSize: '',

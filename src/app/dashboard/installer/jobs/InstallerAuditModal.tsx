@@ -550,7 +550,11 @@ export function InstallerAuditModal({
     setSaveSuccessMsg(null)
     try {
       const fd = buildSpecsFormData()
-      await saveSolarSpecsOnly(fd)
+      const res = await fetch('/api/installer/save-specs', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Failed to save hardware specs')
+      }
       setSaveSuccessMsg('Hardware Specs successfully saved to database!')
       setTimeout(() => setSaveSuccessMsg(null), 3000)
       return true
@@ -644,7 +648,12 @@ export function InstallerAuditModal({
 
       formData.append('installerName', installerName || 'Installer Team')
 
-      await submitInstallerAudit(formData)
+      const res = await fetch('/api/installer/audit', { method: 'POST', body: formData })
+      const data = await res.json()
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Failed to submit technical audit')
+      }
+
       if (onSuccess) onSuccess()
       onClose()
     } catch (err: any) {

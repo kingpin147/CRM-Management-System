@@ -475,7 +475,7 @@ export function AuditDocument({
                   </View>
                   <View style={styles.row}>
                     <Text style={styles.label}>Inverter Serial #:</Text>
-                    <Text style={styles.value}>{solar.inverterSerial || '—'}</Text>
+                    <Text style={styles.value}>{solar.inverterSerials?.filter(Boolean).join(', ') || solar.inverterSerial || '—'}</Text>
                   </View>
                   <View style={styles.row}>
                     <Text style={styles.label}>PV Panels Spec:</Text>
@@ -485,6 +485,12 @@ export function AuditDocument({
                     <Text style={styles.label}>Battery Spec:</Text>
                     <Text style={styles.value}>{batteryDisplay}</Text>
                   </View>
+                  {solar.batterySerials?.filter(Boolean).length > 0 && (
+                    <View style={styles.row}>
+                      <Text style={styles.label}>Battery Serial #:</Text>
+                      <Text style={styles.value}>{solar.batterySerials.filter(Boolean).join(', ')}</Text>
+                    </View>
+                  )}
                 </View>
               </View>
             </View>

@@ -530,7 +530,7 @@ export function SignupDocument({ customer, logoSrc }: { customer: any; logoSrc?:
                     </View>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>Inverter Serial #:</Text>
-                      <Text style={styles.value}>{solar?.inverterSerial || '—'}</Text>
+                      <Text style={styles.value}>{solar?.inverterSerials?.filter(Boolean).join(', ') || solar?.inverterSerial || '—'}</Text>
                     </View>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>Inverter Warranty:</Text>
@@ -595,7 +595,7 @@ export function SignupDocument({ customer, logoSrc }: { customer: any; logoSrc?:
                     </View>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>Battery Serial #:</Text>
-                      <Text style={styles.value}>{solar?.batterySerial || '—'}</Text>
+                      <Text style={styles.value}>{solar?.batterySerials?.filter(Boolean).join(', ') || solar?.batterySerial || '—'}</Text>
                     </View>
                     <View style={styles.gridRowLast}>
                       <Text style={styles.label}>Battery Warranty:</Text>
