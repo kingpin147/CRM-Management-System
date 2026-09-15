@@ -2,6 +2,22 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 
+function parseDateSafe(val: any): Date | null {
+  if (!val || typeof val !== 'string' || val.trim() === '') return null
+  const d = new Date(val)
+  return isNaN(d.getTime()) ? null : d
+}
+
+function parseJsonArraySafe<T>(val: any, fallback: T[] = []): T[] {
+  if (!val || typeof val !== 'string' || val.trim() === '') return fallback
+  try {
+    const parsed = JSON.parse(val)
+    return Array.isArray(parsed) ? parsed : fallback
+  } catch {
+    return fallback
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData()
@@ -23,15 +39,13 @@ export async function POST(req: NextRequest) {
     const inverterPhase = (formData.get('inverterPhase') as string) || 'Three Phase'
     const inverterCategory = (formData.get('inverterCategory') as string) || 'Low Voltage'
     const inverterSize = (formData.get('inverterSize') as string) || ''
-    const noOfInverters = Number(formData.get('noOfInverters') || 1)
+    const noOfInverters = Math.max(1, Number(formData.get('noOfInverters')) || 1)
     
-    const inverterSerialsStr = formData.get('inverterSerials') as string
-    const inverterSerials = inverterSerialsStr ? JSON.parse(inverterSerialsStr) : []
-    
-    const inverterWarrantyEndsStr = formData.get('inverterWarrantyEnds') as string
-    const inverterWarrantyEnds = inverterWarrantyEndsStr 
-      ? JSON.parse(inverterWarrantyEndsStr).map((d: string) => d ? new Date(d) : new Date('1970-01-01')) 
-      : []
+    const inverterSerials = parseJsonArraySafe<string>(formData.get('inverterSerials') as string, [])
+    const rawInverterWarrantyEnds = parseJsonArraySafe<string>(formData.get('inverterWarrantyEnds') as string, [])
+    const inverterWarrantyEnds: Date[] = rawInverterWarrantyEnds
+      .map(d => parseDateSafe(d))
+      .filter((d): d is Date => d !== null)
 
     const inverterUsername = (formData.get('inverterUsername') as string) || null
     const inverterPassword = (formData.get('inverterPassword') as string) || null
@@ -44,7 +58,7 @@ export async function POST(req: NextRequest) {
     const panelWattage = Number(formData.get('panelWattage') || 0)
     const noOfPanels = Number(formData.get('noOfPanels') || 0)
     const totalWattage = panelWattage * noOfPanels
-    const panelWarrantyEnd = formData.get('panelWarrantyEnd') ? new Date(formData.get('panelWarrantyEnd') as string) : null
+    const panelWarrantyEnd = parseDateSafe(formData.get('panelWarrantyEnd') as string)
 
     // Battery Energy Storage System (BESS)
     const batteryBrand = (formData.get('batteryBrand') as string) || ''
@@ -52,22 +66,20 @@ export async function POST(req: NextRequest) {
     const batteryCategory = (formData.get('batteryCategory') as string) || 'Low Voltage'
     const noOfBatteries = Number(formData.get('noOfBatteries') || 0)
     
-    const batterySerialsStr = formData.get('batterySerials') as string
-    const batterySerials = batterySerialsStr ? JSON.parse(batterySerialsStr) : []
-    
-    const batteryWarrantyEndsStr = formData.get('batteryWarrantyEnds') as string
-    const batteryWarrantyEnds = batteryWarrantyEndsStr 
-      ? JSON.parse(batteryWarrantyEndsStr).map((d: string) => d ? new Date(d) : new Date('1970-01-01')) 
-      : []
+    const batterySerials = parseJsonArraySafe<string>(formData.get('batterySerials') as string, [])
+    const rawBatteryWarrantyEnds = parseJsonArraySafe<string>(formData.get('batteryWarrantyEnds') as string, [])
+    const batteryWarrantyEnds: Date[] = rawBatteryWarrantyEnds
+      .map(d => parseDateSafe(d))
+      .filter((d): d is Date => d !== null)
 
     // Mounting Structure, Protection & Installation Details
     const structureType = (formData.get('structureType') as string) || 'Elevated GI Structure'
     const structureMaterial = (formData.get('structureMaterial') as string) || 'Hot Dip Galvanized (HDG)'
     const ingressProtection = (formData.get('ingressProtection') as string) || 'IP65'
-    const breakerName = (formData.get('breakerName') as string) || ''
+    const breakerName = (formData.get('breakerName') as string) || 'Standard DC/AC Breakers'
     const earthing = (formData.get('earthing') as string) || 'Both'
-    const lightningProtection = formData.get('lightningProtection') === 'true' || formData.get('lightningProtection') === 'Yes'
-    const systemInstallationDate = formData.get('systemInstallationDate') ? new Date(formData.get('systemInstallationDate') as string) : null
+    const lightningProtection = formData.get('lightningProtection') === 'true' || formData.get('lightningProtection') === 'Yes' || formData.get('lightningProtection') === 'Installed'
+    const systemInstallationDate = parseDateSafe(formData.get('systemInstallationDate') as string)
 
     const customerRecord = await prisma.customer.findUnique({
       where: { id: customerId },
@@ -75,16 +87,11 @@ export async function POST(req: NextRequest) {
     })
     const currentSystem = customerRecord?.solarSystem
 
-    const inverterImageUrlsStr = (formData.get('inverterImageUrls') as string) || ''
-    const finalInverterImages = inverterImageUrlsStr ? JSON.parse(inverterImageUrlsStr) : (currentSystem?.inverterImages || [])
+    const rawInverterImageUrls = parseJsonArraySafe<string>(formData.get('inverterImageUrls') as string, [])
+    const finalInverterImages = rawInverterImageUrls.length > 0 ? rawInverterImageUrls : (currentSystem?.inverterImages || [])
 
-    const batteryImageUrlsStr = (formData.get('batteryImageUrls') as string) || ''
-    const finalBatteryImages = batteryImageUrlsStr ? JSON.parse(batteryImageUrlsStr) : (currentSystem?.batteryImages || [])
-
-    const panelImageUrl = (formData.get('panelImageUrl') as string) || ''
-    const finalPanelImages = panelImageUrl 
-      ? [panelImageUrl] 
-      : (currentSystem as any)?.panelImages || []
+    const rawBatteryImageUrls = parseJsonArraySafe<string>(formData.get('batteryImageUrls') as string, [])
+    const finalBatteryImages = rawBatteryImageUrls.length > 0 ? rawBatteryImageUrls : (currentSystem?.batteryImages || [])
 
     await prisma.solarSystem.upsert({
       where: { customerId },

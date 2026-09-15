@@ -4,6 +4,22 @@ import prisma from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { calculateNextAuditDate, getAuditFrequencyLabel, formatDate } from '@/lib/utils'
 
+function parseDateSafe(val: any): Date | null {
+  if (!val || typeof val !== 'string' || val.trim() === '') return null
+  const d = new Date(val)
+  return isNaN(d.getTime()) ? null : d
+}
+
+function parseJsonArraySafe<T>(val: any, fallback: T[] = []): T[] {
+  if (!val || typeof val !== 'string' || val.trim() === '') return fallback
+  try {
+    const parsed = JSON.parse(val)
+    return Array.isArray(parsed) ? parsed : fallback
+  } catch {
+    return fallback
+  }
+}
+
 export async function submitInstallerAudit(formData: FormData) {
   const customerId = formData.get('customerId') as string
   if (!customerId) throw new Error('Customer ID is required')
@@ -27,15 +43,13 @@ export async function submitInstallerAudit(formData: FormData) {
   const inverterPhase = (formData.get('inverterPhase') as string) || 'Three Phase'
   const inverterCategory = (formData.get('inverterCategory') as string) || 'Low Voltage'
   const inverterSize = (formData.get('inverterSize') as string) || ''
-  const noOfInverters = Number(formData.get('noOfInverters') || 1)
+  const noOfInverters = Math.max(1, Number(formData.get('noOfInverters')) || 1)
   
-  const inverterSerialsStr = formData.get('inverterSerials') as string
-  const inverterSerials = inverterSerialsStr ? JSON.parse(inverterSerialsStr) : []
-  
-  const inverterWarrantyEndsStr = formData.get('inverterWarrantyEnds') as string
-  const inverterWarrantyEnds = inverterWarrantyEndsStr 
-    ? JSON.parse(inverterWarrantyEndsStr).map((d: string) => d ? new Date(d) : new Date('1970-01-01')) 
-    : []
+  const inverterSerials = parseJsonArraySafe<string>(formData.get('inverterSerials') as string, [])
+  const rawInverterWarrantyEnds = parseJsonArraySafe<string>(formData.get('inverterWarrantyEnds') as string, [])
+  const inverterWarrantyEnds: Date[] = rawInverterWarrantyEnds
+    .map(d => parseDateSafe(d))
+    .filter((d): d is Date => d !== null)
 
   const inverterUsername = (formData.get('inverterUsername') as string) || null
   const inverterPassword = (formData.get('inverterPassword') as string) || null
@@ -48,7 +62,7 @@ export async function submitInstallerAudit(formData: FormData) {
   const panelWattage = Number(formData.get('panelWattage') || 0)
   const noOfPanels = Number(formData.get('noOfPanels') || 0)
   const totalWattage = panelWattage * noOfPanels
-  const panelWarrantyEnd = formData.get('panelWarrantyEnd') ? new Date(formData.get('panelWarrantyEnd') as string) : null
+  const panelWarrantyEnd = parseDateSafe(formData.get('panelWarrantyEnd') as string)
 
   // Server-side validations for Part 2 (Solar Hardware Specs)
   if (!disco.trim()) throw new Error('DISCO Utility Company is required in Section 1.')
@@ -60,10 +74,10 @@ export async function submitInstallerAudit(formData: FormData) {
   if (!inverterType.trim()) throw new Error('Inverter Type is required in Section 2.')
   if (!inverterPhase.trim()) throw new Error('Inverter Phase is required in Section 2.')
   if (!inverterCategory.trim()) throw new Error('Inverter Category is required in Section 2.')
-  if (inverterSerials.length === 0 || inverterSerials.some((s: string) => !s || !s.trim())) {
+  if (inverterSerials.length === 0 || inverterSerials.slice(0, noOfInverters).some((s: string) => !s || !s.trim())) {
     throw new Error('All Inverter Unit Serial numbers must be provided in Section 2.')
   }
-  if (inverterWarrantyEnds.length === 0 || inverterWarrantyEnds.some((d: any) => !d || isNaN(d.getTime()) || d.getFullYear() <= 1970)) {
+  if (inverterWarrantyEnds.length === 0 || inverterWarrantyEnds.length < noOfInverters) {
     throw new Error('All Inverter Unit Warranty Expiry Dates must be provided in Section 2.')
   }
   if (!panelBrand.trim()) throw new Error('Solar PV Panel Brand is required in Section 3.')
@@ -71,8 +85,8 @@ export async function submitInstallerAudit(formData: FormData) {
   if (!panelType.trim()) throw new Error('Solar PV Panel Type is required in Section 3.')
   if (panelWattage <= 0) throw new Error('Valid Solar Panel Wattage is required in Section 3.')
   if (noOfPanels <= 0) throw new Error('Valid Number of Solar Panels is required in Section 3.')
-  if (!panelWarrantyEnd || isNaN(panelWarrantyEnd.getTime())) {
-    throw new Error('Solar Panel Warranty Expiry Date is required in Section 3.')
+  if (!panelWarrantyEnd) {
+    throw new Error('Valid Solar Panel Warranty Expiry Date is required in Section 3.')
   }
 
   // Battery Energy Storage System (BESS)
@@ -81,22 +95,20 @@ export async function submitInstallerAudit(formData: FormData) {
   const batteryCategory = (formData.get('batteryCategory') as string) || 'Low Voltage'
   const noOfBatteries = Number(formData.get('noOfBatteries') || 0)
   
-  const batterySerialsStr = formData.get('batterySerials') as string
-  const batterySerials = batterySerialsStr ? JSON.parse(batterySerialsStr) : []
-  
-  const batteryWarrantyEndsStr = formData.get('batteryWarrantyEnds') as string
-  const batteryWarrantyEnds = batteryWarrantyEndsStr 
-    ? JSON.parse(batteryWarrantyEndsStr).map((d: string) => d ? new Date(d) : new Date('1970-01-01')) 
-    : []
+  const batterySerials = parseJsonArraySafe<string>(formData.get('batterySerials') as string, [])
+  const rawBatteryWarrantyEnds = parseJsonArraySafe<string>(formData.get('batteryWarrantyEnds') as string, [])
+  const batteryWarrantyEnds: Date[] = rawBatteryWarrantyEnds
+    .map(d => parseDateSafe(d))
+    .filter((d): d is Date => d !== null)
 
   if (noOfBatteries > 0) {
     if (!batteryBrand.trim() || batteryBrand.trim().toUpperCase() === 'N/A') {
       throw new Error('Battery Brand is required in Section 4 when number of batteries is greater than 0.')
     }
-    if (batterySerials.length === 0 || batterySerials.some((s: string) => !s || !s.trim())) {
+    if (batterySerials.length === 0 || batterySerials.slice(0, noOfBatteries).some((s: string) => !s || !s.trim())) {
       throw new Error('All Battery Unit Serial numbers must be provided in Section 4.')
     }
-    if (batteryWarrantyEnds.length === 0 || batteryWarrantyEnds.some((d: any) => !d || isNaN(d.getTime()) || d.getFullYear() <= 1970)) {
+    if (batteryWarrantyEnds.length === 0 || batteryWarrantyEnds.length < noOfBatteries) {
       throw new Error('All Battery Unit Warranty Expiry Dates must be provided in Section 4.')
     }
   }
@@ -105,27 +117,27 @@ export async function submitInstallerAudit(formData: FormData) {
   const structureType = (formData.get('structureType') as string) || 'Elevated GI Structure'
   const structureMaterial = (formData.get('structureMaterial') as string) || 'Hot Dip Galvanized (HDG)'
   const ingressProtection = (formData.get('ingressProtection') as string) || 'IP65'
-  const breakerName = (formData.get('breakerName') as string) || ''
+  const breakerName = (formData.get('breakerName') as string) || 'Standard DC/AC Breakers'
   const earthing = (formData.get('earthing') as string) || 'Both'
-  const systemInstallationDate = formData.get('systemInstallationDate') ? new Date(formData.get('systemInstallationDate') as string) : null
+  const systemInstallationDate = parseDateSafe(formData.get('systemInstallationDate') as string)
 
   if (!structureType.trim()) throw new Error('Structure Type is required in Section 5.')
   if (!structureMaterial.trim()) throw new Error('Structure Material is required in Section 5.')
   if (!ingressProtection.trim()) throw new Error('Ingress Protection rating is required in Section 5.')
   if (!breakerName.trim()) throw new Error('Breaker & Switchgear Specification is required in Section 5.')
   if (!earthing.trim()) throw new Error('Earthing Protection Type is required in Section 5.')
-  if (!systemInstallationDate || isNaN(systemInstallationDate.getTime())) {
-    throw new Error('System Installation Date is required in Section 5.')
+  if (!systemInstallationDate) {
+    throw new Error('Valid System Installation Date is required in Section 5.')
   }
 
   // Part 3: 7-Point Audit Checklist Validations
-  const inverterStatus = (formData.get('inverterStatus') as string) || ''
-  const panelStatus = (formData.get('panelStatus') as string) || ''
-  const batteryStatus = (formData.get('batteryStatus') as string) || ''
-  const structureStatus = (formData.get('structureStatus') as string) || ''
-  const cableStatus = (formData.get('cableStatus') as string) || ''
-  const earthingStatus = (formData.get('earthingStatus') as string) || ''
-  const breakerStatus = (formData.get('breakerStatus') as string) || ''
+  const inverterStatus = (formData.get('inverterStatus') as string) || 'Good'
+  const panelStatus = (formData.get('panelStatus') as string) || 'Good'
+  const batteryStatus = (formData.get('batteryStatus') as string) || 'Good'
+  const structureStatus = (formData.get('structureStatus') as string) || 'Good'
+  const cableStatus = (formData.get('cableStatus') as string) || 'Good'
+  const earthingStatus = (formData.get('earthingStatus') as string) || 'Good'
+  const breakerStatus = (formData.get('breakerStatus') as string) || 'Good'
 
   if (!inverterStatus.trim()) throw new Error('Inverter Operating Condition is required in Part 3 Checklist.')
   if (!panelStatus.trim()) throw new Error('Solar PV Panels Status is required in Part 3 Checklist.')
@@ -147,12 +159,10 @@ export async function submitInstallerAudit(formData: FormData) {
   const earthingAcOhms = Number(earthingAcOhmsRaw)
   const earthingDcOhms = Number(earthingDcOhmsRaw)
 
-  const earthingLastCheckStr = formData.get('earthingLastCheck') as string
-  if (!earthingLastCheckStr) throw new Error('Earthing Inspection Date is required in Part 3.')
-  const earthingLastCheck = new Date(earthingLastCheckStr)
-  if (isNaN(earthingLastCheck.getTime())) throw new Error('Valid Earthing Inspection Date is required in Part 3.')
+  const earthingLastCheck = parseDateSafe(formData.get('earthingLastCheck') as string)
+  if (!earthingLastCheck) throw new Error('Valid Earthing Inspection Date is required in Part 3.')
 
-  const lightningProtection = formData.get('lightningProtection') === 'true' || formData.get('lightningProtection') === 'Installed'
+  const lightningProtection = formData.get('lightningProtection') === 'true' || formData.get('lightningProtection') === 'Installed' || formData.get('lightningProtection') === 'Yes'
 
   const installerName = (formData.get('installerName') as string) || undefined
   const installerCompany = (formData.get('installerCompany') as string) || 'EnergyGurus Technical Operations'
@@ -166,16 +176,11 @@ export async function submitInstallerAudit(formData: FormData) {
   // Equipment photos
   const currentSystem = customerRecord?.solarSystem
 
-  const inverterImageUrlsStr = (formData.get('inverterImageUrls') as string) || ''
-  const finalInverterImages = inverterImageUrlsStr ? JSON.parse(inverterImageUrlsStr) : (currentSystem?.inverterImages || [])
+  const rawInverterImageUrls = parseJsonArraySafe<string>(formData.get('inverterImageUrls') as string, [])
+  const finalInverterImages = rawInverterImageUrls.length > 0 ? rawInverterImageUrls : (currentSystem?.inverterImages || [])
 
-  const batteryImageUrlsStr = (formData.get('batteryImageUrls') as string) || ''
-  const finalBatteryImages = batteryImageUrlsStr ? JSON.parse(batteryImageUrlsStr) : (currentSystem?.batteryImages || [])
-
-  const panelImageUrl = (formData.get('panelImageUrl') as string) || ''
-  const finalPanelImages = panelImageUrl 
-    ? [panelImageUrl] 
-    : (currentSystem as any)?.panelImages || []
+  const rawBatteryImageUrls = parseJsonArraySafe<string>(formData.get('batteryImageUrls') as string, [])
+  const finalBatteryImages = rawBatteryImageUrls.length > 0 ? rawBatteryImageUrls : (currentSystem?.batteryImages || [])
 
   await prisma.solarSystem.upsert({
     where: { customerId },
@@ -310,7 +315,9 @@ export async function submitInstallerAudit(formData: FormData) {
       customerId,
       customerCode: updatedCustomer.customerCode || customerId,
       customerName: updatedCustomer.fullName || 'Customer',
-      actionType: 'PENDING_ACTIVATION',
+      actionType: 'STATUS_CHANGE',
+      oldStatus: (customerRecord?.status as any) || null,
+      newStatus: 'PENDING_ACTIVATION',
       notes: `Installer (${installerName || 'Technical Specialist'}) completed Solar Specs (Part 2) & System Audit (Part 3). Next Scheduled Audit: ${nextAuditDate ? formatDate(nextAuditDate) : 'N/A'} (${getAuditFrequencyLabel(packageTier)}). Routed to O&M Manager for activation.`,
       performedBy: installerName || 'Installer Team'
     }
@@ -341,15 +348,13 @@ export async function saveSolarSpecsOnly(formData: FormData) {
   const inverterPhase = (formData.get('inverterPhase') as string) || 'Three Phase'
   const inverterCategory = (formData.get('inverterCategory') as string) || 'Low Voltage'
   const inverterSize = (formData.get('inverterSize') as string) || ''
-  const noOfInverters = Math.max(1, Number(formData.get('noOfInverters') || 1))
+  const noOfInverters = Math.max(1, Number(formData.get('noOfInverters')) || 1)
   
-  const inverterSerialsStr = formData.get('inverterSerials') as string
-  const inverterSerials = inverterSerialsStr ? JSON.parse(inverterSerialsStr) : []
-  
-  const inverterWarrantyEndsStr = formData.get('inverterWarrantyEnds') as string
-  const inverterWarrantyEnds = inverterWarrantyEndsStr 
-    ? JSON.parse(inverterWarrantyEndsStr).map((d: string) => d ? new Date(d) : new Date('1970-01-01')) 
-    : []
+  const inverterSerials = parseJsonArraySafe<string>(formData.get('inverterSerials') as string, [])
+  const rawInverterWarrantyEnds = parseJsonArraySafe<string>(formData.get('inverterWarrantyEnds') as string, [])
+  const inverterWarrantyEnds: Date[] = rawInverterWarrantyEnds
+    .map(d => parseDateSafe(d))
+    .filter((d): d is Date => d !== null)
 
   const inverterUsername = (formData.get('inverterUsername') as string) || null
   const inverterPassword = (formData.get('inverterPassword') as string) || null
@@ -362,7 +367,7 @@ export async function saveSolarSpecsOnly(formData: FormData) {
   const panelWattage = Number(formData.get('panelWattage') || 0)
   const noOfPanels = Number(formData.get('noOfPanels') || 0)
   const totalWattage = panelWattage * noOfPanels
-  const panelWarrantyEnd = formData.get('panelWarrantyEnd') ? new Date(formData.get('panelWarrantyEnd') as string) : null
+  const panelWarrantyEnd = parseDateSafe(formData.get('panelWarrantyEnd') as string)
 
   // Battery Energy Storage System (BESS)
   const batteryBrand = (formData.get('batteryBrand') as string) || ''
@@ -370,22 +375,20 @@ export async function saveSolarSpecsOnly(formData: FormData) {
   const batteryCategory = (formData.get('batteryCategory') as string) || 'Low Voltage'
   const noOfBatteries = Number(formData.get('noOfBatteries') || 0)
   
-  const batterySerialsStr = formData.get('batterySerials') as string
-  const batterySerials = batterySerialsStr ? JSON.parse(batterySerialsStr) : []
-  
-  const batteryWarrantyEndsStr = formData.get('batteryWarrantyEnds') as string
-  const batteryWarrantyEnds = batteryWarrantyEndsStr 
-    ? JSON.parse(batteryWarrantyEndsStr).map((d: string) => d ? new Date(d) : new Date('1970-01-01')) 
-    : []
+  const batterySerials = parseJsonArraySafe<string>(formData.get('batterySerials') as string, [])
+  const rawBatteryWarrantyEnds = parseJsonArraySafe<string>(formData.get('batteryWarrantyEnds') as string, [])
+  const batteryWarrantyEnds: Date[] = rawBatteryWarrantyEnds
+    .map(d => parseDateSafe(d))
+    .filter((d): d is Date => d !== null)
 
   // Mounting Structure, Protection & Installation Details
   const structureType = (formData.get('structureType') as string) || 'Elevated GI Structure'
   const structureMaterial = (formData.get('structureMaterial') as string) || 'Hot Dip Galvanized (HDG)'
   const ingressProtection = (formData.get('ingressProtection') as string) || 'IP65'
-  const breakerName = (formData.get('breakerName') as string) || ''
+  const breakerName = (formData.get('breakerName') as string) || 'Standard DC/AC Breakers'
   const earthing = (formData.get('earthing') as string) || 'Both'
-  const lightningProtection = formData.get('lightningProtection') === 'true' || formData.get('lightningProtection') === 'Yes'
-  const systemInstallationDate = formData.get('systemInstallationDate') ? new Date(formData.get('systemInstallationDate') as string) : null
+  const lightningProtection = formData.get('lightningProtection') === 'true' || formData.get('lightningProtection') === 'Yes' || formData.get('lightningProtection') === 'Installed'
+  const systemInstallationDate = parseDateSafe(formData.get('systemInstallationDate') as string)
 
   const customerRecord = await prisma.customer.findUnique({
     where: { id: customerId },
@@ -393,16 +396,11 @@ export async function saveSolarSpecsOnly(formData: FormData) {
   })
   const currentSystem = customerRecord?.solarSystem
 
-  const inverterImageUrlsStr = (formData.get('inverterImageUrls') as string) || ''
-  const finalInverterImages = inverterImageUrlsStr ? JSON.parse(inverterImageUrlsStr) : (currentSystem?.inverterImages || [])
+  const rawInverterImageUrls = parseJsonArraySafe<string>(formData.get('inverterImageUrls') as string, [])
+  const finalInverterImages = rawInverterImageUrls.length > 0 ? rawInverterImageUrls : (currentSystem?.inverterImages || [])
 
-  const batteryImageUrlsStr = (formData.get('batteryImageUrls') as string) || ''
-  const finalBatteryImages = batteryImageUrlsStr ? JSON.parse(batteryImageUrlsStr) : (currentSystem?.batteryImages || [])
-
-  const panelImageUrl = (formData.get('panelImageUrl') as string) || ''
-  const finalPanelImages = panelImageUrl 
-    ? [panelImageUrl] 
-    : (currentSystem as any)?.panelImages || []
+  const rawBatteryImageUrls = parseJsonArraySafe<string>(formData.get('batteryImageUrls') as string, [])
+  const finalBatteryImages = rawBatteryImageUrls.length > 0 ? rawBatteryImageUrls : (currentSystem?.batteryImages || [])
 
   await prisma.solarSystem.upsert({
     where: { customerId },
@@ -488,7 +486,7 @@ export async function saveSolarSpecsOnly(formData: FormData) {
       ingressProtection,
       structureType,
       structureMaterial,
-      ...(systemInstallationDate ? { systemInstallationDate } : {}),
+      systemInstallationDate,
       inverterImages: finalInverterImages,
       batteryImages: finalBatteryImages,
       inverterUsername,

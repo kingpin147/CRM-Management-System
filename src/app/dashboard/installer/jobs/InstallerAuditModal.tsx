@@ -201,88 +201,214 @@ export function InstallerAuditModal({
   )
   const [lightningProtection, setLightningProtection] = React.useState(solar.lightningProtection !== false ? 'Installed' : 'Not Installed')
 
-  // Re-sync all state whenever customer changes
+  // Re-sync all state whenever customer changes, merging with any local draft
   React.useEffect(() => {
     if (customer) {
       const s = customer.solarSystem || {}
       const p = customer.packagePlan || {}
 
+      let draft: any = null
+      try {
+        const rawDraft = typeof window !== 'undefined' ? localStorage.getItem(`installer_audit_draft_${customer.id}`) : null
+        if (rawDraft) draft = JSON.parse(rawDraft)
+      } catch (e) {
+        console.error('Failed to parse local audit draft', e)
+      }
+
       // Section 1
-      setDisco(s.disco || '')
-      setDiscoRefNo(s.discoRefNo || '')
-      setMeterType(s.meterType || 'Green Meter')
-      setMeterPhase(s.meterPhase || 'Three Phase')
-      setZeroExportDevice(s.zeroExportDevice ? 'Installed' : 'Not Installed')
+      setDisco(s.disco || draft?.disco || '')
+      setDiscoRefNo(s.discoRefNo || draft?.discoRefNo || '')
+      setMeterType(s.meterType || draft?.meterType || 'Green Meter')
+      setMeterPhase(s.meterPhase || draft?.meterPhase || 'Three Phase')
+      setZeroExportDevice(s.zeroExportDevice != null ? (s.zeroExportDevice ? 'Installed' : 'Not Installed') : (draft?.zeroExportDevice || 'Not Installed'))
 
       // Section 2
-      setInverterBrand(s.inverterBrand || '')
-      setInverterSize(s.inverterSize || p.systemSizeKw || '')
-      setInverterType(s.inverterType || 'Hybrid')
-      setInverterPhase(s.inverterPhase || 'Three Phase')
-      setInverterCategory(s.inverterCategory || 'Low Voltage')
-      const invCnt = Math.max(1, Number(s.noOfInverters) || 1)
+      setInverterBrand(s.inverterBrand || draft?.inverterBrand || '')
+      setInverterSize(s.inverterSize || draft?.inverterSize || p.systemSizeKw || '')
+      setInverterType(s.inverterType || draft?.inverterType || 'Hybrid')
+      setInverterPhase(s.inverterPhase || draft?.inverterPhase || 'Three Phase')
+      setInverterCategory(s.inverterCategory || draft?.inverterCategory || 'Low Voltage')
+      const invCnt = Math.max(1, Number(s.noOfInverters) || Number(draft?.noOfInverters) || 1)
       setNoOfInverters(invCnt)
-      const invSers = s.inverterSerials?.length ? [...s.inverterSerials] : [s.inverterSerial || '']
+      const invSers = s.inverterSerials?.length ? [...s.inverterSerials] : (draft?.inverterSerials?.length ? [...draft.inverterSerials] : [s.inverterSerial || ''])
       while (invSers.length < invCnt) invSers.push('')
       setInverterSerials(invSers)
 
-      const invWarrs = s.inverterWarrantyEnds?.length ? s.inverterWarrantyEnds.map((d: any) => d ? new Date(d).toISOString().split('T')[0] : '') : [s.inverterWarrantyEnd ? new Date(s.inverterWarrantyEnd).toISOString().split('T')[0] : '']
+      const invWarrs = s.inverterWarrantyEnds?.length
+        ? s.inverterWarrantyEnds.map((d: any) => d ? new Date(d).toISOString().split('T')[0] : '')
+        : (draft?.inverterWarrantyEnds?.length ? [...draft.inverterWarrantyEnds] : [s.inverterWarrantyEnd ? new Date(s.inverterWarrantyEnd).toISOString().split('T')[0] : ''])
       while (invWarrs.length < invCnt) invWarrs.push('')
       setInverterWarrantyEnds(invWarrs)
 
-      setInverterImageUrls(s.inverterImages?.length ? s.inverterImages : [])
-      setInverterUsername(s.inverterUsername || '')
-      setInverterPassword(s.inverterPassword || '')
-      setInverterInvoiceUrl(s.inverterInvoiceUrl || '')
+      setInverterImageUrls(s.inverterImages?.length ? s.inverterImages : (draft?.inverterImageUrls || []))
+      setInverterUsername(s.inverterUsername || draft?.inverterUsername || '')
+      setInverterPassword(s.inverterPassword || draft?.inverterPassword || '')
+      setInverterInvoiceUrl(s.inverterInvoiceUrl || draft?.inverterInvoiceUrl || '')
 
       // Section 3
-      setPanelBrand(s.panelBrand || '')
-      setPanelTechnology(s.panelTechnology || 'Topcon')
-      setPanelType(s.panelType || 'Tier-1 Monofacial')
-      setPanelWattage(s.panelWattage != null ? Number(s.panelWattage) : 0)
-      setNoOfPanels(s.noOfPanels != null ? Number(s.noOfPanels) : 0)
-      setPanelWarrantyEnd(s.panelWarrantyEnd ? new Date(s.panelWarrantyEnd).toISOString().split('T')[0] : '')
-      setPanelImageUrl(s.panelImages?.[0] || '')
+      setPanelBrand(s.panelBrand || draft?.panelBrand || '')
+      setPanelTechnology(s.panelTechnology || draft?.panelTechnology || 'Topcon')
+      setPanelType(s.panelType || draft?.panelType || 'Tier-1 Monofacial')
+      setPanelWattage(s.panelWattage != null ? Number(s.panelWattage) : (draft?.panelWattage != null ? Number(draft.panelWattage) : 0))
+      setNoOfPanels(s.noOfPanels != null ? Number(s.noOfPanels) : (draft?.noOfPanels != null ? Number(draft.noOfPanels) : 0))
+      setPanelWarrantyEnd(s.panelWarrantyEnd ? new Date(s.panelWarrantyEnd).toISOString().split('T')[0] : (draft?.panelWarrantyEnd || ''))
+      setPanelImageUrl(s.panelImages?.[0] || draft?.panelImageUrl || '')
 
       // Section 4
-      setBatteryBrand(s.batteryBrand || '')
-      setBatteryType(s.batteryType || 'Lithium-ion')
-      setBatteryCategory(s.batteryCategory || 'Low Voltage (LV)')
-      const batCnt = Math.max(0, Number(s.noOfBatteries) || (s.batteryBrand && s.batteryBrand !== 'None' ? 1 : 0))
+      setBatteryBrand(s.batteryBrand || draft?.batteryBrand || '')
+      setBatteryType(s.batteryType || draft?.batteryType || 'Lithium-ion')
+      setBatteryCategory(s.batteryCategory || draft?.batteryCategory || 'Low Voltage (LV)')
+      const batCnt = Math.max(0, Number(s.noOfBatteries) || Number(draft?.noOfBatteries) || (s.batteryBrand && s.batteryBrand !== 'None' ? 1 : 0))
       setNoOfBatteries(batCnt)
-      const batSers = s.batterySerials?.length ? [...s.batterySerials] : [s.batterySerial || '']
+      const batSers = s.batterySerials?.length ? [...s.batterySerials] : (draft?.batterySerials?.length ? [...draft.batterySerials] : [s.batterySerial || ''])
       while (batSers.length < Math.max(1, batCnt)) batSers.push('')
       setBatterySerials(batSers)
 
-      const batWarrs = s.batteryWarrantyEnds?.length ? s.batteryWarrantyEnds.map((d: any) => d ? new Date(d).toISOString().split('T')[0] : '') : [s.batteryWarrantyEnd ? new Date(s.batteryWarrantyEnd).toISOString().split('T')[0] : '']
+      const batWarrs = s.batteryWarrantyEnds?.length
+        ? s.batteryWarrantyEnds.map((d: any) => d ? new Date(d).toISOString().split('T')[0] : '')
+        : (draft?.batteryWarrantyEnds?.length ? [...draft.batteryWarrantyEnds] : [s.batteryWarrantyEnd ? new Date(s.batteryWarrantyEnd).toISOString().split('T')[0] : ''])
       while (batWarrs.length < Math.max(1, batCnt)) batWarrs.push('')
       setBatteryWarrantyEnds(batWarrs)
 
-      setBatteryImageUrls(s.batteryImages?.length ? s.batteryImages : [])
+      setBatteryImageUrls(s.batteryImages?.length ? s.batteryImages : (draft?.batteryImageUrls || []))
 
       // Section 5
-      setStructureType(s.structureType || 'Elevated')
-      setStructureMaterial(s.structureMaterial || 'Hot Dip Galvanized')
-      setIngressProtection(s.ingressProtection || 'IP65')
-      setBreakerName(s.breakerName || 'Standard DC/AC Breakers')
-      setEarthing(s.earthing || 'Both')
-      setSystemInstallationDate(s.systemInstallationDate ? new Date(s.systemInstallationDate).toISOString().split('T')[0] : '')
+      setStructureType(s.structureType || draft?.structureType || 'Elevated')
+      setStructureMaterial(s.structureMaterial || draft?.structureMaterial || 'Hot Dip Galvanized')
+      setIngressProtection(s.ingressProtection || draft?.ingressProtection || 'IP65')
+      setBreakerName(s.breakerName || draft?.breakerName || 'Standard DC/AC Breakers')
+      setEarthing(s.earthing || draft?.earthing || 'Both')
+      setSystemInstallationDate(s.systemInstallationDate ? new Date(s.systemInstallationDate).toISOString().split('T')[0] : (draft?.systemInstallationDate || ''))
 
       // Part 3
-      setInverterStatus(s.inverterStatus || 'Good')
-      setPanelStatus(s.panelStatus || 'Good')
-      setBatteryStatus(s.batteryStatus || 'Good')
-      setStructureStatus(s.structureStatus || 'Good')
-      setCableStatus(s.cableStatus || 'Good')
-      setEarthingStatus(s.earthingStatus || 'Good')
-      setBreakerStatus(s.breakerStatus || 'Good')
+      setInverterStatus(s.inverterStatus || draft?.inverterStatus || 'Good')
+      setPanelStatus(s.panelStatus || draft?.panelStatus || 'Good')
+      setBatteryStatus(s.batteryStatus || draft?.batteryStatus || 'Good')
+      setStructureStatus(s.structureStatus || draft?.structureStatus || 'Good')
+      setCableStatus(s.cableStatus || draft?.cableStatus || 'Good')
+      setEarthingStatus(s.earthingStatus || draft?.earthingStatus || 'Good')
+      setBreakerStatus(s.breakerStatus || draft?.breakerStatus || 'Good')
 
-      setEarthingAcOhms(s.earthingAcOhms != null ? String(s.earthingAcOhms) : '0.6')
-      setEarthingDcOhms(s.earthingDcOhms != null ? String(s.earthingDcOhms) : '0.8')
-      setEarthingLastCheck(s.earthingLastCheck ? new Date(s.earthingLastCheck).toISOString().split('T')[0] : '')
-      setLightningProtection(s.lightningProtection !== false ? 'Installed' : 'Not Installed')
+      setEarthingAcOhms(s.earthingAcOhms != null ? String(s.earthingAcOhms) : (draft?.earthingAcOhms || '0.6'))
+      setEarthingDcOhms(s.earthingDcOhms != null ? String(s.earthingDcOhms) : (draft?.earthingDcOhms || '0.8'))
+      setEarthingLastCheck(s.earthingLastCheck ? new Date(s.earthingLastCheck).toISOString().split('T')[0] : (draft?.earthingLastCheck || ''))
+      setLightningProtection(s.lightningProtection !== false ? (draft?.lightningProtection || 'Installed') : 'Not Installed')
     }
   }, [customer])
+
+  // Save draft state to localStorage whenever values change
+  const saveLocalDraft = React.useCallback(() => {
+    if (!customer?.id || typeof window === 'undefined') return
+    const draftData = {
+      disco,
+      discoRefNo,
+      meterType,
+      meterPhase,
+      zeroExportDevice,
+      inverterBrand,
+      inverterSize,
+      inverterType,
+      inverterPhase,
+      inverterCategory,
+      noOfInverters,
+      inverterSerials,
+      inverterWarrantyEnds,
+      inverterImageUrls,
+      inverterUsername,
+      inverterPassword,
+      inverterInvoiceUrl,
+      panelBrand,
+      panelTechnology,
+      panelType,
+      panelWattage,
+      noOfPanels,
+      panelWarrantyEnd,
+      panelImageUrl,
+      batteryBrand,
+      batteryType,
+      batteryCategory,
+      noOfBatteries,
+      batterySerials,
+      batteryWarrantyEnds,
+      batteryImageUrls,
+      structureType,
+      structureMaterial,
+      ingressProtection,
+      breakerName,
+      earthing,
+      systemInstallationDate,
+      inverterStatus,
+      panelStatus,
+      batteryStatus,
+      structureStatus,
+      cableStatus,
+      earthingStatus,
+      breakerStatus,
+      earthingAcOhms,
+      earthingDcOhms,
+      earthingLastCheck,
+      lightningProtection,
+    }
+    try {
+      localStorage.setItem(`installer_audit_draft_${customer.id}`, JSON.stringify(draftData))
+    } catch (e) {
+      // Ignore quota exceeded or storage unavailable
+    }
+  }, [
+    customer?.id,
+    disco,
+    discoRefNo,
+    meterType,
+    meterPhase,
+    zeroExportDevice,
+    inverterBrand,
+    inverterSize,
+    inverterType,
+    inverterPhase,
+    inverterCategory,
+    noOfInverters,
+    inverterSerials,
+    inverterWarrantyEnds,
+    inverterImageUrls,
+    inverterUsername,
+    inverterPassword,
+    inverterInvoiceUrl,
+    panelBrand,
+    panelTechnology,
+    panelType,
+    panelWattage,
+    noOfPanels,
+    panelWarrantyEnd,
+    panelImageUrl,
+    batteryBrand,
+    batteryType,
+    batteryCategory,
+    noOfBatteries,
+    batterySerials,
+    batteryWarrantyEnds,
+    batteryImageUrls,
+    structureType,
+    structureMaterial,
+    ingressProtection,
+    breakerName,
+    earthing,
+    systemInstallationDate,
+    inverterStatus,
+    panelStatus,
+    batteryStatus,
+    structureStatus,
+    cableStatus,
+    earthingStatus,
+    breakerStatus,
+    earthingAcOhms,
+    earthingDcOhms,
+    earthingLastCheck,
+    lightningProtection,
+  ])
+
+  React.useEffect(() => {
+    saveLocalDraft()
+  }, [saveLocalDraft])
 
   // Helper for uploading equipment photos
   async function uploadEquipmentPhoto(file: File, folder: string): Promise<string | null> {
@@ -407,45 +533,45 @@ export function InstallerAuditModal({
       }
     }
 
-    // Section 3: Solar PV Panels Specifications
-    if (!panelBrand?.trim()) {
-      return 'Please enter or select the Solar Panel Brand in Section 3.'
-    }
-    if (!panelTechnology?.trim()) {
-      return 'Please select the Panel Technology in Section 3.'
-    }
-    if (!panelType?.trim()) {
-      return 'Please select the Panel Type in Section 3.'
-    }
-    if (!panelWattage || Number(panelWattage) <= 0) {
-      return 'Please enter a valid Panel Wattage (W) in Section 3.'
-    }
-    if (!noOfPanels || Number(noOfPanels) <= 0) {
-      return 'Please enter the Number of Solar Panels in Section 3.'
-    }
-    if (!panelWarrantyEnd?.trim()) {
-      return 'Please select the Panel Warranty Expiry Date in Section 3.'
-    }
-
-    // Section 4: Battery Energy Storage System (BESS)
+    // Section 3: Battery Energy Storage System (BESS)
     if (noOfBatteries > 0) {
       if (!batteryBrand?.trim()) {
-        return 'Please specify the Battery Brand in Section 4 since number of batteries is greater than 0.'
+        return 'Please specify the Battery Brand in Section 3 since number of batteries is greater than 0.'
       }
       if (!batteryType?.trim() || batteryType === 'None') {
-        return 'Please select the Battery Chemistry / Type in Section 4.'
+        return 'Please select the Battery Chemistry / Type in Section 3.'
       }
       if (!batteryCategory?.trim() || batteryCategory === 'N/A') {
-        return 'Please select the Battery Category in Section 4.'
+        return 'Please select the Battery Category in Section 3.'
       }
       for (let i = 0; i < noOfBatteries; i++) {
         if (!batterySerials[i]?.trim()) {
-          return `Please provide the Serial Number for Battery Unit ${i + 1} in Section 4.`
+          return `Please provide the Serial Number for Battery Unit ${i + 1} in Section 3.`
         }
         if (!batteryWarrantyEnds[i]?.trim()) {
-          return `Please select the Warranty Expiry Date for Battery Unit ${i + 1} in Section 4.`
+          return `Please select the Warranty Expiry Date for Battery Unit ${i + 1} in Section 3.`
         }
       }
+    }
+
+    // Section 4: Solar PV Panels Specifications
+    if (!panelBrand?.trim()) {
+      return 'Please enter or select the Solar Panel Brand in Section 4.'
+    }
+    if (!panelTechnology?.trim()) {
+      return 'Please select the Panel Technology in Section 4.'
+    }
+    if (!panelType?.trim()) {
+      return 'Please select the Panel Type in Section 4.'
+    }
+    if (!panelWattage || Number(panelWattage) <= 0) {
+      return 'Please enter a valid Panel Wattage (W) in Section 4.'
+    }
+    if (!noOfPanels || Number(noOfPanels) <= 0) {
+      return 'Please enter the Number of Solar Panels in Section 4.'
+    }
+    if (!panelWarrantyEnd?.trim()) {
+      return 'Please select the Panel Warranty Expiry Date in Section 4.'
     }
 
     // Section 5: Mounting Structure, Earthing & Protection Specs
@@ -539,6 +665,7 @@ export function InstallerAuditModal({
     formData.append('ingressProtection', ingressProtection)
     formData.append('breakerName', breakerName)
     formData.append('earthing', earthing)
+    formData.append('lightningProtection', lightningProtection)
     formData.append('systemInstallationDate', systemInstallationDate)
 
     return formData
@@ -577,7 +704,13 @@ export function InstallerAuditModal({
     }
     setError(null)
     // Persist specs directly to database so data is never lost
-    await handleSaveSpecsDraft()
+    const saved = await handleSaveSpecsDraft()
+    if (!saved) {
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' })
+      }
+      return
+    }
 
     setActiveTab('audit')
     lastTabChangeTime.current = Date.now()
@@ -652,6 +785,13 @@ export function InstallerAuditModal({
       const data = await res.json()
       if (!res.ok || data.error) {
         throw new Error(data.error || 'Failed to submit technical audit')
+      }
+
+      // Clear local draft upon successful completion
+      if (typeof window !== 'undefined' && customer?.id) {
+        try {
+          localStorage.removeItem(`installer_audit_draft_${customer.id}`)
+        } catch {}
       }
 
       if (onSuccess) onSuccess()
@@ -908,7 +1048,7 @@ export function InstallerAuditModal({
                     <Input
                       type="number"
                       min={1}
-                      value={noOfInverters}
+                      value={noOfInverters || 1}
                       onChange={(e) => updateNoOfInverters(Math.max(1, Number(e.target.value) || 1))}
                       className="h-9 text-xs font-mono bg-white font-bold"
                     />
@@ -1059,134 +1199,10 @@ export function InstallerAuditModal({
                 ))}
               </div>
 
-              {/* 3. Solar Panels Specs */}
+              {/* 3. Battery Energy Storage System (BESS) */}
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
                 <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                  <p className="text-xs font-bold text-[#002868] uppercase tracking-wide">3. Solar PV Panels Specifications</p>
-                  {panelImageUrl && (
-                    <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Photo Uploaded
-                    </span>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Panel Brand <span className="text-red-500">*</span></Label>
-                    <AutoSuggestInput
-                      value={panelBrand}
-                      onChange={setPanelBrand}
-                      options={PANEL_BRANDS}
-                      placeholder="e.g. LONGi, Jinko, Canadian"
-                      className="h-9 text-xs bg-white"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Panel Technology <span className="text-red-500">*</span></Label>
-                    <Select value={panelTechnology} onValueChange={(val) => setPanelTechnology(val || 'Topcon')}>
-                      <SelectTrigger className="h-9 text-xs bg-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Topcon">Topcon (N-Type)</SelectItem>
-                        <SelectItem value="Mono Perc">Mono Perc</SelectItem>
-                        <SelectItem value="Monocrystalline">Monocrystalline</SelectItem>
-                        <SelectItem value="HJT">HJT (Heterojunction)</SelectItem>
-                        <SelectItem value="ABC">ABC</SelectItem>
-                        <SelectItem value="Polycrystalline">Polycrystalline</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Panel Type <span className="text-red-500">*</span></Label>
-                    <Select value={panelType} onValueChange={(val) => setPanelType(val || 'Tier-1 Monofacial')}>
-                      <SelectTrigger className="h-9 text-xs bg-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Tier-1 Monofacial">Tier-1 Monofacial</SelectItem>
-                        <SelectItem value="Tier-1 Bifacial">Tier-1 Bifacial</SelectItem>
-                        <SelectItem value="Standard Monofacial">Standard Monofacial</SelectItem>
-                        <SelectItem value="Standard Bifacial">Standard Bifacial</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Panel Wattage (W) <span className="text-red-500">*</span></Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={panelWattage || ''}
-                      onChange={(e) => setPanelWattage(Math.max(0, Number(e.target.value) || 0))}
-                      placeholder="e.g. 585"
-                      className="h-9 text-xs font-mono bg-white font-bold"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">No. of Panels <span className="text-red-500">*</span></Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={noOfPanels || ''}
-                      onChange={(e) => setNoOfPanels(Math.max(0, Number(e.target.value) || 0))}
-                      placeholder="e.g. 16"
-                      className="h-9 text-xs font-mono bg-white font-bold"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Total PV Capacity</Label>
-                    <div className="h-9 flex items-center justify-between px-3 bg-amber-50 rounded-md border border-amber-200 font-bold font-mono text-xs text-amber-950">
-                      <span>{totalPvKw.toFixed(2)} kW</span>
-                      <span className="text-[10px] text-amber-700 font-normal">({panelWattage * noOfPanels} W)</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-slate-200 space-y-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-amber-900">Panel Warranty Expiry Date <span className="text-red-500">*</span></Label>
-                    <DateInput
-                      value={panelWarrantyEnd}
-                      onChange={(e) => setPanelWarrantyEnd(e.target.value)}
-                      className="h-9"
-                    />
-                  </div>
-
-                  <CameraPhotoCapture
-                    label="Solar PV Panels Array Photo"
-                    badge="PV PANELS"
-                    guideType="equipment"
-                    compact
-                    value={panelImageUrl || null}
-                    onValueChange={(url) => setPanelImageUrl(url || '')}
-                    onUpload={async (file) => {
-                      setUploadingPanel(true)
-                      try {
-                        const url = await uploadEquipmentPhoto(file, 'equipment/panels')
-                        if (url) {
-                          setPanelImageUrl(url)
-                          return url
-                        }
-                      } catch (err: any) {
-                        setError(`Panel Photo Upload Error: ${err.message}`)
-                      } finally {
-                        setUploadingPanel(false)
-                      }
-                    }}
-                    disabled={uploadingPanel}
-                    fileNamePrefix="solar_panels"
-                    subtext="Take photo of installed solar PV panels array or upload from gallery."
-                  />
-                </div>
-              </div>
-
-              {/* 4. Battery Storage Specs */}
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
-                <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                  <p className="text-xs font-bold text-[#002868] uppercase tracking-wide">4. Battery Energy Storage System (BESS)</p>
+                  <p className="text-xs font-bold text-[#002868] uppercase tracking-wide">3. Battery Energy Storage System (BESS)</p>
                   {batteryImageUrls.some(Boolean) && (
                     <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Photo Uploaded
@@ -1333,6 +1349,130 @@ export function InstallerAuditModal({
                     </div>
                   </div>
                 ))}
+              </div>
+
+              {/* 4. Solar Panels Specs */}
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                  <p className="text-xs font-bold text-[#002868] uppercase tracking-wide">4. Solar PV Panels Specifications</p>
+                  {panelImageUrl && (
+                    <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Photo Uploaded
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold">Panel Brand <span className="text-red-500">*</span></Label>
+                    <AutoSuggestInput
+                      value={panelBrand}
+                      onChange={setPanelBrand}
+                      options={PANEL_BRANDS}
+                      placeholder="e.g. LONGi, Jinko, Canadian"
+                      className="h-9 text-xs bg-white"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold">Panel Technology <span className="text-red-500">*</span></Label>
+                    <Select value={panelTechnology} onValueChange={(val) => setPanelTechnology(val || 'Topcon')}>
+                      <SelectTrigger className="h-9 text-xs bg-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Topcon">Topcon (N-Type)</SelectItem>
+                        <SelectItem value="Mono Perc">Mono Perc</SelectItem>
+                        <SelectItem value="Monocrystalline">Monocrystalline</SelectItem>
+                        <SelectItem value="HJT">HJT (Heterojunction)</SelectItem>
+                        <SelectItem value="ABC">ABC</SelectItem>
+                        <SelectItem value="Polycrystalline">Polycrystalline</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold">Panel Type <span className="text-red-500">*</span></Label>
+                    <Select value={panelType} onValueChange={(val) => setPanelType(val || 'Tier-1 Monofacial')}>
+                      <SelectTrigger className="h-9 text-xs bg-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Tier-1 Monofacial">Tier-1 Monofacial</SelectItem>
+                        <SelectItem value="Tier-1 Bifacial">Tier-1 Bifacial</SelectItem>
+                        <SelectItem value="Standard Monofacial">Standard Monofacial</SelectItem>
+                        <SelectItem value="Standard Bifacial">Standard Bifacial</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold">Panel Wattage (W) <span className="text-red-500">*</span></Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={panelWattage || ''}
+                      onChange={(e) => setPanelWattage(Math.max(0, Number(e.target.value) || 0))}
+                      placeholder="e.g. 585"
+                      className="h-9 text-xs font-mono bg-white font-bold"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold">No. of Panels <span className="text-red-500">*</span></Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={noOfPanels || ''}
+                      onChange={(e) => setNoOfPanels(Math.max(0, Number(e.target.value) || 0))}
+                      placeholder="e.g. 16"
+                      className="h-9 text-xs font-mono bg-white font-bold"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold">Total PV Capacity</Label>
+                    <div className="h-9 flex items-center justify-between px-3 bg-amber-50 rounded-md border border-amber-200 font-bold font-mono text-xs text-amber-950">
+                      <span>{totalPvKw.toFixed(2)} kW</span>
+                      <span className="text-[10px] text-amber-700 font-normal">({panelWattage * noOfPanels} W)</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-200 space-y-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-amber-900">Panel Warranty Expiry Date <span className="text-red-500">*</span></Label>
+                    <DateInput
+                      value={panelWarrantyEnd}
+                      onChange={(e) => setPanelWarrantyEnd(e.target.value)}
+                      className="h-9"
+                    />
+                  </div>
+
+                  <CameraPhotoCapture
+                    label="Solar PV Panels Array Photo"
+                    badge="PV PANELS"
+                    guideType="equipment"
+                    compact
+                    value={panelImageUrl || null}
+                    onValueChange={(url) => setPanelImageUrl(url || '')}
+                    onUpload={async (file) => {
+                      setUploadingPanel(true)
+                      try {
+                        const url = await uploadEquipmentPhoto(file, 'equipment/panels')
+                        if (url) {
+                          setPanelImageUrl(url)
+                          return url
+                        }
+                      } catch (err: any) {
+                        setError(`Panel Photo Upload Error: ${err.message}`)
+                      } finally {
+                        setUploadingPanel(false)
+                      }
+                    }}
+                    disabled={uploadingPanel}
+                    fileNamePrefix="solar_panels"
+                    subtext="Take photo of installed solar PV panels array or upload from gallery."
+                  />
+                </div>
               </div>
 
               {/* 5. Mounting Structure, Earthing & Protection Specs */}
