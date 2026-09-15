@@ -34,7 +34,7 @@ export const INVERTER_BRANDS = [
   'Solax Power', 'Tesla', 'Crown', 'Growatt', 'Deye', 'Sungrow', 'Sofar', 'SMA',
   'SolarEdge', 'KSTAR', 'SolarMax', 'SRNE', 'Voltronic/Axpert', 'Kodak', 'Sineng',
   'FIMER', 'Canadian Solar', 'Apex', 'Gripsun', 'Anicsun', 'Maxpower', 'Auxsol',
-  'Onyx', 'Powerage', 'Sunlife', 'Other'
+  'Onyx', 'Powerage', 'Sunlife', 'EY Power', 'Other'
 ]
 
 export const PANEL_BRANDS = [
@@ -46,7 +46,7 @@ export const PANEL_BRANDS = [
 export const BATTERY_BRANDS = [
   'Dyness', 'Narada', 'Pylontech', 'Sunwoda', 'Dongjin', 'BYD', 'Knox', 'GoodWe',
   'Sacred Sun', 'Genix Green', 'Inverex', 'Growatt', 'Deye', 'Huawei', 'Fox ESS',
-  'Sungrow', 'Sofar', 'SolaX', 'SRNE', 'Osaka', 'Phoenix', 'Apex Solar', 'MaxPower', 'Other'
+  'Sungrow', 'Sofar', 'SolaX', 'SRNE', 'Osaka', 'Phoenix', 'Apex Solar', 'MaxPower', 'EY Power', 'Other'
 ]
 
 export const IP_LIST = ['IP20', 'IP21', 'IP34', 'IP40', 'IP54', 'IP55', 'IP65', 'IP66', 'IP67', 'IP68']
