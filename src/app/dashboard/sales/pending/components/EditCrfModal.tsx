@@ -764,9 +764,8 @@ export function EditCrfModal({
                   <Select value={meterType} onValueChange={(v) => setMeterType(v || 'Green Meter')}>
                     <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Green Meter" className="text-xs">Green Meter (Bi-directional)</SelectItem>
+                      <SelectItem value="Green Meter" className="text-xs">Green Meter</SelectItem>
                       <SelectItem value="Non Green" className="text-xs">Standard (Non Green)</SelectItem>
-                      <SelectItem value="Digital" className="text-xs">Digital Standard</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

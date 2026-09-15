@@ -843,8 +843,8 @@ export function SolarSystemDialog({
                       className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white"
                     >
                       <option value="">Select Meter Type...</option>
-                      <option value="Green Meter">Green Meter (Bi-Directional)</option>
-                      <option value="Non Green">Standard Meter</option>
+                      <option value="Green Meter">Green Meter</option>
+                      <option value="Non Green">Standard (Non Green)</option>
                     </select>
                   </div>
                 </div>

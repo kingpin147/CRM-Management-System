@@ -936,9 +936,7 @@ export function InstallerAuditModal({
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Green Meter">Green Meter</SelectItem>
-                        <SelectItem value="Bidirectional">Bidirectional Meter</SelectItem>
                         <SelectItem value="Standard">Standard Grid Meter</SelectItem>
-                        <SelectItem value="Check Meter">Check Meter</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
