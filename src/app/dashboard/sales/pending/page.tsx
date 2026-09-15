@@ -405,8 +405,22 @@ export default async function PendingSalesPage() {
     } = await supabase.auth.getUser()
 
     // Fetch user role from Prisma DB to determine navigation options
-    const dbUser = user ? await prisma.user.findUnique({ where: { supabaseId: user.id }, select: { role: true } }) : null
-    const userRole = dbUser?.role || ''
+    const dbUser = user ? await prisma.user.findFirst({ 
+      where: { 
+        OR: [
+          { supabaseId: user.id },
+          ...(user.email ? [{ email: { equals: user.email, mode: 'insensitive' as const } }] : [])
+        ]
+      }, 
+      select: { role: true, designation: true } 
+    }) : null
+    const userRole = dbUser?.role || (
+      (dbUser?.designation || '').toLowerCase().includes('o & m') || 
+      (dbUser?.designation || '').toLowerCase().includes('o&m') ||
+      (dbUser?.designation || '').toLowerCase().includes('operations & maintenance')
+        ? 'OM_MANAGER' 
+        : ''
+    )
 
     // Fetch all customer sales in pending pipeline stages and available installer users
     const [rawPendingCustomers, rawInstallers] = await Promise.all([

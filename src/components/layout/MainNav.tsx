@@ -80,7 +80,7 @@ export function MainNav({
                           (designation || '').toLowerCase().includes('o&m')
 
   const canViewAdmin = isSuperAdmin
-  const canViewApproval = isSuperAdmin || isSalesManager
+  const canViewApproval = isSuperAdmin || isSalesManager || isOMManager
   const canViewBilling = isSuperAdmin || isSalesManager
   const canViewReports = !isOMOrFieldTeam && !isOMManager && !isInstaller && !isIpNoc
   const canViewAssignedJobs = isInstaller || isIpNoc
@@ -147,7 +147,7 @@ export function MainNav({
                   Create Sales
                 </Link>
               </DropdownMenuItem>
-              {canViewApproval && !isOMManager && (
+              {canViewApproval && (
                 <DropdownMenuItem>
                   <Link href="/dashboard/sales/pending" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
                     Manager Approval
@@ -358,7 +358,7 @@ export function MainNav({
               <Link href="/dashboard/customers/new" className={linkClass('/dashboard/customers/new')}>
                 Create Sales
               </Link>
-              {canViewApproval && !isOMManager && (
+              {canViewApproval && (
                 <Link href="/dashboard/sales/pending" className={linkClass('/dashboard/sales/pending')}>
                   Manager Approval
                 </Link>
