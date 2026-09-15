@@ -97,6 +97,9 @@ export function EditCrfModal({
   const [noOfInverters, setNoOfInverters] = React.useState('1')
   const [inverterSerial, setInverterSerial] = React.useState('')
   const [inverterWarrantyEnd, setInverterWarrantyEnd] = React.useState('')
+  const [inverterUsername, setInverterUsername] = React.useState('')
+  const [inverterPassword, setInverterPassword] = React.useState('')
+  const [inverterInvoiceUrl, setInverterInvoiceUrl] = React.useState('')
 
   const [panelBrand, setPanelBrand] = React.useState('')
   const [panelType, setPanelType] = React.useState('Tier-1 Monofacial')
@@ -189,6 +192,9 @@ export function EditCrfModal({
         setInverterCategory(s.inverterCategory || 'Low Voltage')
         setNoOfInverters(s.noOfInverters != null ? String(s.noOfInverters) : '1')
         setInverterSerial(s.inverterSerials?.[0] || s.inverterSerial || '')
+        setInverterUsername(s.inverterUsername || '')
+        setInverterPassword(s.inverterPassword || '')
+        setInverterInvoiceUrl(s.inverterInvoiceUrl || '')
         if (s.inverterWarrantyEnds?.[0]) {
           setInverterWarrantyEnd(new Date(s.inverterWarrantyEnds[0]).toISOString().split('T')[0])
         } else if (s.inverterWarrantyEnd) {
@@ -346,6 +352,9 @@ export function EditCrfModal({
       formData.append('noOfInverters', noOfInverters)
       formData.append('inverterSerial', inverterSerial)
       formData.append('inverterWarrantyEnd', inverterWarrantyEnd)
+      formData.append('inverterUsername', inverterUsername)
+      formData.append('inverterPassword', inverterPassword)
+      formData.append('inverterInvoiceUrl', inverterInvoiceUrl)
 
       // Panel specs
       formData.append('panelBrand', panelBrand)
@@ -865,6 +874,37 @@ export function EditCrfModal({
                     value={inverterWarrantyEnd} 
                     onChange={(e) => setInverterWarrantyEnd(e.target.value)} 
                     className="h-9 text-xs"
+                  />
+                </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <Label className="text-xs font-semibold text-slate-700">Inverter User Name</Label>
+                  <Input 
+                    value={inverterUsername} 
+                    onChange={(e) => setInverterUsername(e.target.value)} 
+                    className="h-9 text-xs" 
+                    placeholder="e.g. customer@gmail.com or GoodWe username"
+                  />
+                </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <Label className="text-xs font-semibold text-slate-700">Inverter Password</Label>
+                  <Input 
+                    value={inverterPassword} 
+                    onChange={(e) => setInverterPassword(e.target.value)} 
+                    className="h-9 text-xs font-mono" 
+                    placeholder="e.g. Inverter portal password"
+                  />
+                </div>
+                <div className="space-y-1 sm:col-span-2 md:col-span-4 pt-2 border-t border-slate-200/80">
+                  <CameraPhotoCapture
+                    label="Inverter Invoice Snapshot"
+                    badge="INVOICE PROOF"
+                    guideType="general"
+                    compact
+                    value={inverterInvoiceUrl || null}
+                    onValueChange={(url) => setInverterInvoiceUrl(url || '')}
+                    onUpload={(file) => uploadEquipmentPhoto(file, 'invoices/inverters')}
+                    fileNamePrefix="inverter-invoice"
+                    subtext="Take photo of the Inverter Purchase Invoice or upload document from gallery."
                   />
                 </div>
                 <div className="space-y-1 sm:col-span-2 md:col-span-4 pt-2 border-t border-slate-200/80">

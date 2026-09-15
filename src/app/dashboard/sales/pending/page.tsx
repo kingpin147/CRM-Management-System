@@ -114,7 +114,17 @@ export default async function PendingSalesPage() {
     const inverterCategory = (formData.get('inverterCategory') as string) || undefined
     const noOfInvertersStr = formData.get('noOfInverters') as string
     const inverterSerial = (formData.get('inverterSerial') as string) || undefined
+    const inverterSerialsStr = formData.get('inverterSerials') as string
+    const inverterSerials = inverterSerialsStr ? JSON.parse(inverterSerialsStr) : undefined
     const inverterWarrantyEndStr = formData.get('inverterWarrantyEnd') as string
+    const inverterWarrantyEndsStr = formData.get('inverterWarrantyEnds') as string
+    const inverterWarrantyEnds = inverterWarrantyEndsStr 
+      ? JSON.parse(inverterWarrantyEndsStr).map((d: string) => d ? new Date(d) : new Date('1970-01-01')) 
+      : undefined
+
+    const inverterUsername = (formData.get('inverterUsername') as string) || undefined
+    const inverterPassword = (formData.get('inverterPassword') as string) || undefined
+    const inverterInvoiceUrl = (formData.get('inverterInvoiceUrl') as string) || undefined
 
     const panelType = (formData.get('panelType') as string) || undefined
     const panelTechnology = (formData.get('panelTechnology') as string) || undefined
@@ -124,7 +134,13 @@ export default async function PendingSalesPage() {
     const batteryCategory = (formData.get('batteryCategory') as string) || undefined
     const batteryType = (formData.get('batteryType') as string) || undefined
     const batterySerial = (formData.get('batterySerial') as string) || undefined
+    const batterySerialsStr = formData.get('batterySerials') as string
+    const batterySerials = batterySerialsStr ? JSON.parse(batterySerialsStr) : undefined
     const batteryWarrantyEndStr = formData.get('batteryWarrantyEnd') as string
+    const batteryWarrantyEndsStr = formData.get('batteryWarrantyEnds') as string
+    const batteryWarrantyEnds = batteryWarrantyEndsStr 
+      ? JSON.parse(batteryWarrantyEndsStr).map((d: string) => d ? new Date(d) : new Date('1970-01-01')) 
+      : undefined
 
     const earthingType = (formData.get('earthingType') as string) || undefined
     const lightningProtection = formData.get('lightningProtection') === 'Yes' ? true : formData.get('lightningProtection') === 'No' ? false : undefined
@@ -258,8 +274,13 @@ export default async function PendingSalesPage() {
         inverterCategory: inverterCategory || 'Low Voltage',
         inverterSize: inverterSize || '',
         noOfInverters: invCount || 1,
-        inverterSerial: inverterSerial || '',
-        inverterWarrantyEnd: invWarrantyEnd,
+        inverterSerial: inverterSerial || (inverterSerials?.[0] || ''),
+        inverterSerials: inverterSerials || (inverterSerial ? [inverterSerial] : []),
+        inverterWarrantyEnd: invWarrantyEnd || (inverterWarrantyEnds?.[0] || null),
+        inverterWarrantyEnds: inverterWarrantyEnds || (invWarrantyEnd ? [invWarrantyEnd] : []),
+        inverterUsername: inverterUsername || null,
+        inverterPassword: inverterPassword || null,
+        inverterInvoiceUrl: inverterInvoiceUrl || null,
         
         panelBrand: panelBrand || '',
         panelType: panelType || 'Bifacial',
@@ -273,8 +294,10 @@ export default async function PendingSalesPage() {
         batteryType: batteryType || 'Lithium',
         batteryBrand: batteryBrand || '',
         noOfBatteries: bQty || 0,
-        batterySerial: batterySerial || '',
-        batteryWarrantyEnd: batWarrantyEnd,
+        batterySerial: batterySerial || (batterySerials?.[0] || ''),
+        batterySerials: batterySerials || (batterySerial ? [batterySerial] : []),
+        batteryWarrantyEnd: batWarrantyEnd || (batteryWarrantyEnds?.[0] || null),
+        batteryWarrantyEnds: batteryWarrantyEnds || (batWarrantyEnd ? [batWarrantyEnd] : []),
         
         earthing: earthingType || 'Both',
         earthingLastCheck: earthingLastDt,
@@ -316,7 +339,12 @@ export default async function PendingSalesPage() {
         inverterSize,
         ...(invCount !== undefined ? { noOfInverters: invCount } : {}),
         inverterSerial,
+        ...(inverterSerials !== undefined ? { inverterSerials } : {}),
         ...(invWarrantyEnd !== undefined ? { inverterWarrantyEnd: invWarrantyEnd } : {}),
+        ...(inverterWarrantyEnds !== undefined ? { inverterWarrantyEnds } : {}),
+        ...(inverterUsername !== undefined ? { inverterUsername } : {}),
+        ...(inverterPassword !== undefined ? { inverterPassword } : {}),
+        ...(inverterInvoiceUrl !== undefined ? { inverterInvoiceUrl } : {}),
         
         panelBrand,
         panelType,
@@ -331,7 +359,9 @@ export default async function PendingSalesPage() {
         batteryBrand,
         ...(bQty !== undefined ? { noOfBatteries: bQty } : {}),
         batterySerial,
+        ...(batterySerials !== undefined ? { batterySerials } : {}),
         ...(batWarrantyEnd !== undefined ? { batteryWarrantyEnd: batWarrantyEnd } : {}),
+        ...(batteryWarrantyEnds !== undefined ? { batteryWarrantyEnds } : {}),
         
         ...(earthingType !== undefined ? { earthing: earthingType } : {}),
         ...(earthingLastDt !== undefined ? { earthingLastCheck: earthingLastDt } : {}),

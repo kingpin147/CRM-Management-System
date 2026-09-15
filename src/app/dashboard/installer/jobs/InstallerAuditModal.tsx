@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AutoSuggestInput } from '@/components/ui/auto-suggest-input'
 import { DateInput } from '@/components/ui/date-input'
-import { submitInstallerAudit } from './actions'
+import { submitInstallerAudit, saveSolarSpecsOnly } from './actions'
 import { formatDiscoRefNo } from '@/lib/utils'
 import {
   SYSTEM_SIZES,
@@ -43,6 +43,7 @@ import {
   MapPin,
   ArrowRight,
   ArrowLeft,
+  Save,
 } from 'lucide-react'
 import { CameraPhotoCapture } from '@/components/ui/CameraPhotoCapture'
 
@@ -71,6 +72,8 @@ export function InstallerAuditModal({
   const lastTabChangeTime = React.useRef<number>(0)
 
   const [isSubmitting, setIsSubmitting] = React.useState(false)
+  const [isSavingDraft, setIsSavingDraft] = React.useState(false)
+  const [saveSuccessMsg, setSaveSuccessMsg] = React.useState<string | null>(null)
   const [error, setError] = React.useState<string | null>(null)
 
   // 1. DISCO Utility & Meter Connection
@@ -81,18 +84,25 @@ export function InstallerAuditModal({
   const [zeroExportDevice, setZeroExportDevice] = React.useState(solar.zeroExportDevice ? 'Installed' : 'Not Installed')
 
   // 2. Inverter Unit Specifications
+  const initialInvCount = Math.max(1, Number(solar.noOfInverters) || 1)
   const [inverterBrand, setInverterBrand] = React.useState(solar.inverterBrand || '')
   const [inverterSize, setInverterSize] = React.useState(solar.inverterSize || plan.systemSizeKw || '')
   const [inverterType, setInverterType] = React.useState(solar.inverterType || 'Hybrid')
   const [inverterPhase, setInverterPhase] = React.useState(solar.inverterPhase || 'Three Phase')
   const [inverterCategory, setInverterCategory] = React.useState(solar.inverterCategory || 'Low Voltage')
-  const [noOfInverters, setNoOfInverters] = React.useState<number>(solar.noOfInverters != null ? Number(solar.noOfInverters) : 1)
-  const [inverterSerials, setInverterSerials] = React.useState<string[]>(solar.inverterSerials?.length ? solar.inverterSerials : [solar.inverterSerial || ''])
-  const [inverterWarrantyEnds, setInverterWarrantyEnds] = React.useState<string[]>(
-    solar.inverterWarrantyEnds?.length
+  const [noOfInverters, setNoOfInverters] = React.useState<number>(initialInvCount)
+  const [inverterSerials, setInverterSerials] = React.useState<string[]>(() => {
+    const list = solar.inverterSerials?.length ? [...solar.inverterSerials] : [solar.inverterSerial || '']
+    while (list.length < initialInvCount) list.push('')
+    return list
+  })
+  const [inverterWarrantyEnds, setInverterWarrantyEnds] = React.useState<string[]>(() => {
+    const list = solar.inverterWarrantyEnds?.length
       ? solar.inverterWarrantyEnds.map((d: any) => d ? new Date(d).toISOString().split('T')[0] : '')
       : [solar.inverterWarrantyEnd ? new Date(solar.inverterWarrantyEnd).toISOString().split('T')[0] : '']
-  )
+    while (list.length < initialInvCount) list.push('')
+    return list
+  })
   const [inverterImageUrls, setInverterImageUrls] = React.useState<string[]>(solar.inverterImages?.length ? solar.inverterImages : [])
   const [uploadingInverterIndex, setUploadingInverterIndex] = React.useState<number | null>(null)
   const [inverterUsername, setInverterUsername] = React.useState(solar.inverterUsername || '')
@@ -113,18 +123,57 @@ export function InstallerAuditModal({
   const [uploadingPanel, setUploadingPanel] = React.useState(false)
 
   // 4. Battery Energy Storage System (BESS)
+  const initialBatCount = Math.max(0, Number(solar.noOfBatteries) || (solar.batteryBrand && solar.batteryBrand !== 'None' ? 1 : 0))
   const [batteryBrand, setBatteryBrand] = React.useState(solar.batteryBrand || '')
   const [batteryType, setBatteryType] = React.useState(solar.batteryType || 'Lithium-ion')
   const [batteryCategory, setBatteryCategory] = React.useState(solar.batteryCategory || 'Low Voltage (LV)')
-  const [noOfBatteries, setNoOfBatteries] = React.useState<number>(solar.noOfBatteries != null ? Number(solar.noOfBatteries) : 0)
-  const [batterySerials, setBatterySerials] = React.useState<string[]>(solar.batterySerials?.length ? solar.batterySerials : [solar.batterySerial || ''])
-  const [batteryWarrantyEnds, setBatteryWarrantyEnds] = React.useState<string[]>(
-    solar.batteryWarrantyEnds?.length
+  const [noOfBatteries, setNoOfBatteries] = React.useState<number>(initialBatCount)
+  const [batterySerials, setBatterySerials] = React.useState<string[]>(() => {
+    const list = solar.batterySerials?.length ? [...solar.batterySerials] : [solar.batterySerial || '']
+    while (list.length < Math.max(1, initialBatCount)) list.push('')
+    return list
+  })
+  const [batteryWarrantyEnds, setBatteryWarrantyEnds] = React.useState<string[]>(() => {
+    const list = solar.batteryWarrantyEnds?.length
       ? solar.batteryWarrantyEnds.map((d: any) => d ? new Date(d).toISOString().split('T')[0] : '')
       : [solar.batteryWarrantyEnd ? new Date(solar.batteryWarrantyEnd).toISOString().split('T')[0] : '']
-  )
+    while (list.length < Math.max(1, initialBatCount)) list.push('')
+    return list
+  })
   const [batteryImageUrls, setBatteryImageUrls] = React.useState<string[]>(solar.batteryImages?.length ? solar.batteryImages : [])
   const [uploadingBatteryIndex, setUploadingBatteryIndex] = React.useState<number | null>(null)
+
+  // Helper function to dynamically scale inverter units
+  const updateNoOfInverters = (count: number) => {
+    const validCount = Math.max(1, count || 1)
+    setNoOfInverters(validCount)
+    setInverterSerials(prev => {
+      const next = [...prev]
+      while (next.length < validCount) next.push('')
+      return next
+    })
+    setInverterWarrantyEnds(prev => {
+      const next = [...prev]
+      while (next.length < validCount) next.push('')
+      return next
+    })
+  }
+
+  // Helper function to dynamically scale battery units
+  const updateNoOfBatteries = (count: number) => {
+    const validCount = Math.max(0, count || 0)
+    setNoOfBatteries(validCount)
+    setBatterySerials(prev => {
+      const next = [...prev]
+      while (next.length < Math.max(1, validCount)) next.push('')
+      return next
+    })
+    setBatteryWarrantyEnds(prev => {
+      const next = [...prev]
+      while (next.length < Math.max(1, validCount)) next.push('')
+      return next
+    })
+  }
 
   // 5. Mounting Structure, Earthing & Protection Specs
   const [structureType, setStructureType] = React.useState(solar.structureType || 'Elevated')
@@ -171,9 +220,16 @@ export function InstallerAuditModal({
       setInverterType(s.inverterType || 'Hybrid')
       setInverterPhase(s.inverterPhase || 'Three Phase')
       setInverterCategory(s.inverterCategory || 'Low Voltage')
-      setNoOfInverters(s.noOfInverters != null ? Number(s.noOfInverters) : 1)
-      setInverterSerials(s.inverterSerials?.length ? s.inverterSerials : [s.inverterSerial || ''])
-      setInverterWarrantyEnds(s.inverterWarrantyEnds?.length ? s.inverterWarrantyEnds.map((d: any) => d ? new Date(d).toISOString().split('T')[0] : '') : [s.inverterWarrantyEnd ? new Date(s.inverterWarrantyEnd).toISOString().split('T')[0] : ''])
+      const invCnt = Math.max(1, Number(s.noOfInverters) || 1)
+      setNoOfInverters(invCnt)
+      const invSers = s.inverterSerials?.length ? [...s.inverterSerials] : [s.inverterSerial || '']
+      while (invSers.length < invCnt) invSers.push('')
+      setInverterSerials(invSers)
+
+      const invWarrs = s.inverterWarrantyEnds?.length ? s.inverterWarrantyEnds.map((d: any) => d ? new Date(d).toISOString().split('T')[0] : '') : [s.inverterWarrantyEnd ? new Date(s.inverterWarrantyEnd).toISOString().split('T')[0] : '']
+      while (invWarrs.length < invCnt) invWarrs.push('')
+      setInverterWarrantyEnds(invWarrs)
+
       setInverterImageUrls(s.inverterImages?.length ? s.inverterImages : [])
       setInverterUsername(s.inverterUsername || '')
       setInverterPassword(s.inverterPassword || '')
@@ -192,9 +248,16 @@ export function InstallerAuditModal({
       setBatteryBrand(s.batteryBrand || '')
       setBatteryType(s.batteryType || 'Lithium-ion')
       setBatteryCategory(s.batteryCategory || 'Low Voltage (LV)')
-      setNoOfBatteries(s.noOfBatteries != null ? Number(s.noOfBatteries) : 0)
-      setBatterySerials(s.batterySerials?.length ? s.batterySerials : [s.batterySerial || ''])
-      setBatteryWarrantyEnds(s.batteryWarrantyEnds?.length ? s.batteryWarrantyEnds.map((d: any) => d ? new Date(d).toISOString().split('T')[0] : '') : [s.batteryWarrantyEnd ? new Date(s.batteryWarrantyEnd).toISOString().split('T')[0] : ''])
+      const batCnt = Math.max(0, Number(s.noOfBatteries) || (s.batteryBrand && s.batteryBrand !== 'None' ? 1 : 0))
+      setNoOfBatteries(batCnt)
+      const batSers = s.batterySerials?.length ? [...s.batterySerials] : [s.batterySerial || '']
+      while (batSers.length < Math.max(1, batCnt)) batSers.push('')
+      setBatterySerials(batSers)
+
+      const batWarrs = s.batteryWarrantyEnds?.length ? s.batteryWarrantyEnds.map((d: any) => d ? new Date(d).toISOString().split('T')[0] : '') : [s.batteryWarrantyEnd ? new Date(s.batteryWarrantyEnd).toISOString().split('T')[0] : '']
+      while (batWarrs.length < Math.max(1, batCnt)) batWarrs.push('')
+      setBatteryWarrantyEnds(batWarrs)
+
       setBatteryImageUrls(s.batteryImages?.length ? s.batteryImages : [])
 
       // Section 5
@@ -433,7 +496,73 @@ export function InstallerAuditModal({
     return null
   }
 
-  const handleGoNext = () => {
+  const buildSpecsFormData = () => {
+    const formData = new FormData()
+    formData.append('customerId', customer.id)
+    formData.append('disco', disco)
+    formData.append('discoRefNo', discoRefNo)
+    formData.append('meterType', meterType)
+    formData.append('meterPhase', meterPhase)
+    formData.append('zeroExportDevice', zeroExportDevice)
+
+    formData.append('inverterBrand', inverterBrand)
+    formData.append('inverterSize', inverterSize)
+    formData.append('inverterType', inverterType)
+    formData.append('inverterPhase', inverterPhase)
+    formData.append('inverterCategory', inverterCategory)
+    formData.append('noOfInverters', String(Math.max(1, Number(noOfInverters) || 1)))
+    formData.append('inverterSerials', JSON.stringify(inverterSerials.slice(0, Math.max(1, noOfInverters))))
+    formData.append('inverterWarrantyEnds', JSON.stringify(inverterWarrantyEnds.slice(0, Math.max(1, noOfInverters))))
+    formData.append('inverterImageUrls', JSON.stringify(inverterImageUrls.slice(0, Math.max(1, noOfInverters))))
+    formData.append('inverterUsername', inverterUsername)
+    formData.append('inverterPassword', inverterPassword)
+    formData.append('inverterInvoiceUrl', inverterInvoiceUrl)
+
+    formData.append('panelBrand', panelBrand)
+    formData.append('panelTechnology', panelTechnology)
+    formData.append('panelType', panelType)
+    formData.append('panelWattage', String(panelWattage))
+    formData.append('noOfPanels', String(noOfPanels))
+    formData.append('panelWarrantyEnd', panelWarrantyEnd)
+    formData.append('panelImageUrl', panelImageUrl)
+
+    formData.append('batteryBrand', batteryBrand)
+    formData.append('batteryType', batteryType)
+    formData.append('batteryCategory', batteryCategory)
+    formData.append('noOfBatteries', String(noOfBatteries))
+    formData.append('batterySerials', JSON.stringify(batterySerials.slice(0, noOfBatteries)))
+    formData.append('batteryWarrantyEnds', JSON.stringify(batteryWarrantyEnds.slice(0, noOfBatteries)))
+    formData.append('batteryImageUrls', JSON.stringify(batteryImageUrls.slice(0, noOfBatteries)))
+
+    formData.append('structureType', structureType)
+    formData.append('structureMaterial', structureMaterial)
+    formData.append('ingressProtection', ingressProtection)
+    formData.append('breakerName', breakerName)
+    formData.append('earthing', earthing)
+    formData.append('systemInstallationDate', systemInstallationDate)
+
+    return formData
+  }
+
+  const handleSaveSpecsDraft = async () => {
+    setIsSavingDraft(true)
+    setError(null)
+    setSaveSuccessMsg(null)
+    try {
+      const fd = buildSpecsFormData()
+      await saveSolarSpecsOnly(fd)
+      setSaveSuccessMsg('Hardware Specs successfully saved to database!')
+      setTimeout(() => setSaveSuccessMsg(null), 3000)
+      return true
+    } catch (err: any) {
+      setError(`Failed to save specs: ${err.message}`)
+      return false
+    } finally {
+      setIsSavingDraft(false)
+    }
+  }
+
+  const handleGoNext = async () => {
     const valErr = validateSpecs()
     if (valErr) {
       setError(valErr)
@@ -443,6 +572,9 @@ export function InstallerAuditModal({
       return
     }
     setError(null)
+    // Persist specs directly to database so data is never lost
+    await handleSaveSpecsDraft()
+
     setActiveTab('audit')
     lastTabChangeTime.current = Date.now()
     if (scrollContainerRef.current) {
@@ -463,7 +595,7 @@ export function InstallerAuditModal({
 
     // If Enter key was pressed while on Specs step, advance to next step instead of submitting
     if (activeTab === 'specs') {
-      handleGoNext()
+      await handleGoNext()
       return
     }
 
@@ -495,49 +627,7 @@ export function InstallerAuditModal({
     setError(null)
 
     try {
-      const formData = new FormData()
-      formData.append('customerId', customer.id)
-      formData.append('disco', disco)
-      formData.append('discoRefNo', discoRefNo)
-      formData.append('meterType', meterType)
-      formData.append('meterPhase', meterPhase)
-      formData.append('zeroExportDevice', zeroExportDevice)
-
-      formData.append('inverterBrand', inverterBrand)
-      formData.append('inverterSize', inverterSize)
-      formData.append('inverterType', inverterType)
-      formData.append('inverterPhase', inverterPhase)
-      formData.append('inverterCategory', inverterCategory)
-      formData.append('noOfInverters', String(noOfInverters))
-      formData.append('inverterSerials', JSON.stringify(inverterSerials.slice(0, noOfInverters)))
-      formData.append('inverterWarrantyEnds', JSON.stringify(inverterWarrantyEnds.slice(0, noOfInverters)))
-      formData.append('inverterImageUrls', JSON.stringify(inverterImageUrls.slice(0, noOfInverters)))
-      formData.append('inverterUsername', inverterUsername)
-      formData.append('inverterPassword', inverterPassword)
-      formData.append('inverterInvoiceUrl', inverterInvoiceUrl)
-
-      formData.append('panelBrand', panelBrand)
-      formData.append('panelTechnology', panelTechnology)
-      formData.append('panelType', panelType)
-      formData.append('panelWattage', String(panelWattage))
-      formData.append('noOfPanels', String(noOfPanels))
-      formData.append('panelWarrantyEnd', panelWarrantyEnd)
-      formData.append('panelImageUrl', panelImageUrl)
-
-      formData.append('batteryBrand', batteryBrand)
-      formData.append('batteryType', batteryType)
-      formData.append('batteryCategory', batteryCategory)
-      formData.append('noOfBatteries', String(noOfBatteries))
-      formData.append('batterySerials', JSON.stringify(batterySerials.slice(0, noOfBatteries)))
-      formData.append('batteryWarrantyEnds', JSON.stringify(batteryWarrantyEnds.slice(0, noOfBatteries)))
-      formData.append('batteryImageUrls', JSON.stringify(batteryImageUrls.slice(0, noOfBatteries)))
-
-      formData.append('structureType', structureType)
-      formData.append('structureMaterial', structureMaterial)
-      formData.append('ingressProtection', ingressProtection)
-      formData.append('breakerName', breakerName)
-      formData.append('earthing', earthing)
-      formData.append('systemInstallationDate', systemInstallationDate)
+      const formData = buildSpecsFormData()
 
       formData.append('inverterStatus', inverterStatus)
       formData.append('panelStatus', panelStatus)
@@ -647,6 +737,13 @@ export function InstallerAuditModal({
           </div>
         </DialogHeader>
 
+        {saveSuccessMsg && (
+          <div className="p-3 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-lg text-xs font-semibold flex items-center gap-2 animate-in fade-in-50">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+            <span>{saveSuccessMsg}</span>
+          </div>
+        )}
+
         {error && (
           <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-xs font-semibold">
             {error}
@@ -679,7 +776,7 @@ export function InstallerAuditModal({
                       value={discoRefNo}
                       onChange={(e) => setDiscoRefNo(formatDiscoRefNo(e.target.value))}
                       placeholder="e.g. 04-11515-0469701 U"
-                      className="h-9 text-xs font-mono bg-white font-bold"
+                      className="h-9 text-xs font-mono bg-white uppercase font-bold"
                     />
                   </div>
                   <div className="space-y-1 sm:col-span-1">
@@ -690,8 +787,9 @@ export function InstallerAuditModal({
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Green Meter">Green Meter</SelectItem>
-                        <SelectItem value="Non Green">Non Green</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
+                        <SelectItem value="Bidirectional">Bidirectional Meter</SelectItem>
+                        <SelectItem value="Standard">Standard Grid Meter</SelectItem>
+                        <SelectItem value="Check Meter">Check Meter</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -714,8 +812,8 @@ export function InstallerAuditModal({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Installed">Installed</SelectItem>
                         <SelectItem value="Not Installed">Not Installed</SelectItem>
+                        <SelectItem value="Installed">Installed &amp; Active</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -802,7 +900,7 @@ export function InstallerAuditModal({
                       type="number"
                       min={1}
                       value={noOfInverters}
-                      onChange={(e) => setNoOfInverters(Math.max(1, Number(e.target.value) || 1))}
+                      onChange={(e) => updateNoOfInverters(Math.max(1, Number(e.target.value) || 1))}
                       className="h-9 text-xs font-mono bg-white font-bold"
                     />
                   </div>
@@ -1092,7 +1190,12 @@ export function InstallerAuditModal({
                     <Label className="text-xs font-semibold">Battery Brand {noOfBatteries > 0 && <span className="text-red-500">*</span>}</Label>
                     <AutoSuggestInput
                       value={batteryBrand}
-                      onChange={setBatteryBrand}
+                      onChange={(brand) => {
+                        setBatteryBrand(brand)
+                        if (brand && brand.trim() !== '' && brand !== 'None' && noOfBatteries === 0) {
+                          updateNoOfBatteries(1)
+                        }
+                      }}
                       options={BATTERY_BRANDS}
                       placeholder="e.g. Narada, Pylontech"
                       className="h-9 text-xs bg-white"
@@ -1100,7 +1203,13 @@ export function InstallerAuditModal({
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold">Battery Chemistry / Type {noOfBatteries > 0 && <span className="text-red-500">*</span>}</Label>
-                    <Select value={batteryType} onValueChange={(val) => setBatteryType(val || 'Lithium-ion')}>
+                    <Select value={batteryType} onValueChange={(val) => {
+                      const newType = val || 'Lithium-ion'
+                      setBatteryType(newType)
+                      if (newType !== 'None' && noOfBatteries === 0) {
+                        updateNoOfBatteries(1)
+                      }
+                    }}>
                       <SelectTrigger className="h-9 text-xs bg-white">
                         <SelectValue />
                       </SelectTrigger>
@@ -1132,7 +1241,7 @@ export function InstallerAuditModal({
                       type="number"
                       min={0}
                       value={noOfBatteries}
-                      onChange={(e) => setNoOfBatteries(Math.max(0, Number(e.target.value) || 0))}
+                      onChange={(e) => updateNoOfBatteries(Math.max(0, Number(e.target.value) || 0))}
                       className="h-9 text-xs font-mono bg-white font-bold"
                     />
                   </div>
@@ -1270,12 +1379,12 @@ export function InstallerAuditModal({
                     <Input
                       value={breakerName}
                       onChange={(e) => setBreakerName(e.target.value)}
-                      placeholder="e.g. Schneider 32A MCB, CNC"
-                      className="h-9 text-xs bg-white font-medium"
+                      placeholder="e.g. Schneider / ABB AC/DC Breakers"
+                      className="h-9 text-xs bg-white"
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Earthing Protection Type <span className="text-red-500">*</span></Label>
+                    <Label className="text-xs font-semibold">Earthing Protection <span className="text-red-500">*</span></Label>
                     <Select value={earthing} onValueChange={(val) => setEarthing(val || 'Both')}>
                       <SelectTrigger className="h-9 text-xs bg-white">
                         <SelectValue />
@@ -1302,38 +1411,118 @@ export function InstallerAuditModal({
 
           {activeTab === 'audit' && (
             <div className="space-y-4 animate-in fade-in duration-150">
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                <p className="text-xs font-bold text-amber-950">Technical Inspection Checklist (Part 3)</p>
+                <p className="text-[11px] text-amber-800 mt-0.5">
+                  Inspect the physical equipment health &amp; safety earthing values before submitting to the O&amp;M Manager.
+                </p>
+              </div>
+
+              {/* 7-Point Audit Checklist Table */}
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
-                <p className="text-xs font-bold text-[#002868] uppercase tracking-wide">7-Point System Technical Inspection Checklist</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {[
-                    { label: '1. Inverter Operating Condition', val: inverterStatus, set: setInverterStatus },
-                    { label: '2. Solar PV Panels & Soiling Status', val: panelStatus, set: setPanelStatus },
-                    { label: '3. Battery Storage & Health Status', val: batteryStatus, set: setBatteryStatus },
-                    { label: '4. Mounting Structure & GI Material', val: structureStatus, set: setStructureStatus },
-                    { label: '5. DC & AC Cabling & Conduits', val: cableStatus, set: setCableStatus },
-                    { label: '6. AC & DC Earthing & Protection', val: earthingStatus, set: setEarthingStatus },
-                    { label: '7. Breakers, Isolators & Switchgear', val: breakerStatus, set: setBreakerStatus },
-                  ].map((item, idx) => (
-                    <div key={idx} className="space-y-1">
-                      <Label className="text-xs font-semibold text-slate-700">{item.label} <span className="text-red-500">*</span></Label>
-                      <Select value={item.val} onValueChange={(val) => item.set(val || 'Good')}>
-                        <SelectTrigger className="h-9 text-xs bg-white font-medium">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {AUDIT_STATUSES.map(st => (
-                            <SelectItem key={st} value={st}>{st}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  ))}
+                <p className="text-xs font-bold text-[#002868] uppercase tracking-wide">7-Point Physical Audit</p>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold">1. Inverter Condition <span className="text-red-500">*</span></Label>
+                    <Select value={inverterStatus} onValueChange={(val) => setInverterStatus(val || 'Good')}>
+                      <SelectTrigger className="h-9 text-xs bg-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {AUDIT_STATUSES.map((st) => (
+                          <SelectItem key={st} value={st}>{st}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold">2. PV Panels Status <span className="text-red-500">*</span></Label>
+                    <Select value={panelStatus} onValueChange={(val) => setPanelStatus(val || 'Good')}>
+                      <SelectTrigger className="h-9 text-xs bg-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {AUDIT_STATUSES.map((st) => (
+                          <SelectItem key={st} value={st}>{st}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold">3. Battery Storage Status <span className="text-red-500">*</span></Label>
+                    <Select value={batteryStatus} onValueChange={(val) => setBatteryStatus(val || 'Good')}>
+                      <SelectTrigger className="h-9 text-xs bg-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {AUDIT_STATUSES.map((st) => (
+                          <SelectItem key={st} value={st}>{st}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold">4. Structure &amp; GI Material <span className="text-red-500">*</span></Label>
+                    <Select value={structureStatus} onValueChange={(val) => setStructureStatus(val || 'Good')}>
+                      <SelectTrigger className="h-9 text-xs bg-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {AUDIT_STATUSES.map((st) => (
+                          <SelectItem key={st} value={st}>{st}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold">5. Cabling &amp; Conduits <span className="text-red-500">*</span></Label>
+                    <Select value={cableStatus} onValueChange={(val) => setCableStatus(val || 'Good')}>
+                      <SelectTrigger className="h-9 text-xs bg-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {AUDIT_STATUSES.map((st) => (
+                          <SelectItem key={st} value={st}>{st}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold">6. Earthing &amp; Protection <span className="text-red-500">*</span></Label>
+                    <Select value={earthingStatus} onValueChange={(val) => setEarthingStatus(val || 'Good')}>
+                      <SelectTrigger className="h-9 text-xs bg-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {AUDIT_STATUSES.map((st) => (
+                          <SelectItem key={st} value={st}>{st}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold">7. Breakers &amp; Switchgear <span className="text-red-500">*</span></Label>
+                    <Select value={breakerStatus} onValueChange={(val) => setBreakerStatus(val || 'Good')}>
+                      <SelectTrigger className="h-9 text-xs bg-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {AUDIT_STATUSES.map((st) => (
+                          <SelectItem key={st} value={st}>{st}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
 
-              {/* Safety Parameters */}
+              {/* Safety Earthing Readings */}
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
-                <p className="text-xs font-bold text-[#002868] uppercase tracking-wide">Earthing Resistance &amp; Safety Parameters</p>
+                <p className="text-xs font-bold text-[#002868] uppercase tracking-wide">Safety Earthing Parameters</p>
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold">AC Earthing (Ω) <span className="text-red-500">*</span></Label>
@@ -1384,7 +1573,7 @@ export function InstallerAuditModal({
 
           <DialogFooter className="border-t border-line pt-4 flex flex-col sm:flex-row justify-between items-center gap-2">
             <div className="flex items-center gap-2">
-              <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting} className="text-xs">
+              <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting || isSavingDraft} className="text-xs">
                 Cancel
               </Button>
               {activeTab === 'audit' && (
@@ -1392,7 +1581,7 @@ export function InstallerAuditModal({
                   type="button"
                   variant="outline"
                   onClick={handleBackToSpecs}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isSavingDraft}
                   className="text-xs font-semibold text-slate-700 hover:bg-slate-100 border-slate-300 gap-1.5"
                 >
                   <ArrowLeft className="h-3.5 w-3.5" /> Back to Specs
@@ -1401,19 +1590,33 @@ export function InstallerAuditModal({
             </div>
 
             {activeTab === 'specs' ? (
-              <Button
-                key="next-btn"
-                type="button"
-                onClick={handleGoNext}
-                className="bg-[#135d86] hover:bg-[#f16232] text-white font-bold text-xs gap-2 px-6 shadow-md cursor-pointer transition-colors"
-              >
-                Save &amp; Go Next <ArrowRight className="h-3.5 w-3.5" />
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isSavingDraft || isSubmitting}
+                  onClick={handleSaveSpecsDraft}
+                  className="text-xs border-amber-300 text-amber-900 bg-amber-50 hover:bg-amber-100 font-bold gap-1.5 cursor-pointer shadow-2xs"
+                >
+                  {isSavingDraft ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5 text-amber-600" />}
+                  Save Specs Draft
+                </Button>
+                <Button
+                  key="next-btn"
+                  type="button"
+                  disabled={isSavingDraft || isSubmitting}
+                  onClick={handleGoNext}
+                  className="bg-[#135d86] hover:bg-[#f16232] text-white font-bold text-xs gap-2 px-6 shadow-md cursor-pointer transition-colors"
+                >
+                  {isSavingDraft ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                  Save &amp; Go Next <ArrowRight className="h-3.5 w-3.5" />
+                </Button>
+              </div>
             ) : (
               <Button
                 key="submit-btn"
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isSavingDraft}
                 className="bg-[#135d86] hover:bg-[#f16232] text-white font-bold text-xs gap-2 px-6 shadow-md cursor-pointer transition-colors"
               >
                 {isSubmitting ? (
