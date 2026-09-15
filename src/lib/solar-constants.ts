@@ -56,9 +56,9 @@ export const DISCO_LIST = [
 ]
 
 export const STRUCTURE_TYPES = [
-  'Standard', 'Elevated', 'L2', 'L3', 'L4', 'Ground Mount', 'Custom', 'Other'
+  'Standard', 'Elevated', 'Ground Mount', 'Custom', 'Other'
 ]
 
 export const STRUCTURE_MATERIALS = [
-  'Pre Galvanized', 'Hot Dip Galvanized', 'Aluminum', 'Painted Steel', 'Other'
+  'Pre Galvanized', 'Hot Dip Galvanized', 'Aluminum', 'Painted Steel', 'L1', 'L2', 'L3', 'L4', 'Other'
 ]
