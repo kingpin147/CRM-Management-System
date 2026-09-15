@@ -57,8 +57,11 @@ export function CameraPhotoCapture({
   const galleryInputRef = useRef<HTMLInputElement | null>(null)
   const nativeCameraInputRef = useRef<HTMLInputElement | null>(null)
 
+  const [imageError, setImageError] = useState(false)
+
   // Manage preview URL from file or value
   useEffect(() => {
+    setImageError(false)
     if (file) {
       const url = URL.createObjectURL(file)
       setPreviewUrl(url)
@@ -338,29 +341,30 @@ export function CameraPhotoCapture({
         /* Captured / Uploaded Image Preview Card */
         <div className="flex items-center gap-3 p-2.5 bg-slate-50 border border-slate-200 rounded-xl shadow-2xs">
           {/* Thumbnail Preview */}
-          <div className="relative w-16 h-14 sm:w-20 sm:h-14 rounded-lg overflow-hidden bg-slate-900 shrink-0 border border-slate-300 group">
-            {previewUrl ? (
+          <div 
+            onClick={() => setIsZoomModalOpen(true)}
+            className="relative w-16 h-14 sm:w-20 sm:h-14 rounded-lg overflow-hidden bg-slate-900 shrink-0 border border-slate-300 group cursor-pointer"
+            title="Click to view full image"
+          >
+            {previewUrl && !imageError ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={previewUrl}
                 alt={label || 'Uploaded Photo'}
                 className="w-full h-full object-cover"
+                onError={() => setImageError(true)}
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-slate-400">
-                <ImageIcon className="w-6 h-6" />
+              <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-slate-800 p-1 text-center">
+                <ImageIcon className="w-5 h-5 mb-0.5 text-amber-400" />
+                <span className="text-[8px] text-slate-300 font-sans leading-tight">
+                  {imageError ? 'Not Loaded' : 'Preview'}
+                </span>
               </div>
             )}
-            {previewUrl && (
-              <button
-                type="button"
-                onClick={() => setIsZoomModalOpen(true)}
-                className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity cursor-pointer"
-                title="View full image"
-              >
-                <Eye className="w-4 h-4" />
-              </button>
-            )}
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
+              <Eye className="w-4 h-4 text-amber-400" />
+            </div>
           </div>
 
           {/* Details */}
@@ -375,6 +379,18 @@ export function CameraPhotoCapture({
 
           {/* Action Buttons */}
           <div className="flex items-center gap-1.5 shrink-0">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsZoomModalOpen(true)}
+              className="h-8 px-2 text-xs font-semibold text-blue-700 hover:text-blue-900 hover:bg-blue-50 border-blue-200 gap-1 cursor-pointer"
+              title="View full image"
+            >
+              <Eye className="w-3.5 h-3.5 text-blue-600" />
+              <span className="hidden sm:inline">View</span>
+            </Button>
+
             <Button
               type="button"
               variant="outline"
@@ -419,10 +435,10 @@ export function CameraPhotoCapture({
       {/* Full Image Zoom Modal */}
       {isZoomModalOpen && previewUrl && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 animate-in fade-in duration-150"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 animate-in fade-in duration-150"
           onClick={() => setIsZoomModalOpen(false)}
         >
-          <div className="relative max-w-4xl max-h-[90vh] bg-slate-900 rounded-2xl overflow-hidden shadow-2xl border border-slate-700 p-2" onClick={e => e.stopPropagation()}>
+          <div className="relative max-w-4xl max-h-[90vh] bg-slate-900 rounded-2xl overflow-hidden shadow-2xl border border-slate-700 p-3 w-full" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between p-2 border-b border-slate-800 mb-2">
               <span className="text-xs font-bold text-white flex items-center gap-1.5">
                 <ImageIcon className="w-4 h-4 text-amber-400" />
@@ -431,13 +447,43 @@ export function CameraPhotoCapture({
               <button
                 type="button"
                 onClick={() => setIsZoomModalOpen(false)}
-                className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={previewUrl} alt={label || 'Full Photo'} className="max-h-[75vh] w-auto object-contain mx-auto rounded-lg" />
+            
+            {imageError ? (
+              <div className="py-12 px-4 flex flex-col items-center justify-center text-center space-y-3">
+                <ImageIcon className="w-12 h-12 text-amber-400 opacity-60" />
+                <p className="text-sm font-semibold text-white">Image Preview Not Found on Server</p>
+                <p className="text-xs text-slate-400 max-w-md">
+                  This photo URL was saved under a remote domain or was not saved to local storage. Please click &quot;Retake&quot; or &quot;Change&quot; to upload a fresh image.
+                </p>
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => {
+                      setIsZoomModalOpen(false)
+                      galleryInputRef.current?.click()
+                    }}
+                    className="bg-amber-600 hover:bg-amber-700 text-white text-xs gap-1.5"
+                  >
+                    <UploadCloud className="w-4 h-4" />
+                    Upload Fresh Photo
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img 
+                src={previewUrl} 
+                alt={label || 'Full Photo'} 
+                onError={() => setImageError(true)}
+                className="max-h-[75vh] w-auto max-w-full object-contain mx-auto rounded-lg" 
+              />
+            )}
           </div>
         </div>
       )}

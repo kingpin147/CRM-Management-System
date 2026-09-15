@@ -1,7 +1,9 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
+import fs from 'fs'
+import path from 'path'
 
 /**
- * Cloudflare R2 Storage Utility using S3 Compatible API
+ * Cloudflare R2 Storage Utility using S3 Compatible API with local filesystem fallback
  */
 
 const accountId = process.env.R2_ACCOUNT_ID || ''
@@ -14,7 +16,7 @@ let r2Client: S3Client | null = null
 
 function getR2Client(): S3Client | null {
   if (!accountId || !accessKeyId || !secretAccessKey) {
-    console.warn('[R2 Storage] R2 credentials not fully configured in environment variables.')
+    return null
   }
   
   if (!r2Client) {
@@ -31,8 +33,24 @@ function getR2Client(): S3Client | null {
 }
 
 /**
+ * Saves uploaded file locally into public/uploads for direct serving
+ */
+async function saveToLocalUploads(fileBuffer: Buffer, key: string): Promise<string> {
+  try {
+    const uploadDir = path.join(process.cwd(), 'public', 'uploads', path.dirname(key))
+    await fs.promises.mkdir(uploadDir, { recursive: true })
+    const filePath = path.join(process.cwd(), 'public', 'uploads', key)
+    await fs.promises.writeFile(filePath, fileBuffer)
+    return `/uploads/${key}`
+  } catch (err) {
+    console.error('[Local Storage Write Error]:', err)
+    return `/uploads/${key}`
+  }
+}
+
+/**
  * Uploads a file buffer or Blob to Cloudflare R2 Cloud Storage.
- * Returns the public text URL of the uploaded object to store in database.
+ * Falls back to local public uploads if R2 credentials are not set.
  */
 export async function uploadToR2(
   fileBuffer: Buffer,
@@ -42,10 +60,8 @@ export async function uploadToR2(
   try {
     const client = getR2Client()
     if (!client || !accountId) {
-      console.warn('[R2 Upload] Missing R2 credentials. Generating mock Cloudflare R2 object URL format.')
-      // Fallback object URL if R2 credentials are yet to be supplied in .env
-      const fallbackDomain = publicDomain || `https://${bucketName}.${accountId || 'pub'}.r2.dev`
-      return `${fallbackDomain.replace(/\/$/, '')}/${key}`
+      // Save locally to public/uploads so the file is immediately accessible and viewable
+      return await saveToLocalUploads(fileBuffer, key)
     }
 
     const command = new PutObjectCommand({
@@ -64,9 +80,7 @@ export async function uploadToR2(
     
     return `${baseUrl}/${key}`
   } catch (error: any) {
-    console.error('[R2 Storage Error]:', error?.message || error)
-    // If S3 upload fails due to invalid credential placeholder, return public URL path for simple textual DB persistence
-    const fallbackDomain = publicDomain || `https://${bucketName}.r2.dev`
-    return `${fallbackDomain}/${key}`
+    console.error('[R2 Storage Error, falling back to local storage]:', error?.message || error)
+    return await saveToLocalUploads(fileBuffer, key)
   }
 }
