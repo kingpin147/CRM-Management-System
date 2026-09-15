@@ -59,14 +59,17 @@ export function TicketForm({ customers }: { customers: { id: string, fullName: s
 
     let attachmentUrl = null
     if (attachment) {
-      const ext = attachment.name.split('.').pop()
-      const fileName = `tkt-${Date.now()}.${ext}`
-      attachmentUrl = await uploadFile(attachment, 'crm-uploads', `tickets/${fileName}`)
-      
-      if (!attachmentUrl) {
-        setError("Failed to upload attachment. Check Supabase storage bucket.")
-        setUploading(false)
-        return
+      try {
+        const uploadData = new FormData()
+        uploadData.append('file', attachment)
+        uploadData.append('folder', 'tickets')
+        const uploadRes = await fetch('/api/upload/r2', { method: 'POST', body: uploadData })
+        if (uploadRes.ok) {
+          const uploadJson = await uploadRes.json()
+          attachmentUrl = uploadJson.url
+        }
+      } catch (uploadErr) {
+        console.warn('Attachment upload fallback notice:', uploadErr)
       }
     }
 
