@@ -15,12 +15,14 @@ export function MainNav({
   role = 'SALES_MANAGER', 
   orientation = 'vertical',
   fullName = '',
-  designation = ''
+  designation = '',
+  onItemClick,
 }: { 
   role?: string;
   orientation?: 'horizontal' | 'vertical';
   fullName?: string;
   designation?: string;
+  onItemClick?: () => void;
 }) {
   const pathname = usePathname()
 
@@ -47,10 +49,10 @@ export function MainNav({
   }
 
   const linkClass = (path: string) => {
-    const base = "flex items-center text-xs xl:text-sm font-medium rounded-lg transition-all duration-200 whitespace-nowrap shrink-0"
+    const base = "flex items-center text-xs xl:text-sm font-medium rounded-lg transition-all duration-200 whitespace-nowrap shrink-0 cursor-pointer"
     const layout = orientation === 'horizontal' 
       ? "px-2 py-1.5 lg:px-2.5 lg:py-1.5 xl:px-3 xl:py-2" 
-      : "px-3 py-2 text-xs"
+      : "px-3 py-2 text-xs w-full block"
 
     if (isActive(path)) {
       return `${base} ${layout} bg-[var(--color-amber)]/15 text-[var(--color-ink)] font-semibold shadow-2xs`
@@ -326,7 +328,7 @@ export function MainNav({
       <div>
         <p className="px-3 text-xs font-bold text-[var(--color-slate-custom)] uppercase tracking-wider mb-1">Customers</p>
         <div className="space-y-0.5">
-          <Link href="/dashboard/customers" className={linkClass('/dashboard/customers')}>
+          <Link href="/dashboard/customers" className={linkClass('/dashboard/customers')} onClick={onItemClick}>
             <span className="flex items-center gap-1.5 font-semibold">
               <Search className="h-4 w-4 text-[var(--color-amber)]" />
               Customer Search
@@ -342,29 +344,29 @@ export function MainNav({
         <div className="space-y-0.5">
           {isSalesExec ? (
             <>
-              <Link href="/dashboard/customers/new" className={linkClass('/dashboard/customers/new')}>
+              <Link href="/dashboard/customers/new" className={linkClass('/dashboard/customers/new')} onClick={onItemClick}>
                 Create Sales
               </Link>
-              <Link href="/dashboard/installer/jobs" className={linkClass('/dashboard/installer/jobs')}>
+              <Link href="/dashboard/installer/jobs" className={linkClass('/dashboard/installer/jobs')} onClick={onItemClick}>
                 Assigned Jobs
               </Link>
             </>
           ) : canViewAssignedJobs ? (
-            <Link href="/dashboard/installer/jobs" className={linkClass('/dashboard/installer/jobs')}>
+            <Link href="/dashboard/installer/jobs" className={linkClass('/dashboard/installer/jobs')} onClick={onItemClick}>
               Assigned Jobs
             </Link>
           ) : (
             <>
-              <Link href="/dashboard/customers/new" className={linkClass('/dashboard/customers/new')}>
+              <Link href="/dashboard/customers/new" className={linkClass('/dashboard/customers/new')} onClick={onItemClick}>
                 Create Sales
               </Link>
               {canViewApproval && (
-                <Link href="/dashboard/sales/pending" className={linkClass('/dashboard/sales/pending')}>
+                <Link href="/dashboard/sales/pending" className={linkClass('/dashboard/sales/pending')} onClick={onItemClick}>
                   Manager Approval
                 </Link>
               )}
               {(isOMManager || isSuperAdmin || isSalesManager) && (
-                <Link href="/dashboard/installer/jobs" className={linkClass('/dashboard/installer/jobs')}>
+                <Link href="/dashboard/installer/jobs" className={linkClass('/dashboard/installer/jobs')} onClick={onItemClick}>
                   Assigned Jobs Queue
                 </Link>
               )}
@@ -377,16 +379,16 @@ export function MainNav({
         <div>
           <p className="px-3 text-xs font-bold text-[var(--color-slate-custom)] uppercase tracking-wider mb-1">Billing & CPM</p>
           <div className="space-y-0.5">
-            <Link href="/dashboard/billing-cpm?tab=package-status" className={linkClass('/dashboard/billing-cpm?tab=package-status')}>
+            <Link href="/dashboard/billing-cpm?tab=package-status" className={linkClass('/dashboard/billing-cpm?tab=package-status')} onClick={onItemClick}>
               Package & Status Change
             </Link>
-            <Link href="/dashboard/billing-cpm?tab=debit-credit" className={linkClass('/dashboard/billing-cpm?tab=debit-credit')}>
+            <Link href="/dashboard/billing-cpm?tab=debit-credit" className={linkClass('/dashboard/billing-cpm?tab=debit-credit')} onClick={onItemClick}>
               Debit / Credit Notes
             </Link>
-            <Link href="/dashboard/billing-cpm?tab=payments" className={linkClass('/dashboard/billing-cpm?tab=payments')}>
+            <Link href="/dashboard/billing-cpm?tab=payments" className={linkClass('/dashboard/billing-cpm?tab=payments')} onClick={onItemClick}>
               Payment Entry & Approval
             </Link>
-            <Link href="/dashboard/billing-cpm?tab=bulk-status" className={linkClass('/dashboard/billing-cpm?tab=bulk-status')}>
+            <Link href="/dashboard/billing-cpm?tab=bulk-status" className={linkClass('/dashboard/billing-cpm?tab=bulk-status')} onClick={onItemClick}>
               Bulk Status Change
             </Link>
           </div>
@@ -396,10 +398,10 @@ export function MainNav({
       <div>
         <p className="px-3 text-xs font-bold text-[var(--color-slate-custom)] uppercase tracking-wider mb-1">Complaint Management</p>
         <div className="space-y-0.5">
-          <Link href="/dashboard/tickets?status=PENDING" className={linkClass('/dashboard/tickets?status=PENDING')}>
+          <Link href="/dashboard/tickets?status=PENDING" className={linkClass('/dashboard/tickets?status=PENDING')} onClick={onItemClick}>
             Pending Complaints
           </Link>
-          <Link href="/dashboard/tickets" className={linkClass('/dashboard/tickets')}>
+          <Link href="/dashboard/tickets" className={linkClass('/dashboard/tickets')} onClick={onItemClick}>
             All Tickets & Support
           </Link>
         </div>
@@ -409,39 +411,39 @@ export function MainNav({
         <div>
           <p className="px-3 text-xs font-bold text-[var(--color-slate-custom)] uppercase tracking-wider mb-1">Reports</p>
           <div className="space-y-0.5">
-            <Link href="/dashboard/reports?view=status" className={linkClass('/dashboard/reports?view=status')}>
+            <Link href="/dashboard/reports?view=status" className={linkClass('/dashboard/reports?view=status')} onClick={onItemClick}>
               Customer Status Report
             </Link>
-            <Link href="/dashboard/reports?view=sales" className={linkClass('/dashboard/reports?view=sales')}>
+            <Link href="/dashboard/reports?view=sales" className={linkClass('/dashboard/reports?view=sales')} onClick={onItemClick}>
               Sales Report
             </Link>
-            <Link href="/dashboard/reports?view=receivable" className={linkClass('/dashboard/reports?view=receivable')}>
+            <Link href="/dashboard/reports?view=receivable" className={linkClass('/dashboard/reports?view=receivable')} onClick={onItemClick}>
               Customer Receivable
             </Link>
             {!isSalesExec && (
               <>
-                <Link href="/dashboard/reports?view=connectivity" className={linkClass('/dashboard/reports?view=connectivity')}>
+                <Link href="/dashboard/reports?view=connectivity" className={linkClass('/dashboard/reports?view=connectivity')} onClick={onItemClick}>
                   Connectivity Report Summary
                 </Link>
-                <Link href="/dashboard/reports?view=adjustment" className={linkClass('/dashboard/reports?view=adjustment')}>
+                <Link href="/dashboard/reports?view=adjustment" className={linkClass('/dashboard/reports?view=adjustment')} onClick={onItemClick}>
                   Adjustment Report
                 </Link>
-                <Link href="/dashboard/reports?view=payments" className={linkClass('/dashboard/reports?view=payments')}>
+                <Link href="/dashboard/reports?view=payments" className={linkClass('/dashboard/reports?view=payments')} onClick={onItemClick}>
                   Payments Report
                 </Link>
-                <Link href="/dashboard/reports?view=billing" className={linkClass('/dashboard/reports?view=billing')}>
+                <Link href="/dashboard/reports?view=billing" className={linkClass('/dashboard/reports?view=billing')} onClick={onItemClick}>
                   Billing Report
                 </Link>
-                <Link href="/dashboard/reports?view=sales-incentive" className={linkClass('/dashboard/reports?view=sales-incentive')}>
+                <Link href="/dashboard/reports?view=sales-incentive" className={linkClass('/dashboard/reports?view=sales-incentive')} onClick={onItemClick}>
                   Incentive Disbursement Report (Sales)
                 </Link>
-                <Link href="/dashboard/reports?view=om-incentive" className={linkClass('/dashboard/reports?view=om-incentive')}>
+                <Link href="/dashboard/reports?view=om-incentive" className={linkClass('/dashboard/reports?view=om-incentive')} onClick={onItemClick}>
                   Incentive Disbursement Report (O &amp; M)
                 </Link>
-                <Link href="/dashboard/reports?view=system-brands" className={linkClass('/dashboard/reports?view=system-brands')}>
+                <Link href="/dashboard/reports?view=system-brands" className={linkClass('/dashboard/reports?view=system-brands')} onClick={onItemClick}>
                   Customer System Brands
                 </Link>
-                <Link href="/dashboard/reports?view=register" className={linkClass('/dashboard/reports?view=register')}>
+                <Link href="/dashboard/reports?view=register" className={linkClass('/dashboard/reports?view=register')} onClick={onItemClick}>
                   Customer Register
                 </Link>
               </>
@@ -453,7 +455,7 @@ export function MainNav({
       {canViewAdmin && (
         <div>
           <p className="px-3 text-xs font-bold text-[var(--color-slate-custom)] uppercase tracking-wider mb-1">Management</p>
-          <Link href="/dashboard/admin" className={linkClass('/dashboard/admin')}>
+          <Link href="/dashboard/admin" className={linkClass('/dashboard/admin')} onClick={onItemClick}>
             User Roles & Permissions
           </Link>
         </div>
@@ -461,7 +463,7 @@ export function MainNav({
 
       <div>
         <p className="px-3 text-xs font-bold text-[var(--color-slate-custom)] uppercase tracking-wider mb-1">Account</p>
-        <Link href="/dashboard/settings" className={linkClass('/dashboard/settings')}>
+        <Link href="/dashboard/settings" className={linkClass('/dashboard/settings')} onClick={onItemClick}>
           Settings
         </Link>
       </div>

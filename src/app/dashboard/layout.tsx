@@ -1,15 +1,8 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
-import { Menu } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { MainNav } from '@/components/layout/MainNav'
+import { MobileNav } from '@/components/layout/MobileNav'
 import prisma from '@/lib/prisma'
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from "@/components/ui/sheet"
 import { UserNav } from '@/components/layout/UserNav'
 import { Logo } from '@/components/ui/logo'
 import { SessionTimeout } from '@/components/auth/SessionTimeout'
@@ -60,27 +53,7 @@ export default async function DashboardLayout({
         <header className="h-16 flex items-center justify-between px-3 sm:px-4 lg:px-6 border-b border-[var(--color-line)] bg-white/90 backdrop-blur-md sticky top-0 z-30 shadow-2xs shrink-0">
           
           {/* Mobile Navigation */}
-          <div className="flex items-center gap-2 md:hidden">
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="shrink-0 md:hidden h-9 w-9">
-                  <Menu className="h-5 w-5" />
-                  <span className="sr-only">Toggle navigation menu</span>
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-64 p-0">
-                <Logo
-                  href="/dashboard/customers"
-                  iconSize={28}
-                  className="h-16 px-6 border-b border-line shadow-sm hover:opacity-80 transition-opacity"
-                />
-                <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-                  <MainNav role={userRole} fullName={userFullName} designation={userDesignation} orientation="vertical" />
-                </nav>
-              </SheetContent>
-            </Sheet>
-            <Logo href="/dashboard/customers" iconSize={24} className="hover:opacity-80 transition-opacity" />
-          </div>
+          <MobileNav role={userRole} fullName={userFullName} designation={userDesignation} />
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center flex-1 gap-2 lg:gap-4 xl:gap-6 min-w-0">
