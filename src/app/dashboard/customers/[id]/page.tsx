@@ -367,9 +367,14 @@ export default async function CustomerDetailPage({
                         <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs w-44 bg-slate-50 border-r border-slate-200 text-[#002868]">Billing Type</TableCell>
                           <TableCell className="text-xs">
-                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs mr-2">
                               {customer.packagePlan?.billingType || 'Monthly'}
                             </Badge>
+                            {Boolean(customer.packagePlan?.freeMonths) && (
+                              <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 font-bold text-[10px]">
+                                +{customer.packagePlan?.freeMonths} Month{Number(customer.packagePlan?.freeMonths) > 1 ? 's' : ''} Free Promo
+                              </Badge>
+                            )}
                           </TableCell>
                         </TableRow>
                         <TableRow className="border-b hover:bg-transparent">

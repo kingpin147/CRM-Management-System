@@ -172,6 +172,7 @@ model PackagePlan {
   billingType      String // Monthly, Quarterly, Half Yearly, Yearly, FOC (Dropdown)
   monitoringTime   String // 12 Hours, 24 Hours (Dropdown)
   nextBillingDate  DateTime?
+  freeMonths       Int       @default(0)
   monthlyBasePrice Decimal
   appliedDiscount  Decimal // 0%, 10%, 20%, 40%, 100% (FOC)
   salesTaxAmount   Decimal

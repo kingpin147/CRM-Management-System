@@ -5,6 +5,7 @@ import { CustomerStatus, CustomerType, TicketStatus, TicketType } from '@prisma/
 import prisma from '@/lib/prisma'
 import { createClient } from '@/utils/supabase/server'
 import { sendInvoiceNotifications } from '@/utils/communication'
+import { calculateNextBillingDate } from '@/lib/pricing'
 
 export async function updateCustomer(formData: FormData) {
   const customerId = formData.get('customerId') as string
@@ -42,11 +43,8 @@ export async function updateCustomer(formData: FormData) {
     let calculatedNextBillingDate: Date | undefined
     if (isNowActive && currentCustomer?.packagePlan) {
       const bType = currentCustomer.packagePlan.billingType || 'Monthly'
-      calculatedNextBillingDate = new Date(activationDate!)
-      if (bType === 'Quarterly') calculatedNextBillingDate.setMonth(calculatedNextBillingDate.getMonth() + 3)
-      else if (bType === 'Half Yearly') calculatedNextBillingDate.setMonth(calculatedNextBillingDate.getMonth() + 6)
-      else if (bType === 'Yearly') calculatedNextBillingDate.setMonth(calculatedNextBillingDate.getMonth() + 12)
-      else calculatedNextBillingDate.setMonth(calculatedNextBillingDate.getMonth() + 1)
+      const freeM = currentCustomer.packagePlan.freeMonths || 0
+      calculatedNextBillingDate = calculateNextBillingDate(activationDate, bType, freeM)
     }
 
     if (currentCustomer && currentCustomer.status !== status) {
@@ -110,6 +108,7 @@ export async function createPackagePlan(formData: FormData) {
   const packageTier = formData.get('packageTier') as string
   const billingType = formData.get('billingType') as string
   const monitoringTime = formData.get('monitoringTime') as string
+  const freeMonths = Math.max(0, Number(formData.get('freeMonths') || 0))
   const monthlyBasePrice = Number(formData.get('monthlyBasePrice')) || 0
   const appliedDiscount = Number(formData.get('appliedDiscount')) || 0
   
@@ -124,6 +123,7 @@ export async function createPackagePlan(formData: FormData) {
         packageTier,
         billingType,
         monitoringTime,
+        freeMonths,
         monthlyBasePrice,
         appliedDiscount,
         salesTaxAmount,
@@ -135,6 +135,7 @@ export async function createPackagePlan(formData: FormData) {
         packageTier,
         billingType,
         monitoringTime,
+        freeMonths,
         monthlyBasePrice,
         appliedDiscount,
         salesTaxAmount,

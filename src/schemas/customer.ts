@@ -31,6 +31,7 @@ export const customerSchema = z.object({
   packageTier: z.string().min(1, 'Please select Package Tier'),
   billingType: z.string().min(1, 'Please select Billing Type'),
   monitoringTime: z.string().min(1, 'Please select Monitoring Time'),
+  freeMonths: z.coerce.number().default(0),
   monthlyBasePrice: z.coerce.number().default(0),
   salesTaxAmount: z.coerce.number().default(0),
   onboardingFee: z.coerce.number().default(0),

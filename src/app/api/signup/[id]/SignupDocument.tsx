@@ -435,7 +435,9 @@ export function SignupDocument({ customer, logoSrc }: { customer: any; logoSrc?:
                 <View style={styles.gridColRight}>
                   <Text style={styles.label}>Billing Type:</Text>
                   <View style={{ width: '58%' }}>
-                    <Text style={styles.badgePill}>{plan?.billingType || '—'}</Text>
+                    <Text style={styles.badgePill}>
+                      {plan?.billingType ? `${plan.billingType}${plan.freeMonths ? ` (+${plan.freeMonths} Mo Free)` : ''}` : '—'}
+                    </Text>
                   </View>
                 </View>
               </View>

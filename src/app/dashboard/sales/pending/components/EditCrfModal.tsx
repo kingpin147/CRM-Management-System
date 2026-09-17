@@ -27,9 +27,9 @@ import {
   IP_LIST,
 } from '@/lib/solar-constants'
 import { CITIES_LIST, getAreasForCity, getSubAreasForArea } from '@/lib/pakistan-cities-areas'
-import { CheckCircle2, Edit3, Loader2, Save, FileText, User, Zap, Wrench, ShieldCheck, Sun, Battery, HardHat } from 'lucide-react'
+import { CheckCircle2, Edit3, Loader2, Save, FileText, User, Zap, Wrench, ShieldCheck, Sun, Battery, HardHat, Gift } from 'lucide-react'
+import { calculatePackageBreakdown, getEligibleFreeMonths, calculateBillingDurationMonths } from '@/lib/pricing'
 import { SectionHeader } from '@/components/ui/section-header'
-import { calculatePackageBreakdown } from '@/lib/pricing'
 import { CameraPhotoCapture } from '@/components/ui/CameraPhotoCapture'
 
 const PACKAGES = ['Basic', 'Moderate', 'Comprehensive']
@@ -76,6 +76,7 @@ export function EditCrfModal({
   const [packageTier, setPackageTier] = React.useState('Basic')
   const [billingType, setBillingType] = React.useState('Monthly')
   const [monitoringTime, setMonitoringTime] = React.useState('Hybrid')
+  const [freeMonths, setFreeMonths] = React.useState<number>(0)
   
   // Payment State
   const [paymentMode, setPaymentMode] = React.useState('')
@@ -175,6 +176,7 @@ export function EditCrfModal({
         setPackageTier(customer.packagePlan.packageTier || 'Basic')
         setBillingType(customer.packagePlan.billingType || 'Monthly')
         setMonitoringTime(customer.packagePlan.monitoringTime || 'Hybrid')
+        setFreeMonths((customer.packagePlan as any).freeMonths || 0)
       }
 
       if (customer.solarSystem) {
@@ -325,6 +327,7 @@ export function EditCrfModal({
       formData.append('packageTier', packageTier)
       formData.append('billingType', billingType)
       formData.append('monitoringTime', monitoringTime)
+      formData.append('freeMonths', String(freeMonths))
 
       // Calculated pricing fields
       formData.append('monthlyBasePrice', String(breakdown.priceAfterDiscount))
@@ -626,6 +629,36 @@ export function EditCrfModal({
                 </Select>
               </div>
             </div>
+
+            {/* Promotional Free Months Checkpoint */}
+            {getEligibleFreeMonths(billingType) > 0 && (
+              <div className="bg-gradient-to-r from-orange-50/80 via-amber-50/60 to-emerald-50/60 border border-orange-200/90 rounded-xl p-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <label className="flex items-center gap-2.5 cursor-pointer select-none text-xs font-semibold text-slate-800">
+                    <input
+                      type="checkbox"
+                      checked={freeMonths > 0}
+                      onChange={(e) => {
+                        const isChecked = e.target.checked
+                        const eligible = getEligibleFreeMonths(billingType)
+                        setFreeMonths(isChecked ? eligible : 0)
+                      }}
+                      className="h-4 w-4 rounded border-slate-300 text-[#F58220] focus:ring-[#F58220]"
+                    />
+                    <Gift className="w-3.5 h-3.5 text-[#F58220]" />
+                    <span>
+                      {getEligibleFreeMonths(billingType) === 1 ? '1 Month Free Promotion' : '2 Months Free Promotion'}
+                    </span>
+                    <Badge className={freeMonths > 0 ? "bg-emerald-600 text-white text-[10px] font-bold px-1.5 py-0" : "bg-orange-100 text-orange-800 border-orange-200 text-[10px] font-semibold px-1.5 py-0"}>
+                      {freeMonths > 0 ? 'Applied' : 'Available'}
+                    </Badge>
+                  </label>
+                  <div className="text-xs text-slate-600 font-medium">
+                    Effective Coverage: <strong>{calculateBillingDurationMonths(billingType, freeMonths)} Months</strong>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Pricing Summary Breakdown Card */}
             <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200 shadow-2xs space-y-2.5">

@@ -3,6 +3,7 @@
 import prisma from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { calculateNextAuditDate, getAuditFrequencyLabel, formatDate } from '@/lib/utils'
+import { calculateNextBillingDate } from '@/lib/pricing'
 
 function parseDateSafe(val: any): Date | null {
   if (!val || typeof val !== 'string' || val.trim() === '') return null
@@ -535,11 +536,8 @@ export async function activateIpNocConnection(formData: FormData) {
 
   const activationDate = new Date()
   const bType = customer.packagePlan?.billingType || 'Monthly'
-  const nextBillingDate = new Date(activationDate)
-  if (bType === 'Quarterly') nextBillingDate.setMonth(nextBillingDate.getMonth() + 3)
-  else if (bType === 'Half Yearly') nextBillingDate.setMonth(nextBillingDate.getMonth() + 6)
-  else if (bType === 'Yearly') nextBillingDate.setMonth(nextBillingDate.getMonth() + 12)
-  else nextBillingDate.setMonth(nextBillingDate.getMonth() + 1)
+  const freeMonths = customer.packagePlan?.freeMonths || 0
+  const nextBillingDate = calculateNextBillingDate(activationDate, bType, freeMonths)
 
   await prisma.customer.update({
     where: { id: customerId },

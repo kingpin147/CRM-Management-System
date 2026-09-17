@@ -8,8 +8,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SYSTEM_SIZES } from '@/lib/solar-constants'
-import { calculatePackageBreakdown } from '@/lib/pricing'
+import { calculatePackageBreakdown, getEligibleFreeMonths } from '@/lib/pricing'
 import { createPackagePlan } from './actions'
+import { Gift } from 'lucide-react'
 
 export function PackageFormDialog({ customerId, initialData, inline = false }: { customerId: string; initialData?: any; inline?: boolean }) {
   const router = useRouter()
@@ -23,6 +24,7 @@ export function PackageFormDialog({ customerId, initialData, inline = false }: {
   const [packageTier, setPackageTier] = useState(initialData?.packageTier || '')
   const [monitoringTime, setMonitoringTime] = useState(initialData?.monitoringTime || '')
   const [billingType, setBillingType] = useState(initialData?.billingType || '')
+  const [freeMonths, setFreeMonths] = useState<number>(initialData?.freeMonths || 0)
   const [basePrice, setBasePrice] = useState<number | ''>(initialData?.monthlyBasePrice ?? '')
   const [discount, setDiscount] = useState<number | ''>(initialData?.appliedDiscount ?? '')
 
@@ -43,6 +45,7 @@ export function PackageFormDialog({ customerId, initialData, inline = false }: {
     if (packageTier) formData.set('packageTier', packageTier)
     if (monitoringTime) formData.set('monitoringTime', monitoringTime)
     if (billingType) formData.set('billingType', billingType)
+    formData.set('freeMonths', String(freeMonths))
     if (basePrice !== '') formData.set('monthlyBasePrice', String(basePrice))
     if (discount !== '') formData.set('appliedDiscount', String(discount))
 
@@ -133,7 +136,12 @@ export function PackageFormDialog({ customerId, initialData, inline = false }: {
 
             <div className="space-y-1.5">
               <Label htmlFor="billingType" className="text-xs font-semibold text-[var(--color-ink)]">Billing Cycle</Label>
-              <Select name="billingType" value={billingType} onValueChange={setBillingType}>
+              <Select name="billingType" value={billingType} onValueChange={(val) => {
+                setBillingType(val)
+                const eligible = getEligibleFreeMonths(val)
+                if (eligible === 0) setFreeMonths(0)
+                else if (freeMonths > 0) setFreeMonths(eligible)
+              }}>
                 <SelectTrigger className="border-[var(--color-line)] bg-white w-full">
                   <SelectValue placeholder="Select Billing Cycle" />
                 </SelectTrigger>
@@ -146,6 +154,28 @@ export function PackageFormDialog({ customerId, initialData, inline = false }: {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Checkpoint for Promotional Free Months */}
+            {getEligibleFreeMonths(billingType) > 0 && (
+              <div className="bg-amber-50/80 border border-amber-200 rounded-lg p-2.5">
+                <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-semibold text-amber-950">
+                  <input
+                    type="checkbox"
+                    checked={freeMonths > 0}
+                    onChange={(e) => {
+                      const isChecked = e.target.checked
+                      const eligible = getEligibleFreeMonths(billingType)
+                      setFreeMonths(isChecked ? eligible : 0)
+                    }}
+                    className="h-4 w-4 rounded border-amber-300 text-[#F58220] focus:ring-[#F58220]"
+                  />
+                  <Gift className="w-3.5 h-3.5 text-[#F58220]" />
+                  <span>
+                    {getEligibleFreeMonths(billingType) === 1 ? '1 Month Free Promotion' : '2 Months Free Promotion'}
+                  </span>
+                </label>
+              </div>
+            )}
 
             <div className="space-y-1.5">
               <Label htmlFor="monthlyBasePrice" className="text-xs font-semibold text-[var(--color-ink)]">Subscription Price (PKR)</Label>

@@ -140,3 +140,51 @@ export function calculatePackageBreakdown(
     grandTotal,
   }
 }
+
+/**
+ * Returns the number of promotional free months available for a given billing cycle.
+ * - Monthly or Quarterly: 1 Month Free
+ * - Half Yearly or Yearly: 2 Months Free
+ * - Others: 0
+ */
+export function getEligibleFreeMonths(billingType?: string | null): number {
+  if (billingType === 'Monthly' || billingType === 'Quarterly') return 1
+  if (billingType === 'Half Yearly' || billingType === 'Yearly') return 2
+  return 0
+}
+
+/**
+ * Calculates total coverage duration in months including promotional free months.
+ */
+export function calculateBillingDurationMonths(
+  billingType?: string | null,
+  freeMonths: number = 0
+): number {
+  let baseMonths = 1
+  if (billingType === 'Quarterly') {
+    baseMonths = 3
+  } else if (billingType === 'Half Yearly') {
+    baseMonths = 6
+  } else if (billingType === 'Yearly' || billingType === 'FOC') {
+    baseMonths = 12
+  }
+
+  const validFree = Math.max(0, Number(freeMonths) || 0)
+  return baseMonths + validFree
+}
+
+/**
+ * Calculates Next Billing Date based on start date, billing cycle, and promotional free months.
+ */
+export function calculateNextBillingDate(
+  startDate?: Date | string | null,
+  billingType?: string | null,
+  freeMonths: number = 0
+): Date {
+  const base = startDate ? new Date(startDate) : new Date()
+  const d = isNaN(base.getTime()) ? new Date() : new Date(base)
+  const totalMonths = calculateBillingDurationMonths(billingType, freeMonths)
+  d.setMonth(d.getMonth() + totalMonths)
+  return d
+}
+

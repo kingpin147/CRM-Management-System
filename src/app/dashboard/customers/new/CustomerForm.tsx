@@ -15,13 +15,13 @@ import { Badge } from '@/components/ui/badge'
 import { createCustomer } from './actions'
 import { uploadFile } from '@/utils/supabase/storage'
 import { CustomerType } from '@prisma/client'
-import { ChevronRight, ChevronLeft, CheckCircle2, Check, Sparkles, Loader2, AlertCircle, Download, FileText, Camera, UploadCloud, Image as ImageIcon, X, Users } from 'lucide-react'
+import { ChevronRight, ChevronLeft, CheckCircle2, Check, Sparkles, Loader2, AlertCircle, Download, FileText, Camera, UploadCloud, Image as ImageIcon, X, Users, Gift } from 'lucide-react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { AutoSuggestInput } from '@/components/ui/auto-suggest-input'
 import { CITIES_LIST, getAreasForCity, getDefaultDiscoForCity, getSubAreasForArea } from '@/lib/pakistan-cities-areas'
 import { formatDiscoRefNo } from '@/lib/utils'
 import { SYSTEM_SIZES, INVERTER_SIZES, INVERTER_BRANDS, PANEL_BRANDS, BATTERY_BRANDS, IP_LIST, DISCO_LIST, STRUCTURE_TYPES, STRUCTURE_MATERIALS } from '@/lib/solar-constants'
-import { calculatePackageBreakdown } from '@/lib/pricing'
+import { calculatePackageBreakdown, getEligibleFreeMonths, calculateBillingDurationMonths, calculateNextBillingDate } from '@/lib/pricing'
 import { SectionHeader } from '@/components/ui/section-header'
 import { CnicCameraCapture } from '@/components/ui/CnicCameraCapture'
 import { CameraPhotoCapture } from '@/components/ui/CameraPhotoCapture'
@@ -74,6 +74,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
       packageTier: '',
       billingType: '',
       monitoringTime: '',
+      freeMonths: 0,
       monthlyBasePrice: 0,
       salesTaxAmount: 0,
       onboardingFee: 0,
@@ -136,6 +137,20 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
   const panelWattage   = form.watch('panelWattage') || 0
   const noOfPanels     = form.watch('noOfPanels')   || 0
   const totalPanelWattage = panelWattage * noOfPanels
+
+  const freeMonthsValue = form.watch('freeMonths') || 0
+  const eligibleFreeMonths = getEligibleFreeMonths(billingType)
+
+  // Automatically adjust freeMonths if billingType changes
+  useEffect(() => {
+    const current = form.getValues('freeMonths') || 0
+    const eligible = getEligibleFreeMonths(billingType)
+    if (eligible === 0) {
+      if (current !== 0) form.setValue('freeMonths', 0)
+    } else if (current > 0 && current !== eligible) {
+      form.setValue('freeMonths', eligible)
+    }
+  }, [billingType, form])
 
   const breakdown = calculatePackageBreakdown(systemSizeKw, packageTier, billingType, monitoringTime)
   const {
@@ -440,6 +455,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
       formData.append('salesTaxAmount',  Math.round(salesTax).toString())
       formData.append('onboardingFee',   Math.round(onboardingFee).toString())
       formData.append('totalAmount',     Math.round(grandTotal).toString())
+      formData.set('freeMonths',         (values.freeMonths ?? 0).toString())
       if (cnicFrontUrl) {
         formData.append('cnicFrontUrl', cnicFrontUrl)
         formData.append('cnicImageUrl', cnicFrontUrl)
@@ -997,6 +1013,58 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                       )}
                     />
                   </div>
+
+                  {/* Dynamic Promotional Free Months Checkpoint */}
+                  {eligibleFreeMonths > 0 && (
+                    <div className="bg-gradient-to-r from-orange-50/80 via-amber-50/60 to-emerald-50/60 border border-orange-200/90 rounded-xl p-4 transition-all duration-200 shadow-xs">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <label className="flex items-start sm:items-center gap-3 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            id="free-months-checkbox"
+                            checked={freeMonthsValue > 0}
+                            onChange={(e) => {
+                              const isChecked = e.target.checked
+                              const eligible = getEligibleFreeMonths(billingType)
+                              form.setValue('freeMonths', isChecked ? eligible : 0, { shouldValidate: true })
+                            }}
+                            className="mt-0.5 sm:mt-0 h-4.5 w-4.5 rounded border-gray-300 text-[#F58220] focus:ring-[#F58220] transition cursor-pointer"
+                          />
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-gray-900 flex items-center gap-1.5">
+                                <Gift className="w-3.5 h-3.5 text-[#F58220]" />
+                                {eligibleFreeMonths === 1
+                                  ? '1 Month Free (Promotional Offer)'
+                                  : '2 Months Free (Promotional Offer)'}
+                              </span>
+                              <Badge className={freeMonthsValue > 0 ? "bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold px-1.5 py-0" : "bg-orange-100 text-orange-800 border-orange-200 text-[10px] font-semibold px-1.5 py-0"}>
+                                {freeMonthsValue > 0 ? 'Applied' : 'Available'}
+                              </Badge>
+                            </div>
+                            <p className="text-[11px] text-gray-600 mt-0.5">
+                              {eligibleFreeMonths === 1
+                                ? 'Enable 1 additional month free for this customer subscription.'
+                                : 'Enable 2 additional months free for this customer subscription.'}
+                            </p>
+                          </div>
+                        </label>
+
+                        {/* Date & Period Coverage Preview */}
+                        <div className="text-left sm:text-right shrink-0 bg-white/90 backdrop-blur-xs px-3 py-1.5 rounded-lg border border-orange-200/60 text-xs">
+                          <span className="text-[10px] text-gray-500 uppercase tracking-wider block font-semibold">
+                            Coverage Period &amp; Next Bill
+                          </span>
+                          <span className="font-bold text-[#002868]">
+                            {calculateBillingDurationMonths(billingType, freeMonthsValue)} Months
+                            <span className="text-[11px] font-normal text-gray-600 ml-1">
+                              (Next Due: {calculateNextBillingDate(form.watch('signUpDate') || new Date(), billingType, freeMonthsValue).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })})
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Package Calculation Breakdown with On-Boarding Charges Breakdown */}
                   <div className="bg-amber-50/50 p-5 rounded-xl border border-amber-200/80 space-y-3">

@@ -2,6 +2,7 @@ import prisma from '@/lib/prisma'
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { ManagerApprovalView } from './ManagerApprovalView'
+import { calculateNextBillingDate } from '@/lib/pricing'
 
 // Re-evaluated Prisma schema
 export default async function PendingSalesPage() {
@@ -32,11 +33,8 @@ export default async function PendingSalesPage() {
     let nextBillingDate: Date | undefined
     if (isActivating && customer?.packagePlan) {
       const bType = customer.packagePlan.billingType || 'Monthly'
-      nextBillingDate = new Date(activationDate!)
-      if (bType === 'Quarterly') nextBillingDate.setMonth(nextBillingDate.getMonth() + 3)
-      else if (bType === 'Half Yearly') nextBillingDate.setMonth(nextBillingDate.getMonth() + 6)
-      else if (bType === 'Yearly') nextBillingDate.setMonth(nextBillingDate.getMonth() + 12)
-      else nextBillingDate.setMonth(nextBillingDate.getMonth() + 1)
+      const freeM = customer.packagePlan.freeMonths || 0
+      nextBillingDate = calculateNextBillingDate(activationDate, bType, freeM)
     }
 
     await prisma.customer.update({
@@ -214,14 +212,13 @@ export default async function PendingSalesPage() {
     const isActivating = false
     const activationDate = undefined
 
+    const freeMonthsRaw = formData.get('freeMonths')
+    const freeMonths = freeMonthsRaw !== null && freeMonthsRaw !== undefined && freeMonthsRaw !== '' ? Number(freeMonthsRaw) : undefined
+
     let calculatedNextBillingDate: Date | undefined
     if (isActivating) {
       const bType = billingType || 'Monthly'
-      calculatedNextBillingDate = new Date(activationDate!)
-      if (bType === 'Quarterly') calculatedNextBillingDate.setMonth(calculatedNextBillingDate.getMonth() + 3)
-      else if (bType === 'Half Yearly') calculatedNextBillingDate.setMonth(calculatedNextBillingDate.getMonth() + 6)
-      else if (bType === 'Yearly') calculatedNextBillingDate.setMonth(calculatedNextBillingDate.getMonth() + 12)
-      else calculatedNextBillingDate.setMonth(calculatedNextBillingDate.getMonth() + 1)
+      calculatedNextBillingDate = calculateNextBillingDate(activationDate, bType, freeMonths || 0)
     }
 
     // 1. Update Customer
@@ -247,7 +244,7 @@ export default async function PendingSalesPage() {
     })
 
     // 2. Upsert Package Plan
-    if (systemSizeKw || packageTier || billingType || monitoringTime || calculatedNextBillingDate || totalAmount !== undefined) {
+    if (systemSizeKw || packageTier || billingType || monitoringTime || calculatedNextBillingDate || totalAmount !== undefined || freeMonths !== undefined) {
       await prisma.packagePlan.upsert({
         where: { customerId },
         create: {
@@ -256,6 +253,7 @@ export default async function PendingSalesPage() {
           packageTier: packageTier || 'Basic',
           billingType: billingType || 'Monthly',
           monitoringTime: monitoringTime || 'Hybrid',
+          freeMonths: freeMonths ?? 0,
           monthlyBasePrice: monthlyBasePrice ?? 0,
           appliedDiscount: appliedDiscount ?? 0,
           salesTaxAmount: salesTaxAmount ?? 0,
@@ -267,6 +265,7 @@ export default async function PendingSalesPage() {
           packageTier,
           billingType,
           monitoringTime,
+          ...(freeMonths !== undefined ? { freeMonths } : {}),
           ...(monthlyBasePrice !== undefined ? { monthlyBasePrice } : {}),
           ...(appliedDiscount !== undefined ? { appliedDiscount } : {}),
           ...(salesTaxAmount !== undefined ? { salesTaxAmount } : {}),

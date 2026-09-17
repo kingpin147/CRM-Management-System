@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { CustomerType, CustomerStatus } from '@prisma/client'
 import prisma from '@/lib/prisma'
+import { calculateNextBillingDate } from '@/lib/pricing'
 
 async function generateCustomerCode(): Promise<string> {
   // Fetch existing customer codes to determine the next sequential ID starting from 101
@@ -71,6 +72,7 @@ export async function createCustomer(formData: FormData) {
   const packageTier = (formData.get('packageTier') as string) || 'Comprehensive'
   const billingType = (formData.get('billingType') as string) || 'Yearly'
   const monitoringTime = (formData.get('monitoringTime') as string) || 'Grid Tied'
+  const freeMonths = Math.max(0, Number(formData.get('freeMonths') || 0))
   const monthlyBasePrice = Number(formData.get('monthlyBasePrice') || 0)
   const appliedDiscount = Number(formData.get('appliedDiscount') || 0)
   const salesTaxAmount = Number(formData.get('salesTaxAmount') || 0)
@@ -168,11 +170,7 @@ export async function createCustomer(formData: FormData) {
     const customerCode = await generateCustomerCode()
     const crfNumber = `CRF-${Math.floor(100000 + Math.random() * 900000)}`
 
-    let nextBillingDate = new Date()
-    if (billingType === 'Monthly') nextBillingDate.setMonth(nextBillingDate.getMonth() + 1)
-    else if (billingType === 'Quarterly') nextBillingDate.setMonth(nextBillingDate.getMonth() + 3)
-    else if (billingType === 'Half Yearly') nextBillingDate.setMonth(nextBillingDate.getMonth() + 6)
-    else if (billingType === 'Yearly') nextBillingDate.setMonth(nextBillingDate.getMonth() + 12)
+    const nextBillingDate = calculateNextBillingDate(signUpDate || new Date(), billingType, freeMonths)
 
     let matchedInstallerId: string | null = null
     if (installerName) {
@@ -222,6 +220,7 @@ export async function createCustomer(formData: FormData) {
             packageTier,
             billingType,
             monitoringTime,
+            freeMonths,
             monthlyBasePrice,
             appliedDiscount,
             salesTaxAmount,
