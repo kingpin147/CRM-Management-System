@@ -421,7 +421,7 @@ export function ReportsView({
       BILLING: customers.filter((c) => Boolean(c.packagePlan)).length,
       SALES_INCENTIVE: customers.filter((c) => Boolean(c.packagePlan)).length,
       OM_INCENTIVE: customers.filter((c) => Boolean(c.solarSystem?.lastAuditDate)).length,
-      SYSTEM_BRANDS: customers.filter((c) => Boolean(c.solarSystem?.inverterBrand || c.solarSystem?.batteryBrand || c.solarSystem?.panelBrand)).length,
+      SYSTEM_BRANDS: customers.filter((c) => ['CONNECTION_ACTIVE', 'FOC_CONNECTION', 'IN_HOUSE_CONNECTION'].includes(c.status) && Boolean(c.solarSystem?.inverterBrand || c.solarSystem?.batteryBrand || c.solarSystem?.panelBrand)).length,
       REGISTER: customers.length,
     }
   }, [customers])
@@ -529,7 +529,10 @@ export function ReportsView({
     return customers.filter((c) => {
       // Category-specific base conditions
       if (activeCategory === 'SALES' && !c.packagePlan) return false
-      if (activeCategory === 'SYSTEM_BRANDS' && !c.solarSystem?.inverterBrand && !c.solarSystem?.batteryBrand && !c.solarSystem?.panelBrand) return false
+      if (activeCategory === 'SYSTEM_BRANDS') {
+        if (!['CONNECTION_ACTIVE', 'FOC_CONNECTION', 'IN_HOUSE_CONNECTION'].includes(c.status)) return false
+        if (!c.solarSystem?.inverterBrand && !c.solarSystem?.batteryBrand && !c.solarSystem?.panelBrand) return false
+      }
       
       if (activeCategory === 'RECEIVABLE') {
         // RECEIVABLE: only CONNECTION_ACTIVE customers
@@ -932,73 +935,67 @@ export function ReportsView({
 
   const topInverterBrands = React.useMemo(() => {
     if (activeCategory !== 'SYSTEM_BRANDS') return []
-    const brandMap = new Map<string, { brand: string; total: number; pendingAudits: number; completed: number }>()
-    const sourceList = hasSearched ? filteredCustomers : customers
+    const brandMap = new Map<string, { brand: string; count: number }>()
+    const activeCustomers = customers.filter(c => ['CONNECTION_ACTIVE', 'FOC_CONNECTION', 'IN_HOUSE_CONNECTION'].includes(c.status))
+    const sourceList = hasSearched 
+      ? filteredCustomers.filter(c => ['CONNECTION_ACTIVE', 'FOC_CONNECTION', 'IN_HOUSE_CONNECTION'].includes(c.status)) 
+      : activeCustomers
+
     sourceList.forEach(c => {
       const brand = c.solarSystem?.inverterBrand
       if (brand && brand.trim() && brand !== '-' && brand.toLowerCase() !== 'n/a') {
         const clean = brand.trim()
-        const existing = brandMap.get(clean) || { brand: clean, total: 0, pendingAudits: 0, completed: 0 }
-        existing.total += 1
-        const isCompleted = Boolean(c.solarSystem?.lastAuditDate) && c.status !== 'PENDING_INSTALLER_AUDIT'
-        if (isCompleted) {
-          existing.completed += 1
-        } else {
-          existing.pendingAudits += 1
-        }
+        const existing = brandMap.get(clean) || { brand: clean, count: 0 }
+        existing.count += 1
         brandMap.set(clean, existing)
       }
     })
     return Array.from(brandMap.values())
-      .sort((a, b) => b.total - a.total)
+      .sort((a, b) => b.count - a.count)
       .slice(0, 10)
   }, [customers, filteredCustomers, hasSearched, activeCategory])
 
   const topBatteryBrands = React.useMemo(() => {
     if (activeCategory !== 'SYSTEM_BRANDS') return []
-    const brandMap = new Map<string, { brand: string; total: number; pendingAudits: number; completed: number }>()
-    const sourceList = hasSearched ? filteredCustomers : customers
+    const brandMap = new Map<string, { brand: string; count: number }>()
+    const activeCustomers = customers.filter(c => ['CONNECTION_ACTIVE', 'FOC_CONNECTION', 'IN_HOUSE_CONNECTION'].includes(c.status))
+    const sourceList = hasSearched 
+      ? filteredCustomers.filter(c => ['CONNECTION_ACTIVE', 'FOC_CONNECTION', 'IN_HOUSE_CONNECTION'].includes(c.status)) 
+      : activeCustomers
+
     sourceList.forEach(c => {
       const brand = c.solarSystem?.batteryBrand
       if (brand && brand.trim() && brand !== '-' && brand.toLowerCase() !== 'n/a') {
         const clean = brand.trim()
-        const existing = brandMap.get(clean) || { brand: clean, total: 0, pendingAudits: 0, completed: 0 }
-        existing.total += 1
-        const isCompleted = Boolean(c.solarSystem?.lastAuditDate) && c.status !== 'PENDING_INSTALLER_AUDIT'
-        if (isCompleted) {
-          existing.completed += 1
-        } else {
-          existing.pendingAudits += 1
-        }
+        const existing = brandMap.get(clean) || { brand: clean, count: 0 }
+        existing.count += 1
         brandMap.set(clean, existing)
       }
     })
     return Array.from(brandMap.values())
-      .sort((a, b) => b.total - a.total)
+      .sort((a, b) => b.count - a.count)
       .slice(0, 10)
   }, [customers, filteredCustomers, hasSearched, activeCategory])
 
   const topPanelBrands = React.useMemo(() => {
     if (activeCategory !== 'SYSTEM_BRANDS') return []
-    const brandMap = new Map<string, { brand: string; total: number; pendingAudits: number; completed: number }>()
-    const sourceList = hasSearched ? filteredCustomers : customers
+    const brandMap = new Map<string, { brand: string; count: number }>()
+    const activeCustomers = customers.filter(c => ['CONNECTION_ACTIVE', 'FOC_CONNECTION', 'IN_HOUSE_CONNECTION'].includes(c.status))
+    const sourceList = hasSearched 
+      ? filteredCustomers.filter(c => ['CONNECTION_ACTIVE', 'FOC_CONNECTION', 'IN_HOUSE_CONNECTION'].includes(c.status)) 
+      : activeCustomers
+
     sourceList.forEach(c => {
       const brand = c.solarSystem?.panelBrand
       if (brand && brand.trim() && brand !== '-' && brand.toLowerCase() !== 'n/a') {
         const clean = brand.trim()
-        const existing = brandMap.get(clean) || { brand: clean, total: 0, pendingAudits: 0, completed: 0 }
-        existing.total += 1
-        const isCompleted = Boolean(c.solarSystem?.lastAuditDate) && c.status !== 'PENDING_INSTALLER_AUDIT'
-        if (isCompleted) {
-          existing.completed += 1
-        } else {
-          existing.pendingAudits += 1
-        }
+        const existing = brandMap.get(clean) || { brand: clean, count: 0 }
+        existing.count += 1
         brandMap.set(clean, existing)
       }
     })
     return Array.from(brandMap.values())
-      .sort((a, b) => b.total - a.total)
+      .sort((a, b) => b.count - a.count)
       .slice(0, 10)
   }, [customers, filteredCustomers, hasSearched, activeCategory])
 
@@ -1622,28 +1619,21 @@ export function ReportsView({
             <CardContent className="p-4">
               {topInverterBrands.length === 0 ? (
                 <div className="text-xs text-slate-400 py-3 text-center">
-                  No inverter brand data found.
+                  No active inverter brand data found.
                 </div>
               ) : (
-                <div className="flex flex-wrap gap-4 items-center">
+                <div className="flex flex-wrap gap-3 items-center">
                   {topInverterBrands.map((item) => (
                     <div
                       key={item.brand}
-                      className="flex flex-col items-center bg-slate-50/50 p-2 rounded-xl border border-slate-200/80 shadow-2xs hover:shadow-xs transition-all"
+                      className="bg-emerald-50/80 border border-emerald-200/90 hover:border-emerald-300 hover:bg-emerald-50 px-4 py-2 rounded-xl text-center min-w-[90px] shadow-2xs transition-all"
                     >
-                      <span className="text-xs font-bold text-slate-800 uppercase tracking-tight mb-1.5 px-1 truncate max-w-[200px]" title={item.brand}>
+                      <p className="text-[10px] font-bold uppercase text-emerald-900 tracking-tight truncate max-w-[160px]" title={item.brand}>
                         {item.brand}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <div className="bg-amber-50 border border-amber-200/90 px-3.5 py-1.5 rounded-lg text-center min-w-[80px]">
-                          <p className="text-[9px] font-bold uppercase text-amber-900 tracking-tight">Pending Audits</p>
-                          <p className="text-base font-extrabold font-mono text-amber-950 mt-0.5">{item.pendingAudits}</p>
-                        </div>
-                        <div className="bg-emerald-50 border border-emerald-200/90 px-3.5 py-1.5 rounded-lg text-center min-w-[80px]">
-                          <p className="text-[9px] font-bold uppercase text-emerald-900 tracking-tight">Completed</p>
-                          <p className="text-base font-extrabold font-mono text-emerald-950 mt-0.5">{item.completed}</p>
-                        </div>
-                      </div>
+                      </p>
+                      <p className="text-base font-extrabold font-mono text-emerald-950 mt-0.5">
+                        {item.count}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -1668,28 +1658,21 @@ export function ReportsView({
             <CardContent className="p-4">
               {topBatteryBrands.length === 0 ? (
                 <div className="text-xs text-slate-400 py-3 text-center">
-                  No battery brand data found.
+                  No active battery brand data found.
                 </div>
               ) : (
-                <div className="flex flex-wrap gap-4 items-center">
+                <div className="flex flex-wrap gap-3 items-center">
                   {topBatteryBrands.map((item) => (
                     <div
                       key={item.brand}
-                      className="flex flex-col items-center bg-slate-50/50 p-2 rounded-xl border border-slate-200/80 shadow-2xs hover:shadow-xs transition-all"
+                      className="bg-emerald-50/80 border border-emerald-200/90 hover:border-emerald-300 hover:bg-emerald-50 px-4 py-2 rounded-xl text-center min-w-[90px] shadow-2xs transition-all"
                     >
-                      <span className="text-xs font-bold text-slate-800 uppercase tracking-tight mb-1.5 px-1 truncate max-w-[200px]" title={item.brand}>
+                      <p className="text-[10px] font-bold uppercase text-emerald-900 tracking-tight truncate max-w-[160px]" title={item.brand}>
                         {item.brand}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <div className="bg-amber-50 border border-amber-200/90 px-3.5 py-1.5 rounded-lg text-center min-w-[80px]">
-                          <p className="text-[9px] font-bold uppercase text-amber-900 tracking-tight">Pending Audits</p>
-                          <p className="text-base font-extrabold font-mono text-amber-950 mt-0.5">{item.pendingAudits}</p>
-                        </div>
-                        <div className="bg-emerald-50 border border-emerald-200/90 px-3.5 py-1.5 rounded-lg text-center min-w-[80px]">
-                          <p className="text-[9px] font-bold uppercase text-emerald-900 tracking-tight">Completed</p>
-                          <p className="text-base font-extrabold font-mono text-emerald-950 mt-0.5">{item.completed}</p>
-                        </div>
-                      </div>
+                      </p>
+                      <p className="text-base font-extrabold font-mono text-emerald-950 mt-0.5">
+                        {item.count}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -1714,28 +1697,21 @@ export function ReportsView({
             <CardContent className="p-4">
               {topPanelBrands.length === 0 ? (
                 <div className="text-xs text-slate-400 py-3 text-center">
-                  No panel brand data found.
+                  No active panel brand data found.
                 </div>
               ) : (
-                <div className="flex flex-wrap gap-4 items-center">
+                <div className="flex flex-wrap gap-3 items-center">
                   {topPanelBrands.map((item) => (
                     <div
                       key={item.brand}
-                      className="flex flex-col items-center bg-slate-50/50 p-2 rounded-xl border border-slate-200/80 shadow-2xs hover:shadow-xs transition-all"
+                      className="bg-emerald-50/80 border border-emerald-200/90 hover:border-emerald-300 hover:bg-emerald-50 px-4 py-2 rounded-xl text-center min-w-[90px] shadow-2xs transition-all"
                     >
-                      <span className="text-xs font-bold text-slate-800 uppercase tracking-tight mb-1.5 px-1 truncate max-w-[200px]" title={item.brand}>
+                      <p className="text-[10px] font-bold uppercase text-emerald-900 tracking-tight truncate max-w-[160px]" title={item.brand}>
                         {item.brand}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <div className="bg-amber-50 border border-amber-200/90 px-3.5 py-1.5 rounded-lg text-center min-w-[80px]">
-                          <p className="text-[9px] font-bold uppercase text-amber-900 tracking-tight">Pending Audits</p>
-                          <p className="text-base font-extrabold font-mono text-amber-950 mt-0.5">{item.pendingAudits}</p>
-                        </div>
-                        <div className="bg-emerald-50 border border-emerald-200/90 px-3.5 py-1.5 rounded-lg text-center min-w-[80px]">
-                          <p className="text-[9px] font-bold uppercase text-emerald-900 tracking-tight">Completed</p>
-                          <p className="text-base font-extrabold font-mono text-emerald-950 mt-0.5">{item.completed}</p>
-                        </div>
-                      </div>
+                      </p>
+                      <p className="text-base font-extrabold font-mono text-emerald-950 mt-0.5">
+                        {item.count}
+                      </p>
                     </div>
                   ))}
                 </div>
