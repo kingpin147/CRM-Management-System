@@ -1278,31 +1278,36 @@ export function ReportsView({
       headers = [
         'Customer ID', 'Customer Name', 'Customer Address', 'Contact #', 'Sub Area', 'Area',
         'Account Executive', 'City', 'Package', 'Customer Type', 'System Type:', 'Billing Type',
-        'Inverter Brand', 'No of Inverters', 'Battery Brand', 'No of Batteries', 'Panel Brand',
+        'Inverter Brand', 'No of Inverters', 'Inverter Sr. #', 'Battery Brand', 'No of Batteries', 'Panel Brand',
         'No of Panels', 'Total Wattage', 'Installer Name'
       ]
-      rows = filteredCustomers.map((c) => [
-        `"${formatCustomerId(c.customerCode || c.id)}"`,
-        `"${c.fullName}"`,
-        `"${c.address}"`,
-        `"${c.contactNumber}"`,
-        `"${c.subArea || '-'}"`,
-        `"${c.area || '-'}"`,
-        `"${c.accountExecutive?.fullName || c.accountExecutiveName || '-'}"`,
-        `"${c.city}"`,
-        `"${c.packagePlan?.packageTier || 'Basic'}"`,
-        `"${c.customerType ? (c.customerType.charAt(0).toUpperCase() + c.customerType.slice(1).toLowerCase()) : 'Residential'}"`,
-        `"${c.solarSystem?.inverterType || c.packagePlan?.systemSizeKw || c.solarSystem?.inverterSize || '-'}"`,
-        `"${c.packagePlan?.billingType || '-'}"`,
-        `"${c.solarSystem?.inverterBrand || '-'}"`,
-        `"${c.solarSystem?.noOfInverters || (c.solarSystem?.inverterBrand ? 1 : 0)}"`,
-        `"${c.solarSystem?.batteryBrand || '-'}"`,
-        `"${c.solarSystem?.noOfBatteries || (c.solarSystem?.batteryBrand ? 1 : 0)}"`,
-        `"${c.solarSystem?.panelBrand || '-'}"`,
-        `"${c.solarSystem?.noOfPanels || '-'}"`,
-        `"${c.solarSystem?.totalWattage ? `${c.solarSystem.totalWattage} W` : (c.solarSystem?.panelWattage ? `${c.solarSystem.panelWattage} W` : '-')}"`,
-        `"${c.assignedInstaller?.fullName || c.solarSystem?.installerName || '-'}"`,
-      ])
+      rows = filteredCustomers.map((c) => {
+        const invSerials = getInverterSerials(c)
+        const firstInvSr = invSerials[0] || c.solarSystem?.inverterSerial || '-'
+        return [
+          `"${formatCustomerId(c.customerCode || c.id)}"`,
+          `"${c.fullName}"`,
+          `"${c.address}"`,
+          `"${c.contactNumber}"`,
+          `"${c.subArea || '-'}"`,
+          `"${c.area || '-'}"`,
+          `"${c.accountExecutive?.fullName || c.accountExecutiveName || '-'}"`,
+          `"${c.city}"`,
+          `"${c.packagePlan?.packageTier || 'Basic'}"`,
+          `"${c.customerType ? (c.customerType.charAt(0).toUpperCase() + c.customerType.slice(1).toLowerCase()) : 'Residential'}"`,
+          `"${c.solarSystem?.inverterType || c.packagePlan?.systemSizeKw || c.solarSystem?.inverterSize || '-'}"`,
+          `"${c.packagePlan?.billingType || '-'}"`,
+          `"${c.solarSystem?.inverterBrand || '-'}"`,
+          `"${c.solarSystem?.noOfInverters || (c.solarSystem?.inverterBrand ? 1 : 0)}"`,
+          `"${firstInvSr}"`,
+          `"${c.solarSystem?.batteryBrand || '-'}"`,
+          `"${c.solarSystem?.noOfBatteries || (c.solarSystem?.batteryBrand ? 1 : 0)}"`,
+          `"${c.solarSystem?.panelBrand || '-'}"`,
+          `"${c.solarSystem?.noOfPanels || '-'}"`,
+          `"${c.solarSystem?.totalWattage ? `${c.solarSystem.totalWattage} W` : (c.solarSystem?.panelWattage ? `${c.solarSystem.panelWattage} W` : '-')}"`,
+          `"${c.assignedInstaller?.fullName || c.solarSystem?.installerName || '-'}"`,
+        ]
+      })
     } else {
       // REGISTER
       headers = [
@@ -2483,6 +2488,7 @@ export function ReportsView({
                     <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Billing Type</TableHead>
                     <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Inverter Brand</TableHead>
                     <TableHead className="font-extrabold text-xs text-white whitespace-nowrap text-center">No of Inverters</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Inverter Sr. #</TableHead>
                     <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Battery Brand</TableHead>
                     <TableHead className="font-extrabold text-xs text-white whitespace-nowrap text-center">No of Batteries</TableHead>
                     <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Panel Brand</TableHead>
@@ -2494,60 +2500,67 @@ export function ReportsView({
                 <TableBody>
                   {!hasSearched ? (
                     <TableRow>
-                      <TableCell colSpan={20} className="h-32 text-center text-xs text-[var(--color-slate-custom)] font-medium">
+                      <TableCell colSpan={21} className="h-32 text-center text-xs text-[var(--color-slate-custom)] font-medium">
                         Select filters and click &quot;Search / Apply Filters&quot; to load report data.
                       </TableCell>
                     </TableRow>
                   ) : filteredCustomers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={20} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">
+                      <TableCell colSpan={21} className="h-32 text-center text-sm text-[var(--color-slate-custom)]">
                         No customer records found matching the selected brand filters.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredCustomers.map((c) => (
-                      <TableRow key={c.id} className="hover:bg-[var(--color-paper)]/50 text-xs">
-                        <TableCell className="font-mono font-bold text-[var(--color-ink)] whitespace-nowrap">
-                          <Link href={`/dashboard/customers/${c.id}`} className="hover:underline text-amber-900">
-                            {formatCustomerId(c.customerCode || c.id)}
-                          </Link>
-                        </TableCell>
-                        <TableCell className="font-semibold text-gray-900 whitespace-nowrap">{c.fullName}</TableCell>
-                        <TableCell className="text-gray-600 max-w-xs truncate">{c.address}</TableCell>
-                        <TableCell className="font-mono whitespace-nowrap">
-                          <div>{c.contactNumber}</div>
-                          {c.pocNumber && <div className="text-[10px] text-gray-400">POC: {c.pocNumber}</div>}
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">{c.subArea || '—'}</TableCell>
-                        <TableCell className="whitespace-nowrap">{c.area || '—'}</TableCell>
-                        <TableCell className="whitespace-nowrap">{c.accountExecutive?.fullName || c.accountExecutiveName || '—'}</TableCell>
-                        <TableCell className="whitespace-nowrap font-medium">{c.city}</TableCell>
-                        <TableCell className="whitespace-nowrap">{c.packagePlan?.packageTier || 'Basic'}</TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          <Badge variant="outline" className="bg-slate-100 text-slate-800 text-[10px]">
-                            {c.customerType ? (c.customerType.charAt(0).toUpperCase() + c.customerType.slice(1).toLowerCase()) : 'Residential'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">{c.solarSystem?.inverterType || c.packagePlan?.systemSizeKw || c.solarSystem?.inverterSize || '—'}</TableCell>
-                        <TableCell className="whitespace-nowrap">{c.packagePlan?.billingType || '—'}</TableCell>
-                        <TableCell className="font-bold text-[#002868] whitespace-nowrap">{c.solarSystem?.inverterBrand || '—'}</TableCell>
-                        <TableCell className="font-mono text-center font-bold text-slate-800">
-                          {c.solarSystem?.noOfInverters || (c.solarSystem?.inverterBrand ? 1 : '—')}
-                        </TableCell>
-                        <TableCell className="font-bold text-[#002868] whitespace-nowrap">{c.solarSystem?.batteryBrand || '—'}</TableCell>
-                        <TableCell className="font-mono text-center font-bold text-slate-800">
-                          {c.solarSystem?.noOfBatteries || (c.solarSystem?.batteryBrand ? 1 : '—')}
-                        </TableCell>
-                        <TableCell className="font-bold text-[#002868] whitespace-nowrap">{c.solarSystem?.panelBrand || '—'}</TableCell>
-                        <TableCell className="font-mono text-center font-bold text-slate-800">
-                          {c.solarSystem?.noOfPanels || '—'}
-                        </TableCell>
-                        <TableCell className="font-mono text-right font-semibold text-emerald-800 whitespace-nowrap">
-                          {c.solarSystem?.totalWattage ? `${c.solarSystem.totalWattage} W` : (c.solarSystem?.panelWattage ? `${c.solarSystem.panelWattage} W` : '—')}
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">{c.assignedInstaller?.fullName || c.solarSystem?.installerName || '—'}</TableCell>
-                      </TableRow>
-                    ))
+                    filteredCustomers.map((c) => {
+                      const invSerials = getInverterSerials(c)
+                      const firstInvSr = invSerials[0] || c.solarSystem?.inverterSerial || '—'
+                      return (
+                        <TableRow key={c.id} className="hover:bg-[var(--color-paper)]/50 text-xs">
+                          <TableCell className="font-mono font-bold text-[var(--color-ink)] whitespace-nowrap">
+                            <Link href={`/dashboard/customers/${c.id}`} className="hover:underline text-amber-900">
+                              {formatCustomerId(c.customerCode || c.id)}
+                            </Link>
+                          </TableCell>
+                          <TableCell className="font-semibold text-gray-900 whitespace-nowrap">{c.fullName}</TableCell>
+                          <TableCell className="text-gray-600 max-w-xs truncate">{c.address}</TableCell>
+                          <TableCell className="font-mono whitespace-nowrap">
+                            <div>{c.contactNumber}</div>
+                            {c.pocNumber && <div className="text-[10px] text-gray-400">POC: {c.pocNumber}</div>}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">{c.subArea || '—'}</TableCell>
+                          <TableCell className="whitespace-nowrap">{c.area || '—'}</TableCell>
+                          <TableCell className="whitespace-nowrap">{c.accountExecutive?.fullName || c.accountExecutiveName || '—'}</TableCell>
+                          <TableCell className="whitespace-nowrap font-medium">{c.city}</TableCell>
+                          <TableCell className="whitespace-nowrap">{c.packagePlan?.packageTier || 'Basic'}</TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <Badge variant="outline" className="bg-slate-100 text-slate-800 text-[10px]">
+                              {c.customerType ? (c.customerType.charAt(0).toUpperCase() + c.customerType.slice(1).toLowerCase()) : 'Residential'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">{c.solarSystem?.inverterType || c.packagePlan?.systemSizeKw || c.solarSystem?.inverterSize || '—'}</TableCell>
+                          <TableCell className="whitespace-nowrap">{c.packagePlan?.billingType || '—'}</TableCell>
+                          <TableCell className="font-bold text-[#002868] whitespace-nowrap">{c.solarSystem?.inverterBrand || '—'}</TableCell>
+                          <TableCell className="font-mono text-center font-bold text-slate-800">
+                            {c.solarSystem?.noOfInverters || (c.solarSystem?.inverterBrand ? 1 : '—')}
+                          </TableCell>
+                          <TableCell className="font-mono font-medium text-slate-800 whitespace-nowrap">
+                            {firstInvSr}
+                          </TableCell>
+                          <TableCell className="font-bold text-[#002868] whitespace-nowrap">{c.solarSystem?.batteryBrand || '—'}</TableCell>
+                          <TableCell className="font-mono text-center font-bold text-slate-800">
+                            {c.solarSystem?.noOfBatteries || (c.solarSystem?.batteryBrand ? 1 : '—')}
+                          </TableCell>
+                          <TableCell className="font-bold text-[#002868] whitespace-nowrap">{c.solarSystem?.panelBrand || '—'}</TableCell>
+                          <TableCell className="font-mono text-center font-bold text-slate-800">
+                            {c.solarSystem?.noOfPanels || '—'}
+                          </TableCell>
+                          <TableCell className="font-mono text-right font-semibold text-emerald-800 whitespace-nowrap">
+                            {c.solarSystem?.totalWattage ? `${c.solarSystem.totalWattage} W` : (c.solarSystem?.panelWattage ? `${c.solarSystem.panelWattage} W` : '—')}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">{c.assignedInstaller?.fullName || c.solarSystem?.installerName || '—'}</TableCell>
+                        </TableRow>
+                      )
+                    })
                   )}
                 </TableBody>
               </>
