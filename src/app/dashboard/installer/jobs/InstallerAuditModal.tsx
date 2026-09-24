@@ -53,6 +53,7 @@ interface InstallerAuditModalProps {
   customer: any
   installerName: string
   isOpen: boolean
+  initialTab?: 'specs' | 'audit'
   onClose: () => void
   onSuccess?: () => void
 }
@@ -61,6 +62,7 @@ export function InstallerAuditModal({
   customer,
   installerName,
   isOpen,
+  initialTab = 'specs',
   onClose,
   onSuccess,
 }: InstallerAuditModalProps) {
@@ -68,7 +70,13 @@ export function InstallerAuditModal({
   const plan = customer?.packagePlan || {}
 
   const scrollContainerRef = React.useRef<HTMLDivElement>(null)
-  const [activeTab, setActiveTab] = React.useState<'specs' | 'audit'>('specs')
+  const [activeTab, setActiveTab] = React.useState<'specs' | 'audit'>(initialTab)
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setActiveTab(initialTab)
+    }
+  }, [isOpen, initialTab])
   const lastTabChangeTime = React.useRef<number>(0)
 
   const [isSubmitting, setIsSubmitting] = React.useState(false)

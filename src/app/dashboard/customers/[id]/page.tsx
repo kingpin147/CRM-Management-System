@@ -1188,6 +1188,14 @@ export default async function CustomerDetailPage({
                 leftAction={
                   <ClipboardCheck className="h-4 w-4 text-amber-500 shrink-0" />
                 }
+                action={
+                  <Link href="/dashboard/installer/jobs?view=audits">
+                    <Button size="sm" className="bg-[#135d86] hover:bg-[#002868] text-white font-bold text-xs gap-1.5 shadow-2xs cursor-pointer">
+                      <ShieldCheck className="h-3.5 w-3.5 text-amber-400" />
+                      Conduct / View System Audits
+                    </Button>
+                  </Link>
+                }
               >
                 System Audit History &amp; Inspection Logs
               </SectionHeader>

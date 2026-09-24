@@ -2,12 +2,13 @@
 
 import * as React from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Search, Wrench, CheckCircle2, Eye, Sun, RotateCcw, Download, ShieldCheck, MapPin } from 'lucide-react'
+import { Search, Wrench, CheckCircle2, Eye, Sun, RotateCcw, ShieldCheck, MapPin, Sparkles, Clock, AlertTriangle, ArrowRight } from 'lucide-react'
 import { InstallerAuditModal } from './InstallerAuditModal'
 import { activateIpNocConnection, assignInstallerToAudit } from './actions'
 import { useRouter } from 'next/navigation'
@@ -30,8 +31,28 @@ export function InstallerJobsView({
   userRole,
 }: InstallerJobsViewProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const initialViewParam = searchParams.get('view')
+
+  // Top View Mode: 'new-jobs' (New Signups Queue) vs 'audits' (Recurring System Audits Queue)
+  const [viewMode, setViewMode] = React.useState<'new-jobs' | 'audits'>(() => {
+    if (initialViewParam === 'new-jobs' || initialViewParam === 'jobs') return 'new-jobs'
+    return 'audits'
+  })
+
+  // Sync if URL query param changes
+  React.useEffect(() => {
+    const v = searchParams.get('view')
+    if (v === 'new-jobs' || v === 'jobs') {
+      setViewMode('new-jobs')
+    } else if (v === 'audits') {
+      setViewMode('audits')
+    }
+  }, [searchParams])
+
   const [searchQuery, setSearchQuery] = React.useState('')
   const [selectedCustomer, setSelectedCustomer] = React.useState<any | null>(null)
+  const [modalInitialTab, setModalInitialTab] = React.useState<'specs' | 'audit'>('specs')
   const [isModalOpen, setIsModalOpen] = React.useState(false)
   const [filterTab, setFilterTab] = React.useState<'ALL' | 'PENDING' | 'COMPLETED' | 'ON_DEMAND'>('ALL')
   const [isActivatingId, setIsActivatingId] = React.useState<string | null>(null)
@@ -43,39 +64,59 @@ export function InstallerJobsView({
   const isSales = userRole === 'SALES'
   const canAssign = isOMManager || userRole === 'SUPER_ADMIN' || userRole === 'ADMIN' || userRole === 'MANAGER'
 
+  // Partition Customers into:
+  // 1. New Signups (Job Queue): Pending initial onboarding & setup
+  // 2. Active Installations (System Audits): For continuous / recurring audits
+  const isNewSignup = (c: any) => {
+    return c.status === 'SIGNUP_GENERATED' || 
+           c.status === 'PENDING_PAYMENT_VERIFICATION' || 
+           c.status === 'PENDING_INSTALLER_AUDIT' || 
+           c.status === 'PENDING_ACTIVATION' || 
+           c.status === 'PENDING_IP_NOC' ||
+           (!c.solarSystem?.lastAuditDate && c.status !== 'CONNECTION_ACTIVE')
+  }
+
+  const newSignupCustomers = React.useMemo(() => {
+    return customers.filter(isNewSignup)
+  }, [customers])
+
+  const systemAuditCustomers = React.useMemo(() => {
+    return customers.filter((c: any) => !isNewSignup(c) || c.status === 'CONNECTION_ACTIVE' || Boolean(c.solarSystem?.lastAuditDate) || (c.systemAudits && c.systemAudits.length > 0))
+  }, [customers])
+
+  // Customers for current view mode
+  const currentBaseList = viewMode === 'new-jobs' ? newSignupCustomers : systemAuditCustomers
+
   const filteredCustomers = React.useMemo(() => {
-    let baseList = customers;
+    let baseList = currentBaseList
 
     if (isInstaller) {
-      // Installers only see jobs pending their audit
-      baseList = customers.filter((c: any) => 
+      // Installers only see jobs assigned to them
+      baseList = baseList.filter((c: any) => 
+        c.assignedInstallerId === currentUserId ||
         c.status === 'PENDING_INSTALLER_AUDIT' || 
         c.systemAudits?.some((sa: any) => sa.status === 'PENDING' && sa.assignedInstallerId === currentUserId)
-      );
+      )
     } else if (filterTab === 'PENDING') {
-      if (isIPNOC) {
-        baseList = customers.filter((c: any) => c.status === 'PENDING_IP_NOC');
-      } else if (isSales) {
-        baseList = customers.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT' || c.status === 'SIGNUP_GENERATED' || c.status === 'PENDING_PAYMENT_VERIFICATION' || !c.solarSystem?.lastAuditDate);
+      if (viewMode === 'new-jobs') {
+        baseList = baseList.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT' || c.status === 'PENDING_IP_NOC' || !c.solarSystem?.lastAuditDate)
       } else {
-        baseList = customers.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT' || c.systemAudits?.some((sa: any) => sa.status === 'PENDING'));
+        baseList = baseList.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT' || c.systemAudits?.some((sa: any) => sa.status === 'PENDING') || !c.solarSystem?.lastAuditDate)
       }
     } else if (filterTab === 'COMPLETED') {
-      if (isIPNOC) {
-        baseList = customers.filter((c: any) => c.status === 'CONNECTION_ACTIVE');
-      } else if (isSales) {
-        baseList = customers.filter((c: any) => Boolean(c.solarSystem?.lastAuditDate));
+      if (viewMode === 'new-jobs') {
+        baseList = baseList.filter((c: any) => c.status === 'CONNECTION_ACTIVE' || Boolean(c.solarSystem?.lastAuditDate))
       } else {
-        baseList = customers.filter((c: any) => c.status !== 'PENDING_INSTALLER_AUDIT' && (Boolean(c.solarSystem?.lastAuditDate) || c.systemAudits?.some((sa: any) => sa.status === 'COMPLETED')));
+        baseList = baseList.filter((c: any) => Boolean(c.solarSystem?.lastAuditDate) || c.systemAudits?.some((sa: any) => sa.status === 'COMPLETED'))
       }
     } else if (filterTab === 'ON_DEMAND') {
-      baseList = customers.filter((c: any) => 
+      baseList = baseList.filter((c: any) => 
         c.systemAudits?.some((sa: any) => sa.auditType === 'ON_DEMAND') || 
         c.tickets?.some((t: any) => t.fault?.includes('Audit') || t.category?.includes('Audit'))
-      );
+      )
     }
 
-    if (!searchQuery.trim()) return baseList;
+    if (!searchQuery.trim()) return baseList
 
     const q = searchQuery.toLowerCase().trim()
     return baseList.filter((c: any) =>
@@ -89,52 +130,15 @@ export function InstallerJobsView({
       c.assignedInstaller?.fullName?.toLowerCase().includes(q) ||
       c.solarSystem?.installerName?.toLowerCase().includes(q)
     )
-  }, [customers, searchQuery, isIPNOC, isOMManager, isInstaller, isSales, filterTab, currentUserId])
+  }, [currentBaseList, viewMode, searchQuery, isInstaller, filterTab, currentUserId])
 
-  // KPIs dynamically rendered based on user role
-  const pendingCount = isIPNOC
-    ? customers.filter((c: any) => c.status === 'PENDING_IP_NOC').length
-    : isSales
-    ? customers.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT' || c.status === 'SIGNUP_GENERATED' || c.status === 'PENDING_PAYMENT_VERIFICATION' || !c.solarSystem?.lastAuditDate).length
-    : customers.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT' || c.systemAudits?.some((sa: any) => sa.status === 'PENDING')).length
+  // Dynamic KPI counts for current view mode
+  const newJobsPendingCount = newSignupCustomers.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT' || c.status === 'PENDING_IP_NOC' || !c.solarSystem?.lastAuditDate).length
+  const newJobsTotalCount = newSignupCustomers.length
 
-  const completedCount = isIPNOC
-    ? customers.filter((c: any) => c.status === 'CONNECTION_ACTIVE').length
-    : isSales
-    ? customers.filter((c: any) => Boolean(c.solarSystem?.lastAuditDate)).length
-    : customers.filter((c: any) => c.status !== 'PENDING_INSTALLER_AUDIT' && (Boolean(c.solarSystem?.lastAuditDate) || c.systemAudits?.some((sa: any) => sa.status === 'COMPLETED'))).length
-
-  const onDemandCount = customers.filter((c: any) => 
-    c.systemAudits?.some((sa: any) => sa.auditType === 'ON_DEMAND')
-  ).length
-
-  // Header dynamic details
-  const headerTitle = isIPNOC 
-    ? "IP NOC Operations & Assigned Jobs" 
-    : isOMManager 
-    ? "O&M Management & System Audits Queue" 
-    : isSales
-    ? "Sales Operations & Assigned Jobs"
-    : "Installer Field Operations & Assigned Jobs"
-    
-  const portalBadge = isIPNOC 
-    ? "IP NOC Portal" 
-    : isOMManager 
-    ? "O&M Portal" 
-    : isSales
-    ? "Sales Portal"
-    : "Installer Portal"
-    
-  const subtitleLabel = isIPNOC 
-    ? "Setup IP NOC & Configure Connection." 
-    : isOMManager 
-    ? "Assign Pending Audits to Field Installers, Monitor System Health & Track Completed Audits."
-    : isSales
-    ? "Collect Solar System Hardware Specs (Part 2) & Audit Details (Part 3)."
-    : "Fill Solar Hardware Specs (Part 2) & 7-Point System Audit (Part 3)."
-
-  const pendingLabel = isIPNOC ? "Pending Setup" : "Pending Audits"
-  const completedLabel = isIPNOC ? "Connections Active" : "Completed"
+  const auditPendingCount = systemAuditCustomers.filter((c: any) => c.systemAudits?.some((sa: any) => sa.status === 'PENDING') || c.status === 'PENDING_INSTALLER_AUDIT' || !c.solarSystem?.lastAuditDate).length
+  const auditCompletedCount = systemAuditCustomers.filter((c: any) => Boolean(c.solarSystem?.lastAuditDate) || c.systemAudits?.some((sa: any) => sa.status === 'COMPLETED')).length
+  const auditOnDemandCount = systemAuditCustomers.filter((c: any) => c.systemAudits?.some((sa: any) => sa.auditType === 'ON_DEMAND')).length
 
   const handleAssignInstaller = async (customerId: string, installerId: string, auditId?: string) => {
     if (!installerId) return
@@ -153,93 +157,156 @@ export function InstallerJobsView({
     }
   }
 
+  const openJobCard = (c: any) => {
+    setSelectedCustomer(c)
+    setModalInitialTab('specs')
+    setIsModalOpen(true)
+  }
+
+  const openSystemAudit = (c: any) => {
+    setSelectedCustomer(c)
+    setModalInitialTab('audit')
+    setIsModalOpen(true)
+  }
+
   return (
     <div className="space-y-6">
-      {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-line shadow-xs">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-display font-bold text-[var(--color-graphite)] tracking-tight">
-              {headerTitle}
-            </h1>
-            <Badge variant="outline" className="bg-amber-100 text-amber-900 border-amber-300 font-bold text-xs">
-              {portalBadge}
-            </Badge>
+      {/* Top Main Navigation Mode Selector (New Signups Job Queue vs Recurring System Audits) */}
+      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-display font-bold text-[#002868] tracking-tight">
+                {viewMode === 'new-jobs' ? 'Assigned Jobs Queue (New Signups)' : 'System Audits Queue (Recurring & Routine)'}
+              </h1>
+              <Badge variant="outline" className="bg-amber-100 text-amber-900 border-amber-300 font-bold text-xs">
+                {viewMode === 'new-jobs' ? '⚡ New Onboarding' : '🛡️ Routine & Periodic'}
+              </Badge>
+            </div>
+            <p className="text-xs text-slate-500 mt-1">
+              {viewMode === 'new-jobs'
+                ? 'Job Queue is strictly for new customer sign-ups: Fill Hardware Specs (Part 2), Initial Audit (Part 3), and Activate IP NOC.'
+                : 'System Audits are due repeatedly over the customer lifecycle (Quarterly, Half-Yearly, Yearly) or requested On-Demand.'}
+            </p>
           </div>
-          <p className="text-xs text-[var(--color-slate-custom)] mt-1">
-            Logged in Specialist: <strong className="text-slate-800">{currentUserName}</strong> | {subtitleLabel}
-          </p>
+
+          {/* Mode Switcher Buttons */}
+          <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 gap-1 shrink-0 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => {
+                setViewMode('new-jobs')
+                setFilterTab('ALL')
+              }}
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                viewMode === 'new-jobs'
+                  ? 'bg-[#135d86] text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+              }`}
+            >
+              <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+              <span>Assigned Jobs (New Signups)</span>
+              <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-white/20 font-mono">
+                {newJobsTotalCount}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setViewMode('audits')
+                setFilterTab('ALL')
+              }}
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                viewMode === 'audits'
+                  ? 'bg-[#135d86] text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+              }`}
+            >
+              <ShieldCheck className="h-3.5 w-3.5 text-amber-300" />
+              <span>System Audits (Recurring)</span>
+              <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-white/20 font-mono">
+                {systemAuditCustomers.length}
+              </span>
+            </button>
+          </div>
         </div>
 
-        {/* Quick KPI Count */}
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => !isInstaller && setFilterTab(filterTab === 'PENDING' ? 'ALL' : 'PENDING')}
-            className={`bg-amber-50 border px-4 py-2 rounded-xl text-center transition-all ${
-              isInstaller ? 'cursor-default border-amber-300' : 'cursor-pointer hover:shadow-xs ' + (filterTab === 'PENDING' ? 'border-amber-500 ring-2 ring-amber-400 bg-amber-100/70' : 'border-amber-200')
-            }`}
-          >
-            <p className="text-[10px] font-bold uppercase text-amber-800">{pendingLabel}</p>
-            <p className="text-xl font-bold font-mono text-amber-950">{pendingCount}</p>
-          </button>
-          {!isInstaller && (
-            <button
-              type="button"
-              onClick={() => setFilterTab(filterTab === 'COMPLETED' ? 'ALL' : 'COMPLETED')}
-              className={`bg-emerald-50 border px-4 py-2 rounded-xl text-center transition-all cursor-pointer hover:shadow-xs ${
-                filterTab === 'COMPLETED' ? 'border-emerald-500 ring-2 ring-emerald-400 bg-emerald-100/70' : 'border-emerald-200'
-              }`}
-            >
-              <p className="text-[10px] font-bold uppercase text-emerald-800">{completedLabel}</p>
-              <p className="text-xl font-bold font-mono text-emerald-950">{completedCount}</p>
-            </button>
-          )}
-          {onDemandCount > 0 && !isInstaller && (
-            <button
-              type="button"
-              onClick={() => setFilterTab(filterTab === 'ON_DEMAND' ? 'ALL' : 'ON_DEMAND')}
-              className={`bg-blue-50 border px-4 py-2 rounded-xl text-center transition-all cursor-pointer hover:shadow-xs ${
-                filterTab === 'ON_DEMAND' ? 'border-blue-500 ring-2 ring-blue-400 bg-blue-100/70' : 'border-blue-200'
-              }`}
-            >
-              <p className="text-[10px] font-bold uppercase text-blue-800">On-Demand</p>
-              <p className="text-xl font-bold font-mono text-blue-950">{onDemandCount}</p>
-            </button>
+        {/* Quick KPI Cards for Current View Mode */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-slate-100">
+          {viewMode === 'new-jobs' ? (
+            <>
+              <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-3">
+                <p className="text-[10px] font-bold uppercase text-amber-800">New Signups Total</p>
+                <p className="text-xl font-bold font-mono text-amber-950 mt-0.5">{newJobsTotalCount}</p>
+              </div>
+              <div className="bg-sky-50/70 border border-sky-200 rounded-xl p-3">
+                <p className="text-[10px] font-bold uppercase text-sky-800">Pending Initial Setup</p>
+                <p className="text-xl font-bold font-mono text-sky-950 mt-0.5">{newJobsPendingCount}</p>
+              </div>
+              <div className="bg-indigo-50/70 border border-indigo-200 rounded-xl p-3">
+                <p className="text-[10px] font-bold uppercase text-indigo-800">Pending IP NOC</p>
+                <p className="text-xl font-bold font-mono text-indigo-950 mt-0.5">
+                  {newSignupCustomers.filter((c: any) => c.status === 'PENDING_IP_NOC').length}
+                </p>
+              </div>
+              <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3">
+                <p className="text-[10px] font-bold uppercase text-emerald-800">Ready to Activate</p>
+                <p className="text-xl font-bold font-mono text-emerald-950 mt-0.5">
+                  {newSignupCustomers.filter((c: any) => c.status === 'PENDING_ACTIVATION' || c.status === 'PENDING_IP_NOC').length}
+                </p>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                <p className="text-[10px] font-bold uppercase text-slate-700">Total Active Systems</p>
+                <p className="text-xl font-bold font-mono text-slate-900 mt-0.5">{systemAuditCustomers.length}</p>
+              </div>
+              <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-3">
+                <p className="text-[10px] font-bold uppercase text-amber-800">Audits Due / Pending</p>
+                <p className="text-xl font-bold font-mono text-amber-950 mt-0.5">{auditPendingCount}</p>
+              </div>
+              <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3">
+                <p className="text-[10px] font-bold uppercase text-emerald-800">Completed Audits</p>
+                <p className="text-xl font-bold font-mono text-emerald-950 mt-0.5">{auditCompletedCount}</p>
+              </div>
+              <div className="bg-blue-50/70 border border-blue-200 rounded-xl p-3">
+                <p className="text-[10px] font-bold uppercase text-blue-800">On-Demand Requests</p>
+                <p className="text-xl font-bold font-mono text-blue-950 mt-0.5">{auditOnDemandCount}</p>
+              </div>
+            </>
           )}
         </div>
       </div>
 
-      {/* Main Assigned Jobs Table Card */}
-      <SectionHeader leftAction={<Wrench className="h-4 w-4 text-amber-600" />}>
-        System Audits &amp; Assigned Jobs Queue
-      </SectionHeader>
+      {/* Main Table Card */}
       <Card className="shadow-sm border-line bg-white overflow-hidden">
         <CardHeader className="py-4 bg-slate-50/70 border-b border-line flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <div>
               <CardTitle className="text-base font-bold text-[#002868] flex items-center gap-2">
-                <Sun className="h-4 w-4 text-amber-600" />
-                System Audits &amp; Assigned Jobs Queue ({filteredCustomers.length})
+                {viewMode === 'new-jobs' ? <Sparkles className="h-4 w-4 text-amber-500" /> : <ShieldCheck className="h-4 w-4 text-amber-500" />}
+                {viewMode === 'new-jobs' ? 'Assigned Jobs (New Signups)' : 'Recurring System Audits Queue'} ({filteredCustomers.length})
               </CardTitle>
               <CardDescription className="text-xs text-slate-500">
-                {canAssign 
-                  ? "O&M Manager can assign pending audits to installers and review completed field reports." 
-                  : "Click 'Edit Specs & Audit' to input technical parameters and submit to O&M Manager."}
+                {viewMode === 'new-jobs'
+                  ? 'Click "Job Card" to fill hardware specifications (Part 2) and complete initial setup.'
+                  : 'Click "System Audit" to conduct recurring 7-point inspections for ongoing solar installations.'}
               </CardDescription>
             </div>
 
-            {/* Filter Tabs (only for managers/admins/NOC, installers only have pending active queue) */}
+            {/* Filter Tabs */}
             {!isInstaller && (
               <div className="flex items-center gap-1 bg-slate-200/70 p-0.5 rounded-lg text-xs font-semibold">
                 <button
                   type="button"
                   onClick={() => setFilterTab('ALL')}
                   className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
-                    filterTab === 'ALL' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                    filterTab === 'ALL' ? 'bg-white text-slate-900 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  All ({customers.length})
+                  All ({currentBaseList.length})
                 </button>
                 <button
                   type="button"
@@ -248,7 +315,7 @@ export function InstallerJobsView({
                     filterTab === 'PENDING' ? 'bg-amber-500 text-white shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  Pending ({pendingCount})
+                  Pending ({viewMode === 'new-jobs' ? newJobsPendingCount : auditPendingCount})
                 </button>
                 <button
                   type="button"
@@ -257,9 +324,9 @@ export function InstallerJobsView({
                     filterTab === 'COMPLETED' ? 'bg-emerald-600 text-white shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  Completed ({completedCount})
+                  Completed ({viewMode === 'new-jobs' ? (newJobsTotalCount - newJobsPendingCount) : auditCompletedCount})
                 </button>
-                {onDemandCount > 0 && (
+                {viewMode === 'audits' && auditOnDemandCount > 0 && (
                   <button
                     type="button"
                     onClick={() => setFilterTab('ON_DEMAND')}
@@ -267,7 +334,7 @@ export function InstallerJobsView({
                       filterTab === 'ON_DEMAND' ? 'bg-blue-600 text-white shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    On-Demand ({onDemandCount})
+                    On-Demand ({auditOnDemandCount})
                   </button>
                 )}
               </div>
@@ -296,27 +363,25 @@ export function InstallerJobsView({
                 <TableHead className="font-bold text-xs text-[#002868] border-r">System Specs &amp; Tier</TableHead>
                 <TableHead className="font-bold text-xs text-[#002868] border-r">Address / Installation Site</TableHead>
                 <TableHead className="font-bold text-xs text-[#002868] border-r text-center">Audit Status &amp; Schedule</TableHead>
-                <TableHead className="text-right font-bold text-xs text-[#002868] w-56">Field Actions</TableHead>
+                <TableHead className="text-right font-bold text-xs text-[#002868] w-64">Job Card &amp; Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredCustomers.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-10 text-xs text-slate-500">
-                    No assigned customer jobs found matching your criteria.
+                    No customers found in this queue matching your search or filter.
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredCustomers.map((c: any) => {
-                  const hasAuditCompleted = c.status !== 'PENDING_INSTALLER_AUDIT' && Boolean(c.solarSystem?.lastAuditDate)
+                  const hasAuditCompleted = Boolean(c.solarSystem?.lastAuditDate) || c.systemAudits?.some((sa: any) => sa.status === 'COMPLETED')
                   const customerIdDisplay = c.customerCode?.replace(/\D/g, '') || c.customerCode || c.id
                   const crfDisplay = c.crfNumber || (c.customerCode ? `CRF-${c.customerCode.replace(/\D/g, '')}` : '—')
 
-                  // Check if there is an on-demand audit request
                   const onDemandAudit = c.systemAudits?.find((sa: any) => sa.auditType === 'ON_DEMAND')
                   const pendingAudit = c.systemAudits?.find((sa: any) => sa.status === 'PENDING')
 
-                  // Format detailed address
                   const addressParts = [
                     c.houseNumber ? `House ${c.houseNumber}` : '',
                     c.streetNumber ? `Street ${c.streetNumber}` : '',
@@ -338,12 +403,11 @@ export function InstallerJobsView({
                         {crfDisplay}
                       </TableCell>
 
-                      {/* Customer Name & Contact & Installer Assignment */}
+                      {/* Customer Details & Assigned Installer */}
                       <TableCell className="border-r">
                         <span className="font-bold text-slate-900 block">{c.fullName}</span>
                         <span className="text-[11px] text-slate-500 font-mono block">{c.contactNumber}</span>
                         
-                        {/* Installer Assignment Section for O&M Manager */}
                         {!isInstaller && (
                           <div className="mt-1.5 space-y-1">
                             <div className="flex items-center gap-1 text-[11px]">
@@ -353,7 +417,6 @@ export function InstallerJobsView({
                               </span>
                             </div>
 
-                            {/* O&M Manager Quick Assign Dropdown */}
                             {canAssign && (
                               <div className="pt-0.5">
                                 <select
@@ -375,7 +438,7 @@ export function InstallerJobsView({
                         )}
                       </TableCell>
 
-                      {/* System & Hardware Specs (Job Card specs) */}
+                      {/* System Specs & Tier */}
                       <TableCell className="border-r">
                         <div className="space-y-1">
                           <div className="flex items-center gap-1.5">
@@ -452,7 +515,7 @@ export function InstallerJobsView({
                           ) : hasAuditCompleted ? (
                             <Badge variant="outline" className="bg-emerald-50 text-emerald-800 border-emerald-300 font-bold text-[11px] inline-flex items-center gap-1">
                               <CheckCircle2 className="h-3 w-3 text-emerald-600" />
-                              Audit Submitted
+                              Audit Completed
                             </Badge>
                           ) : (
                             <Badge variant="outline" className="bg-amber-50 text-amber-900 border-amber-300 font-bold text-[11px]">
@@ -460,9 +523,8 @@ export function InstallerJobsView({
                             </Badge>
                           )}
 
-                          {/* Next Audit Date */}
                           <div className="text-[10px] text-slate-500 font-medium">
-                            <span>Next: </span>
+                            <span>Next Audit: </span>
                             <span className="font-mono font-bold text-slate-800">
                               {formatDate(
                                 calculateNextAuditDate(
@@ -475,20 +537,44 @@ export function InstallerJobsView({
                         </div>
                       </TableCell>
 
-                      {/* Action Buttons */}
+                      {/* Job Card & Actions Column */}
                       <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Link href={`/dashboard/customers/${c.id}`}>
+                        <div className="flex flex-col items-end gap-1.5">
+                          <div className="flex items-center gap-1.5">
+                            <Link href={`/dashboard/customers/${c.id}`}>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 text-xs border-slate-300 text-slate-700 hover:bg-slate-100 font-semibold gap-1 px-2"
+                                title="View Customer Profile"
+                              >
+                                <Eye className="h-3 w-3 text-slate-600" />
+                                View
+                              </Button>
+                            </Link>
+
+                            {/* Job Card Button */}
                             <Button
-                              variant="outline"
                               size="sm"
-                              className="h-8 text-xs border-slate-300 text-slate-700 hover:bg-slate-100 font-semibold gap-1"
-                              title="View Customer Profile"
+                              onClick={() => openJobCard(c)}
+                              className="h-7 bg-[#135d86] hover:bg-[#002868] text-white font-bold text-xs gap-1 shadow-2xs cursor-pointer px-2.5"
+                              title="Open Job Card (Hardware Specs Part 2)"
                             >
-                              <Eye className="h-3.5 w-3.5 text-slate-600" />
-                              View
+                              <Sun className="h-3 w-3 text-amber-400" />
+                              Job Card
                             </Button>
-                          </Link>
+                          </div>
+
+                          {/* Dedicated System Audit Link / Button under Job Card */}
+                          <button
+                            type="button"
+                            onClick={() => openSystemAudit(c)}
+                            className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-950 bg-amber-50 hover:bg-amber-100 px-2 py-0.5 rounded-md border border-amber-300 hover:border-amber-400 transition-all cursor-pointer shadow-2xs group"
+                            title="Conduct or Review 7-Point System Audit (Part 3)"
+                          >
+                            <ShieldCheck className="h-3 w-3 text-amber-600 group-hover:text-amber-700" />
+                            <span>System Audit (Part 3) →</span>
+                          </button>
 
                           {/* IP NOC Process to Activate Action */}
                           {(c.status === 'PENDING_IP_NOC' || isIPNOC) && c.status !== 'CONNECTION_ACTIVE' && (
@@ -507,25 +593,13 @@ export function InstallerJobsView({
                                   setIsActivatingId(null)
                                 }
                               }}
-                              className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs gap-1.5 shadow-xs cursor-pointer"
+                              className="h-7 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] gap-1 shadow-xs cursor-pointer px-2"
                               title="Process to Activate in CRM"
                             >
-                              <CheckCircle2 className="h-3.5 w-3.5" />
-                              {isActivatingId === c.id ? 'Activating...' : 'Process to Activate'}
+                              <CheckCircle2 className="h-3 w-3" />
+                              {isActivatingId === c.id ? 'Activating...' : 'Activate Connection'}
                             </Button>
                           )}
-
-                          <Button
-                            size="sm"
-                            onClick={() => {
-                              setSelectedCustomer(c)
-                              setIsModalOpen(true)
-                            }}
-                            className="h-8 bg-[#135d86] hover:bg-[#f16232] text-white font-bold text-xs gap-1.5 shadow-xs cursor-pointer"
-                          >
-                            <Wrench className="h-3.5 w-3.5 text-amber-400" />
-                            {isIPNOC ? 'Review Specs' : 'Edit Specs & Audit'}
-                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -537,12 +611,13 @@ export function InstallerJobsView({
         </CardContent>
       </Card>
 
-      {/* Interactive Audit Modal */}
+      {/* Interactive Specs / Audit Modal */}
       {selectedCustomer && (
         <InstallerAuditModal
           customer={selectedCustomer}
           installerName={currentUserName}
           isOpen={isModalOpen}
+          initialTab={modalInitialTab}
           onClose={() => {
             setIsModalOpen(false)
             setSelectedCustomer(null)

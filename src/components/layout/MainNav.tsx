@@ -105,15 +105,27 @@ export function MainNav({
 
         {/* 1. Sales Tab (Direct Create Sales or Dropdown for Managers) */}
         {isSalesExec ? (
-          <Link 
-            href="/dashboard/customers/new" 
-            className={linkClass('/dashboard/customers/new')}
-          >
-            <span className="flex items-center gap-1 xl:gap-1.5 font-semibold">
-              <ShoppingBag className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
-              <span>Create Sales</span>
-            </span>
-          </Link>
+          <>
+            <Link 
+              href="/dashboard/customers/new" 
+              className={linkClass('/dashboard/customers/new')}
+            >
+              <span className="flex items-center gap-1 xl:gap-1.5 font-semibold">
+                <ShoppingBag className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
+                <span>Create Sales</span>
+              </span>
+            </Link>
+
+            <Link 
+              href="/dashboard/installer/jobs?view=new-jobs" 
+              className={linkClass('/dashboard/installer/jobs?view=new-jobs')}
+            >
+              <span className="flex items-center gap-1 xl:gap-1.5 font-semibold">
+                <ShoppingBag className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
+                <span>Assigned Jobs</span>
+              </span>
+            </Link>
+          </>
         ) : (canViewApproval || isSuperAdmin || isSalesManager) ? (
           <DropdownMenu>
             <DropdownMenuTrigger className={triggerClass(pathname.startsWith('/dashboard/sales') || pathname === '/dashboard/customers/new')}>
@@ -123,7 +135,7 @@ export function MainNav({
               </span>
               <ChevronDown className="h-3 w-3 xl:h-3.5 xl:w-3.5 opacity-70 shrink-0 ml-0.5" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-48 bg-white p-1.5 shadow-lg border-line rounded-xl animate-in fade-in-50 zoom-in-95">
+            <DropdownMenuContent align="start" className="w-56 bg-white p-1.5 shadow-lg border-line rounded-xl animate-in fade-in-50 zoom-in-95">
               <DropdownMenuItem>
                 <Link href="/dashboard/customers/new" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
                   Create Sales
@@ -136,14 +148,20 @@ export function MainNav({
                   </Link>
                 </DropdownMenuItem>
               )}
+              <DropdownMenuItem>
+                <Link href="/dashboard/installer/jobs?view=new-jobs" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer flex items-center justify-between">
+                  <span>Assigned Jobs (New Signups)</span>
+                  <span className="text-[10px] bg-amber-100 text-amber-900 font-bold px-1.5 py-0.5 rounded">New</span>
+                </Link>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         ) : null}
 
-        {/* 2. Dedicated System Audits Tab */}
+        {/* 2. Dedicated Recurring System Audits Tab */}
         {canViewSystemAudits && (
           <Link 
-            href="/dashboard/installer/jobs" 
+            href="/dashboard/installer/jobs?view=audits" 
             className={linkClass('/dashboard/installer/jobs')}
           >
             <span className="flex items-center gap-1 xl:gap-1.5 font-semibold">
@@ -326,6 +344,9 @@ export function MainNav({
               Manager Approval
             </Link>
           )}
+          <Link href="/dashboard/installer/jobs?view=new-jobs" className={linkClass('/dashboard/installer/jobs?view=new-jobs')} onClick={onItemClick}>
+            Assigned Jobs (New Signups)
+          </Link>
         </div>
       </div>
 
@@ -335,10 +356,10 @@ export function MainNav({
             System Audits &amp; Operations
           </p>
           <div className="space-y-0.5">
-            <Link href="/dashboard/installer/jobs" className={linkClass('/dashboard/installer/jobs')} onClick={onItemClick}>
+            <Link href="/dashboard/installer/jobs?view=audits" className={linkClass('/dashboard/installer/jobs?view=audits')} onClick={onItemClick}>
               <span className="flex items-center gap-1.5 font-semibold">
                 <Wrench className="h-4 w-4 text-[var(--color-amber)]" />
-                System Audits Queue
+                Recurring System Audits Queue
               </span>
             </Link>
           </div>
