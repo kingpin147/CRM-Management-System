@@ -29,6 +29,7 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
   const [complainStatus, setComplainStatus] = React.useState('Pending')
   const [firstCallResolution, setFirstCallResolution] = React.useState('')
   const [description, setDescription] = React.useState('')
+  const [createAuditRequest, setCreateAuditRequest] = React.useState(false)
 
   const isTechnical = ticketType === 'TECHNICAL_COMPLAINT'
 
@@ -37,6 +38,7 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
     setTicketType(type)
     setCategory('')
     setFaultCode('')
+    setCreateAuditRequest(false)
     if (type === 'TECHNICAL_COMPLAINT') {
       setEscalation('')
       setAssignedTo('Operation & Maintenance')
@@ -55,6 +57,7 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
   const handleCategoryChange = (cat: string) => {
     setCategory(cat)
     setFaultCode('')
+    setCreateAuditRequest(false)
     if (ticketType !== 'BILLING_COMPLAINT' && ticketType !== 'SERVICE_REQUEST') {
       setEscalation('')
     }
@@ -62,6 +65,11 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
 
   const handleFaultChange = (fault: string) => {
     setFaultCode(fault)
+    if (fault === 'Solar System Audit Request') {
+      setCreateAuditRequest(true)
+    } else {
+      setCreateAuditRequest(false)
+    }
     if (isTechnical && ESCALATION_MATRIX[fault]) {
       setEscalation(ESCALATION_MATRIX[fault])
     } else if (ticketType !== 'BILLING_COMPLAINT' && ticketType !== 'SERVICE_REQUEST') {
@@ -93,6 +101,7 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
     formData.append('status', complainStatus)
     formData.append('firstCallResolution', firstCallResolution)
     formData.append('description', description)
+    formData.append('createAuditRequest', createAuditRequest ? 'true' : 'false')
 
     const res = await createCustomerTicket(formData)
     setLoading(false)
@@ -100,8 +109,9 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
     if (res?.error) {
       setError(res.error)
     } else {
-      setSuccess('✅ Ticket successfully logged!')
+      setSuccess('✅ Ticket successfully logged!' + (createAuditRequest ? ' System Audit Request also created in O&M Queue.' : ''))
       setDescription('')
+      setCreateAuditRequest(false)
       router.refresh()
     }
   }
@@ -252,6 +262,25 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
               </TableRow>
             </TableBody>
           </Table>
+
+          {/* Conditional Auto-Checked Checkbox for System Audit Request */}
+          {(faultCode === 'Solar System Audit Request' || createAuditRequest) && (
+            <div className="flex items-center gap-2.5 p-3 rounded-xl bg-amber-50 border border-amber-300 shadow-2xs animate-in fade-in-50">
+              <input
+                type="checkbox"
+                id="createAuditCheckbox"
+                checked={createAuditRequest}
+                onChange={(e) => setCreateAuditRequest(e.target.checked)}
+                className="h-4 w-4 rounded border-amber-400 text-amber-600 focus:ring-amber-500 cursor-pointer accent-amber-600"
+              />
+              <label htmlFor="createAuditCheckbox" className="text-xs font-bold text-amber-950 cursor-pointer select-none flex items-center gap-1.5">
+                <span>Create System Audit Request in O&amp;M Manager Queue</span>
+                <Badge variant="outline" className="bg-amber-200/80 text-amber-950 border-amber-400 text-[10px] font-bold">
+                  Auto-Checked
+                </Badge>
+              </label>
+            </div>
+          )}
 
           <div className="flex justify-end pt-2">
             <Button type="submit" disabled={loading} className="bg-[#135d86] hover:bg-[#f16232] text-white font-bold text-xs shadow-sm px-6">

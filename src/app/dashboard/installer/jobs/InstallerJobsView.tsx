@@ -9,12 +9,14 @@ import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Search, Wrench, CheckCircle2, Eye, Sun, RotateCcw, Download, ShieldCheck, MapPin } from 'lucide-react'
 import { InstallerAuditModal } from './InstallerAuditModal'
-import { activateIpNocConnection } from './actions'
+import { activateIpNocConnection, assignInstallerToAudit } from './actions'
 import { useRouter } from 'next/navigation'
 import { SectionHeader } from '@/components/ui/section-header'
+import { formatDate, calculateNextAuditDate, getAuditFrequencyLabel } from '@/lib/utils'
 
 interface InstallerJobsViewProps {
   customers: any[]
+  installers?: any[]
   currentUserId: string
   currentUserName: string
   userRole: string
@@ -22,6 +24,7 @@ interface InstallerJobsViewProps {
 
 export function InstallerJobsView({
   customers,
+  installers = [],
   currentUserId,
   currentUserName,
   userRole,
@@ -30,27 +33,32 @@ export function InstallerJobsView({
   const [searchQuery, setSearchQuery] = React.useState('')
   const [selectedCustomer, setSelectedCustomer] = React.useState<any | null>(null)
   const [isModalOpen, setIsModalOpen] = React.useState(false)
-  const [filterTab, setFilterTab] = React.useState<'ALL' | 'PENDING' | 'COMPLETED'>('ALL')
+  const [filterTab, setFilterTab] = React.useState<'ALL' | 'PENDING' | 'COMPLETED' | 'ON_DEMAND'>('ALL')
   const [isActivatingId, setIsActivatingId] = React.useState<string | null>(null)
+  const [assigningCustomerId, setAssigningCustomerId] = React.useState<string | null>(null)
 
   const isIPNOC = userRole === 'IP_NOC_EXECUTIVE'
-  const isOMManager = userRole === 'OM_MANAGER'
+  const isOMManager = userRole === 'OM_MANAGER' || (userRole || '').toUpperCase().includes('OM')
   const isInstaller = userRole === 'INSTALLATION' || userRole === 'INSTALLER'
   const isSales = userRole === 'SALES'
+  const canAssign = isOMManager || userRole === 'SUPER_ADMIN' || userRole === 'ADMIN' || userRole === 'MANAGER'
 
   const filteredCustomers = React.useMemo(() => {
     let baseList = customers;
 
     if (isInstaller) {
       // Installers only see jobs pending their audit
-      baseList = customers.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT');
+      baseList = customers.filter((c: any) => 
+        c.status === 'PENDING_INSTALLER_AUDIT' || 
+        c.systemAudits?.some((sa: any) => sa.status === 'PENDING' && sa.assignedInstallerId === currentUserId)
+      );
     } else if (filterTab === 'PENDING') {
       if (isIPNOC) {
         baseList = customers.filter((c: any) => c.status === 'PENDING_IP_NOC');
       } else if (isSales) {
         baseList = customers.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT' || c.status === 'SIGNUP_GENERATED' || c.status === 'PENDING_PAYMENT_VERIFICATION' || !c.solarSystem?.lastAuditDate);
       } else {
-        baseList = customers.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT');
+        baseList = customers.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT' || c.systemAudits?.some((sa: any) => sa.status === 'PENDING'));
       }
     } else if (filterTab === 'COMPLETED') {
       if (isIPNOC) {
@@ -58,8 +66,13 @@ export function InstallerJobsView({
       } else if (isSales) {
         baseList = customers.filter((c: any) => Boolean(c.solarSystem?.lastAuditDate));
       } else {
-        baseList = customers.filter((c: any) => c.status !== 'PENDING_INSTALLER_AUDIT' && Boolean(c.solarSystem?.lastAuditDate));
+        baseList = customers.filter((c: any) => c.status !== 'PENDING_INSTALLER_AUDIT' && (Boolean(c.solarSystem?.lastAuditDate) || c.systemAudits?.some((sa: any) => sa.status === 'COMPLETED')));
       }
+    } else if (filterTab === 'ON_DEMAND') {
+      baseList = customers.filter((c: any) => 
+        c.systemAudits?.some((sa: any) => sa.auditType === 'ON_DEMAND') || 
+        c.tickets?.some((t: any) => t.fault?.includes('Audit') || t.category?.includes('Audit'))
+      );
     }
 
     if (!searchQuery.trim()) return baseList;
@@ -76,26 +89,30 @@ export function InstallerJobsView({
       c.assignedInstaller?.fullName?.toLowerCase().includes(q) ||
       c.solarSystem?.installerName?.toLowerCase().includes(q)
     )
-  }, [customers, searchQuery, isIPNOC, isOMManager, isInstaller, isSales, filterTab])
+  }, [customers, searchQuery, isIPNOC, isOMManager, isInstaller, isSales, filterTab, currentUserId])
 
   // KPIs dynamically rendered based on user role
   const pendingCount = isIPNOC
     ? customers.filter((c: any) => c.status === 'PENDING_IP_NOC').length
     : isSales
     ? customers.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT' || c.status === 'SIGNUP_GENERATED' || c.status === 'PENDING_PAYMENT_VERIFICATION' || !c.solarSystem?.lastAuditDate).length
-    : customers.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT').length
+    : customers.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT' || c.systemAudits?.some((sa: any) => sa.status === 'PENDING')).length
 
   const completedCount = isIPNOC
     ? customers.filter((c: any) => c.status === 'CONNECTION_ACTIVE').length
     : isSales
     ? customers.filter((c: any) => Boolean(c.solarSystem?.lastAuditDate)).length
-    : customers.filter((c: any) => c.status !== 'PENDING_INSTALLER_AUDIT' && Boolean(c.solarSystem?.lastAuditDate)).length
+    : customers.filter((c: any) => c.status !== 'PENDING_INSTALLER_AUDIT' && (Boolean(c.solarSystem?.lastAuditDate) || c.systemAudits?.some((sa: any) => sa.status === 'COMPLETED'))).length
+
+  const onDemandCount = customers.filter((c: any) => 
+    c.systemAudits?.some((sa: any) => sa.auditType === 'ON_DEMAND')
+  ).length
 
   // Header dynamic details
   const headerTitle = isIPNOC 
     ? "IP NOC Operations & Assigned Jobs" 
     : isOMManager 
-    ? "O&M Management & Assigned Jobs" 
+    ? "O&M Management & System Audits Queue" 
     : isSales
     ? "Sales Operations & Assigned Jobs"
     : "Installer Field Operations & Assigned Jobs"
@@ -111,13 +128,30 @@ export function InstallerJobsView({
   const subtitleLabel = isIPNOC 
     ? "Setup IP NOC & Configure Connection." 
     : isOMManager 
-    ? "Monitor Installer Field Audits & Push Pending Jobs to Completion."
+    ? "Assign Pending Audits to Field Installers, Monitor System Health & Track Completed Audits."
     : isSales
     ? "Collect Solar System Hardware Specs (Part 2) & Audit Details (Part 3)."
     : "Fill Solar Hardware Specs (Part 2) & 7-Point System Audit (Part 3)."
 
   const pendingLabel = isIPNOC ? "Pending Setup" : "Pending Audits"
   const completedLabel = isIPNOC ? "Connections Active" : "Completed"
+
+  const handleAssignInstaller = async (customerId: string, installerId: string, auditId?: string) => {
+    if (!installerId) return
+    setAssigningCustomerId(customerId)
+    try {
+      const fd = new FormData()
+      fd.append('customerId', customerId)
+      fd.append('installerId', installerId)
+      if (auditId) fd.append('auditId', auditId)
+      await assignInstallerToAudit(fd)
+      router.refresh()
+    } catch (err) {
+      console.error('Failed to assign installer:', err)
+    } finally {
+      setAssigningCustomerId(null)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -161,12 +195,24 @@ export function InstallerJobsView({
               <p className="text-xl font-bold font-mono text-emerald-950">{completedCount}</p>
             </button>
           )}
+          {onDemandCount > 0 && !isInstaller && (
+            <button
+              type="button"
+              onClick={() => setFilterTab(filterTab === 'ON_DEMAND' ? 'ALL' : 'ON_DEMAND')}
+              className={`bg-blue-50 border px-4 py-2 rounded-xl text-center transition-all cursor-pointer hover:shadow-xs ${
+                filterTab === 'ON_DEMAND' ? 'border-blue-500 ring-2 ring-blue-400 bg-blue-100/70' : 'border-blue-200'
+              }`}
+            >
+              <p className="text-[10px] font-bold uppercase text-blue-800">On-Demand</p>
+              <p className="text-xl font-bold font-mono text-blue-950">{onDemandCount}</p>
+            </button>
+          )}
         </div>
       </div>
 
       {/* Main Assigned Jobs Table Card */}
       <SectionHeader leftAction={<Wrench className="h-4 w-4 text-amber-600" />}>
-        Assigned Customer Jobs Queue
+        System Audits &amp; Assigned Jobs Queue
       </SectionHeader>
       <Card className="shadow-sm border-line bg-white overflow-hidden">
         <CardHeader className="py-4 bg-slate-50/70 border-b border-line flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
@@ -174,10 +220,12 @@ export function InstallerJobsView({
             <div>
               <CardTitle className="text-base font-bold text-[#002868] flex items-center gap-2">
                 <Sun className="h-4 w-4 text-amber-600" />
-                Assigned Customer Jobs Queue ({filteredCustomers.length})
+                System Audits &amp; Assigned Jobs Queue ({filteredCustomers.length})
               </CardTitle>
               <CardDescription className="text-xs text-slate-500">
-                Click &quot;Edit Solar &amp; Audit Specs&quot; to input technical parameters and submit to O&amp;M Manager.
+                {canAssign 
+                  ? "O&M Manager can assign pending audits to installers and review completed field reports." 
+                  : "Click 'Edit Specs & Audit' to input technical parameters and submit to O&M Manager."}
               </CardDescription>
             </div>
 
@@ -211,6 +259,17 @@ export function InstallerJobsView({
                 >
                   Completed ({completedCount})
                 </button>
+                {onDemandCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setFilterTab('ON_DEMAND')}
+                    className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                      filterTab === 'ON_DEMAND' ? 'bg-blue-600 text-white shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    On-Demand ({onDemandCount})
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -221,7 +280,7 @@ export function InstallerJobsView({
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search ID, CRF, name, city..."
+              placeholder="Search ID, CRF, name, city, area..."
               className="pl-9 h-9 text-xs bg-white border-slate-300"
             />
           </div>
@@ -236,7 +295,7 @@ export function InstallerJobsView({
                 <TableHead className="font-bold text-xs text-[#002868] border-r">Customer Details</TableHead>
                 <TableHead className="font-bold text-xs text-[#002868] border-r">System Capacity &amp; Tier</TableHead>
                 <TableHead className="font-bold text-xs text-[#002868] border-r">City &amp; Installation Area</TableHead>
-                <TableHead className="font-bold text-xs text-[#002868] border-r text-center">Audit Status</TableHead>
+                <TableHead className="font-bold text-xs text-[#002868] border-r text-center">Audit Status &amp; Schedule</TableHead>
                 <TableHead className="text-right font-bold text-xs text-[#002868] w-56">Field Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -253,6 +312,20 @@ export function InstallerJobsView({
                   const customerIdDisplay = c.customerCode?.replace(/\D/g, '') || c.customerCode || c.id
                   const crfDisplay = c.crfNumber || (c.customerCode ? `CRF-${c.customerCode.replace(/\D/g, '')}` : '—')
 
+                  // Check if there is an on-demand audit request
+                  const onDemandAudit = c.systemAudits?.find((sa: any) => sa.auditType === 'ON_DEMAND')
+                  const pendingAudit = c.systemAudits?.find((sa: any) => sa.status === 'PENDING')
+
+                  // Format detailed address
+                  const addressParts = [
+                    c.houseNumber ? `House ${c.houseNumber}` : '',
+                    c.streetNumber ? `Street ${c.streetNumber}` : '',
+                    c.block ? `Block ${c.block}` : '',
+                    c.subArea || '',
+                    c.area || '',
+                    c.city || ''
+                  ].filter(Boolean).join(', ')
+
                   return (
                     <TableRow key={c.id} className="hover:bg-slate-50 border-b text-xs">
                       {/* Customer ID */}
@@ -265,16 +338,39 @@ export function InstallerJobsView({
                         {crfDisplay}
                       </TableCell>
 
-                      {/* Customer Name & Contact */}
+                      {/* Customer Name & Contact & Installer Assignment */}
                       <TableCell className="border-r">
                         <span className="font-bold text-slate-900 block">{c.fullName}</span>
                         <span className="text-[11px] text-slate-500 font-mono block">{c.contactNumber}</span>
+                        
+                        {/* Installer Assignment Section for O&M Manager */}
                         {!isInstaller && (
-                          <div className="mt-1 flex items-center gap-1 text-[11px]">
-                            <span className="text-slate-500 font-medium">Installer:</span>
-                            <span className="font-bold text-amber-900 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
-                              {c.assignedInstaller?.fullName || c.solarSystem?.installerName || 'Unassigned'}
-                            </span>
+                          <div className="mt-1.5 space-y-1">
+                            <div className="flex items-center gap-1 text-[11px]">
+                              <span className="text-slate-500 font-medium">Assigned:</span>
+                              <span className="font-bold text-amber-900 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 text-[10px]">
+                                {c.assignedInstaller?.fullName || c.solarSystem?.installerName || 'Unassigned'}
+                              </span>
+                            </div>
+
+                            {/* O&M Manager Quick Assign Dropdown */}
+                            {canAssign && (
+                              <div className="pt-0.5">
+                                <select
+                                  disabled={assigningCustomerId === c.id}
+                                  value={c.assignedInstallerId || ''}
+                                  onChange={(e) => handleAssignInstaller(c.id, e.target.value, pendingAudit?.id)}
+                                  className="text-[11px] font-semibold text-slate-800 bg-white border border-slate-300 rounded px-1.5 py-0.5 shadow-2xs hover:border-amber-500 focus:ring-1 focus:ring-amber-500 cursor-pointer w-full max-w-[170px]"
+                                >
+                                  <option value="">-- Assign Installer --</option>
+                                  {installers.map((inst: any) => (
+                                    <option key={inst.id} value={inst.id}>
+                                      {inst.fullName} {inst.role === 'INSTALLATION' ? '(Installer)' : ''}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
                           </div>
                         )}
                       </TableCell>
@@ -287,15 +383,22 @@ export function InstallerJobsView({
                         <span className="text-[11px] text-slate-600 font-medium">
                           {c.packagePlan?.packageTier || 'Moderate'} ({c.packagePlan?.monitoringTime || 'Hybrid'})
                         </span>
+                        <div className="mt-1">
+                          <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-200 text-[9.5px]">
+                            {getAuditFrequencyLabel(c.packagePlan?.packageTier)}
+                          </Badge>
+                        </div>
                       </TableCell>
 
-                      {/* Address & City */}
+                      {/* Address & City (Prominent Address & Area) */}
                       <TableCell className="border-r">
-                        <div className="flex items-center gap-1 text-slate-800 font-medium">
+                        <div className="flex items-center gap-1 text-slate-900 font-bold">
                           <MapPin className="h-3 w-3 text-amber-600 shrink-0" />
                           <span>{c.city || '—'} {c.area ? `(${c.area})` : ''}</span>
                         </div>
-                        <span className="text-[11px] text-slate-500 line-clamp-1">{c.address}</span>
+                        <span className="text-[11px] text-slate-600 line-clamp-2 mt-0.5 font-medium">
+                          {addressParts || c.address || 'Address pending'}
+                        </span>
                         <div className="mt-1">
                           <a
                             href={
@@ -316,18 +419,37 @@ export function InstallerJobsView({
                         </div>
                       </TableCell>
 
-                      {/* Audit Status */}
+                      {/* Audit Status & Schedule */}
                       <TableCell className="border-r text-center">
-                        {hasAuditCompleted ? (
-                          <Badge variant="outline" className="bg-emerald-50 text-emerald-800 border-emerald-300 font-bold text-[11px] inline-flex items-center gap-1">
-                            <CheckCircle2 className="h-3 w-3 text-emerald-600" />
-                            Audit Submitted
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="bg-amber-50 text-amber-900 border-amber-300 font-bold text-[11px]">
-                            Audit Pending
-                          </Badge>
-                        )}
+                        <div className="space-y-1 inline-flex flex-col items-center">
+                          {onDemandAudit && onDemandAudit.status === 'PENDING' ? (
+                            <Badge variant="outline" className="bg-blue-100 text-blue-900 border-blue-400 font-bold text-[10px] shadow-2xs">
+                              ⚡ On-Demand Request
+                            </Badge>
+                          ) : hasAuditCompleted ? (
+                            <Badge variant="outline" className="bg-emerald-50 text-emerald-800 border-emerald-300 font-bold text-[11px] inline-flex items-center gap-1">
+                              <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                              Audit Submitted
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-amber-50 text-amber-900 border-amber-300 font-bold text-[11px]">
+                              Audit Pending
+                            </Badge>
+                          )}
+
+                          {/* Next Audit Date */}
+                          <div className="text-[10px] text-slate-500 font-medium">
+                            <span>Next: </span>
+                            <span className="font-mono font-bold text-slate-800">
+                              {formatDate(
+                                calculateNextAuditDate(
+                                  c.solarSystem?.lastAuditDate || c.activationDate || c.signupDate,
+                                  c.packagePlan?.packageTier
+                                )
+                              )}
+                            </span>
+                          </div>
+                        </div>
                       </TableCell>
 
                       {/* Action Buttons */}

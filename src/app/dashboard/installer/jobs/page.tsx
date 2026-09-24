@@ -34,9 +34,9 @@ export default async function InstallerJobsPage() {
   const nameParts = (dbUser?.fullName || '').split(' ').filter(p => p.length > 2)
   const whereClause = isTechnician
     ? {
-        status: 'PENDING_INSTALLER_AUDIT',
         OR: [
-          { assignedInstallerId: dbUser.id },
+          { status: 'PENDING_INSTALLER_AUDIT', assignedInstallerId: dbUser.id },
+          { systemAudits: { some: { assignedInstallerId: dbUser.id, status: 'PENDING' } } },
           ...(dbUser?.fullName ? [{ solarSystem: { is: { installerName: { contains: dbUser.fullName, mode: 'insensitive' as const } } } }] : []),
           ...nameParts.map(part => ({
             solarSystem: { is: { installerName: { contains: part, mode: 'insensitive' as const } } }
@@ -76,16 +76,35 @@ export default async function InstallerJobsPage() {
       solarSystem: true,
       accountExecutive: true,
       assignedInstaller: true,
+      systemAudits: {
+        include: {
+          details: true,
+          assignedInstaller: true,
+          ticket: true
+        },
+        orderBy: { createdAt: 'desc' }
+      }
     },
     orderBy: { signupDate: 'desc' }
   })
 
+  const rawInstallers = await prisma.user.findMany({
+    where: {
+      role: { in: ['INSTALLATION', 'SUPER_ADMIN', 'ADMIN', 'MANAGER', 'OM_MANAGER'] },
+      isActive: true
+    },
+    select: { id: true, fullName: true, role: true, designation: true },
+    orderBy: { fullName: 'asc' }
+  })
+
   const customers = JSON.parse(JSON.stringify(rawCustomers))
+  const installers = JSON.parse(JSON.stringify(rawInstallers))
 
   return (
     <div className="space-y-6 animate-reveal">
       <InstallerJobsView 
         customers={customers} 
+        installers={installers}
         currentUserId={dbUser.id}
         currentUserName={dbUser.fullName || 'Installer'}
         userRole={userRole} 

@@ -17,6 +17,7 @@ model User {
   createdAt  DateTime   @default(now())
   customers  Customer[] @relation("CustomerAccountExecutive")
   assignedJobs Customer[] @relation("CustomerAssignedInstaller")
+  assignedAudits SystemAudit[] @relation("InstallerSystemAudits")
 }
 
 enum Role {
@@ -68,6 +69,7 @@ model Customer {
   ledgerEntries  LedgerEntry[]
   customerHistory CustomerHistory[]
   communicationLogs CommunicationLog[]
+  systemAudits  SystemAudit[]
 
   accountExecutiveId String?
   accountExecutive   User?   @relation("CustomerAccountExecutive", fields: [accountExecutiveId], references: [id])
@@ -198,6 +200,7 @@ model Ticket {
   attachmentUrl       String?
   createdAt           DateTime        @default(now())
   histories           TicketHistory[]
+  systemAudits        SystemAudit[]
 
   @@index([customerId])
   @@index([status])
@@ -323,4 +326,53 @@ model CommunicationLog {
   @@index([customerId])
   @@index([channel])
   @@index([createdAt])
+}
+
+model SystemAudit {
+  id                  String             @id @default(uuid())
+  auditNumber         String             @unique
+  customerId          String
+  customer            Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  ticketId            String?
+  ticket              Ticket?            @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+  assignedInstallerId String?
+  assignedInstaller   User?              @relation("InstallerSystemAudits", fields: [assignedInstallerId], references: [id], onDelete: SetNull)
+  auditType           String             @default("QUARTERLY") // INITIAL, QUARTERLY, HALF_YEARLY, YEARLY, ON_DEMAND
+  status              String             @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, CANCELLED
+  scheduledDate       DateTime?
+  completedDate       DateTime?
+  notes               String?
+  performedBy         String?
+  details             SystemAuditDetail?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  @@index([customerId])
+  @@index([status])
+  @@index([assignedInstallerId])
+}
+
+model SystemAuditDetail {
+  id                  String       @id @default(uuid())
+  auditId             String       @unique
+  audit               SystemAudit  @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  inverterStatus      String?      @default("Good")
+  panelStatus         String?      @default("Good")
+  batteryStatus       String?      @default("Good")
+  structureStatus     String?      @default("Good")
+  cableStatus         String?      @default("Good")
+  earthingStatus      String?      @default("Good")
+  breakerStatus       String?      @default("Good")
+  earthingAcOhms      Decimal?
+  earthingDcOhms      Decimal?
+  earthingLastCheck   DateTime?
+  lightningProtection Boolean?     @default(false)
+  inverterImages      String[]     @default([])
+  panelImages         String[]     @default([])
+  batteryImages       String[]     @default([])
+  generalNotes        String?
+  installerName       String?
+  installerCompany    String?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
 }

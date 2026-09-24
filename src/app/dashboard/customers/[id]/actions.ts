@@ -508,8 +508,28 @@ export async function createCustomerTicket(formData: FormData) {
       },
     })
 
+    // If Solar System Audit Request or checkbox checked, create SystemAudit in O&M Manager Queue
+    const createAuditRequest = formData.get('createAuditRequest') === 'true' || faultCode === 'Solar System Audit Request'
+    if (createAuditRequest) {
+      const auditNumber = `AUD-${Date.now().toString().slice(-6)}`
+      await prisma.systemAudit.create({
+        data: {
+          auditNumber,
+          customerId,
+          ticketId: newTicket.id,
+          auditType: 'ON_DEMAND',
+          status: 'PENDING',
+          scheduledDate: new Date(),
+          notes: `On-Demand Audit Request from Ticket #${ticketNumber}: ${description}`,
+          performedBy: 'Customer Support'
+        }
+      })
+    }
+
     revalidatePath(`/dashboard/customers/${customerId}`)
     revalidatePath('/dashboard/tickets')
+    revalidatePath('/dashboard/om/audits')
+    revalidatePath('/dashboard/installer/jobs')
     return { success: true }
   } catch (error: any) {
     console.error('Failed to create ticket:', error)

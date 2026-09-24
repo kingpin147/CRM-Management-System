@@ -13,25 +13,71 @@ export async function GET(
   const { searchParams } = new URL(request.url)
   const isDownload = searchParams.get('download') === 'true'
 
-  // Query Customer including solarSystem, packagePlan and assignedInstaller
-  const customer = await prisma.customer.findFirst({
+  // Check if id corresponds to a SystemAudit record
+  const systemAudit = await prisma.systemAudit.findFirst({
     where: {
       OR: [
         { id },
-        { customerCode: id },
-        { crfNumber: id }
+        { auditNumber: id }
       ]
     },
     include: {
-      solarSystem: true,
-      packagePlan: true,
-      accountExecutive: true,
+      details: true,
       assignedInstaller: true,
+      customer: {
+        include: {
+          solarSystem: true,
+          packagePlan: true,
+          accountExecutive: true,
+          assignedInstaller: true,
+        }
+      }
     }
   })
 
+  let customer = systemAudit?.customer || null
+
   if (!customer) {
-    return new NextResponse('Customer record not found for System Audit PDF', { status: 404 })
+    customer = await prisma.customer.findFirst({
+      where: {
+        OR: [
+          { id },
+          { customerCode: id },
+          { crfNumber: id }
+        ]
+      },
+      include: {
+        solarSystem: true,
+        packagePlan: true,
+        accountExecutive: true,
+        assignedInstaller: true,
+      }
+    })
+  }
+
+  if (!customer) {
+    return new NextResponse('Customer or Audit record not found for System Audit PDF', { status: 404 })
+  }
+
+  // If specific audit details exist, merge them for the PDF document
+  if (systemAudit && systemAudit.details && customer.solarSystem) {
+    customer = {
+      ...customer,
+      solarSystem: {
+        ...customer.solarSystem,
+        inverterStatus: systemAudit.details.inverterStatus || customer.solarSystem.inverterStatus,
+        panelStatus: systemAudit.details.panelStatus || customer.solarSystem.panelStatus,
+        batteryStatus: systemAudit.details.batteryStatus || customer.solarSystem.batteryStatus,
+        structureStatus: systemAudit.details.structureStatus || customer.solarSystem.structureStatus,
+        cableStatus: systemAudit.details.cableStatus || customer.solarSystem.cableStatus,
+        earthingStatus: systemAudit.details.earthingStatus || customer.solarSystem.earthingStatus,
+        breakerStatus: systemAudit.details.breakerStatus || customer.solarSystem.breakerStatus,
+        earthingAcOhms: systemAudit.details.earthingAcOhms || customer.solarSystem.earthingAcOhms,
+        earthingDcOhms: systemAudit.details.earthingDcOhms || customer.solarSystem.earthingDcOhms,
+        installerName: systemAudit.details.installerName || systemAudit.performedBy || customer.solarSystem.installerName,
+        lastAuditDate: systemAudit.completedDate || systemAudit.scheduledDate || customer.solarSystem.lastAuditDate,
+      }
+    }
   }
 
   // Load logo

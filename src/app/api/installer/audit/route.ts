@@ -312,6 +312,84 @@ export async function POST(req: NextRequest) {
       }
     })
 
+    // Record historical SystemAudit & SystemAuditDetail
+    try {
+      const existingPendingAudit = await prisma.systemAudit.findFirst({
+        where: { customerId, status: 'PENDING' },
+        orderBy: { createdAt: 'desc' }
+      })
+
+      const auditNumber = existingPendingAudit?.auditNumber || `AUD-${Date.now().toString().slice(-6)}`
+      const auditType = existingPendingAudit?.auditType || (customerRecord?.solarSystem?.lastAuditDate ? 'QUARTERLY' : 'INITIAL')
+
+      const auditRecord = existingPendingAudit
+        ? await prisma.systemAudit.update({
+            where: { id: existingPendingAudit.id },
+            data: {
+              status: 'COMPLETED',
+              completedDate: lastAuditDate,
+              performedBy: installerName || 'Installer Team',
+              assignedInstallerId: customerRecord?.assignedInstallerId || null,
+            }
+          })
+        : await prisma.systemAudit.create({
+            data: {
+              auditNumber,
+              customerId,
+              auditType,
+              status: 'COMPLETED',
+              scheduledDate: lastAuditDate,
+              completedDate: lastAuditDate,
+              performedBy: installerName || 'Installer Team',
+              assignedInstallerId: customerRecord?.assignedInstallerId || null,
+              notes: `System Audit completed by ${installerName || 'Technical Specialist'}.`
+            }
+          })
+
+      await prisma.systemAuditDetail.upsert({
+        where: { auditId: auditRecord.id },
+        create: {
+          auditId: auditRecord.id,
+          inverterStatus,
+          panelStatus,
+          batteryStatus,
+          structureStatus,
+          cableStatus,
+          earthingStatus,
+          breakerStatus,
+          earthingAcOhms,
+          earthingDcOhms,
+          earthingLastCheck,
+          lightningProtection,
+          inverterImages: finalInverterImages,
+          panelImages: finalPanelImages,
+          batteryImages: finalBatteryImages,
+          installerName,
+          installerCompany
+        },
+        update: {
+          inverterStatus,
+          panelStatus,
+          batteryStatus,
+          structureStatus,
+          cableStatus,
+          earthingStatus,
+          breakerStatus,
+          earthingAcOhms,
+          earthingDcOhms,
+          earthingLastCheck,
+          lightningProtection,
+          inverterImages: finalInverterImages,
+          panelImages: finalPanelImages,
+          batteryImages: finalBatteryImages,
+          installerName,
+          installerCompany
+        }
+      })
+    } catch (auditErr) {
+      console.error('Failed to log SystemAudit history record in API route:', auditErr)
+    }
+
     // Ensure customer workflow is updated to PENDING_ACTIVATION for O&M Manager final review
     const updatedCustomer = await prisma.customer.update({
       where: { id: customerId },

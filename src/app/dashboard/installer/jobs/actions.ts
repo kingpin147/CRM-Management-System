@@ -310,6 +310,84 @@ export async function submitInstallerAudit(formData: FormData) {
     }
   })
 
+  // Record historical SystemAudit & SystemAuditDetail
+  try {
+    const existingPendingAudit = await prisma.systemAudit.findFirst({
+      where: { customerId, status: 'PENDING' },
+      orderBy: { createdAt: 'desc' }
+    })
+
+    const auditNumber = existingPendingAudit?.auditNumber || `AUD-${Date.now().toString().slice(-6)}`
+    const auditType = existingPendingAudit?.auditType || (customerRecord?.solarSystem?.lastAuditDate ? 'QUARTERLY' : 'INITIAL')
+
+    const auditRecord = existingPendingAudit
+      ? await prisma.systemAudit.update({
+          where: { id: existingPendingAudit.id },
+          data: {
+            status: 'COMPLETED',
+            completedDate: lastAuditDate,
+            performedBy: installerName || 'Installer Team',
+            assignedInstallerId: customerRecord?.assignedInstallerId || null,
+          }
+        })
+      : await prisma.systemAudit.create({
+          data: {
+            auditNumber,
+            customerId,
+            auditType,
+            status: 'COMPLETED',
+            scheduledDate: lastAuditDate,
+            completedDate: lastAuditDate,
+            performedBy: installerName || 'Installer Team',
+            assignedInstallerId: customerRecord?.assignedInstallerId || null,
+            notes: `System Audit completed by ${installerName || 'Technical Specialist'}.`
+          }
+        })
+
+    await prisma.systemAuditDetail.upsert({
+      where: { auditId: auditRecord.id },
+      create: {
+        auditId: auditRecord.id,
+        inverterStatus,
+        panelStatus,
+        batteryStatus,
+        structureStatus,
+        cableStatus,
+        earthingStatus,
+        breakerStatus,
+        earthingAcOhms,
+        earthingDcOhms,
+        earthingLastCheck,
+        lightningProtection,
+        inverterImages: finalInverterImages,
+        panelImages: finalPanelImages,
+        batteryImages: finalBatteryImages,
+        installerName,
+        installerCompany
+      },
+      update: {
+        inverterStatus,
+        panelStatus,
+        batteryStatus,
+        structureStatus,
+        cableStatus,
+        earthingStatus,
+        breakerStatus,
+        earthingAcOhms,
+        earthingDcOhms,
+        earthingLastCheck,
+        lightningProtection,
+        inverterImages: finalInverterImages,
+        panelImages: finalPanelImages,
+        batteryImages: finalBatteryImages,
+        installerName,
+        installerCompany
+      }
+    })
+  } catch (auditErr) {
+    console.error('Failed to log SystemAudit history record:', auditErr)
+  }
+
   // Ensure customer workflow is updated to PENDING_ACTIVATION for O&M Manager final review
   const updatedCustomer = await prisma.customer.update({
     where: { id: customerId },
@@ -338,6 +416,55 @@ export async function submitInstallerAudit(formData: FormData) {
   revalidatePath('/dashboard/customers')
 
   return { success: true, nextAuditDate }
+}
+
+export async function assignInstallerToAudit(formData: FormData) {
+  const customerId = formData.get('customerId') as string
+  const installerId = formData.get('installerId') as string
+  const auditId = formData.get('auditId') as string || null
+
+  if (!customerId || !installerId) {
+    throw new Error('Customer ID and Installer ID are required')
+  }
+
+  const installer = await prisma.user.findUnique({
+    where: { id: installerId },
+    select: { id: true, fullName: true }
+  })
+
+  if (!installer) throw new Error('Installer not found')
+
+  // Update customer's assigned installer
+  await prisma.customer.update({
+    where: { id: customerId },
+    data: {
+      assignedInstallerId: installerId,
+      solarSystem: {
+        update: {
+          installerName: installer.fullName
+        }
+      }
+    }
+  })
+
+  // If auditId specified, update that audit; otherwise update pending audits
+  if (auditId) {
+    await prisma.systemAudit.update({
+      where: { id: auditId },
+      data: { assignedInstallerId: installerId }
+    })
+  } else {
+    await prisma.systemAudit.updateMany({
+      where: { customerId, status: 'PENDING' },
+      data: { assignedInstallerId: installerId }
+    })
+  }
+
+  revalidatePath('/dashboard/installer/jobs')
+  revalidatePath(`/dashboard/customers/${customerId}`)
+  revalidatePath('/dashboard/customers')
+
+  return { success: true }
 }
 
 export async function saveSolarSpecsOnly(formData: FormData) {

@@ -21,6 +21,7 @@ import { formatDate, formatDateTime, calculateNextAuditDate, getAuditFrequencyLa
 import { createClient } from '@/utils/supabase/server'
 import { SectionHeader } from '@/components/ui/section-header'
 import { CustomerIdQuickSwitch } from './CustomerIdQuickSwitch'
+import { AuditDetailDialog } from './AuditDetailDialog'
 
 
 export default async function CustomerDetailPage({ 
@@ -70,6 +71,14 @@ export default async function CustomerDetailPage({
         orderBy: { createdAt: 'desc' }
       },
       communicationLogs: {
+        orderBy: { createdAt: 'desc' }
+      },
+      systemAudits: {
+        include: {
+          details: true,
+          assignedInstaller: true,
+          ticket: true
+        },
         orderBy: { createdAt: 'desc' }
       },
     }
@@ -1007,7 +1016,7 @@ export default async function CustomerDetailPage({
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      <Download className="h-3.5 w-3.5" /> Download Audit Report PDF
+                      <Download className="h-3.5 w-3.5" /> Download Latest Audit PDF
                     </a>
                     <a
                       href={`/api/audit/${customer.id}`}
@@ -1020,7 +1029,7 @@ export default async function CustomerDetailPage({
                   </div>
                 }
               >
-                System Audit Details & Checklist
+                System Audit Overview &amp; Schedule
               </SectionHeader>
 
               {/* Recurring & Demand Notice Alert */}
@@ -1041,7 +1050,7 @@ export default async function CustomerDetailPage({
                   {/* Left: Audit Info & Inspector */}
                   <div className="w-full">
                     <SectionHeader>
-                      Audit Information & Inspector Details
+                      Audit Information &amp; Inspector Details
                     </SectionHeader>
                     <Table>
                       <TableBody>
@@ -1122,10 +1131,10 @@ export default async function CustomerDetailPage({
                     </Table>
                   </div>
 
-                  {/* Right: 7-Point Audit Checklist Statuses */}
+                  {/* Right: Current 7-Point Audit Checklist Statuses */}
                   <div className="w-full">
                     <SectionHeader>
-                      7-Point System Components Audit Checklist
+                      7-Point System Components Current Checklist
                     </SectionHeader>
                     <Table>
                       <TableBody>
@@ -1170,6 +1179,157 @@ export default async function CustomerDetailPage({
                     </Table>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Chronological System Audit History Table (Image 1 & 2 Workflow) */}
+            <Card className="shadow-sm border-slate-200 overflow-hidden bg-white">
+              <SectionHeader
+                leftAction={
+                  <ClipboardCheck className="h-4 w-4 text-amber-500 shrink-0" />
+                }
+              >
+                System Audit History &amp; Inspection Logs
+              </SectionHeader>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader className="bg-slate-100/90 border-b border-slate-200">
+                    <TableRow>
+                      <TableHead className="font-bold text-xs text-[#002868] border-r w-32">Audit #</TableHead>
+                      <TableHead className="font-bold text-xs text-[#002868] border-r w-40">Date &amp; Time</TableHead>
+                      <TableHead className="font-bold text-xs text-[#002868] border-r">Audit Type</TableHead>
+                      <TableHead className="font-bold text-xs text-[#002868] border-r">Auditor / Installer</TableHead>
+                      <TableHead className="font-bold text-xs text-[#002868] border-r text-center">Status</TableHead>
+                      <TableHead className="font-bold text-xs text-[#002868] border-r">Components Health Summary</TableHead>
+                      <TableHead className="text-right font-bold text-xs text-[#002868] w-48">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(() => {
+                      const auditList = (customer.systemAudits && customer.systemAudits.length > 0)
+                        ? customer.systemAudits
+                        : (customer.solarSystem?.lastAuditDate || customer.solarSystem?.systemInstallationDate)
+                        ? [
+                            {
+                              id: 'audit-baseline-1',
+                              auditNumber: `AUD-${customer.crfNumber?.replace(/\D/g, '') || customer.customerCode?.replace(/\D/g, '') || '001'}`,
+                              auditType: 'INITIAL',
+                              status: 'COMPLETED',
+                              completedDate: customer.solarSystem?.lastAuditDate || customer.solarSystem?.systemInstallationDate || customer.activationDate || customer.signupDate,
+                              createdAt: customer.solarSystem?.lastAuditDate || customer.solarSystem?.systemInstallationDate || customer.activationDate || customer.signupDate,
+                              performedBy: customer.solarSystem?.installerName || customer.assignedInstaller?.fullName || 'Installer Team',
+                              details: customer.solarSystem,
+                              notes: 'Initial solar installation & 7-point baseline inspection completed.'
+                            }
+                          ]
+                        : []
+
+                      if (auditList.length === 0) {
+                        return (
+                          <TableRow>
+                            <TableCell colSpan={7} className="text-center py-8 text-xs text-slate-500">
+                              No system audit records found yet for this customer.
+                            </TableCell>
+                          </TableRow>
+                        )
+                      }
+
+                      return auditList.map((aud: any) => {
+                        const isCompleted = aud.status === 'COMPLETED' || Boolean(aud.completedDate)
+                        const audDetails = aud.details || customer.solarSystem || {}
+
+                        return (
+                          <TableRow key={aud.id} className="hover:bg-slate-50 border-b text-xs">
+                            {/* Audit Number */}
+                            <TableCell className="font-mono font-bold text-slate-900 border-r">
+                              {aud.auditNumber || `AUD-${aud.id?.slice(0, 6)}`}
+                            </TableCell>
+
+                            {/* Date & Time */}
+                            <TableCell className="font-mono text-slate-700 font-semibold border-r">
+                              {aud.completedDate ? formatDateTime(aud.completedDate) : (aud.scheduledDate ? formatDate(aud.scheduledDate) : formatDateTime(aud.createdAt))}
+                            </TableCell>
+
+                            {/* Audit Type */}
+                            <TableCell className="border-r">
+                              <Badge variant="outline" className="bg-slate-50 text-[#002868] border-slate-300 font-bold text-[11px]">
+                                {aud.auditType === 'INITIAL'
+                                  ? 'Initial Signup Audit'
+                                  : aud.auditType === 'ON_DEMAND'
+                                  ? 'On-Demand Request'
+                                  : aud.auditType === 'HALF_YEARLY'
+                                  ? 'Half-Yearly Audit'
+                                  : aud.auditType === 'YEARLY'
+                                  ? 'Yearly Audit'
+                                  : 'Quarterly Routine Audit'}
+                              </Badge>
+                              {aud.ticket && (
+                                <span className="block text-[10px] text-slate-500 mt-0.5">
+                                  Ticket: {aud.ticket.ticketNumber}
+                                </span>
+                              )}
+                            </TableCell>
+
+                            {/* Auditor / Installer */}
+                            <TableCell className="border-r font-medium text-slate-800">
+                              {aud.performedBy || aud.assignedInstaller?.fullName || audDetails.installerName || 'Installer Team'}
+                            </TableCell>
+
+                            {/* Status */}
+                            <TableCell className="border-r text-center">
+                              <Badge
+                                variant="outline"
+                                className={
+                                  isCompleted
+                                    ? 'bg-emerald-100 text-emerald-900 border-emerald-300 font-bold text-[10px]'
+                                    : aud.status === 'PENDING'
+                                    ? 'bg-amber-100 text-amber-900 border-amber-300 font-bold text-[10px]'
+                                    : 'bg-slate-100 text-slate-700 border-slate-300 text-[10px]'
+                                }
+                              >
+                                {aud.status || (isCompleted ? 'COMPLETED' : 'PENDING')}
+                              </Badge>
+                            </TableCell>
+
+                            {/* 7-Point Overview Summary */}
+                            <TableCell className="border-r">
+                              <div className="flex items-center gap-1.5 flex-wrap text-[10.5px]">
+                                <span className="text-slate-600 font-semibold">Inverter:</span>
+                                <Badge variant="outline" className="bg-emerald-50 text-emerald-900 border-emerald-200 text-[9.5px]">
+                                  {audDetails.inverterStatus || 'Good'}
+                                </Badge>
+                                <span className="text-slate-600 font-semibold ml-1">Panels:</span>
+                                <Badge variant="outline" className="bg-emerald-50 text-emerald-900 border-emerald-200 text-[9.5px]">
+                                  {audDetails.panelStatus || 'Good'}
+                                </Badge>
+                                <span className="text-slate-600 font-semibold ml-1">Battery:</span>
+                                <Badge variant="outline" className="bg-emerald-50 text-emerald-900 border-emerald-200 text-[9.5px]">
+                                  {audDetails.batteryStatus || 'Good'}
+                                </Badge>
+                              </div>
+                            </TableCell>
+
+                            {/* Actions */}
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <AuditDetailDialog audit={aud} customer={customer} />
+                                <a
+                                  href={`/api/audit/${aud.id || customer.id}?download=true`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded shadow-2xs transition-colors cursor-pointer"
+                                  title="Download Audit PDF"
+                                >
+                                  <Download className="h-3 w-3 text-amber-700" /> PDF
+                                </a>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })
+                    })()}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </div>
