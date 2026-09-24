@@ -293,8 +293,8 @@ export function InstallerJobsView({
                 <TableHead className="font-bold text-xs text-[#002868] border-r w-24">Customer ID</TableHead>
                 <TableHead className="font-bold text-xs text-[#002868] border-r w-28">CRF #</TableHead>
                 <TableHead className="font-bold text-xs text-[#002868] border-r">Customer Details</TableHead>
-                <TableHead className="font-bold text-xs text-[#002868] border-r">System Capacity &amp; Tier</TableHead>
-                <TableHead className="font-bold text-xs text-[#002868] border-r">City &amp; Installation Area</TableHead>
+                <TableHead className="font-bold text-xs text-[#002868] border-r">System Specs &amp; Tier</TableHead>
+                <TableHead className="font-bold text-xs text-[#002868] border-r">Address / Installation Site</TableHead>
                 <TableHead className="font-bold text-xs text-[#002868] border-r text-center">Audit Status &amp; Schedule</TableHead>
                 <TableHead className="text-right font-bold text-xs text-[#002868] w-56">Field Actions</TableHead>
               </TableRow>
@@ -375,47 +375,70 @@ export function InstallerJobsView({
                         )}
                       </TableCell>
 
-                      {/* System Capacity & Tier */}
+                      {/* System & Hardware Specs (Job Card specs) */}
                       <TableCell className="border-r">
-                        <span className="font-bold text-[#002868] block">
-                          {c.packagePlan?.systemSizeKw || c.solarSystem?.inverterSize || '1-10 kW'}
-                        </span>
-                        <span className="text-[11px] text-slate-600 font-medium">
-                          {c.packagePlan?.packageTier || 'Moderate'} ({c.packagePlan?.monitoringTime || 'Hybrid'})
-                        </span>
-                        <div className="mt-1">
-                          <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-200 text-[9.5px]">
-                            {getAuditFrequencyLabel(c.packagePlan?.packageTier)}
-                          </Badge>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-[#002868] text-xs">
+                              {c.solarSystem?.inverterBrand || 'Inverter'}: {c.solarSystem?.inverterSize || c.packagePlan?.systemSizeKw || '—'}
+                            </span>
+                            {c.solarSystem?.inverterType && (
+                              <Badge variant="outline" className="text-[9px] px-1 py-0 bg-slate-50 text-slate-600 border-slate-200">
+                                {c.solarSystem.inverterType}
+                              </Badge>
+                            )}
+                          </div>
+
+                          <div className="text-[11px] text-slate-600 flex items-center gap-2 flex-wrap font-medium">
+                            <span>Tier: <strong className="text-slate-800">{c.packagePlan?.packageTier || 'Moderate'}</strong></span>
+                            {c.solarSystem?.meterPhase && (
+                              <span className="text-[10px] text-slate-500 font-mono">({c.solarSystem.meterPhase})</span>
+                            )}
+                          </div>
+
+                          {c.solarSystem?.disco && (
+                            <div className="text-[10px] text-slate-500 font-mono">
+                              <span>DISCO: {c.solarSystem.disco}</span>
+                              {c.solarSystem.discoRefNo && <span> (#{c.solarSystem.discoRefNo})</span>}
+                            </div>
+                          )}
+
+                          <div className="mt-1">
+                            <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-200 text-[9.5px]">
+                              {getAuditFrequencyLabel(c.packagePlan?.packageTier)}
+                            </Badge>
+                          </div>
                         </div>
                       </TableCell>
 
-                      {/* Address & City (Prominent Address & Area) */}
+                      {/* Address / Installation Site */}
                       <TableCell className="border-r">
-                        <div className="flex items-center gap-1 text-slate-900 font-bold">
-                          <MapPin className="h-3 w-3 text-amber-600 shrink-0" />
-                          <span>{c.city || '—'} {c.area ? `(${c.area})` : ''}</span>
-                        </div>
-                        <span className="text-[11px] text-slate-600 line-clamp-2 mt-0.5 font-medium">
-                          {addressParts || c.address || 'Address pending'}
-                        </span>
-                        <div className="mt-1">
-                          <a
-                            href={
-                              c.coordinates?.trim()
-                                ? (c.coordinates.startsWith('http')
-                                    ? c.coordinates
-                                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.coordinates)}`)
-                                : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${c.address || ''}, ${c.city || ''}, Pakistan`)}`
-                            }
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 px-2 py-0.5 rounded border border-amber-300 transition-colors cursor-pointer w-fit shadow-2xs"
-                            title="Open exact pin in Google Maps"
-                          >
-                            <MapPin className="h-2.5 w-2.5 text-amber-600" />
-                            <span>{c.coordinates ? '📍 GPS Map Pin' : '📍 Open Map'}</span>
-                          </a>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1 text-slate-900 font-bold">
+                            <MapPin className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                            <span>{c.city || '—'} {c.area ? `(${c.area})` : ''}</span>
+                          </div>
+                          <p className="text-[11px] text-slate-600 line-clamp-2 leading-relaxed font-medium">
+                            {addressParts || c.address || 'Address pending'}
+                          </p>
+                          <div className="pt-0.5">
+                            <a
+                              href={
+                                c.coordinates?.trim()
+                                  ? (c.coordinates.startsWith('http')
+                                      ? c.coordinates
+                                      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.coordinates)}`)
+                                  : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${c.address || ''}, ${c.city || ''}, Pakistan`)}`
+                              }
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 px-2 py-0.5 rounded border border-amber-300 transition-colors cursor-pointer w-fit shadow-2xs"
+                              title="Open exact site pin in Google Maps"
+                            >
+                              <MapPin className="h-2.5 w-2.5 text-amber-600" />
+                              <span>{c.coordinates ? '📍 GPS Map Pin' : '📍 Open Site Map'}</span>
+                            </a>
+                          </div>
                         </div>
                       </TableCell>
 

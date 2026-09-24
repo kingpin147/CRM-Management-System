@@ -25,12 +25,18 @@ export default async function InstallerJobsPage() {
     redirect('/dashboard/customers')
   }
 
+  const isSuperAdmin = ['SUPER_ADMIN', 'ADMIN', 'MANAGER'].includes(userRole)
   const isTechnician = userRole === 'INSTALLATION' || userRole === 'INSTALLER'
   const isIPNOC = userRole === 'IP_NOC_EXECUTIVE'
-  const isOMManager = userRole === 'OM_MANAGER' || (dbUser?.designation || '').toLowerCase().includes('o & m') || (dbUser?.designation || '').toLowerCase().includes('o&m')
+  const isOMManager = userRole === 'OM_MANAGER' || 
+                      userRole.includes('OM') ||
+                      (dbUser?.designation || '').toLowerCase().includes('o & m') || 
+                      (dbUser?.designation || '').toLowerCase().includes('o&m') ||
+                      (dbUser?.designation || '').toLowerCase().includes('operations & maintenance') ||
+                      (dbUser?.designation || '').toLowerCase().includes('om manager')
   const isSales = userRole === 'SALES' || (dbUser?.designation || '').toLowerCase().includes('sales') || (dbUser?.designation || '').toLowerCase().includes('account executive')
 
-  // Fetch jobs assigned specifically to this installer or sales specialist
+  // Fetch jobs assigned specifically to this installer or sales specialist, or all jobs for O&M/Admin
   const nameParts = (dbUser?.fullName || '').split(' ').filter(p => p.length > 2)
   const whereClause = isTechnician
     ? {
@@ -47,10 +53,8 @@ export default async function InstallerJobsPage() {
     ? {
         status: { in: ['PENDING_IP_NOC', 'CONNECTION_ACTIVE'] }
       }
-    : isOMManager
-    ? {
-        status: { in: ['PENDING_INSTALLER_AUDIT', 'PENDING_ACTIVATION', 'PENDING_IP_NOC', 'CONNECTION_ACTIVE'] }
-      }
+    : (isOMManager || isSuperAdmin)
+    ? {} // O&M Manager and Admins have full access to view all audit queues and installations across the system
     : isSales
     ? {
         OR: [

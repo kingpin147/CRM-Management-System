@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ChevronDown, ShoppingBag, AlertCircle, BarChart3, Users, Settings, Search, CreditCard } from 'lucide-react'
+import { ChevronDown, ShoppingBag, AlertCircle, BarChart3, Users, Settings, Search, CreditCard, Wrench } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -64,9 +64,11 @@ export function MainNav({
   const isSuperAdmin = ['SUPER_ADMIN', 'ADMIN'].includes(normalizedRole)
   const isSalesManager = ['SALES_MANAGER', 'BILLING_MANAGER', 'MANAGER'].includes(normalizedRole)
   const isOMManager = normalizedRole === 'OM_MANAGER' || 
+                      normalizedRole.includes('OM') ||
                       (designation || '').toLowerCase().includes('o & m') ||
                       (designation || '').toLowerCase().includes('o&m') ||
-                      (designation || '').toLowerCase().includes('operations & maintenance')
+                      (designation || '').toLowerCase().includes('operations & maintenance') ||
+                      (designation || '').toLowerCase().includes('om manager')
   const isInstaller = normalizedRole === 'INSTALLATION' || normalizedRole === 'INSTALLER'
   const isSalesExec = normalizedRole === 'SALES' || 
                       (designation || '').toLowerCase().includes('account executive')
@@ -85,7 +87,7 @@ export function MainNav({
   const canViewApproval = isSuperAdmin || isSalesManager || isOMManager
   const canViewBilling = isSuperAdmin || isSalesManager
   const canViewReports = !isOMOrFieldTeam && !isOMManager && !isInstaller && !isIpNoc
-  const canViewAssignedJobs = isInstaller || isIpNoc
+  const canViewSystemAudits = isOMManager || isSuperAdmin || isInstaller || isIpNoc || isSalesManager
 
   if (orientation === 'horizontal') {
     return (
@@ -101,42 +103,20 @@ export function MainNav({
           </span>
         </Link>
 
-        {/* 1. Account Executive Sales: Direct 'Create Sales' and 'Assigned Jobs' tabs */}
+        {/* 1. Sales Tab (Direct Create Sales or Dropdown for Managers) */}
         {isSalesExec ? (
-          <>
-            <Link 
-              href="/dashboard/customers/new" 
-              className={linkClass('/dashboard/customers/new')}
-            >
-              <span className="flex items-center gap-1 xl:gap-1.5 font-semibold">
-                <ShoppingBag className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
-                <span>Create Sales</span>
-              </span>
-            </Link>
-
-            <Link 
-              href="/dashboard/installer/jobs" 
-              className={linkClass('/dashboard/installer/jobs')}
-            >
-              <span className="flex items-center gap-1 xl:gap-1.5 font-semibold">
-                <ShoppingBag className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
-                <span>Assigned Jobs</span>
-              </span>
-            </Link>
-          </>
-        ) : canViewAssignedJobs ? (
           <Link 
-            href="/dashboard/installer/jobs" 
-            className={linkClass('/dashboard/installer/jobs')}
+            href="/dashboard/customers/new" 
+            className={linkClass('/dashboard/customers/new')}
           >
             <span className="flex items-center gap-1 xl:gap-1.5 font-semibold">
               <ShoppingBag className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
-              <span>Assigned Jobs</span>
+              <span>Create Sales</span>
             </span>
           </Link>
-        ) : (canViewApproval || isOMManager || isSuperAdmin || isSalesManager) ? (
+        ) : (canViewApproval || isSuperAdmin || isSalesManager) ? (
           <DropdownMenu>
-            <DropdownMenuTrigger className={triggerClass(pathname.startsWith('/dashboard/sales') || pathname === '/dashboard/customers/new' || pathname.startsWith('/dashboard/installer/jobs'))}>
+            <DropdownMenuTrigger className={triggerClass(pathname.startsWith('/dashboard/sales') || pathname === '/dashboard/customers/new')}>
               <span className="flex items-center gap-1 xl:gap-1.5">
                 <ShoppingBag className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
                 <span>Sales</span>
@@ -156,23 +136,19 @@ export function MainNav({
                   </Link>
                 </DropdownMenuItem>
               )}
-              {(isOMManager || isSuperAdmin || isSalesManager) && (
-                <DropdownMenuItem>
-                  <Link href="/dashboard/installer/jobs" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
-                    Assigned Jobs Queue
-                  </Link>
-                </DropdownMenuItem>
-              )}
             </DropdownMenuContent>
           </DropdownMenu>
-        ) : (
+        ) : null}
+
+        {/* 2. Dedicated System Audits Tab */}
+        {canViewSystemAudits && (
           <Link 
-            href="/dashboard/customers/new" 
-            className={linkClass('/dashboard/customers/new')}
+            href="/dashboard/installer/jobs" 
+            className={linkClass('/dashboard/installer/jobs')}
           >
             <span className="flex items-center gap-1 xl:gap-1.5 font-semibold">
-              <ShoppingBag className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
-              <span>Create Sales</span>
+              <Wrench className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
+              <span>System Audits</span>
             </span>
           </Link>
         )}
@@ -339,41 +315,35 @@ export function MainNav({
 
       <div>
         <p className="px-3 text-xs font-bold text-[var(--color-slate-custom)] uppercase tracking-wider mb-1">
-          {canViewAssignedJobs ? 'Assigned Jobs' : 'Sales Operations'}
+          Sales Operations
         </p>
         <div className="space-y-0.5">
-          {isSalesExec ? (
-            <>
-              <Link href="/dashboard/customers/new" className={linkClass('/dashboard/customers/new')} onClick={onItemClick}>
-                Create Sales
-              </Link>
-              <Link href="/dashboard/installer/jobs" className={linkClass('/dashboard/installer/jobs')} onClick={onItemClick}>
-                Assigned Jobs
-              </Link>
-            </>
-          ) : canViewAssignedJobs ? (
-            <Link href="/dashboard/installer/jobs" className={linkClass('/dashboard/installer/jobs')} onClick={onItemClick}>
-              Assigned Jobs
+          <Link href="/dashboard/customers/new" className={linkClass('/dashboard/customers/new')} onClick={onItemClick}>
+            Create Sales
+          </Link>
+          {canViewApproval && (
+            <Link href="/dashboard/sales/pending" className={linkClass('/dashboard/sales/pending')} onClick={onItemClick}>
+              Manager Approval
             </Link>
-          ) : (
-            <>
-              <Link href="/dashboard/customers/new" className={linkClass('/dashboard/customers/new')} onClick={onItemClick}>
-                Create Sales
-              </Link>
-              {canViewApproval && (
-                <Link href="/dashboard/sales/pending" className={linkClass('/dashboard/sales/pending')} onClick={onItemClick}>
-                  Manager Approval
-                </Link>
-              )}
-              {(isOMManager || isSuperAdmin || isSalesManager) && (
-                <Link href="/dashboard/installer/jobs" className={linkClass('/dashboard/installer/jobs')} onClick={onItemClick}>
-                  Assigned Jobs Queue
-                </Link>
-              )}
-            </>
           )}
         </div>
       </div>
+
+      {canViewSystemAudits && (
+        <div>
+          <p className="px-3 text-xs font-bold text-[var(--color-slate-custom)] uppercase tracking-wider mb-1">
+            System Audits &amp; Operations
+          </p>
+          <div className="space-y-0.5">
+            <Link href="/dashboard/installer/jobs" className={linkClass('/dashboard/installer/jobs')} onClick={onItemClick}>
+              <span className="flex items-center gap-1.5 font-semibold">
+                <Wrench className="h-4 w-4 text-[var(--color-amber)]" />
+                System Audits Queue
+              </span>
+            </Link>
+          </div>
+        </div>
+      )}
 
       {canViewBilling && (
         <div>
