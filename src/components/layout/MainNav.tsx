@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ChevronDown, ShoppingBag, AlertCircle, BarChart3, Users, Settings, Search, CreditCard, Wrench } from 'lucide-react'
+import { ChevronDown, ShoppingBag, AlertCircle, BarChart3, Users, Settings, Search, CreditCard, Wrench, LayoutDashboard } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -74,6 +74,18 @@ export function MainNav({
                       (designation || '').toLowerCase().includes('account executive')
   const isIpNoc = normalizedRole === 'IP_NOC_EXECUTIVE'
 
+  // CEO and Sales Manager Access for Management Dashboard
+  const isCEO = normalizedRole === 'SUPER_ADMIN' || 
+                normalizedRole === 'ADMIN' || 
+                normalizedRole.includes('CEO') || 
+                (designation || '').toLowerCase().includes('ceo') || 
+                (designation || '').toLowerCase().includes('chief executive')
+  const canViewManagementDashboard = isCEO || 
+                                     isSuperAdmin || 
+                                     isSalesManager || 
+                                     (fullName || '').toLowerCase().includes('ajmal') ||
+                                     (designation || '').toLowerCase().includes('ajmal')
+
   // Exclude O&M team / Installers / IP NOC from Reports access
   const isOMOrFieldTeam = isOMManager || 
                           isInstaller || 
@@ -107,6 +119,16 @@ export function MainNav({
         {isSalesExec ? (
           <>
             <Link 
+              href="/dashboard/sales/leads" 
+              className={linkClass('/dashboard/sales/leads')}
+            >
+              <span className="flex items-center gap-1 xl:gap-1.5 font-semibold">
+                <ShoppingBag className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
+                <span>Sales Lead Create</span>
+              </span>
+            </Link>
+
+            <Link 
               href="/dashboard/customers/new" 
               className={linkClass('/dashboard/customers/new')}
             >
@@ -136,6 +158,12 @@ export function MainNav({
               <ChevronDown className="h-3 w-3 xl:h-3.5 xl:w-3.5 opacity-70 shrink-0 ml-0.5" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56 bg-white p-1.5 shadow-lg border-line rounded-xl animate-in fade-in-50 zoom-in-95">
+              <DropdownMenuItem>
+                <Link href="/dashboard/sales/leads" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer flex items-center justify-between">
+                  <span>Sales Lead Create</span>
+                  <span className="text-[10px] bg-amber-100 text-amber-900 font-bold px-1.5 py-0.5 rounded">New</span>
+                </Link>
+              </DropdownMenuItem>
               <DropdownMenuItem>
                 <Link href="/dashboard/customers/new" className="w-full text-xs font-semibold py-2 px-3 hover:bg-[var(--color-paper)] rounded-lg cursor-pointer">
                   Create Sales
@@ -303,6 +331,19 @@ export function MainNav({
           </DropdownMenu>
         )}
 
+        {/* 5. Management Dashboard Tab (Visible to CEO & Sales Managers) */}
+        {canViewManagementDashboard && (
+          <Link 
+            href="/dashboard/management-dashboard" 
+            className={linkClass('/dashboard/management-dashboard')}
+          >
+            <span className="flex items-center gap-1 xl:gap-1.5 font-semibold">
+              <LayoutDashboard className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
+              <span>Management Dashboard</span>
+            </span>
+          </Link>
+        )}
+
         {/* Admin Management if Authorized */}
         {canViewAdmin && (
           <Link href="/dashboard/admin" className={linkClass('/dashboard/admin')}>
@@ -336,6 +377,9 @@ export function MainNav({
           Sales Operations
         </p>
         <div className="space-y-0.5">
+          <Link href="/dashboard/sales/leads" className={linkClass('/dashboard/sales/leads')} onClick={onItemClick}>
+            Sales Lead Create
+          </Link>
           <Link href="/dashboard/customers/new" className={linkClass('/dashboard/customers/new')} onClick={onItemClick}>
             Create Sales
           </Link>
@@ -439,6 +483,20 @@ export function MainNav({
                 </Link>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {canViewManagementDashboard && (
+        <div>
+          <p className="px-3 text-xs font-bold text-[var(--color-slate-custom)] uppercase tracking-wider mb-1">Executive</p>
+          <div className="space-y-0.5">
+            <Link href="/dashboard/management-dashboard" className={linkClass('/dashboard/management-dashboard')} onClick={onItemClick}>
+              <span className="flex items-center gap-1.5 font-semibold">
+                <LayoutDashboard className="h-4 w-4 text-[var(--color-amber)]" />
+                Management Dashboard
+              </span>
+            </Link>
           </div>
         </div>
       )}

@@ -44,6 +44,10 @@ export async function updateTicket(formData: FormData) {
       where: { id: ticketId },
     })
 
+    if (existingTicket?.status === TicketStatus.CLOSED) {
+      return { error: 'This ticket is closed and read-only. It cannot be modified.' }
+    }
+
     const prevDate = lastHistory?.createdAt || existingTicket?.createdAt || new Date()
     const diffMs = Math.max(0, Date.now() - new Date(prevDate).getTime())
     const diffMins = Math.floor(diffMs / (1000 * 60))
