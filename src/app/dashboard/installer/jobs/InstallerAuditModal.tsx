@@ -119,16 +119,65 @@ export function InstallerAuditModal({
   const [uploadingInverterInvoice, setUploadingInverterInvoice] = React.useState(false)
 
   // 3. Solar PV Panels Specifications
-  const [panelBrand, setPanelBrand] = React.useState(solar.panelBrand || '')
-  const [panelTechnology, setPanelTechnology] = React.useState(solar.panelTechnology || 'Topcon')
-  const [panelType, setPanelType] = React.useState(solar.panelType || 'Tier-1 Monofacial')
-  const [panelWattage, setPanelWattage] = React.useState<number>(solar.panelWattage != null ? Number(solar.panelWattage) : 0)
-  const [noOfPanels, setNoOfPanels] = React.useState<number>(solar.noOfPanels != null ? Number(solar.noOfPanels) : 0)
-  const [panelWarrantyEnd, setPanelWarrantyEnd] = React.useState(
+  const [noOfPanelBrands, setNoOfPanelBrands] = React.useState<number>(1)
+  const [panelBrands, setPanelBrands] = React.useState<string[]>([solar.panelBrand || ''])
+  const [panelTechnologies, setPanelTechnologies] = React.useState<string[]>([solar.panelTechnology || 'Topcon'])
+  const [panelTypes, setPanelTypes] = React.useState<string[]>([solar.panelType || 'Tier-1 Monofacial'])
+  const [panelWattages, setPanelWattages] = React.useState<number[]>([
+    solar.panelWattage != null ? Number(solar.panelWattage) : 0
+  ])
+  const [noOfPanelsList, setNoOfPanelsList] = React.useState<number[]>([
+    solar.noOfPanels != null ? Number(solar.noOfPanels) : 0
+  ])
+  const [panelWarrantyEnds, setPanelWarrantyEnds] = React.useState<string[]>([
     solar.panelWarrantyEnd ? new Date(solar.panelWarrantyEnd).toISOString().split('T')[0] : ''
-  )
-  const [panelImageUrl, setPanelImageUrl] = React.useState(solar.panelImages?.[0] || '')
-  const [uploadingPanel, setUploadingPanel] = React.useState(false)
+  ])
+  const [panelImageUrls, setPanelImageUrls] = React.useState<string[]>(() => {
+    if (solar.panelImages?.length) return [...solar.panelImages]
+    return ['']
+  })
+  const [uploadingPanelIndex, setUploadingPanelIndex] = React.useState<number | null>(null)
+
+  // Helper function to dynamically scale panel brand groups
+  const updateNoOfPanelBrands = (count: number) => {
+    const validCount = Math.max(1, count || 1)
+    setNoOfPanelBrands(validCount)
+    setPanelBrands(prev => {
+      const next = [...prev]
+      while (next.length < validCount) next.push('')
+      return next
+    })
+    setPanelTechnologies(prev => {
+      const next = [...prev]
+      while (next.length < validCount) next.push('Topcon')
+      return next
+    })
+    setPanelTypes(prev => {
+      const next = [...prev]
+      while (next.length < validCount) next.push('Tier-1 Monofacial')
+      return next
+    })
+    setPanelWattages(prev => {
+      const next = [...prev]
+      while (next.length < validCount) next.push(0)
+      return next
+    })
+    setNoOfPanelsList(prev => {
+      const next = [...prev]
+      while (next.length < validCount) next.push(0)
+      return next
+    })
+    setPanelWarrantyEnds(prev => {
+      const next = [...prev]
+      while (next.length < validCount) next.push('')
+      return next
+    })
+    setPanelImageUrls(prev => {
+      const next = [...prev]
+      while (next.length < validCount) next.push('')
+      return next
+    })
+  }
 
   // 4. Battery Energy Storage System (BESS)
   const initialBatCount = Math.max(0, Number(solar.noOfBatteries) || (solar.batteryBrand && solar.batteryBrand !== 'None' ? 1 : 0))
@@ -184,7 +233,7 @@ export function InstallerAuditModal({
   }
 
   // 5. Mounting Structure, Earthing & Protection Specs
-  const [structureType, setStructureType] = React.useState(solar.structureType || 'Elevated')
+  const [structureType, setStructureType] = React.useState(solar.structureType || 'Aluminium - L1 Z-Type Structure')
   const [structureMaterial, setStructureMaterial] = React.useState(solar.structureMaterial || 'Hot Dip Galvanized')
   const [ingressProtection, setIngressProtection] = React.useState(solar.ingressProtection || 'IP65')
   const [breakerName, setBreakerName] = React.useState(solar.breakerName || 'Standard DC/AC Breakers')
@@ -253,14 +302,39 @@ export function InstallerAuditModal({
       setInverterPassword(s.inverterPassword || draft?.inverterPassword || '')
       setInverterInvoiceUrl(s.inverterInvoiceUrl || draft?.inverterInvoiceUrl || '')
 
-      // Section 3
-      setPanelBrand(s.panelBrand || draft?.panelBrand || '')
-      setPanelTechnology(s.panelTechnology || draft?.panelTechnology || 'Topcon')
-      setPanelType(s.panelType || draft?.panelType || 'Tier-1 Monofacial')
-      setPanelWattage(s.panelWattage != null ? Number(s.panelWattage) : (draft?.panelWattage != null ? Number(draft.panelWattage) : 0))
-      setNoOfPanels(s.noOfPanels != null ? Number(s.noOfPanels) : (draft?.noOfPanels != null ? Number(draft.noOfPanels) : 0))
-      setPanelWarrantyEnd(s.panelWarrantyEnd ? new Date(s.panelWarrantyEnd).toISOString().split('T')[0] : (draft?.panelWarrantyEnd || ''))
-      setPanelImageUrl(s.panelImages?.[0] || draft?.panelImageUrl || '')
+      // Section 4 (Panels)
+      const pBrandCount = Math.max(1, Number(draft?.noOfPanelBrands) || (draft?.panelBrands?.length || 1))
+      setNoOfPanelBrands(pBrandCount)
+
+      const pBrands = draft?.panelBrands?.length ? [...draft.panelBrands] : [s.panelBrand || draft?.panelBrand || '']
+      while (pBrands.length < pBrandCount) pBrands.push('')
+      setPanelBrands(pBrands)
+
+      const pTechs = draft?.panelTechnologies?.length ? [...draft.panelTechnologies] : [s.panelTechnology || draft?.panelTechnology || 'Topcon']
+      while (pTechs.length < pBrandCount) pTechs.push('Topcon')
+      setPanelTechnologies(pTechs)
+
+      const pTypes = draft?.panelTypes?.length ? [...draft.panelTypes] : [s.panelType || draft?.panelType || 'Tier-1 Monofacial']
+      while (pTypes.length < pBrandCount) pTypes.push('Tier-1 Monofacial')
+      setPanelTypes(pTypes)
+
+      const pWatts = draft?.panelWattages?.length ? [...draft.panelWattages] : [s.panelWattage != null ? Number(s.panelWattage) : (draft?.panelWattage != null ? Number(draft.panelWattage) : 0)]
+      while (pWatts.length < pBrandCount) pWatts.push(0)
+      setPanelWattages(pWatts)
+
+      const pPanels = draft?.noOfPanelsList?.length ? [...draft.noOfPanelsList] : [s.noOfPanels != null ? Number(s.noOfPanels) : (draft?.noOfPanels != null ? Number(draft.noOfPanels) : 0)]
+      while (pPanels.length < pBrandCount) pPanels.push(0)
+      setNoOfPanelsList(pPanels)
+
+      const pWarrs = draft?.panelWarrantyEnds?.length
+        ? draft.panelWarrantyEnds
+        : [s.panelWarrantyEnd ? new Date(s.panelWarrantyEnd).toISOString().split('T')[0] : (draft?.panelWarrantyEnd || '')]
+      while (pWarrs.length < pBrandCount) pWarrs.push('')
+      setPanelWarrantyEnds(pWarrs)
+
+      const pImgs = s.panelImages?.length ? [...s.panelImages] : (draft?.panelImageUrls?.length ? [...draft.panelImageUrls] : [s.panelImages?.[0] || draft?.panelImageUrl || ''])
+      while (pImgs.length < pBrandCount) pImgs.push('')
+      setPanelImageUrls(pImgs)
 
       // Section 4
       setBatteryBrand(s.batteryBrand || draft?.batteryBrand || '')
@@ -281,7 +355,7 @@ export function InstallerAuditModal({
       setBatteryImageUrls(s.batteryImages?.length ? s.batteryImages : (draft?.batteryImageUrls || []))
 
       // Section 5
-      setStructureType(s.structureType || draft?.structureType || 'Elevated')
+      setStructureType(s.structureType || draft?.structureType || 'Aluminium - L1 Z-Type Structure')
       setStructureMaterial(s.structureMaterial || draft?.structureMaterial || 'Hot Dip Galvanized')
       setIngressProtection(s.ingressProtection || draft?.ingressProtection || 'IP65')
       setBreakerName(s.breakerName || draft?.breakerName || 'Standard DC/AC Breakers')
@@ -324,14 +398,14 @@ export function InstallerAuditModal({
       inverterImageUrls,
       inverterUsername,
       inverterPassword,
-      inverterInvoiceUrl,
-      panelBrand,
-      panelTechnology,
-      panelType,
-      panelWattage,
-      noOfPanels,
-      panelWarrantyEnd,
-      panelImageUrl,
+      noOfPanelBrands,
+      panelBrands,
+      panelTechnologies,
+      panelTypes,
+      panelWattages,
+      noOfPanelsList,
+      panelWarrantyEnds,
+      panelImageUrls,
       batteryBrand,
       batteryType,
       batteryCategory,
@@ -381,13 +455,14 @@ export function InstallerAuditModal({
     inverterUsername,
     inverterPassword,
     inverterInvoiceUrl,
-    panelBrand,
-    panelTechnology,
-    panelType,
-    panelWattage,
-    noOfPanels,
-    panelWarrantyEnd,
-    panelImageUrl,
+    noOfPanelBrands,
+    panelBrands,
+    panelTechnologies,
+    panelTypes,
+    panelWattages,
+    noOfPanelsList,
+    panelWarrantyEnds,
+    panelImageUrls,
     batteryBrand,
     batteryType,
     batteryCategory,
@@ -459,18 +534,24 @@ export function InstallerAuditModal({
     }
   }
 
-  async function handlePanelPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handlePanelPhoto(e: React.ChangeEvent<HTMLInputElement>, index: number = 0) {
     const file = e.target.files?.[0]
     if (!file) return
-    setUploadingPanel(true)
+    setUploadingPanelIndex(index)
     setError(null)
     try {
       const url = await uploadEquipmentPhoto(file, 'equipment/panels')
-      if (url) setPanelImageUrl(url)
+      if (url) {
+        setPanelImageUrls(prev => {
+          const next = [...prev]
+          next[index] = url
+          return next
+        })
+      }
     } catch (err: any) {
       setError(`Panel Photo Upload Error: ${err.message}`)
     } finally {
-      setUploadingPanel(false)
+      setUploadingPanelIndex(null)
     }
   }
 
@@ -563,23 +644,26 @@ export function InstallerAuditModal({
     }
 
     // Section 4: Solar PV Panels Specifications
-    if (!panelBrand?.trim()) {
-      return 'Please enter or select the Solar Panel Brand in Section 4.'
-    }
-    if (!panelTechnology?.trim()) {
-      return 'Please select the Panel Technology in Section 4.'
-    }
-    if (!panelType?.trim()) {
-      return 'Please select the Panel Type in Section 4.'
-    }
-    if (!panelWattage || Number(panelWattage) <= 0) {
-      return 'Please enter a valid Panel Wattage (W) in Section 4.'
-    }
-    if (!noOfPanels || Number(noOfPanels) <= 0) {
-      return 'Please enter the Number of Solar Panels in Section 4.'
-    }
-    if (!panelWarrantyEnd?.trim()) {
-      return 'Please select the Panel Warranty Expiry Date in Section 4.'
+    for (let i = 0; i < noOfPanelBrands; i++) {
+      const brandNum = noOfPanelBrands > 1 ? ` for Brand #${i + 1}` : ''
+      if (!panelBrands[i]?.trim()) {
+        return `Please enter or select the Solar Panel Brand${brandNum} in Section 4.`
+      }
+      if (!panelTechnologies[i]?.trim()) {
+        return `Please select the Panel Technology${brandNum} in Section 4.`
+      }
+      if (!panelTypes[i]?.trim()) {
+        return `Please select the Panel Type${brandNum} in Section 4.`
+      }
+      if (!panelWattages[i] || Number(panelWattages[i]) <= 0) {
+        return `Please enter a valid Panel Wattage (W)${brandNum} in Section 4.`
+      }
+      if (!noOfPanelsList[i] || Number(noOfPanelsList[i]) <= 0) {
+        return `Please enter the Number of Solar Panels${brandNum} in Section 4.`
+      }
+      if (!panelWarrantyEnds[i]?.trim()) {
+        return `Please select the Panel Warranty Expiry Date${brandNum} in Section 4.`
+      }
     }
 
     // Section 5: Mounting Structure, Earthing & Protection Specs
@@ -652,13 +736,24 @@ export function InstallerAuditModal({
     formData.append('inverterPassword', inverterPassword)
     formData.append('inverterInvoiceUrl', inverterInvoiceUrl)
 
-    formData.append('panelBrand', panelBrand)
-    formData.append('panelTechnology', panelTechnology)
-    formData.append('panelType', panelType)
-    formData.append('panelWattage', String(panelWattage))
-    formData.append('noOfPanels', String(noOfPanels))
-    formData.append('panelWarrantyEnd', panelWarrantyEnd)
-    formData.append('panelImageUrl', panelImageUrl)
+    const activeBrands = panelBrands.slice(0, noOfPanelBrands).filter(Boolean)
+    const activeTechs = panelTechnologies.slice(0, noOfPanelBrands).filter(Boolean)
+    const activeTypes = panelTypes.slice(0, noOfPanelBrands).filter(Boolean)
+    const activeImages = panelImageUrls.slice(0, noOfPanelBrands).filter(Boolean)
+    const grandPanels = noOfPanelsList.slice(0, noOfPanelBrands).reduce((sum, n) => sum + (Number(n) || 0), 0)
+    const grandWatts = panelWattages.slice(0, noOfPanelBrands).reduce((sum, w, idx) => sum + (Number(w) || 0) * (Number(noOfPanelsList[idx]) || 0), 0)
+
+    formData.append('noOfPanelBrands', String(noOfPanelBrands))
+    formData.append('panelBrand', activeBrands.join(', ') || panelBrands[0] || '')
+    formData.append('panelTechnology', activeTechs.join(', ') || panelTechnologies[0] || 'Topcon')
+    formData.append('panelType', activeTypes.join(', ') || panelTypes[0] || 'Tier-1 Monofacial')
+    formData.append('panelWattage', String(panelWattages[0] || 0))
+    formData.append('noOfPanels', String(grandPanels))
+    formData.append('totalWattage', String(grandWatts))
+    formData.append('panelWarrantyEnd', panelWarrantyEnds[0] || '')
+    formData.append('panelImageUrl', activeImages[0] || '')
+    formData.append('panelImages', JSON.stringify(activeImages))
+    formData.append('panelImageUrls', JSON.stringify(activeImages))
 
     formData.append('batteryBrand', batteryBrand)
     formData.append('batteryType', batteryType)
@@ -813,7 +908,8 @@ export function InstallerAuditModal({
 
   if (!customer) return null
 
-  const totalPvKw = ((Number(panelWattage) || 0) * (Number(noOfPanels) || 0)) / 1000
+  const grandTotalWatts = panelWattages.slice(0, noOfPanelBrands).reduce((sum, w, idx) => sum + (Number(w) || 0) * (Number(noOfPanelsList[idx]) || 0), 0)
+  const totalPvKw = grandTotalWatts / 1000
   const customerIdDisplay = customer.customerCode?.replace(/\D/g, '') || customer.customerCode || customer.id
   const crfDisplay = customer.crfNumber || (customer.customerCode ? `CRF-${customer.customerCode.replace(/\D/g, '')}` : '—')
 
@@ -1358,35 +1454,47 @@ export function InstallerAuditModal({
               </div>
 
               {/* 4. Solar Panels Specs */}
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                   <p className="text-xs font-bold text-[#002868] uppercase tracking-wide">4. Solar PV Panels Specifications</p>
-                  {panelImageUrl && (
+                  {panelImageUrls.some(Boolean) && (
                     <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Photo Uploaded
                     </span>
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* Top Row: Panel Brand, Technology, Type, and No. Of Panel Brands */}
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Panel Brand <span className="text-red-500">*</span></Label>
+                    <Label className="text-xs font-semibold">Panel Brand {noOfPanelBrands > 1 ? '#1' : ''} <span className="text-red-500">*</span></Label>
                     <AutoSuggestInput
-                      value={panelBrand}
-                      onChange={setPanelBrand}
+                      value={panelBrands[0] || ''}
+                      onChange={(val) => {
+                        const newBrands = [...panelBrands]
+                        newBrands[0] = val
+                        setPanelBrands(newBrands)
+                      }}
                       options={PANEL_BRANDS}
-                      placeholder="e.g. LONGi, Jinko, Canadian"
+                      placeholder="e.g. Jinko, LONGi"
                       className="h-9 text-xs bg-white"
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Panel Technology <span className="text-red-500">*</span></Label>
-                    <Select value={panelTechnology} onValueChange={(val) => setPanelTechnology(val || 'Topcon')}>
+                    <Label className="text-xs font-semibold">Panel Technology {noOfPanelBrands > 1 ? '#1' : ''} <span className="text-red-500">*</span></Label>
+                    <Select
+                      value={panelTechnologies[0] || 'Topcon'}
+                      onValueChange={(val) => {
+                        const newTechs = [...panelTechnologies]
+                        newTechs[0] = val || 'Topcon'
+                        setPanelTechnologies(newTechs)
+                      }}
+                    >
                       <SelectTrigger className="h-9 text-xs bg-white">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Topcon">Topcon (N-Type)</SelectItem>
+                        <SelectItem value="Topcon">Topcon</SelectItem>
                         <SelectItem value="Mono Perc">Mono Perc</SelectItem>
                         <SelectItem value="Monocrystalline">Monocrystalline</SelectItem>
                         <SelectItem value="HJT">HJT (Heterojunction)</SelectItem>
@@ -1396,8 +1504,15 @@ export function InstallerAuditModal({
                     </Select>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Panel Type <span className="text-red-500">*</span></Label>
-                    <Select value={panelType} onValueChange={(val) => setPanelType(val || 'Tier-1 Monofacial')}>
+                    <Label className="text-xs font-semibold">Panel Type {noOfPanelBrands > 1 ? '#1' : ''} <span className="text-red-500">*</span></Label>
+                    <Select
+                      value={panelTypes[0] || 'Tier-1 Monofacial'}
+                      onValueChange={(val) => {
+                        const newTypes = [...panelTypes]
+                        newTypes[0] = val || 'Tier-1 Monofacial'
+                        setPanelTypes(newTypes)
+                      }}
+                    >
                       <SelectTrigger className="h-9 text-xs bg-white">
                         <SelectValue />
                       </SelectTrigger>
@@ -1409,76 +1524,234 @@ export function InstallerAuditModal({
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-rose-700">No. Of Panel Brands <span className="text-red-500">*</span></Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={noOfPanelBrands}
+                      onChange={(e) => updateNoOfPanelBrands(Math.max(1, Number(e.target.value) || 1))}
+                      placeholder="1"
+                      className="h-9 text-xs font-mono bg-white font-bold border-rose-300 focus-visible:ring-rose-400"
+                    />
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Panel Wattage (W) <span className="text-red-500">*</span></Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={panelWattage || ''}
-                      onChange={(e) => setPanelWattage(Math.max(0, Number(e.target.value) || 0))}
-                      placeholder="e.g. 585"
-                      className="h-9 text-xs font-mono bg-white font-bold"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">No. of Panels <span className="text-red-500">*</span></Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={noOfPanels || ''}
-                      onChange={(e) => setNoOfPanels(Math.max(0, Number(e.target.value) || 0))}
-                      placeholder="e.g. 16"
-                      className="h-9 text-xs font-mono bg-white font-bold"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Total PV Capacity</Label>
-                    <div className="h-9 flex items-center justify-between px-3 bg-amber-50 rounded-md border border-amber-200 font-bold font-mono text-xs text-amber-950">
-                      <span>{totalPvKw.toFixed(2)} kW</span>
-                      <span className="text-[10px] text-amber-700 font-normal">({panelWattage * noOfPanels} W)</span>
+                {/* Repeated Yellow Highlighted Portion for Each Panel Brand */}
+                <div className="space-y-4 pt-1">
+                  {Array.from({ length: noOfPanelBrands }).map((_, index) => {
+                    const wattage = Number(panelWattages[index]) || 0
+                    const qty = Number(noOfPanelsList[index]) || 0
+                    const totalWatts = wattage * qty
+                    const totalKw = totalWatts / 1000
+
+                    return (
+                      <div
+                        key={`panel-brand-group-${index}`}
+                        className="p-4 rounded-xl border-2 border-amber-400/90 bg-amber-50/25 shadow-xs space-y-3 transition-all"
+                      >
+                        {noOfPanelBrands > 1 && (
+                          <div className="flex items-center justify-between pb-2 border-b border-amber-200">
+                            <h4 className="text-xs font-bold text-amber-950 flex items-center gap-2 uppercase tracking-wide">
+                              <span className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center text-[11px] font-bold">
+                                {index + 1}
+                              </span>
+                              Panel Brand #{index + 1} Specs {panelBrands[index] ? `(${panelBrands[index]})` : ''}
+                            </h4>
+                            <span className="text-[11px] font-mono font-bold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded border border-amber-300">
+                              {totalKw.toFixed(2)} kW
+                            </span>
+                          </div>
+                        )}
+
+                        {index > 0 && (
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pb-2 border-b border-amber-200/70">
+                            <div className="space-y-1">
+                              <Label className="text-xs font-semibold">Panel Brand #{index + 1} <span className="text-red-500">*</span></Label>
+                              <AutoSuggestInput
+                                value={panelBrands[index] || ''}
+                                onChange={(val) => {
+                                  const newBrands = [...panelBrands]
+                                  newBrands[index] = val
+                                  setPanelBrands(newBrands)
+                                }}
+                                options={PANEL_BRANDS}
+                                placeholder="e.g. Canadian, LONGi"
+                                className="h-9 text-xs bg-white"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs font-semibold">Technology #{index + 1} <span className="text-red-500">*</span></Label>
+                              <Select
+                                value={panelTechnologies[index] || 'Topcon'}
+                                onValueChange={(val) => {
+                                  const newTechs = [...panelTechnologies]
+                                  newTechs[index] = val || 'Topcon'
+                                  setPanelTechnologies(newTechs)
+                                }}
+                              >
+                                <SelectTrigger className="h-9 text-xs bg-white">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Topcon">Topcon</SelectItem>
+                                  <SelectItem value="Mono Perc">Mono Perc</SelectItem>
+                                  <SelectItem value="Monocrystalline">Monocrystalline</SelectItem>
+                                  <SelectItem value="HJT">HJT (Heterojunction)</SelectItem>
+                                  <SelectItem value="ABC">ABC</SelectItem>
+                                  <SelectItem value="Polycrystalline">Polycrystalline</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs font-semibold">Panel Type #{index + 1} <span className="text-red-500">*</span></Label>
+                              <Select
+                                value={panelTypes[index] || 'Tier-1 Monofacial'}
+                                onValueChange={(val) => {
+                                  const newTypes = [...panelTypes]
+                                  newTypes[index] = val || 'Tier-1 Monofacial'
+                                  setPanelTypes(newTypes)
+                                }}
+                              >
+                                <SelectTrigger className="h-9 text-xs bg-white">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Tier-1 Monofacial">Tier-1 Monofacial</SelectItem>
+                                  <SelectItem value="Tier-1 Bifacial">Tier-1 Bifacial</SelectItem>
+                                  <SelectItem value="Standard Monofacial">Standard Monofacial</SelectItem>
+                                  <SelectItem value="Standard Bifacial">Standard Bifacial</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Yellow Highlighted Row: Wattage, No. of Panels, Total PV Capacity */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div className="space-y-1">
+                            <Label className="text-xs font-semibold">Panel Wattage (W) <span className="text-red-500">*</span></Label>
+                            <Input
+                              type="number"
+                              min={0}
+                              value={panelWattages[index] || ''}
+                              onChange={(e) => {
+                                const newWatts = [...panelWattages]
+                                newWatts[index] = Math.max(0, Number(e.target.value) || 0)
+                                setPanelWattages(newWatts)
+                              }}
+                              placeholder="e.g. 585"
+                              className="h-9 text-xs font-mono bg-white font-bold"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs font-semibold">No. of Panels <span className="text-red-500">*</span></Label>
+                            <Input
+                              type="number"
+                              min={0}
+                              value={noOfPanelsList[index] || ''}
+                              onChange={(e) => {
+                                const newPanels = [...noOfPanelsList]
+                                newPanels[index] = Math.max(0, Number(e.target.value) || 0)
+                                setNoOfPanelsList(newPanels)
+                              }}
+                              placeholder="e.g. 16"
+                              className="h-9 text-xs font-mono bg-white font-bold"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs font-semibold">Total PV Capacity</Label>
+                            <div className="h-9 flex items-center justify-between px-3 bg-amber-50/90 rounded-md border border-amber-300 font-bold font-mono text-xs text-amber-950">
+                              <span>{totalKw.toFixed(2)} kW</span>
+                              <span className="text-[10px] text-amber-700 font-normal">({totalWatts} W)</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Warranty & Photo */}
+                        <div className="pt-2 border-t border-amber-200/70 space-y-3">
+                          <div className="space-y-1">
+                            <Label className="text-xs font-semibold text-amber-900">
+                              Panel Warranty Expiry Date {noOfPanelBrands > 1 ? `#${index + 1}` : ''} <span className="text-red-500">*</span>
+                            </Label>
+                            <DateInput
+                              value={panelWarrantyEnds[index] || ''}
+                              onChange={(e) => {
+                                const newWarrs = [...panelWarrantyEnds]
+                                newWarrs[index] = e.target.value
+                                setPanelWarrantyEnds(newWarrs)
+                              }}
+                              className="h-9 bg-white"
+                            />
+                          </div>
+
+                          <CameraPhotoCapture
+                            label={`Solar PV Panels Array Photo${noOfPanelBrands > 1 ? ` (Brand #${index + 1})` : ''}`}
+                            badge={`PV PANELS${noOfPanelBrands > 1 ? ` #${index + 1}` : ''}`}
+                            guideType="equipment"
+                            compact
+                            value={panelImageUrls[index] || null}
+                            onValueChange={(url) => {
+                              setPanelImageUrls(prev => {
+                                const next = [...prev]
+                                next[index] = url || ''
+                                return next
+                              })
+                            }}
+                            onUpload={async (file) => {
+                              setUploadingPanelIndex(index)
+                              try {
+                                const url = await uploadEquipmentPhoto(file, 'equipment/panels')
+                                if (url) {
+                                  setPanelImageUrls(prev => {
+                                    const next = [...prev]
+                                    next[index] = url
+                                    return next
+                                  })
+                                  return url
+                                }
+                              } catch (err: any) {
+                                setError(`Panel Photo Upload Error: ${err.message}`)
+                              } finally {
+                                setUploadingPanelIndex(null)
+                              }
+                            }}
+                            disabled={uploadingPanelIndex === index}
+                            fileNamePrefix={`solar_panels_${index + 1}`}
+                            subtext="Take photo of installed solar PV panels array or upload from gallery."
+                          />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Grand Total PV Capacity Calculation Cell */}
+                {(() => {
+                  const grandWatts = panelWattages.slice(0, noOfPanelBrands).reduce((sum, w, idx) => sum + (Number(w) || 0) * (Number(noOfPanelsList[idx]) || 0), 0)
+                  const grandKw = grandWatts / 1000
+                  const grandPanels = noOfPanelsList.slice(0, noOfPanelBrands).reduce((sum, n) => sum + (Number(n) || 0), 0)
+
+                  return (
+                    <div className="bg-gradient-to-r from-amber-100/90 via-amber-50 to-orange-100/80 p-3.5 rounded-xl border-2 border-amber-400 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+                      <div className="space-y-0.5">
+                        <p className="text-xs font-bold text-[#002868] uppercase tracking-wide flex items-center gap-1.5">
+                          <Zap className="w-4 h-4 text-amber-600" />
+                          Grand Total PV Capacity
+                        </p>
+                        <p className="text-[11px] text-amber-800 font-medium">
+                          Calculated across {noOfPanelBrands} panel brand group{noOfPanelBrands > 1 ? 's' : ''} ({grandPanels} total panels)
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="px-3.5 py-1.5 bg-white rounded-lg border-2 border-amber-400 font-mono font-bold text-sm text-amber-950 shadow-xs flex items-center gap-2">
+                          <span className="text-base text-[#002868]">{grandKw.toFixed(2)} kW</span>
+                          <span className="text-[11px] text-amber-700 font-normal">({grandWatts.toLocaleString()} W)</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-slate-200 space-y-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-amber-900">Panel Warranty Expiry Date <span className="text-red-500">*</span></Label>
-                    <DateInput
-                      value={panelWarrantyEnd}
-                      onChange={(e) => setPanelWarrantyEnd(e.target.value)}
-                      className="h-9"
-                    />
-                  </div>
-
-                  <CameraPhotoCapture
-                    label="Solar PV Panels Array Photo"
-                    badge="PV PANELS"
-                    guideType="equipment"
-                    compact
-                    value={panelImageUrl || null}
-                    onValueChange={(url) => setPanelImageUrl(url || '')}
-                    onUpload={async (file) => {
-                      setUploadingPanel(true)
-                      try {
-                        const url = await uploadEquipmentPhoto(file, 'equipment/panels')
-                        if (url) {
-                          setPanelImageUrl(url)
-                          return url
-                        }
-                      } catch (err: any) {
-                        setError(`Panel Photo Upload Error: ${err.message}`)
-                      } finally {
-                        setUploadingPanel(false)
-                      }
-                    }}
-                    disabled={uploadingPanel}
-                    fileNamePrefix="solar_panels"
-                    subtext="Take photo of installed solar PV panels array or upload from gallery."
-                  />
-                </div>
+                  )
+                })()}
               </div>
 
               {/* 5. Mounting Structure, Earthing & Protection Specs */}
@@ -1489,7 +1762,7 @@ export function InstallerAuditModal({
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold">Structure Type <span className="text-red-500">*</span></Label>
-                    <Select value={structureType} onValueChange={(val) => setStructureType(val || 'Elevated')}>
+                    <Select value={structureType} onValueChange={(val) => setStructureType(val || 'Aluminium - L1 Z-Type Structure')}>
                       <SelectTrigger className="h-9 text-xs bg-white">
                         <SelectValue />
                       </SelectTrigger>

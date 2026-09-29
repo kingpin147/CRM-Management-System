@@ -56,7 +56,24 @@ export const DISCO_LIST = [
 ]
 
 export const STRUCTURE_TYPES = [
-  'Standard', 'Elevated', 'Ground Mount', 'Custom', 'Other'
+  'Aluminium - L1 Z-Type Structure',
+  'Aluminium - L2 Z-Type Structure',
+  'Aluminium - L3 Z-Type Structure',
+  'Aluminium - Flushmount Structure',
+  'G.I. - L1 Z-Type Structure',
+  'G.I. - L2 Z-Type Structure',
+  'G.I. - L3 Z-Type Structure',
+  'H.D.G.I. - L1 Z-Type Structure',
+  'H.D.G.I. - L2 Z-Type Structure',
+  'H.D.G.I. - L3 Z-Type Structure',
+  'M.S. - Elevated Structure with Walkway',
+  'M.S. - L2 Z-Type Elevated Structure',
+  'M.S. - L3 Z-Type Elevated Structure',
+  'H.D.G.I. / Aluminium - L2 Z-Type Structure',
+  'H.D.G.I. Elevated Structure with Walkway',
+  'E.P.G.I. - Elevated Structure with Walkway',
+  'Aluminium Elevated Structure with Walkway',
+  'Other',
 ]
 
 export const STRUCTURE_MATERIALS = [

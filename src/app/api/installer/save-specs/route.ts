@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
     const panelTechnology = (formData.get('panelTechnology') as string) || 'Topcon'
     const panelWattage = Number(formData.get('panelWattage') || 0)
     const noOfPanels = Number(formData.get('noOfPanels') || 0)
-    const totalWattage = panelWattage * noOfPanels
+    const totalWattage = formData.get('totalWattage') ? Number(formData.get('totalWattage')) : (panelWattage * noOfPanels)
     const panelWarrantyEnd = parseDateSafe(formData.get('panelWarrantyEnd') as string)
 
     // Battery Energy Storage System (BESS)
