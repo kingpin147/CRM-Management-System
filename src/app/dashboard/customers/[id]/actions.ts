@@ -156,7 +156,8 @@ export async function saveSolarSystem(formData: FormData) {
   const discoRefNo = formData.get('discoRefNo') as string || null
   const meterType = formData.get('meterType') as string || 'Green Meter'
   const meterPhase = formData.get('meterPhase') as string || 'Three Phase'
-  const zeroExportDevice = formData.get('zeroExportDevice') === 'true'
+  const zeroExportDevice = formData.get('zeroExportDevice') === 'true' || formData.get('zeroExportDevice') === 'Installed'
+  const netMetering = (formData.get('netMetering') as string) || 'Yes'
   
   // Inverter
   const inverterBrand = formData.get('inverterBrand') as string || 'Huawei'
@@ -165,6 +166,12 @@ export async function saveSolarSystem(formData: FormData) {
   const inverterCategory = formData.get('inverterCategory') as string || 'Low Voltage'
   const inverterSize = formData.get('inverterSize') as string || '10 kW'
   const noOfInverters = Number(formData.get('noOfInverters')) || 1
+  const pvDgController = (formData.get('pvDgController') as string) || 'Not Installed'
+  const pvDgControllerBrand = (formData.get('pvDgControllerBrand') as string) || null
+  const datalogger = (formData.get('datalogger') as string) || 'Not Installed'
+  const dataloggerBrand = (formData.get('dataloggerBrand') as string) || null
+  const monitoringEcosystem = (formData.get('monitoringEcosystem') as string) || null
+
   const inverterUsername = formData.get('inverterUsername') as string || null
   const inverterPassword = formData.get('inverterPassword') as string || null
   const inverterInvoiceUrl = formData.get('inverterInvoiceUrl') as string || null
@@ -243,7 +250,9 @@ export async function saveSolarSystem(formData: FormData) {
   const earthing = formData.get('earthing') as string || 'AC & DC Grounding'
   const earthingAcOhms = Number(formData.get('earthingAcOhms')) || 1.2
   const earthingDcOhms = Number(formData.get('earthingDcOhms')) || 0.8
-  const lightningProtection = formData.get('lightningProtection') === 'true' || true
+  const lightningProtection = formData.get('lightningProtection') === 'true' || formData.get('lightningProtection') === 'Installed' || true
+  const lightningArrestor = (formData.get('lightningArrestor') as string) || 'Not Installed'
+  const energyAnalyzer = (formData.get('energyAnalyzer') as string) || 'Not Installed'
   const breakerName = formData.get('breakerName') as string || 'Schneider 32A MCB'
   const structureType = formData.get('structureType') as string || 'Elevated GI Structure'
   const installerName = formData.get('installerName') as string || 'EnergyGurus Technical Team'
@@ -309,6 +318,12 @@ export async function saveSolarSystem(formData: FormData) {
         meterType,
         meterPhase,
         zeroExportDevice,
+        netMetering,
+        pvDgController,
+        pvDgControllerBrand,
+        datalogger,
+        dataloggerBrand,
+        monitoringEcosystem,
         inverterBrand,
         inverterType,
         inverterPhase,
@@ -338,6 +353,8 @@ export async function saveSolarSystem(formData: FormData) {
         earthingAcOhms,
         earthingDcOhms,
         lightningProtection,
+        lightningArrestor,
+        energyAnalyzer,
         breakerName,
         structureType,
         installerName,
@@ -356,6 +373,12 @@ export async function saveSolarSystem(formData: FormData) {
         meterType,
         meterPhase,
         zeroExportDevice,
+        netMetering,
+        pvDgController,
+        pvDgControllerBrand,
+        datalogger,
+        dataloggerBrand,
+        monitoringEcosystem,
         inverterBrand,
         inverterType,
         inverterPhase,
@@ -385,6 +408,8 @@ export async function saveSolarSystem(formData: FormData) {
         earthingAcOhms,
         earthingDcOhms,
         lightningProtection,
+        lightningArrestor,
+        energyAnalyzer,
         breakerName,
         structureType,
         installerName,

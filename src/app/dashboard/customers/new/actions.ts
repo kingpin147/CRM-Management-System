@@ -87,7 +87,13 @@ export async function createCustomer(formData: FormData) {
   const discoRefNo = (formData.get('discoRefNo') as string) || null
   const meterType = (formData.get('meterType') as string) || ''
   const meterPhase = (formData.get('meterPhase') as string) || null
-  const zeroExportDevice = formData.get('zeroExportDevice') === 'Installed' || formData.get('zeroExportDevice') === 'true'
+  const netMetering = (formData.get('netMetering') as string) || 'Yes'
+  const zeroExportDevice = formData.get('zeroExportDevice') === 'Installed' || formData.get('zeroExportDevice') === 'true' || formData.get('zeroExportDevice') === 'Yes'
+  const pvDgController = (formData.get('pvDgController') as string) || 'Not Installed'
+  const pvDgControllerBrand = (formData.get('pvDgControllerBrand') as string) || null
+  const datalogger = (formData.get('datalogger') as string) || 'Not Installed'
+  const dataloggerBrand = (formData.get('dataloggerBrand') as string) || null
+  const monitoringEcosystem = (formData.get('monitoringEcosystem') as string) || null
   const inverterBrand = (formData.get('inverterBrand') as string) || ''
   const inverterType = (formData.get('inverterType') as string) || ''
   const inverterPhase = (formData.get('inverterPhase') as string) || ''
@@ -119,6 +125,8 @@ export async function createCustomer(formData: FormData) {
   const ingressProtection = (formData.get('ingressProtection') as string) || null
   const structureType = (formData.get('structureType') as string) || null
   const structureMaterial = (formData.get('structureMaterial') as string) || null
+  const lightningArrestor = (formData.get('lightningArrestor') as string) || (formData.get('lightningProtection') === 'true' || formData.get('lightningProtection') === 'Installed' ? 'Installed' : 'Not Installed')
+  const energyAnalyzer = (formData.get('energyAnalyzer') as string) || 'Not Installed'
   const systemInstallationDate = parseDate(formData.get('installationDate'))
 
   // Installer & Audit fields
@@ -234,7 +242,13 @@ export async function createCustomer(formData: FormData) {
             discoRefNo,
             meterType,
             meterPhase,
+            netMetering,
             zeroExportDevice,
+            pvDgController,
+            pvDgControllerBrand,
+            datalogger,
+            dataloggerBrand,
+            monitoringEcosystem,
             inverterBrand,
             inverterType,
             inverterPhase,
@@ -278,6 +292,8 @@ export async function createCustomer(formData: FormData) {
             breakerStatus,
             breakerName: (formData.get('breakerName') as string) || '',
             lightningProtection: formData.get('lightningProtection') === 'true' || formData.get('lightningProtection') === 'Installed',
+            lightningArrestor,
+            energyAnalyzer,
             inverterUsername,
             inverterPassword,
             inverterInvoiceUrl,

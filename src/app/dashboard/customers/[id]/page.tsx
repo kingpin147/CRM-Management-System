@@ -479,6 +479,19 @@ export default async function CustomerDetailPage({
                           </TableRow>
 
                           <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Net Metering / Net Billing</TableCell>
+                            <TableCell className="text-xs">
+                              {customer.solarSystem?.netMetering ? (
+                                <Badge variant="outline" className={customer.solarSystem.netMetering === 'Yes' ? "bg-emerald-100 text-emerald-950 border-emerald-400 font-bold shadow-xs" : "bg-slate-100 text-slate-700 border-slate-300 font-medium"}>
+                                  {customer.solarSystem.netMetering}
+                                </Badge>
+                              ) : (
+                                <span className="text-slate-400 font-medium">—</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+
+                          <TableRow className="border-b hover:bg-transparent">
                             <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Zero Export Device</TableCell>
                             <TableCell className="text-xs">
                               {customer.solarSystem?.zeroExportDevice ? (
@@ -677,6 +690,60 @@ export default async function CustomerDetailPage({
                             </TableCell>
                           </TableRow>
 
+                          {/* PV DG Controller */}
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">PV DG Controller</TableCell>
+                            <TableCell className="text-xs">
+                              {customer.solarSystem?.pvDgController === 'Installed' ? (
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <Badge variant="outline" className="bg-emerald-100 text-emerald-950 border-emerald-400 font-bold shadow-xs">
+                                    Installed
+                                  </Badge>
+                                  {customer.solarSystem.pvDgControllerBrand && (
+                                    <span className="text-xs font-semibold text-slate-700">
+                                      Brand: <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold text-[10px]">{customer.solarSystem.pvDgControllerBrand}</Badge>
+                                    </span>
+                                  )}
+                                </div>
+                              ) : (
+                                <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 font-medium">
+                                  {customer.solarSystem?.pvDgController || 'Not Installed'}
+                                </Badge>
+                              )}
+                            </TableCell>
+                          </TableRow>
+
+                          {/* Datalogger & Monitoring */}
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Datalogger</TableCell>
+                            <TableCell className="text-xs">
+                              {customer.solarSystem?.datalogger === 'Installed' ? (
+                                <div className="space-y-1.5">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <Badge variant="outline" className="bg-emerald-100 text-emerald-950 border-emerald-400 font-bold shadow-xs">
+                                      Installed
+                                    </Badge>
+                                    {customer.solarSystem.dataloggerBrand && (
+                                      <span className="text-xs font-semibold text-slate-700">
+                                        Brand: <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold text-[10px]">{customer.solarSystem.dataloggerBrand}</Badge>
+                                      </span>
+                                    )}
+                                  </div>
+                                  {customer.solarSystem.monitoringEcosystem && (
+                                    <div className="text-[11px] text-slate-700 bg-sky-50 border border-sky-200 rounded px-2 py-1 font-medium flex items-center gap-1.5">
+                                      <span className="text-sky-800 font-bold">Ecosystem:</span>
+                                      <span>{customer.solarSystem.monitoringEcosystem}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 font-medium">
+                                  {customer.solarSystem?.datalogger || 'Not Installed'}
+                                </Badge>
+                              )}
+                            </TableCell>
+                          </TableRow>
+
                           {/* Inverter User Name */}
                           <TableRow className="border-b hover:bg-transparent">
                             <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Inverter User Name</TableCell>
@@ -729,6 +796,38 @@ export default async function CustomerDetailPage({
                                   </span>
                                 </div>
                               </div>
+                            </TableCell>
+                          </TableRow>
+
+                          {/* Lightning Arrestor */}
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Lightning Arrestor</TableCell>
+                            <TableCell className="text-xs">
+                              {customer.solarSystem?.lightningArrestor === 'Installed' ? (
+                                <Badge variant="outline" className="bg-emerald-100 text-emerald-950 border-emerald-400 font-bold shadow-xs">
+                                  Installed
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 font-medium">
+                                  {customer.solarSystem?.lightningArrestor || 'Not Installed'}
+                                </Badge>
+                              )}
+                            </TableCell>
+                          </TableRow>
+
+                          {/* Energy Analyzer */}
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Energy Analyzer</TableCell>
+                            <TableCell className="text-xs">
+                              {customer.solarSystem?.energyAnalyzer && customer.solarSystem.energyAnalyzer !== 'Not Installed' ? (
+                                <Badge variant="outline" className="bg-amber-100 text-amber-950 border-amber-400 font-bold shadow-xs">
+                                  {customer.solarSystem.energyAnalyzer}
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-300 font-medium">
+                                  Not Installed
+                                </Badge>
+                              )}
                             </TableCell>
                           </TableRow>
 

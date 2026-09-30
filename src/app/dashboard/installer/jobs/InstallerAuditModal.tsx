@@ -27,6 +27,10 @@ import {
   STRUCTURE_TYPES,
   STRUCTURE_MATERIALS,
   IP_LIST,
+  PV_DG_CONTROLLER_BRANDS,
+  ENERGY_ANALYZER_BRANDS,
+  DATALOGGER_BRANDS,
+  getDataloggerEcosystem,
 } from '@/lib/solar-constants'
 import {
   Wrench,
@@ -90,6 +94,7 @@ export function InstallerAuditModal({
   const [meterType, setMeterType] = React.useState(solar.meterType || 'Green Meter')
   const [meterPhase, setMeterPhase] = React.useState(solar.meterPhase || 'Three Phase')
   const [zeroExportDevice, setZeroExportDevice] = React.useState(solar.zeroExportDevice ? 'Installed' : 'Not Installed')
+  const [netMetering, setNetMetering] = React.useState(solar.netMetering || 'Yes')
 
   // 2. Inverter Unit Specifications
   const initialInvCount = Math.max(1, Number(solar.noOfInverters) || 1)
@@ -113,10 +118,50 @@ export function InstallerAuditModal({
   })
   const [inverterImageUrls, setInverterImageUrls] = React.useState<string[]>(solar.inverterImages?.length ? solar.inverterImages : [])
   const [uploadingInverterIndex, setUploadingInverterIndex] = React.useState<number | null>(null)
+
+  // PV DG Controller
+  const [pvDgController, setPvDgController] = React.useState(solar.pvDgController || 'Not Installed')
+  const [pvDgControllerBrand, setPvDgControllerBrand] = React.useState(solar.pvDgControllerBrand || 'DSE')
+
+  // Datalogger & Monitoring
+  const [datalogger, setDatalogger] = React.useState(
+    solar.datalogger || (solar.inverterUsername || solar.dataloggerBrand ? 'Installed' : 'Not Installed')
+  )
+  const [dataloggerBrand, setDataloggerBrand] = React.useState(solar.dataloggerBrand || solar.inverterBrand || '')
+  const [monitoringEcosystem, setMonitoringEcosystem] = React.useState(
+    solar.monitoringEcosystem || getDataloggerEcosystem(solar.dataloggerBrand || solar.inverterBrand || '')
+  )
   const [inverterUsername, setInverterUsername] = React.useState(solar.inverterUsername || '')
   const [inverterPassword, setInverterPassword] = React.useState(solar.inverterPassword || '')
   const [inverterInvoiceUrl, setInverterInvoiceUrl] = React.useState(solar.inverterInvoiceUrl || '')
   const [uploadingInverterInvoice, setUploadingInverterInvoice] = React.useState(false)
+
+  // Auto sync datalogger brand and ecosystem with inverter brand changes
+  const handleInverterBrandChange = (brand: string) => {
+    setInverterBrand(brand)
+    if (!dataloggerBrand || dataloggerBrand === inverterBrand || dataloggerBrand === '') {
+      setDataloggerBrand(brand)
+      const eco = getDataloggerEcosystem(brand)
+      if (eco) setMonitoringEcosystem(eco)
+    }
+  }
+
+  const handleDataloggerBrandChange = (brand: string) => {
+    setDataloggerBrand(brand)
+    const eco = getDataloggerEcosystem(brand)
+    if (eco) setMonitoringEcosystem(eco)
+  }
+
+  const handleDataloggerStatusChange = (val: string) => {
+    setDatalogger(val)
+    if (val === 'Installed') {
+      const targetBrand = dataloggerBrand || inverterBrand || 'Huawei'
+      setDataloggerBrand(targetBrand)
+      if (!monitoringEcosystem) {
+        setMonitoringEcosystem(getDataloggerEcosystem(targetBrand))
+      }
+    }
+  }
 
   // 3. Solar PV Panels Specifications
   const [noOfPanelBrands, setNoOfPanelBrands] = React.useState<number>(1)
@@ -241,6 +286,8 @@ export function InstallerAuditModal({
   const [systemInstallationDate, setSystemInstallationDate] = React.useState(
     solar.systemInstallationDate ? new Date(solar.systemInstallationDate).toISOString().split('T')[0] : ''
   )
+  const [lightningArrestor, setLightningArrestor] = React.useState(solar.lightningArrestor || 'Not Installed')
+  const [energyAnalyzer, setEnergyAnalyzer] = React.useState(solar.energyAnalyzer || 'Not Installed')
 
   // Part 3: 7-Point Audit Checklist
   const [inverterStatus, setInverterStatus] = React.useState(solar.inverterStatus || 'Good')
@@ -278,6 +325,7 @@ export function InstallerAuditModal({
       setMeterType(s.meterType || draft?.meterType || 'Green Meter')
       setMeterPhase(s.meterPhase || draft?.meterPhase || 'Three Phase')
       setZeroExportDevice(s.zeroExportDevice != null ? (s.zeroExportDevice ? 'Installed' : 'Not Installed') : (draft?.zeroExportDevice || 'Not Installed'))
+      setNetMetering(s.netMetering || draft?.netMetering || 'Yes')
 
       // Section 2
       setInverterBrand(s.inverterBrand || draft?.inverterBrand || '')
@@ -298,6 +346,18 @@ export function InstallerAuditModal({
       setInverterWarrantyEnds(invWarrs)
 
       setInverterImageUrls(s.inverterImages?.length ? s.inverterImages : (draft?.inverterImageUrls || []))
+      
+      setPvDgController(s.pvDgController || draft?.pvDgController || 'Not Installed')
+      setPvDgControllerBrand(s.pvDgControllerBrand || draft?.pvDgControllerBrand || 'DSE')
+
+      const initialDatalogger = s.datalogger || draft?.datalogger || (s.inverterUsername || s.dataloggerBrand ? 'Installed' : 'Not Installed')
+      setDatalogger(initialDatalogger)
+      const initialDataloggerBrand = s.dataloggerBrand || draft?.dataloggerBrand || s.inverterBrand || ''
+      setDataloggerBrand(initialDataloggerBrand)
+      setMonitoringEcosystem(
+        s.monitoringEcosystem || draft?.monitoringEcosystem || getDataloggerEcosystem(initialDataloggerBrand)
+      )
+
       setInverterUsername(s.inverterUsername || draft?.inverterUsername || '')
       setInverterPassword(s.inverterPassword || draft?.inverterPassword || '')
       setInverterInvoiceUrl(s.inverterInvoiceUrl || draft?.inverterInvoiceUrl || '')
@@ -361,6 +421,8 @@ export function InstallerAuditModal({
       setBreakerName(s.breakerName || draft?.breakerName || 'Standard DC/AC Breakers')
       setEarthing(s.earthing || draft?.earthing || 'Both')
       setSystemInstallationDate(s.systemInstallationDate ? new Date(s.systemInstallationDate).toISOString().split('T')[0] : (draft?.systemInstallationDate || ''))
+      setLightningArrestor(s.lightningArrestor || draft?.lightningArrestor || 'Not Installed')
+      setEnergyAnalyzer(s.energyAnalyzer || draft?.energyAnalyzer || 'Not Installed')
 
       // Part 3
       setInverterStatus(s.inverterStatus || draft?.inverterStatus || 'Good')
@@ -387,6 +449,7 @@ export function InstallerAuditModal({
       meterType,
       meterPhase,
       zeroExportDevice,
+      netMetering,
       inverterBrand,
       inverterSize,
       inverterType,
@@ -396,8 +459,14 @@ export function InstallerAuditModal({
       inverterSerials,
       inverterWarrantyEnds,
       inverterImageUrls,
+      pvDgController,
+      pvDgControllerBrand,
+      datalogger,
+      dataloggerBrand,
+      monitoringEcosystem,
       inverterUsername,
       inverterPassword,
+      inverterInvoiceUrl,
       noOfPanelBrands,
       panelBrands,
       panelTechnologies,
@@ -419,6 +488,8 @@ export function InstallerAuditModal({
       breakerName,
       earthing,
       systemInstallationDate,
+      lightningArrestor,
+      energyAnalyzer,
       inverterStatus,
       panelStatus,
       batteryStatus,
@@ -443,6 +514,7 @@ export function InstallerAuditModal({
     meterType,
     meterPhase,
     zeroExportDevice,
+    netMetering,
     inverterBrand,
     inverterSize,
     inverterType,
@@ -452,6 +524,11 @@ export function InstallerAuditModal({
     inverterSerials,
     inverterWarrantyEnds,
     inverterImageUrls,
+    pvDgController,
+    pvDgControllerBrand,
+    datalogger,
+    dataloggerBrand,
+    monitoringEcosystem,
     inverterUsername,
     inverterPassword,
     inverterInvoiceUrl,
@@ -476,6 +553,8 @@ export function InstallerAuditModal({
     breakerName,
     earthing,
     systemInstallationDate,
+    lightningArrestor,
+    energyAnalyzer,
     inverterStatus,
     panelStatus,
     batteryStatus,
@@ -593,6 +672,9 @@ export function InstallerAuditModal({
     if (!zeroExportDevice?.trim()) {
       return 'Please select the Zero Export Device status in Section 1.'
     }
+    if (!netMetering?.trim()) {
+      return 'Please select Net Metering / Net Billing status in Section 1.'
+    }
 
     // Section 2: Inverter Unit Specifications
     if (!inverterBrand?.trim()) {
@@ -620,6 +702,12 @@ export function InstallerAuditModal({
       if (!inverterWarrantyEnds[i]?.trim()) {
         return `Please select the Warranty Expiry Date for Inverter Unit ${i + 1} in Section 2.`
       }
+    }
+    if (pvDgController === 'Installed' && !pvDgControllerBrand?.trim()) {
+      return 'Please select or specify the PV DG Controller Brand in Section 2.'
+    }
+    if (datalogger === 'Installed' && !dataloggerBrand?.trim()) {
+      return 'Please enter or select the Datalogger Brand in Section 2.'
     }
 
     // Section 3: Battery Energy Storage System (BESS)
@@ -685,6 +773,12 @@ export function InstallerAuditModal({
     if (!systemInstallationDate?.trim()) {
       return 'Please select the System Installation Date in Section 5.'
     }
+    if (!lightningArrestor?.trim()) {
+      return 'Please select the Lightning Arrestor status in Section 5.'
+    }
+    if (!energyAnalyzer?.trim()) {
+      return 'Please select the Energy Analyzer in Section 5.'
+    }
 
     return null
   }
@@ -722,6 +816,7 @@ export function InstallerAuditModal({
     formData.append('meterType', meterType)
     formData.append('meterPhase', meterPhase)
     formData.append('zeroExportDevice', zeroExportDevice)
+    formData.append('netMetering', netMetering)
 
     formData.append('inverterBrand', inverterBrand)
     formData.append('inverterSize', inverterSize)
@@ -732,8 +827,15 @@ export function InstallerAuditModal({
     formData.append('inverterSerials', JSON.stringify(inverterSerials.slice(0, Math.max(1, noOfInverters))))
     formData.append('inverterWarrantyEnds', JSON.stringify(inverterWarrantyEnds.slice(0, Math.max(1, noOfInverters))))
     formData.append('inverterImageUrls', JSON.stringify(inverterImageUrls.slice(0, Math.max(1, noOfInverters))))
-    formData.append('inverterUsername', inverterUsername)
-    formData.append('inverterPassword', inverterPassword)
+
+    formData.append('pvDgController', pvDgController)
+    formData.append('pvDgControllerBrand', pvDgController === 'Installed' ? pvDgControllerBrand : '')
+    formData.append('datalogger', datalogger)
+    formData.append('dataloggerBrand', datalogger === 'Installed' ? dataloggerBrand : '')
+    formData.append('monitoringEcosystem', datalogger === 'Installed' ? monitoringEcosystem : '')
+
+    formData.append('inverterUsername', datalogger === 'Installed' ? inverterUsername : '')
+    formData.append('inverterPassword', datalogger === 'Installed' ? inverterPassword : '')
     formData.append('inverterInvoiceUrl', inverterInvoiceUrl)
 
     const activeBrands = panelBrands.slice(0, noOfPanelBrands).filter(Boolean)
@@ -770,6 +872,8 @@ export function InstallerAuditModal({
     formData.append('earthing', earthing)
     formData.append('lightningProtection', lightningProtection)
     formData.append('systemInstallationDate', systemInstallationDate)
+    formData.append('lightningArrestor', lightningArrestor)
+    formData.append('energyAnalyzer', energyAnalyzer)
 
     return formData
   }
@@ -1012,7 +1116,7 @@ export function InstallerAuditModal({
                   <p className="text-xs font-bold text-[#002868] uppercase tracking-wide">1. DISCO Utility &amp; Meter Connection</p>
                   <span className="text-[11px] font-mono text-slate-500">{disco || 'DISCO Unset'}</span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-3">
                   <div className="space-y-1 sm:col-span-1">
                     <Label className="text-xs font-semibold">DISCO Utility Company <span className="text-red-500">*</span></Label>
                     <AutoSuggestInput
@@ -1068,6 +1172,18 @@ export function InstallerAuditModal({
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="space-y-1 sm:col-span-1">
+                    <Label className="text-xs font-semibold text-rose-700">Net Metering / Net Billing <span className="text-red-500">*</span></Label>
+                    <Select value={netMetering} onValueChange={(val) => setNetMetering(val || 'Yes')}>
+                      <SelectTrigger className="h-9 text-xs bg-white border-rose-300">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Yes">Yes</SelectItem>
+                        <SelectItem value="No">No</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
 
@@ -1087,7 +1203,7 @@ export function InstallerAuditModal({
                     <Label className="text-xs font-semibold">Inverter Brand <span className="text-red-500">*</span></Label>
                     <AutoSuggestInput
                       value={inverterBrand}
-                      onChange={setInverterBrand}
+                      onChange={handleInverterBrandChange}
                       options={INVERTER_BRANDS}
                       placeholder="e.g. Solis, Huawei, Growatt"
                       className="h-9 text-xs bg-white"
@@ -1155,44 +1271,162 @@ export function InstallerAuditModal({
                       className="h-9 text-xs font-mono bg-white font-bold"
                     />
                   </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-rose-700">PV DG controller <span className="text-red-500">*</span></Label>
+                    <Select value={pvDgController} onValueChange={(val) => setPvDgController(val || 'Not Installed')}>
+                      <SelectTrigger className="h-9 text-xs bg-white border-rose-300">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Not Installed">Not Installed</SelectItem>
+                        <SelectItem value="Installed">Installed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {pvDgController === 'Installed' ? (
+                    <div className="space-y-1 animate-in fade-in-50">
+                      <Label className="text-xs font-semibold text-rose-700">PV DG Controller Brand <span className="text-red-500">*</span></Label>
+                      <AutoSuggestInput
+                        value={pvDgControllerBrand}
+                        onChange={setPvDgControllerBrand}
+                        options={PV_DG_CONTROLLER_BRANDS}
+                        placeholder="e.g. DSE, ComAp, DEIF"
+                        className="h-9 text-xs bg-white border-rose-300"
+                      />
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-rose-700">Datalogger <span className="text-red-500">*</span></Label>
+                      <Select value={datalogger} onValueChange={handleDataloggerStatusChange}>
+                        <SelectTrigger className="h-9 text-xs bg-white border-rose-300">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Not Installed">Not Installed</SelectItem>
+                          <SelectItem value="Installed">Installed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
 
-                {/* Inverter Credentials & Invoice Snapshot (For centralized monitoring migration) */}
-                <div className="mt-4 p-4 rounded-xl border border-sky-200 bg-sky-50/40 space-y-4">
-                  <div className="flex items-center justify-between pb-2 border-b border-sky-200">
-                    <div>
+                {pvDgController === 'Installed' && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-rose-700">Datalogger <span className="text-red-500">*</span></Label>
+                      <Select value={datalogger} onValueChange={handleDataloggerStatusChange}>
+                        <SelectTrigger className="h-9 text-xs bg-white border-rose-300">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Not Installed">Not Installed</SelectItem>
+                          <SelectItem value="Installed">Installed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+
+                {/* Datalogger Brands, Monitoring Ecosystem & Credentials - ONLY SHOWN WHEN INSTALLED */}
+                {datalogger === 'Installed' && (
+                  <div className="mt-4 p-4 rounded-xl border-2 border-amber-400 bg-amber-50/40 space-y-4 animate-in fade-in-50 shadow-xs">
+                    <div className="flex items-center justify-between pb-2 border-b border-amber-200">
+                      <div>
+                        <h4 className="text-xs font-bold text-[#002868] uppercase tracking-wide flex items-center gap-2">
+                          <ShieldCheck className="h-4 w-4 text-amber-600" />
+                          Datalogger &amp; Monitoring Ecosystem Credentials
+                        </h4>
+                        <p className="text-[11px] text-amber-900 mt-0.5">
+                          Configure datalogger brand, ecosystem setup, and monitoring portal credentials.
+                        </p>
+                      </div>
+                      <span className="text-[10px] bg-amber-100 border border-amber-300 text-amber-950 font-bold px-2 py-0.5 rounded">
+                        Datalogger Active
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <Label className="text-xs font-semibold text-amber-950">Datalogger Brand <span className="text-red-500">*</span></Label>
+                        <AutoSuggestInput
+                          value={dataloggerBrand}
+                          onChange={handleDataloggerBrandChange}
+                          options={DATALOGGER_BRANDS}
+                          placeholder="e.g. Huawei, GoodWe, Solis"
+                          className="h-9 text-xs bg-white border-amber-300"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs font-semibold text-amber-950">Monitoring / Datalogger Ecosystem</Label>
+                        <Input
+                          value={monitoringEcosystem}
+                          onChange={(e) => setMonitoringEcosystem(e.target.value)}
+                          placeholder="e.g. FusionSolar / Smart Dongle, SEMS Portal / WiFi kit"
+                          className="h-9 text-xs bg-white border-amber-300 font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-amber-200/60">
+                      <div className="space-y-1">
+                        <Label className="text-xs font-semibold text-[#002868]">User Name</Label>
+                        <Input
+                          value={inverterUsername}
+                          onChange={(e) => setInverterUsername(e.target.value)}
+                          placeholder="e.g. customer@gmail.com or GoodWe username"
+                          className="h-9 text-xs bg-white border-amber-200"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs font-semibold text-[#002868]">Password</Label>
+                        <Input
+                          value={inverterPassword}
+                          onChange={(e) => setInverterPassword(e.target.value)}
+                          placeholder="e.g. Inverter / Datalogger portal password"
+                          className="h-9 text-xs bg-white font-mono border-amber-200"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-amber-200/60">
+                      <CameraPhotoCapture
+                        label="Inverter Invoice Snapshot"
+                        badge="Invoice Proof"
+                        guideType="general"
+                        compact
+                        value={inverterInvoiceUrl || null}
+                        onValueChange={(url) => setInverterInvoiceUrl(url || '')}
+                        onUpload={async (file) => {
+                          setUploadingInverterInvoice(true)
+                          try {
+                            const url = await uploadEquipmentPhoto(file, 'equipment/inverter-invoices')
+                            if (url) {
+                              setInverterInvoiceUrl(url)
+                              return url
+                            }
+                          } catch (err: any) {
+                            setError(`Inverter Invoice Upload Error: ${err.message}`)
+                          } finally {
+                            setUploadingInverterInvoice(false)
+                          }
+                        }}
+                        disabled={uploadingInverterInvoice}
+                        fileNamePrefix="inverter_invoice"
+                        subtext="Take a photo of the Inverter Purchase Invoice or upload document from gallery."
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* If Datalogger is NOT installed, we can still provide Inverter Invoice snapshot below */}
+                {datalogger !== 'Installed' && (
+                  <div className="mt-4 p-4 rounded-xl border border-slate-200 bg-white space-y-3">
+                    <div className="pb-2 border-b border-slate-100">
                       <h4 className="text-xs font-bold text-[#002868] uppercase tracking-wide flex items-center gap-2">
-                        <ShieldCheck className="h-4 w-4 text-sky-600" />
-                        Inverter Credentials &amp; Invoice Snapshot
+                        <ShieldCheck className="h-4 w-4 text-slate-500" />
+                        Inverter Invoice Snapshot
                       </h4>
-                      <p className="text-[11px] text-slate-500 mt-0.5">
-                        Required to remove existing manufacturer setup and register on Centralized Monitoring.
-                      </p>
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-[#002868]">Inverter User Name</Label>
-                      <Input
-                        value={inverterUsername}
-                        onChange={(e) => setInverterUsername(e.target.value)}
-                        placeholder="e.g. customer@gmail.com or GoodWe username"
-                        className="h-9 text-xs bg-white"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-[#002868]">Inverter Password</Label>
-                      <Input
-                        value={inverterPassword}
-                        onChange={(e) => setInverterPassword(e.target.value)}
-                        placeholder="e.g. Inverter portal password"
-                        className="h-9 text-xs bg-white font-mono"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="pt-2 border-t border-sky-200/60">
                     <CameraPhotoCapture
                       label="Inverter Invoice Snapshot"
                       badge="Invoice Proof"
@@ -1219,7 +1453,7 @@ export function InstallerAuditModal({
                       subtext="Take a photo of the Inverter Purchase Invoice or upload document from gallery."
                     />
                   </div>
-                </div>
+                )}
 
                 {Array.from({ length: noOfInverters }).map((_, index) => (
                   <div key={`inverter-${index}`} className="mt-4 p-4 rounded-xl border border-amber-200/60 bg-amber-50/30 space-y-4">
@@ -1831,6 +2065,34 @@ export function InstallerAuditModal({
                       onChange={(e) => setSystemInstallationDate(e.target.value)}
                       className="h-9"
                     />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-200">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-rose-700">Lightening Arrestor <span className="text-red-500">*</span></Label>
+                    <Select value={lightningArrestor} onValueChange={(val) => setLightningArrestor(val || 'Not Installed')}>
+                      <SelectTrigger className="h-9 text-xs bg-white border-rose-300">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Not Installed">Not Installed</SelectItem>
+                        <SelectItem value="Installed">Installed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-rose-700">Energy Analyzer <span className="text-red-500">*</span></Label>
+                    <Select value={energyAnalyzer} onValueChange={(val) => setEnergyAnalyzer(val || 'Not Installed')}>
+                      <SelectTrigger className="h-9 text-xs bg-white border-rose-300">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ENERGY_ANALYZER_BRANDS.map((ea) => (
+                          <SelectItem key={ea} value={ea}>{ea}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </div>

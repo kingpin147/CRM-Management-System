@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
     const meterType = (formData.get('meterType') as string) || 'Green Meter'
     const meterPhase = (formData.get('meterPhase') as string) || 'Three Phase'
     const zeroExportDevice = formData.get('zeroExportDevice') === 'Installed' || formData.get('zeroExportDevice') === 'true'
+    const netMetering = (formData.get('netMetering') as string) || 'Yes'
 
     // Inverter Unit Specifications
     const inverterBrand = (formData.get('inverterBrand') as string) || ''
@@ -46,6 +47,12 @@ export async function POST(req: NextRequest) {
     const inverterWarrantyEnds: Date[] = rawInverterWarrantyEnds
       .map(d => parseDateSafe(d))
       .filter((d): d is Date => d !== null)
+
+    const pvDgController = (formData.get('pvDgController') as string) || 'Not Installed'
+    const pvDgControllerBrand = (formData.get('pvDgControllerBrand') as string) || null
+    const datalogger = (formData.get('datalogger') as string) || 'Not Installed'
+    const dataloggerBrand = (formData.get('dataloggerBrand') as string) || null
+    const monitoringEcosystem = (formData.get('monitoringEcosystem') as string) || null
 
     const inverterUsername = (formData.get('inverterUsername') as string) || null
     const inverterPassword = (formData.get('inverterPassword') as string) || null
@@ -79,6 +86,8 @@ export async function POST(req: NextRequest) {
     const breakerName = (formData.get('breakerName') as string) || 'Standard DC/AC Breakers'
     const earthing = (formData.get('earthing') as string) || 'Both'
     const lightningProtection = formData.get('lightningProtection') === 'true' || formData.get('lightningProtection') === 'Yes' || formData.get('lightningProtection') === 'Installed'
+    const lightningArrestor = (formData.get('lightningArrestor') as string) || 'Not Installed'
+    const energyAnalyzer = (formData.get('energyAnalyzer') as string) || 'Not Installed'
     const systemInstallationDate = parseDateSafe(formData.get('systemInstallationDate') as string)
 
     const customerRecord = await prisma.customer.findUnique({
@@ -106,6 +115,7 @@ export async function POST(req: NextRequest) {
         meterType,
         meterPhase,
         zeroExportDevice,
+        netMetering,
         disco,
         discoRefNo,
         inverterBrand,
@@ -118,6 +128,11 @@ export async function POST(req: NextRequest) {
         inverterSerials,
         inverterWarrantyEnd: inverterWarrantyEnds[0] || null,
         inverterWarrantyEnds,
+        pvDgController,
+        pvDgControllerBrand,
+        datalogger,
+        dataloggerBrand,
+        monitoringEcosystem,
         panelBrand,
         panelType,
         panelTechnology,
@@ -135,6 +150,8 @@ export async function POST(req: NextRequest) {
         batteryWarrantyEnds,
         earthing,
         lightningProtection,
+        lightningArrestor,
+        energyAnalyzer,
         breakerName,
         ingressProtection,
         structureType,
@@ -151,6 +168,7 @@ export async function POST(req: NextRequest) {
         meterType,
         meterPhase,
         zeroExportDevice,
+        netMetering,
         disco,
         discoRefNo,
         inverterBrand,
@@ -163,6 +181,11 @@ export async function POST(req: NextRequest) {
         inverterSerials,
         inverterWarrantyEnd: inverterWarrantyEnds[0] || null,
         inverterWarrantyEnds,
+        pvDgController,
+        pvDgControllerBrand,
+        datalogger,
+        dataloggerBrand,
+        monitoringEcosystem,
         panelBrand,
         panelType,
         panelTechnology,
@@ -180,6 +203,8 @@ export async function POST(req: NextRequest) {
         batteryWarrantyEnds,
         earthing,
         lightningProtection,
+        lightningArrestor,
+        energyAnalyzer,
         breakerName,
         ingressProtection,
         structureType,

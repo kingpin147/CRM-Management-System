@@ -104,6 +104,7 @@ export default async function PendingSalesPage() {
     const meterType = (formData.get('meterType') as string) || undefined
     const meterPhase = (formData.get('meterPhase') as string) || undefined
     const zeroExportDevice = formData.get('zeroExportDevice') === 'Yes' ? true : formData.get('zeroExportDevice') === 'No' ? false : undefined
+    const netMetering = (formData.get('netMetering') as string) || undefined
     const disco = (formData.get('disco') as string) || undefined
     const discoRefNo = (formData.get('discoRefNo') as string) || undefined
     
@@ -119,6 +120,12 @@ export default async function PendingSalesPage() {
     const inverterWarrantyEnds = inverterWarrantyEndsStr 
       ? JSON.parse(inverterWarrantyEndsStr).map((d: string) => d ? new Date(d) : new Date('1970-01-01')) 
       : undefined
+
+    const pvDgController = (formData.get('pvDgController') as string) || undefined
+    const pvDgControllerBrand = (formData.get('pvDgControllerBrand') as string) || undefined
+    const datalogger = (formData.get('datalogger') as string) || undefined
+    const dataloggerBrand = (formData.get('dataloggerBrand') as string) || undefined
+    const monitoringEcosystem = (formData.get('monitoringEcosystem') as string) || undefined
 
     const inverterUsername = (formData.get('inverterUsername') as string) || undefined
     const inverterPassword = (formData.get('inverterPassword') as string) || undefined
@@ -142,6 +149,8 @@ export default async function PendingSalesPage() {
 
     const earthingType = (formData.get('earthingType') as string) || undefined
     const lightningProtection = formData.get('lightningProtection') === 'Yes' ? true : formData.get('lightningProtection') === 'No' ? false : undefined
+    const lightningArrestor = (formData.get('lightningArrestor') as string) || undefined
+    const energyAnalyzer = (formData.get('energyAnalyzer') as string) || undefined
     const breakerName = (formData.get('breakerName') as string) || undefined
     const ingressProtection = (formData.get('ingressProtection') as string) || undefined
     const structureType = (formData.get('structureType') as string) || undefined
@@ -297,6 +306,7 @@ export default async function PendingSalesPage() {
         meterType: meterType || 'Green Meter',
         meterPhase: meterPhase,
         zeroExportDevice: zeroExportDevice ?? false,
+        netMetering: netMetering || 'Yes',
         disco: disco,
         discoRefNo: discoRefNo,
         
@@ -310,6 +320,11 @@ export default async function PendingSalesPage() {
         inverterSerials: inverterSerials || (inverterSerial ? [inverterSerial] : []),
         inverterWarrantyEnd: invWarrantyEnd || (inverterWarrantyEnds?.[0] || null),
         inverterWarrantyEnds: inverterWarrantyEnds || (invWarrantyEnd ? [invWarrantyEnd] : []),
+        pvDgController: pvDgController || 'Not Installed',
+        pvDgControllerBrand: pvDgControllerBrand || null,
+        datalogger: datalogger || 'Not Installed',
+        dataloggerBrand: dataloggerBrand || null,
+        monitoringEcosystem: monitoringEcosystem || null,
         inverterUsername: inverterUsername || null,
         inverterPassword: inverterPassword || null,
         inverterInvoiceUrl: inverterInvoiceUrl || null,
@@ -339,6 +354,8 @@ export default async function PendingSalesPage() {
         earthingAcOhms: acOhms || 0,
         earthingDcOhms: dcOhms || 0,
         lightningProtection: lightningProtection ?? false,
+        lightningArrestor: lightningArrestor || 'Not Installed',
+        energyAnalyzer: energyAnalyzer || 'Not Installed',
         breakerName: breakerName || 'Schneider / ABB',
         ingressProtection: ingressProtection,
         structureType: structureType,
@@ -364,6 +381,7 @@ export default async function PendingSalesPage() {
         meterType,
         meterPhase,
         ...(zeroExportDevice !== undefined ? { zeroExportDevice } : {}),
+        ...(netMetering !== undefined ? { netMetering } : {}),
         disco,
         discoRefNo,
         
@@ -377,6 +395,11 @@ export default async function PendingSalesPage() {
         ...(inverterSerials !== undefined ? { inverterSerials } : {}),
         ...(invWarrantyEnd !== undefined ? { inverterWarrantyEnd: invWarrantyEnd } : {}),
         ...(inverterWarrantyEnds !== undefined ? { inverterWarrantyEnds } : {}),
+        ...(pvDgController !== undefined ? { pvDgController } : {}),
+        ...(pvDgControllerBrand !== undefined ? { pvDgControllerBrand } : {}),
+        ...(datalogger !== undefined ? { datalogger } : {}),
+        ...(dataloggerBrand !== undefined ? { dataloggerBrand } : {}),
+        ...(monitoringEcosystem !== undefined ? { monitoringEcosystem } : {}),
         ...(inverterUsername !== undefined ? { inverterUsername } : {}),
         ...(inverterPassword !== undefined ? { inverterPassword } : {}),
         ...(inverterInvoiceUrl !== undefined ? { inverterInvoiceUrl } : {}),
@@ -406,6 +429,8 @@ export default async function PendingSalesPage() {
         ...(acOhms !== undefined ? { earthingAcOhms: acOhms } : {}),
         ...(dcOhms !== undefined ? { earthingDcOhms: dcOhms } : {}),
         ...(lightningProtection !== undefined ? { lightningProtection } : {}),
+        ...(lightningArrestor !== undefined ? { lightningArrestor } : {}),
+        ...(energyAnalyzer !== undefined ? { energyAnalyzer } : {}),
         breakerName,
         ingressProtection,
         structureType,

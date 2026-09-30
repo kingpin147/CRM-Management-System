@@ -25,6 +25,11 @@ import {
   STRUCTURE_TYPES,
   STRUCTURE_MATERIALS,
   IP_LIST,
+  PV_DG_CONTROLLER_BRANDS,
+  ENERGY_ANALYZER_BRANDS,
+  DATALOGGER_BRANDS,
+  DATALOGGER_ECOSYSTEM_MAP,
+  getDataloggerEcosystem,
 } from '@/lib/solar-constants'
 import { CITIES_LIST, getAreasForCity, getSubAreasForArea } from '@/lib/pakistan-cities-areas'
 import { CheckCircle2, Edit3, Loader2, Save, FileText, User, Zap, Wrench, ShieldCheck, Sun, Battery, HardHat, Gift } from 'lucide-react'
@@ -88,7 +93,10 @@ export function EditCrfModal({
   const [discoRefNo, setDiscoRefNo] = React.useState('')
   const [meterType, setMeterType] = React.useState('Green Meter')
   const [meterPhase, setMeterPhase] = React.useState('Three Phase')
+  const [netMetering, setNetMetering] = React.useState('Yes')
   const [zeroExportDevice, setZeroExportDevice] = React.useState('No')
+  const [pvDgController, setPvDgController] = React.useState('Not Installed')
+  const [pvDgControllerBrand, setPvDgControllerBrand] = React.useState('')
 
   const [inverterBrand, setInverterBrand] = React.useState('')
   const [inverterSize, setInverterSize] = React.useState('')
@@ -101,6 +109,29 @@ export function EditCrfModal({
   const [inverterUsername, setInverterUsername] = React.useState('')
   const [inverterPassword, setInverterPassword] = React.useState('')
   const [inverterInvoiceUrl, setInverterInvoiceUrl] = React.useState('')
+
+  // Datalogger Specifications
+  const [datalogger, setDatalogger] = React.useState('Not Installed')
+  const [dataloggerBrand, setDataloggerBrand] = React.useState('')
+  const [monitoringEcosystem, setMonitoringEcosystem] = React.useState('')
+
+  const handleDataloggerBrandChange = (brand: string) => {
+    setDataloggerBrand(brand)
+    const matched = getDataloggerEcosystem(brand)
+    if (matched) {
+      setMonitoringEcosystem(matched)
+    }
+  }
+
+  const handleInverterBrandChange = (brand: string) => {
+    setInverterBrand(brand)
+    if (!dataloggerBrand || dataloggerBrand === inverterBrand) {
+      const matched = getDataloggerEcosystem(brand)
+      if (matched) {
+        setMonitoringEcosystem(matched)
+      }
+    }
+  }
 
   const [panelBrand, setPanelBrand] = React.useState('')
   const [panelType, setPanelType] = React.useState('Tier-1 Monofacial')
@@ -122,6 +153,8 @@ export function EditCrfModal({
   const [breakerName, setBreakerName] = React.useState('Schneider / ABB')
   const [earthingType, setEarthingType] = React.useState('Both')
   const [lightningProtection, setLightningProtection] = React.useState('No')
+  const [lightningArrestor, setLightningArrestor] = React.useState('Not Installed')
+  const [energyAnalyzer, setEnergyAnalyzer] = React.useState('Not Installed')
   const [systemInstallationDate, setSystemInstallationDate] = React.useState('')
 
   // 7-Point Audit Checklist & Safety
@@ -185,7 +218,10 @@ export function EditCrfModal({
         setDiscoRefNo(s.discoRefNo || '')
         setMeterType(s.meterType || 'Green Meter')
         setMeterPhase(s.meterPhase || 'Three Phase')
+        setNetMetering(s.netMetering || 'Yes')
         setZeroExportDevice(s.zeroExportDevice ? 'Yes' : 'No')
+        setPvDgController(s.pvDgController || 'Not Installed')
+        setPvDgControllerBrand(s.pvDgControllerBrand || '')
 
         setInverterBrand(s.inverterBrand || '')
         setInverterSize(s.inverterSize || '')
@@ -197,6 +233,12 @@ export function EditCrfModal({
         setInverterUsername(s.inverterUsername || '')
         setInverterPassword(s.inverterPassword || '')
         setInverterInvoiceUrl(s.inverterInvoiceUrl || '')
+
+        // Datalogger
+        setDatalogger(s.datalogger || (s.inverterUsername || s.inverterPassword ? 'Installed' : 'Not Installed'))
+        setDataloggerBrand(s.dataloggerBrand || s.inverterBrand || '')
+        setMonitoringEcosystem(s.monitoringEcosystem || getDataloggerEcosystem(s.dataloggerBrand || s.inverterBrand || '') || '')
+
         if (s.inverterWarrantyEnds?.[0]) {
           setInverterWarrantyEnd(new Date(s.inverterWarrantyEnds[0]).toISOString().split('T')[0])
         } else if (s.inverterWarrantyEnd) {
@@ -233,6 +275,8 @@ export function EditCrfModal({
         setBreakerName(s.breakerName || 'Schneider / ABB')
         setEarthingType(s.earthing || 'Both')
         setLightningProtection(s.lightningProtection ? 'Yes' : 'No')
+        setLightningArrestor(s.lightningArrestor || (s.lightningProtection === true || s.lightningProtection === 'Yes' ? 'Installed' : 'Not Installed'))
+        setEnergyAnalyzer(s.energyAnalyzer || 'Not Installed')
         setSystemInstallationDate(s.systemInstallationDate ? new Date(s.systemInstallationDate).toISOString().split('T')[0] : '')
 
         setInverterStatus(s.inverterStatus || 'Good')
@@ -344,9 +388,16 @@ export function EditCrfModal({
       formData.append('discoRefNo', discoRefNo)
       formData.append('meterType', meterType)
       formData.append('meterPhase', meterPhase)
+      formData.append('netMetering', netMetering)
       formData.append('zeroExportDevice', zeroExportDevice)
 
-      // Inverter specs
+      // Inverter & Controllers specs
+      formData.append('pvDgController', pvDgController)
+      formData.append('pvDgControllerBrand', pvDgControllerBrand)
+      formData.append('datalogger', datalogger)
+      formData.append('dataloggerBrand', dataloggerBrand)
+      formData.append('monitoringEcosystem', monitoringEcosystem)
+
       formData.append('inverterBrand', inverterBrand)
       formData.append('inverterSize', inverterSize)
       formData.append('inverterType', inverterType)
@@ -382,6 +433,8 @@ export function EditCrfModal({
       formData.append('breakerName', breakerName)
       formData.append('earthingType', earthingType)
       formData.append('lightningProtection', lightningProtection)
+      formData.append('lightningArrestor', lightningArrestor)
+      formData.append('energyAnalyzer', energyAnalyzer)
       formData.append('systemInstallationDate', systemInstallationDate)
 
       // 7-Point Audit Checklist
@@ -773,10 +826,10 @@ export function EditCrfModal({
             <div className="p-3.5 bg-slate-50/60 rounded-xl border border-slate-200 space-y-2.5">
               <div className="flex items-center gap-1.5 text-xs font-bold text-[#002868] uppercase tracking-wider">
                 <Zap className="h-3.5 w-3.5 text-amber-600" />
-                Utility Grid &amp; Meter Connection
+                3.1 Utility Grid &amp; Meter Connection
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
-                <div className="space-y-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-3">
+                <div className="space-y-1 sm:col-span-2">
                   <Label className="text-xs font-semibold text-slate-700">DISCO Utility</Label>
                   <AutoSuggestInput 
                     value={disco} 
@@ -786,7 +839,7 @@ export function EditCrfModal({
                   />
                 </div>
                 <div className="space-y-1 sm:col-span-2">
-                  <Label className="text-xs font-semibold text-slate-700">Consumer Reference # / Consumer ID</Label>
+                  <Label className="text-xs font-semibold text-slate-700">Consumer Reference # / ID</Label>
                   <Input 
                     value={discoRefNo} 
                     onChange={(e) => setDiscoRefNo(e.target.value)} 
@@ -815,11 +868,21 @@ export function EditCrfModal({
                   </Select>
                 </div>
                 <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-slate-700">Net Metering / Billing *</Label>
+                  <Select value={netMetering} onValueChange={(v) => setNetMetering(v || 'Yes')}>
+                    <SelectTrigger className="h-9 text-xs font-semibold"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Yes" className="text-xs font-semibold text-emerald-700">Yes (Active / Enabled)</SelectItem>
+                      <SelectItem value="No" className="text-xs text-slate-600">No (Disabled / N/A)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
                   <Label className="text-xs font-semibold text-slate-700">Zero Export Device *</Label>
                   <Select value={zeroExportDevice} onValueChange={(v) => setZeroExportDevice(v || 'No')}>
                     <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Yes" className="text-xs">Installed</SelectItem>
+                      <SelectItem value="Yes" className="text-xs font-semibold text-emerald-700">Installed</SelectItem>
                       <SelectItem value="No" className="text-xs">Not Installed</SelectItem>
                     </SelectContent>
                   </Select>
@@ -827,18 +890,18 @@ export function EditCrfModal({
               </div>
             </div>
 
-            {/* 3.2 Inverter Specifications */}
-            <div className="p-3.5 bg-slate-50/60 rounded-xl border border-slate-200 space-y-2.5">
+            {/* 3.2 Inverter & System Control Specifications */}
+            <div className="p-3.5 bg-slate-50/60 rounded-xl border border-slate-200 space-y-3">
               <div className="flex items-center gap-1.5 text-xs font-bold text-[#002868] uppercase tracking-wider">
                 <Sun className="h-3.5 w-3.5 text-amber-600" />
-                Inverter Unit Specifications
+                3.2 Inverter &amp; System Control Specifications
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="space-y-1">
                   <Label className="text-xs font-semibold text-slate-700">Inverter Brand</Label>
                   <AutoSuggestInput 
                     value={inverterBrand}
-                    onChange={setInverterBrand}
+                    onChange={handleInverterBrandChange}
                     options={INVERTER_BRANDS}
                     placeholder="e.g. Knox, Fronius, Growatt"
                   />
@@ -910,50 +973,126 @@ export function EditCrfModal({
                     className="h-9 text-xs"
                   />
                 </div>
-                <div className="space-y-1 sm:col-span-2">
-                  <Label className="text-xs font-semibold text-slate-700">Inverter User Name</Label>
-                  <Input 
-                    value={inverterUsername} 
-                    onChange={(e) => setInverterUsername(e.target.value)} 
-                    className="h-9 text-xs" 
-                    placeholder="e.g. customer@gmail.com or GoodWe username"
-                  />
+
+                {/* PV DG Controller */}
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-slate-700">PV DG Controller *</Label>
+                  <Select value={pvDgController} onValueChange={(v) => setPvDgController(v || 'Not Installed')}>
+                    <SelectTrigger className="h-9 text-xs font-semibold"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Installed" className="text-xs font-semibold text-emerald-700">Installed</SelectItem>
+                      <SelectItem value="Not Installed" className="text-xs text-slate-600">Not Installed</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="space-y-1 sm:col-span-2">
-                  <Label className="text-xs font-semibold text-slate-700">Inverter Password</Label>
-                  <Input 
-                    value={inverterPassword} 
-                    onChange={(e) => setInverterPassword(e.target.value)} 
-                    className="h-9 text-xs font-mono" 
-                    placeholder="e.g. Inverter portal password"
-                  />
+                {pvDgController === 'Installed' ? (
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-slate-700">PV DG Controller Brand</Label>
+                    <AutoSuggestInput 
+                      value={pvDgControllerBrand} 
+                      onChange={setPvDgControllerBrand} 
+                      options={PV_DG_CONTROLLER_BRANDS} 
+                      placeholder="e.g. DSE, ComAp, DEIF"
+                    />
+                  </div>
+                ) : null}
+
+                {/* Datalogger Selection */}
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-slate-700">Datalogger *</Label>
+                  <Select value={datalogger} onValueChange={(v) => {
+                    setDatalogger(v || 'Not Installed')
+                    if (v === 'Installed' && !dataloggerBrand && inverterBrand) {
+                      setDataloggerBrand(inverterBrand)
+                      const eco = getDataloggerEcosystem(inverterBrand)
+                      if (eco) setMonitoringEcosystem(eco)
+                    }
+                  }}>
+                    <SelectTrigger className="h-9 text-xs font-semibold"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Installed" className="text-xs font-semibold text-emerald-700">Installed</SelectItem>
+                      <SelectItem value="Not Installed" className="text-xs text-slate-600">Not Installed</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="space-y-1 sm:col-span-2 md:col-span-4 pt-2 border-t border-slate-200/80">
-                  <CameraPhotoCapture
-                    label="Inverter Invoice Snapshot"
-                    badge="INVOICE PROOF"
-                    guideType="general"
-                    compact
-                    value={inverterInvoiceUrl || null}
-                    onValueChange={(url) => setInverterInvoiceUrl(url || '')}
-                    onUpload={(file) => uploadEquipmentPhoto(file, 'invoices/inverters')}
-                    fileNamePrefix="inverter-invoice"
-                    subtext="Take photo of the Inverter Purchase Invoice or upload document from gallery."
-                  />
+              </div>
+
+              {/* Datalogger Options Card - STRICT CONDITIONAL DISPLAY: ONLY WHEN INSTALLED */}
+              {datalogger === 'Installed' && (
+                <div className="p-3 bg-white rounded-xl border border-sky-200/90 shadow-2xs space-y-3">
+                  <div className="flex items-center justify-between border-b border-sky-100 pb-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-sky-500 animate-pulse" />
+                      <span className="text-xs font-bold text-[#002868]">Datalogger &amp; Monitoring Ecosystem Setup</span>
+                    </div>
+                    <Badge className="bg-sky-100 text-sky-800 text-[10px] font-semibold border-sky-200">
+                      Hardware Active
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-slate-700">Datalogger Brand *</Label>
+                      <AutoSuggestInput 
+                        value={dataloggerBrand} 
+                        onChange={handleDataloggerBrandChange} 
+                        options={DATALOGGER_BRANDS} 
+                        placeholder="e.g. Huawei, GoodWe, SolarEdge"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-slate-700">Monitoring Ecosystem</Label>
+                      <Input 
+                        value={monitoringEcosystem} 
+                        onChange={(e) => setMonitoringEcosystem(e.target.value)} 
+                        className="h-9 text-xs bg-slate-50 font-medium text-slate-800" 
+                        placeholder="Auto-suggested ecosystem..."
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-slate-700">Portal / Inverter Username</Label>
+                      <Input 
+                        value={inverterUsername} 
+                        onChange={(e) => setInverterUsername(e.target.value)} 
+                        className="h-9 text-xs" 
+                        placeholder="e.g. customer@gmail.com"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-slate-700">Portal / Inverter Password</Label>
+                      <Input 
+                        value={inverterPassword} 
+                        onChange={(e) => setInverterPassword(e.target.value)} 
+                        className="h-9 text-xs font-mono" 
+                        placeholder="Portal login password"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-1 sm:col-span-2 md:col-span-4 pt-2 border-t border-slate-200/80">
-                  <CameraPhotoCapture
-                    label="Inverter Hardware Photo"
-                    badge="INVERTER"
-                    guideType="equipment"
-                    compact
-                    value={inverterImageUrl || null}
-                    onValueChange={(url) => setInverterImageUrl(url || '')}
-                    onUpload={(file) => uploadEquipmentPhoto(file, 'equipment/inverters')}
-                    fileNamePrefix="inverter"
-                    subtext="Take photo of inverter showing model & serial label, or upload from gallery."
-                  />
-                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-slate-200/80">
+                <CameraPhotoCapture
+                  label="Inverter Invoice Snapshot"
+                  badge="INVOICE PROOF"
+                  guideType="general"
+                  compact
+                  value={inverterInvoiceUrl || null}
+                  onValueChange={(url) => setInverterInvoiceUrl(url || '')}
+                  onUpload={(file) => uploadEquipmentPhoto(file, 'invoices/inverters')}
+                  fileNamePrefix="inverter-invoice"
+                  subtext="Take photo of the Inverter Purchase Invoice or upload document from gallery."
+                />
+                <CameraPhotoCapture
+                  label="Inverter Hardware Photo"
+                  badge="INVERTER"
+                  guideType="equipment"
+                  compact
+                  value={inverterImageUrl || null}
+                  onValueChange={(url) => setInverterImageUrl(url || '')}
+                  onUpload={(file) => uploadEquipmentPhoto(file, 'equipment/inverters')}
+                  fileNamePrefix="inverter"
+                  subtext="Take photo of inverter showing model & serial label, or upload from gallery."
+                />
               </div>
             </div>
 
@@ -1155,6 +1294,32 @@ export function EditCrfModal({
                     className="h-9 text-xs" 
                     placeholder="e.g. Schneider / ABB"
                   />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-slate-700">Lightning Arrestor *</Label>
+                  <Select value={lightningArrestor} onValueChange={(v) => {
+                    setLightningArrestor(v || 'Not Installed')
+                    setLightningProtection(v === 'Installed' ? 'Yes' : 'No')
+                  }}>
+                    <SelectTrigger className="h-9 text-xs font-semibold"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Installed" className="text-xs font-semibold text-emerald-700">Installed</SelectItem>
+                      <SelectItem value="Not Installed" className="text-xs text-slate-600">Not Installed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-slate-700">Energy Analyzer *</Label>
+                  <Select value={energyAnalyzer} onValueChange={(v) => setEnergyAnalyzer(v || 'Not Installed')}>
+                    <SelectTrigger className="h-9 text-xs font-semibold"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {ENERGY_ANALYZER_BRANDS.map((brand) => (
+                        <SelectItem key={brand} value={brand} className="text-xs font-medium">
+                          {brand}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs font-semibold text-slate-700">Earthing AC (Ohms)</Label>

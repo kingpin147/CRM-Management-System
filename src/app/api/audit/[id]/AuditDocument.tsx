@@ -470,12 +470,24 @@ export function AuditDocument({
                     <Text style={styles.value}>{solar.installerName || customer.assignedInstaller?.fullName || 'EnergyGurus Technical Team'}</Text>
                   </View>
                   <View style={styles.row}>
+                    <Text style={styles.label}>Net Metering:</Text>
+                    <Text style={[styles.value, { fontWeight: 'bold' }]}>{solar.netMetering || 'Yes'}</Text>
+                  </View>
+                  <View style={styles.row}>
                     <Text style={styles.label}>Inverter Spec:</Text>
                     <Text style={styles.value}>{solar.inverterBrand || '—'} {solar.inverterSize || ''} ({solar.inverterType || 'Hybrid'})</Text>
                   </View>
                   <View style={styles.row}>
                     <Text style={styles.label}>Inverter Serial #:</Text>
                     <Text style={styles.value}>{solar.inverterSerials?.filter(Boolean).join(', ') || solar.inverterSerial || '—'}</Text>
+                  </View>
+                  <View style={styles.row}>
+                    <Text style={styles.label}>PV DG Controller:</Text>
+                    <Text style={styles.value}>{solar.pvDgController === 'Installed' ? `Installed (${solar.pvDgControllerBrand || 'Yes'})` : 'Not Installed'}</Text>
+                  </View>
+                  <View style={styles.row}>
+                    <Text style={styles.label}>Datalogger / NOC:</Text>
+                    <Text style={styles.value}>{solar.datalogger === 'Installed' ? `Installed (${solar.monitoringEcosystem || solar.dataloggerBrand || 'Active'})` : 'Not Installed'}</Text>
                   </View>
                   <View style={styles.row}>
                     <Text style={styles.label}>PV Panels Spec:</Text>
@@ -491,6 +503,10 @@ export function AuditDocument({
                       <Text style={styles.value}>{solar.batterySerials.filter(Boolean).join(', ')}</Text>
                     </View>
                   )}
+                  <View style={styles.row}>
+                    <Text style={styles.label}>Energy Analyzer:</Text>
+                    <Text style={styles.value}>{solar.energyAnalyzer && solar.energyAnalyzer !== 'Not Installed' ? solar.energyAnalyzer : 'Not Installed'}</Text>
+                  </View>
                 </View>
               </View>
             </View>

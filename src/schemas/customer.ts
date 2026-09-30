@@ -75,6 +75,14 @@ export const customerSchema = z.object({
   structureType: z.string().optional(),
   structureMaterial: z.string().optional(),
   installationDate: z.string().optional(),
+  netMetering: z.string().optional(),
+  pvDgController: z.string().optional(),
+  pvDgControllerBrand: z.string().optional(),
+  datalogger: z.string().optional(),
+  dataloggerBrand: z.string().optional(),
+  monitoringEcosystem: z.string().optional(),
+  lightningArrestor: z.string().optional(),
+  energyAnalyzer: z.string().optional(),
 
   // TAB 3: Installer Details & System Audit (Optional at initial sale intake)
   installerName: z.string().optional(),

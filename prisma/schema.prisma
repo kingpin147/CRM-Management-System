@@ -163,6 +163,14 @@ model SolarSystem {
   inverterUsername       String?
   inverterPassword       String?
   inverterInvoiceUrl     String?
+  netMetering            String?   @default("Yes") // Yes, No
+  pvDgController         String?   @default("Not Installed") // Installed, Not Installed
+  pvDgControllerBrand    String? // DSE, ComAp, DEIF, SmartGen, Woodward, SICES, Datakom, Lovato, SMA, Other
+  datalogger             String?   @default("Not Installed") // Installed, Not Installed
+  dataloggerBrand        String? // Huawei, GoodWe, Solis, etc.
+  monitoringEcosystem    String? // FusionSolar / Smart Dongle, etc.
+  lightningArrestor      String?   @default("Not Installed") // Installed, Not Installed
+  energyAnalyzer         String?   @default("Not Installed") // Chint, Acrel, Eastron, Other, Not Installed
 }
 
 model PackagePlan {

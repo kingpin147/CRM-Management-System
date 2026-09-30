@@ -491,6 +491,10 @@ export function SignupDocument({ customer, logoSrc }: { customer: any; logoSrc?:
                   <Text style={styles.colHeader}>GRID CONNECTION & INVERTER SYSTEM</Text>
                   <View style={{ paddingHorizontal: 4, paddingVertical: 2 }}>
                     <View style={styles.gridRow}>
+                      <Text style={styles.label}>Net Metering:</Text>
+                      <Text style={[styles.value, { fontWeight: 'bold' }]}>{solar?.netMetering || 'Yes'}</Text>
+                    </View>
+                    <View style={styles.gridRow}>
                       <Text style={styles.label}>Meter Type:</Text>
                       <Text style={styles.value}>{solar?.meterType || '—'}</Text>
                     </View>
@@ -535,8 +539,24 @@ export function SignupDocument({ customer, logoSrc }: { customer: any; logoSrc?:
                       <Text style={styles.value}>{solar?.inverterSerials?.filter(Boolean).join(', ') || solar?.inverterSerial || '—'}</Text>
                     </View>
                     <View style={styles.gridRow}>
+                      <Text style={styles.label}>PV DG Controller:</Text>
+                      <Text style={styles.value}>{solar?.pvDgController === 'Installed' ? `Installed (${solar?.pvDgControllerBrand || 'Standard'})` : 'Not Installed'}</Text>
+                    </View>
+                    <View style={styles.gridRow}>
+                      <Text style={styles.label}>Datalogger / NOC:</Text>
+                      <Text style={styles.value}>{solar?.datalogger === 'Installed' ? `Installed (${solar?.monitoringEcosystem || solar?.dataloggerBrand || 'Active'})` : 'Not Installed'}</Text>
+                    </View>
+                    <View style={styles.gridRow}>
                       <Text style={styles.label}>Inverter Warranty:</Text>
                       <Text style={styles.value}>{formatDateStr(solar?.inverterWarrantyEnd)}</Text>
+                    </View>
+                    <View style={styles.gridRow}>
+                      <Text style={styles.label}>Lightning Arrestor:</Text>
+                      <Text style={styles.value}>{solar?.lightningArrestor || (solar?.lightningProtection ? 'Installed' : 'Not Installed')}</Text>
+                    </View>
+                    <View style={styles.gridRow}>
+                      <Text style={styles.label}>Energy Analyzer:</Text>
+                      <Text style={styles.value}>{solar?.energyAnalyzer && solar?.energyAnalyzer !== 'Not Installed' ? solar.energyAnalyzer : 'Not Installed'}</Text>
                     </View>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>Earthing & OHMs:</Text>
