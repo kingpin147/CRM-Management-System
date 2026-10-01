@@ -278,9 +278,9 @@ export function ManagementDashboardView({
       </div>
 
       {/* Main Dashboard Container */}
-      <div className="border-2 border-slate-900 rounded-xl overflow-hidden bg-white shadow-md">
+      <div className="border-2 border-[#002868] rounded-xl overflow-hidden bg-white shadow-md">
         {/* Title Header */}
-        <div className="bg-slate-900 text-white py-2.5 px-4 text-center font-bold text-base tracking-wide border-b-2 border-slate-900">
+        <div className="bg-[#002868] text-white py-2.5 px-4 text-center font-bold text-base tracking-wide border-b-2 border-[#002868]">
           Management Dashboard
         </div>
 
@@ -288,8 +288,8 @@ export function ManagementDashboardView({
           {/* Top Row: Sales & Billing & Accounts Receivable */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* 1. SALES TABLE */}
-            <div className="border border-slate-900 rounded-lg overflow-hidden shadow-2xs">
-              <div className="bg-slate-900 text-white py-1.5 px-3 text-center font-bold text-xs uppercase tracking-wider">
+            <div className="border border-[#002868] rounded-lg overflow-hidden shadow-2xs">
+              <div className="bg-[#002868] text-white py-1.5 px-3 text-center font-bold text-xs uppercase tracking-wider">
                 Sales
               </div>
               <Table>
@@ -327,8 +327,8 @@ export function ManagementDashboardView({
             </div>
 
             {/* 2. BILLING & ACCOUNTS RECEIVABLE TABLE */}
-            <div className="border border-slate-900 rounded-lg overflow-hidden shadow-2xs">
-              <div className="bg-slate-900 text-white py-1.5 px-3 text-center font-bold text-xs uppercase tracking-wider">
+            <div className="border border-[#002868] rounded-lg overflow-hidden shadow-2xs">
+              <div className="bg-[#002868] text-white py-1.5 px-3 text-center font-bold text-xs uppercase tracking-wider">
                 Billing &amp; Accounts Receivable
               </div>
               <Table>
@@ -369,8 +369,8 @@ export function ManagementDashboardView({
           {/* Bottom Row: Complaint Details & Revenue Summary */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {/* 3. COMPLAINT DETAILS TABLE (7 cols) */}
-            <div className="lg:col-span-7 border border-slate-900 rounded-lg overflow-hidden shadow-2xs">
-              <div className="bg-slate-900 text-white py-1.5 px-3 text-center font-bold text-xs uppercase tracking-wider">
+            <div className="lg:col-span-7 border border-[#002868] rounded-lg overflow-hidden shadow-2xs">
+              <div className="bg-[#002868] text-white py-1.5 px-3 text-center font-bold text-xs uppercase tracking-wider">
                 Complaint Details
               </div>
               <Table>
@@ -409,7 +409,7 @@ export function ManagementDashboardView({
                   ))}
 
                   {/* Total Row */}
-                  <TableRow className="bg-slate-100/90 font-bold text-xs border-t-2 border-slate-900">
+                  <TableRow className="bg-slate-100/90 font-bold text-xs border-t-2 border-[#002868]">
                     <TableCell className="font-bold text-slate-900 border-r border-slate-300 py-2.5">
                       {complaintMetrics.total.department}
                     </TableCell>
@@ -434,8 +434,8 @@ export function ManagementDashboardView({
             </div>
 
             {/* 4. REVENUE SUMMARY TABLE (5 cols) */}
-            <div className="lg:col-span-5 border border-slate-900 rounded-lg overflow-hidden shadow-2xs">
-              <div className="bg-slate-900 text-white py-1.5 px-3 text-center font-bold text-xs uppercase tracking-wider">
+            <div className="lg:col-span-5 border border-[#002868] rounded-lg overflow-hidden shadow-2xs">
+              <div className="bg-[#002868] text-white py-1.5 px-3 text-center font-bold text-xs uppercase tracking-wider">
                 Revenue Summary
               </div>
               <Table>
@@ -465,7 +465,7 @@ export function ManagementDashboardView({
                   </TableRow>
 
                   {/* Total Collection Row */}
-                  <TableRow className="bg-slate-100/90 font-bold text-xs border-t-2 border-slate-900">
+                  <TableRow className="bg-slate-100/90 font-bold text-xs border-t-2 border-[#002868]">
                     <TableCell className="font-bold text-slate-900 border-r border-slate-300 py-2.5">
                       Total Collection
                     </TableCell>
