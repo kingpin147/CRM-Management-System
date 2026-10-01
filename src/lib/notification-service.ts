@@ -1,13 +1,12 @@
 import prisma from './prisma';
-import { SMSTemplateService, SMSTemplateContext, SMSTemplateType } from './sms-service';
-import { createSMSService, SendSMSRequest } from './sms-api';
-import { Customer, Invoice, Ticket, Transaction, SolarSystem } from '@prisma/client';
+import { SMSTemplateService, SMSTemplateContext } from './sms-service';
+import { createSMSService } from './sms-api';
 
 export class NotificationService {
   private smsService = createSMSService();
 
   /**
-   * Send registration completion SMS
+   * Send registration completion WhatsApp (Scenario 1: customer_welcome_crf)
    */
   async sendRegistrationNotification(customerId: string): Promise<boolean> {
     try {
@@ -15,25 +14,27 @@ export class NotificationService {
         where: { id: customerId }
       });
 
-      if (!customer) {
-        throw new Error('Customer not found');
+      if (!customer || !customer.contactNumber) {
+        throw new Error('Customer or contact number not found');
       }
 
-      const context: SMSTemplateContext = {
-        customer,
-        customerCode: customer.customerCode,
-        customerName: customer.fullName,
-        contactNumber: customer.contactNumber,
-        currentDate: SMSTemplateService.formatDate(new Date())
-      };
-
-      const message = SMSTemplateService.generateRegistrationMessage(context);
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://crm.energygurus.pk';
 
       const result = await this.smsService.sendSMS({
         to: customer.contactNumber,
-        message,
         customerId: customer.id,
-        type: 'REGISTRATION'
+        templateName: 'customer_welcome_crf',
+        bodyParams: [
+          customer.fullName,
+          customer.customerCode,
+          customer.crfNumber || `CRF-${customer.customerCode}`,
+          '+92 316 4266004'
+        ],
+        headerDocument: {
+          link: `${appUrl}/api/customers/${customer.id}/crf`,
+          filename: `CRF_${customer.customerCode}.pdf`
+        },
+        type: 'WELCOME'
       });
 
       return result.success;
@@ -44,7 +45,7 @@ export class NotificationService {
   }
 
   /**
-   * Send invoice generation SMS
+   * Send invoice generation WhatsApp (Scenario 2: monthly_invoice_dispatch)
    */
   async sendInvoiceNotification(invoiceId: string): Promise<boolean> {
     try {
@@ -53,27 +54,31 @@ export class NotificationService {
         include: { customer: true }
       });
 
-      if (!invoice) {
-        throw new Error('Invoice not found');
+      if (!invoice || !invoice.customer || !invoice.customer.contactNumber) {
+        throw new Error('Invoice or customer contact not found');
       }
 
-      const context: SMSTemplateContext = {
-        customer: invoice.customer,
-        customerCode: invoice.customer.customerCode,
-        customerName: invoice.customer.fullName,
-        contactNumber: invoice.customer.contactNumber,
-        amount: Number(invoice.totalAmount),
-        invoiceNumber: invoice.invoiceNumber,
-        dueDate: SMSTemplateService.formatDate(invoice.dueDate),
-        currentDate: SMSTemplateService.formatDate(new Date())
-      };
-
-      const message = SMSTemplateService.generateInvoiceMessage(context);
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://crm.energygurus.pk';
+      const monthName = new Date(invoice.billingPeriod).toLocaleString('en-US', { month: 'long', year: 'numeric' });
+      const dueDateStr = SMSTemplateService.formatDate(invoice.dueDate);
+      const formattedAmount = Number(invoice.totalAmount).toLocaleString(undefined, { minimumFractionDigits: 2 });
 
       const result = await this.smsService.sendSMS({
         to: invoice.customer.contactNumber,
-        message,
         customerId: invoice.customer.id,
+        templateName: 'monthly_invoice_dispatch',
+        bodyParams: [
+          invoice.customer.fullName,
+          invoice.invoiceNumber,
+          monthName,
+          formattedAmount,
+          dueDateStr
+        ],
+        headerDocument: {
+          link: `${appUrl}/api/invoice/${invoice.id}/pdf`,
+          filename: `Invoice_${invoice.invoiceNumber}.pdf`
+        },
+        urlButtonParam: invoice.id,
         type: 'INVOICE',
         invoiceId: invoice.id
       });
@@ -86,7 +91,7 @@ export class NotificationService {
   }
 
   /**
-   * Send payment due reminder SMS
+   * Send payment due reminder WhatsApp (Scenario 3: payment_due_reminder)
    */
   async sendPaymentDueReminder(invoiceId: string): Promise<boolean> {
     try {
@@ -95,26 +100,24 @@ export class NotificationService {
         include: { customer: true }
       });
 
-      if (!invoice || invoice.status === 'Paid') {
-        return false; // Don't send reminder for paid invoices
+      if (!invoice || invoice.status.toUpperCase() === 'PAID' || !invoice.customer.contactNumber) {
+        return false;
       }
 
-      const context: SMSTemplateContext = {
-        customer: invoice.customer,
-        customerCode: invoice.customer.customerCode,
-        customerName: invoice.customer.fullName,
-        contactNumber: invoice.customer.contactNumber,
-        amount: Number(invoice.totalAmount),
-        invoiceNumber: invoice.invoiceNumber,
-        dueDate: SMSTemplateService.formatDate(invoice.dueDate)
-      };
-
-      const message = SMSTemplateService.generatePaymentDueMessage(context);
+      const dueDateStr = SMSTemplateService.formatDate(invoice.dueDate);
+      const formattedAmount = Number(invoice.totalAmount).toLocaleString(undefined, { minimumFractionDigits: 2 });
 
       const result = await this.smsService.sendSMS({
         to: invoice.customer.contactNumber,
-        message,
         customerId: invoice.customer.id,
+        templateName: 'payment_due_reminder',
+        bodyParams: [
+          invoice.customer.fullName,
+          invoice.invoiceNumber,
+          formattedAmount,
+          dueDateStr,
+          '+92 316 4266004'
+        ],
         type: 'DUE_REMINDER',
         invoiceId: invoice.id
       });
@@ -127,7 +130,7 @@ export class NotificationService {
   }
 
   /**
-   * Send payment received confirmation SMS
+   * Send payment received confirmation WhatsApp (Scenario 5: payment_receipt_confirmation)
    */
   async sendPaymentReceivedNotification(transactionId: string): Promise<boolean> {
     try {
@@ -136,30 +139,38 @@ export class NotificationService {
         include: { customer: true }
       });
 
-      if (!transaction) {
-        throw new Error('Transaction not found');
+      if (!transaction || !transaction.customer || !transaction.customer.contactNumber) {
+        throw new Error('Transaction or customer not found');
       }
 
-      // Generate receipt number (you may want to customize this format)
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://crm.energygurus.pk';
       const receiptNumber = `RCP-${transaction.id.slice(-8).toUpperCase()}`;
+      const formattedAmount = Number(transaction.amount).toLocaleString(undefined, { minimumFractionDigits: 2 });
+      const paymentDate = SMSTemplateService.formatDate(transaction.createdAt);
 
-      const context: SMSTemplateContext = {
-        customer: transaction.customer,
-        customerCode: transaction.customer.customerCode,
-        customerName: transaction.customer.fullName,
-        contactNumber: transaction.customer.contactNumber,
-        amount: Number(transaction.amount),
-        receiptNumber,
-        currentDate: SMSTemplateService.formatDate(new Date())
-      };
-
-      const message = SMSTemplateService.generatePaymentReceivedMessage(context);
+      // Find current ledger balance
+      const latestLedger = await prisma.ledgerEntry.findFirst({
+        where: { customerId: transaction.customerId },
+        orderBy: { date: 'desc' }
+      });
+      const balanceStr = Number(latestLedger?.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 });
 
       const result = await this.smsService.sendSMS({
         to: transaction.customer.contactNumber,
-        message,
         customerId: transaction.customer.id,
-        type: 'PAYMENT_CONFIRMATION'
+        templateName: 'payment_receipt_confirmation',
+        bodyParams: [
+          transaction.customer.fullName,
+          formattedAmount,
+          receiptNumber,
+          paymentDate,
+          balanceStr
+        ],
+        headerDocument: {
+          link: `${appUrl}/api/receipt/${transaction.id}`,
+          filename: `Receipt_${receiptNumber}.pdf`
+        },
+        type: 'RECEIPT'
       });
 
       return result.success;
@@ -170,7 +181,7 @@ export class NotificationService {
   }
 
   /**
-   * Send complaint registered SMS
+   * Send complaint registered WhatsApp (Scenario 10: ticket_registered_ack)
    */
   async sendComplaintRegisteredNotification(ticketId: string): Promise<boolean> {
     try {
@@ -179,26 +190,23 @@ export class NotificationService {
         include: { customer: true }
       });
 
-      if (!ticket) {
-        throw new Error('Ticket not found');
+      if (!ticket || !ticket.customer || !ticket.customer.contactNumber) {
+        throw new Error('Ticket or customer not found');
       }
-
-      const context: SMSTemplateContext = {
-        customer: ticket.customer,
-        customerCode: ticket.customer.customerCode,
-        customerName: ticket.customer.fullName,
-        contactNumber: ticket.customer.contactNumber,
-        complaintNumber: ticket.ticketNumber,
-        currentDate: SMSTemplateService.formatDate(ticket.createdAt)
-      };
-
-      const message = SMSTemplateService.generateComplaintRegisteredMessage(context);
 
       const result = await this.smsService.sendSMS({
         to: ticket.customer.contactNumber,
-        message,
         customerId: ticket.customer.id,
-        type: 'COMPLAINT_REGISTERED'
+        templateName: 'ticket_registered_ack',
+        bodyParams: [
+          ticket.customer.fullName,
+          ticket.ticketNumber,
+          ticket.category || 'General Support',
+          ticket.assignedTo || 'O&M Team',
+          '24 Hours',
+          '+92 316 4266004'
+        ],
+        type: 'TICKET'
       });
 
       return result.success;
@@ -209,35 +217,34 @@ export class NotificationService {
   }
 
   /**
-   * Send complaint resolved SMS
+   * Send complaint resolved WhatsApp (Scenario 11: ticket_resolved_closure)
    */
   async sendComplaintResolvedNotification(ticketId: string): Promise<boolean> {
     try {
       const ticket = await prisma.ticket.findUnique({
         where: { id: ticketId },
-        include: { customer: true }
+        include: { customer: true, histories: { orderBy: { createdAt: 'desc' }, take: 1 } }
       });
 
-      if (!ticket || ticket.status !== 'RESOLVED') {
-        return false; // Only send for resolved tickets
+      if (!ticket || ticket.status !== 'RESOLVED' || !ticket.customer.contactNumber) {
+        return false;
       }
 
-      const context: SMSTemplateContext = {
-        customer: ticket.customer,
-        customerCode: ticket.customer.customerCode,
-        customerName: ticket.customer.fullName,
-        contactNumber: ticket.customer.contactNumber,
-        complaintNumber: ticket.ticketNumber,
-        closureDate: SMSTemplateService.formatDate(new Date()) // Use current date as closure date
-      };
-
-      const message = SMSTemplateService.generateComplaintResolvedMessage(context);
+      const closureDate = SMSTemplateService.formatDate(new Date());
+      const remarks = ticket.histories[0]?.remarks || 'Issue has been successfully resolved.';
 
       const result = await this.smsService.sendSMS({
         to: ticket.customer.contactNumber,
-        message,
         customerId: ticket.customer.id,
-        type: 'COMPLAINT_RESOLVED'
+        templateName: 'ticket_resolved_closure',
+        bodyParams: [
+          ticket.customer.fullName,
+          ticket.ticketNumber,
+          closureDate,
+          remarks
+        ],
+        urlButtonParam: ticket.ticketNumber,
+        type: 'TICKET'
       });
 
       return result.success;
@@ -248,7 +255,7 @@ export class NotificationService {
   }
 
   /**
-   * Send daily solar production report SMS
+   * Send daily solar production report WhatsApp (Scenario 12: daily_solar_generation_report)
    */
   async sendDailySolarReport(customerId: string, solarData: {
     todayUnits: number;
@@ -261,27 +268,24 @@ export class NotificationService {
         include: { solarSystem: true }
       });
 
-      if (!customer || !customer.solarSystem) {
-        return false; // Customer must have a solar system
+      if (!customer || !customer.solarSystem || !customer.contactNumber) {
+        return false;
       }
 
-      const context: SMSTemplateContext = {
-        customer,
-        customerCode: customer.customerCode,
-        customerName: customer.fullName,
-        contactNumber: customer.contactNumber,
-        todayUnits: solarData.todayUnits,
-        mtdUnits: solarData.mtdUnits,
-        ytdUnits: solarData.ytdUnits
-      };
-
-      const message = SMSTemplateService.generateDailySolarReportMessage(context);
+      const reportDate = SMSTemplateService.formatDate(new Date());
 
       const result = await this.smsService.sendSMS({
         to: customer.contactNumber,
-        message,
         customerId: customer.id,
-        type: 'SOLAR_REPORT'
+        templateName: 'daily_solar_generation_report',
+        bodyParams: [
+          customer.fullName,
+          reportDate,
+          solarData.todayUnits,
+          solarData.mtdUnits,
+          solarData.ytdUnits
+        ],
+        type: 'REPORT'
       });
 
       return result.success;
@@ -296,14 +300,12 @@ export class NotificationService {
    */
   async sendBulkOverdueReminders(): Promise<{ sent: number; failed: number }> {
     try {
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-
+      const now = new Date();
       const overdueInvoices = await prisma.invoice.findMany({
         where: {
-          status: 'Unpaid',
+          status: { in: ['Unpaid', 'UNPAID', 'Overdue', 'OVERDUE'] },
           dueDate: {
-            lte: tomorrow
+            lte: now
           }
         },
         include: { customer: true }
@@ -313,15 +315,34 @@ export class NotificationService {
       let failed = 0;
 
       for (const invoice of overdueInvoices) {
-        const success = await this.sendPaymentDueReminder(invoice.id);
-        if (success) {
+        if (!invoice.customer || !invoice.customer.contactNumber) continue;
+
+        const formattedDueDate = SMSTemplateService.formatDate(invoice.dueDate);
+        const formattedAmount = Number(invoice.totalAmount).toLocaleString(undefined, { minimumFractionDigits: 2 });
+        const daysPastDue = Math.max(1, Math.floor((now.getTime() - new Date(invoice.dueDate).getTime()) / (1000 * 60 * 60 * 24)));
+
+        const res = await this.smsService.sendSMS({
+          to: invoice.customer.contactNumber,
+          customerId: invoice.customer.id,
+          templateName: 'payment_overdue_notice',
+          bodyParams: [
+            invoice.customer.fullName,
+            invoice.invoiceNumber,
+            formattedAmount,
+            daysPastDue,
+            '+92 316 4266004'
+          ],
+          type: 'OVERDUE_REMINDER',
+          invoiceId: invoice.id
+        });
+
+        if (res.success) {
           sent++;
         } else {
           failed++;
         }
 
-        // Add delay to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
 
       return { sent, failed };
@@ -332,7 +353,7 @@ export class NotificationService {
   }
 
   /**
-   * Send custom SMS message
+   * Send custom WhatsApp message
    */
   async sendCustomMessage(customerId: string, message: string): Promise<boolean> {
     try {
@@ -340,15 +361,15 @@ export class NotificationService {
         where: { id: customerId }
       });
 
-      if (!customer) {
-        throw new Error('Customer not found');
+      if (!customer || !customer.contactNumber) {
+        throw new Error('Customer or contact number not found');
       }
 
       const result = await this.smsService.sendSMS({
         to: customer.contactNumber,
         message,
         customerId: customer.id,
-        type: 'CUSTOM'
+        type: 'MANUAL'
       });
 
       return result.success;

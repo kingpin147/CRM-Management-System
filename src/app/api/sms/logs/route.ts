@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
 
     // Build where clause
     const where: any = {
-      channel: 'SMS'
+      channel: { in: ['WHATSAPP', 'SMS'] }
     };
 
     if (query.customerId) {

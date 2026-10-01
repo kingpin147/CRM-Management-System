@@ -1,365 +1,515 @@
-# Meta WhatsApp Cloud API Messaging Scenarios & Requirements Specification
+# Meta WhatsApp Cloud API Specification & Scenarios
 
-> **Contact / Reference:** +92 316 4266004  
-> **System Architecture:**  
-> - **Frontend & API Handlers:** Next.js (App Router / React)  
-> - **Backend / ORM:** Node.js, Prisma ORM, PostgreSQL  
-> - **Provider Protocol:** Meta WhatsApp Cloud API (Graph API v21.0) via Official Meta Graph Endpoints  
-
----
-
-## 📋 Overview
-
-This document outlines the complete set of business scenarios, triggers, Meta message classifications, template parameters, and JSON payload requirements for automated customer notifications in **Energy Guru CRM**.
-
-All communications leverage the official **Meta WhatsApp Cloud API** with:
-- **Pre-Approved Meta Message Templates** (Utility & Marketing categories).
-- **Dynamic Parameter Injection** (`{{1}}`, `{{2}}`, etc.).
-- **Rich Media & Document Attachments** (Customer Registration Form PDFs, Invoices, Receipts, Inspection Reports).
-- **Interactive Quick Reply & Call-To-Action (CTA) Buttons**.
-- **Real-Time Webhook Status Tracking** (`sent`, `delivered`, `read`, `failed`).
+> **Client / Organization:** Energy Gurus (Solar O&M Management System)  
+> **Contact / Helpline Reference:** +92 316 4266004  
+> **CRM Tech Stack:** Next.js (App Router), Prisma ORM, PostgreSQL, Tailwind CSS  
+> **API Protocol:** Meta WhatsApp Cloud API (Graph API v21.0) via Official Meta Endpoints  
+> **Rule Requirement:** All automated/system-initiated messages require **Meta Pre-Approved Templates** under the **`UTILITY`** category.
 
 ---
 
-## 🔌 Meta WhatsApp Cloud API Architecture
+## 📋 1. Architectural Overview
 
-### Endpoint
-```http
-POST https://graph.facebook.com/v21.0/{{WHATSAPP_PHONE_NUMBER_ID}}/messages
-Authorization: Bearer {{WHATSAPP_ACCESS_TOKEN}}
-Content-Type: application/json
+This document specifies the end-to-end integration requirements for automated and ad-hoc WhatsApp messaging across all **13 core business scenarios** in the Energy Gurus CRM.
+
+```
+┌───────────────────────────┐      ┌───────────────────────────┐      ┌───────────────────────────┐
+│     CRM Event Triggers    │ ───► │   Next.js API & Services  │ ───► │  Meta WhatsApp Cloud API  │
+│ (Cron / Webhook / UI Action)│      │  (src/lib/whatsapp.ts)    │      │  (Graph API v21.0)        │
+└───────────────────────────┘      └─────────────┬─────────────┘      └─────────────┬─────────────┘
+                                                 │                                  │
+                                                 ▼                                  ▼
+                                   ┌───────────────────────────┐      ┌───────────────────────────┐
+                                   │ Prisma DB CommunicationLog│ ◄─── │ Meta Delivery Webhooks    │
+                                   │ (channel: 'WHATSAPP')     │      │ (sent, delivered, read)   │
+                                   └───────────────────────────┘      └───────────────────────────┘
 ```
 
-### Required Environment Variables
+### 🔐 Meta WhatsApp Business Rules
+1. **Business-Initiated Messages (Automated System Notifications):**
+   * Whenever the CRM sends a notification without prior customer message, it **MUST use a pre-approved template**.
+   * Category: All 12 transactional & notification scenarios below use **`UTILITY`** (approved in 1–5 minutes by Meta). Scenario 13 uses **`MARKETING`** / **`UTILITY`**.
+2. **Customer-Initiated Messages (Customer Support):**
+   * When a customer replies on WhatsApp, a **24-hour Customer Care Window** opens.
+   * Within this window, the CRM agent or bot can send **free-form text & media** without template approval.
+3. **Delivery Webhooks:**
+   * Meta sends asynchronous status updates (`sent` ➔ `delivered` ➔ `read` ➔ `failed`) which are saved directly to `CommunicationLog`.
+
+---
+
+## ⚙️ 2. Environment Configuration
+
+Add the following to `.env`:
+
 ```env
+# Meta WhatsApp Cloud API Configuration
 WHATSAPP_API_VERSION=v21.0
 WHATSAPP_PHONE_NUMBER_ID=your_meta_phone_number_id
 WHATSAPP_BUSINESS_ACCOUNT_ID=your_waba_id
 WHATSAPP_ACCESS_TOKEN=EAAG...your_permanent_system_user_token
-WHATSAPP_WEBHOOK_VERIFY_TOKEN=your_secure_verify_token
+WHATSAPP_WEBHOOK_VERIFY_TOKEN=energy_gurus_crm_webhook_secure_token_2026
+
+# CRM Public URL for Dynamic Media & Document Hosting
 NEXT_PUBLIC_APP_URL=https://crm.energygurus.pk
+CRON_SECRET=your_secure_cron_secret
 ```
 
 ---
 
-## 🚀 Scenario Specifications
+## 🚀 3. Comprehensive Scenario Specifications & Template Mappings
 
-### 1. Customer Welcome / Registration
-* **Template Name:** `customer_welcome_crf`
+---
+
+### Scenario 1: Customer Welcome & Registration Form (CRF)
+* **Meta Template Name:** `customer_welcome_crf`
 * **Meta Category:** `UTILITY`
-* **Trigger Event:** Real-time event triggered when a new customer account is verified and activated in the CRM.
-* **Header:** `DOCUMENT` (Customer Registration Form PDF - `crf_{{Customer_ID}}.pdf`)
-* **Key Dynamic Parameters:**
-  * `{{1}}` - Customer Name
-  * `{{2}}` - Customer ID (e.g., `101`)
-  * `{{3}}` - CRF Number
-  * `{{4}}` - Support Phone / Helpline
-* **Template Body:**
-  > *"Dear {{1}}, welcome to Energy Gurus! Your solar O&M service account has been successfully activated. Your Customer ID is {{2}} and CRF #{{3}}. Please find your official Customer Registration Form attached. For assistance, contact {{4}}."*
+* **CRM Trigger:** Triggered in `src/app/api/signup/route.ts` or when customer status moves to `CONNECTION_ACTIVE` / `PENDING_ACTIVATION`.
+* **Prisma Model Mapping:** `Customer.fullName`, `Customer.customerCode`, `Customer.crfNumber`
+* **Header:** `DOCUMENT` (Auto-generated CRF PDF: `{{NEXT_PUBLIC_APP_URL}}/api/customers/{{Customer_ID}}/crf`)
+* **Body Text Template:**
+  > *"Dear {{1}}, welcome to Energy Gurus! Your solar O&M service account has been successfully registered. Your Customer Code is {{2}} (CRF #{{3}}). Please find your official Customer Registration Form attached. For assistance, contact our helpline at {{4}}."*
+* **Variable Replacements:**
+  * `{{1}}` -> `Customer.fullName`
+  * `{{2}}` -> `Customer.customerCode` (e.g. `101`)
+  * `{{3}}` -> `Customer.crfNumber` (e.g. `CRF-2026-00101`)
+  * `{{4}}` -> `+92 316 4266004`
 * **Buttons:**
   * Quick Reply: `Contact Support`
-* **Meta API Payload Sample:**
-  ```json
-  {
-    "messaging_product": "whatsapp",
-    "recipient_type": "individual",
-    "to": "923164266004",
-    "type": "template",
-    "template": {
-      "name": "customer_welcome_crf",
-      "language": { "code": "en" },
-      "components": [
-        {
-          "type": "header",
-          "parameters": [
-            {
-              "type": "document",
-              "document": {
-                "link": "https://crm.energygurus.pk/api/documents/crf/101.pdf",
-                "filename": "CRF_Registration_101.pdf"
-              }
+
+#### Meta Graph API Payload:
+```json
+{
+  "messaging_product": "whatsapp",
+  "recipient_type": "individual",
+  "to": "923164266004",
+  "type": "template",
+  "template": {
+    "name": "customer_welcome_crf",
+    "language": { "code": "en" },
+    "components": [
+      {
+        "type": "header",
+        "parameters": [
+          {
+            "type": "document",
+            "document": {
+              "link": "https://crm.energygurus.pk/api/customers/c0a80101-0001-4000-8000-000000000001/crf",
+              "filename": "Customer_Registration_Form_101.pdf"
             }
-          ]
-        },
-        {
-          "type": "body",
-          "parameters": [
-            { "type": "text", "text": "Nouman Attique" },
-            { "type": "text", "text": "101" },
-            { "type": "text", "text": "CRF-2026-00101" },
-            { "type": "text", "text": "+92 316 4266004" }
-          ]
-        }
-      ]
-    }
+          }
+        ]
+      },
+      {
+        "type": "body",
+        "parameters": [
+          { "type": "text", "text": "Nouman Attique" },
+          { "type": "text", "text": "101" },
+          { "type": "text", "text": "CRF-2026-00101" },
+          { "type": "text", "text": "+92 316 4266004" }
+        ]
+      }
+    ]
   }
-  ```
+}
+```
 
 ---
 
-### 2. Monthly Invoice Dispatch
-* **Template Name:** `monthly_invoice_dispatch`
+### Scenario 2: Monthly Invoice Dispatch
+* **Meta Template Name:** `monthly_invoice_dispatch`
 * **Meta Category:** `UTILITY`
-* **Trigger Event:** Automated cron job executed on the **1st of every month** (or manually triggered by the Billing Manager).
-* **Header:** `DOCUMENT` (Official Tax Invoice PDF)
-* **Key Dynamic Parameters:**
-  * `{{1}}` - Customer Name
-  * `{{2}}` - Invoice Number (e.g., `INV-2026-001`)
-  * `{{3}}` - Billing Month / Period (e.g., `October 2026`)
-  * `{{4}}` - Total Payable Amount (PKR)
-  * `{{5}}` - Due Date (e.g., `10-Oct-2026`)
-* **Template Body:**
-  > *"Dear {{1}}, your solar O&M invoice {{2}} for {{3}} amounting to PKR {{4}} is now generated. The payment due date is {{5}}. Please find your invoice PDF attached."*
+* **CRM Trigger:** Automated cron job at `src/app/api/cron/invoicing/route.ts` executed on the **1st of every month** or via manual single invoice dispatch in Billing Management.
+* **Prisma Model Mapping:** `Invoice.invoiceNumber`, `Invoice.totalAmount`, `Invoice.dueDate`, `Invoice.billingPeriod`, `Customer.fullName`
+* **Header:** `DOCUMENT` (Official Tax Invoice PDF: `{{NEXT_PUBLIC_APP_URL}}/api/invoice/{{Invoice_ID}}/pdf`)
+* **Body Text Template:**
+  > *"Dear {{1}}, your solar O&M invoice {{2}} for {{3}} amounting to PKR {{4}} has been generated. The payment due date is {{5}}. Please review your invoice PDF attached below."*
+* **Variable Replacements:**
+  * `{{1}}` -> `Customer.fullName`
+  * `{{2}}` -> `Invoice.invoiceNumber` (e.g. `INV-2026-001`)
+  * `{{3}}` -> `Formatted Billing Period` (e.g. `October 2026`)
+  * `{{4}}` -> `Formatted Invoice Total` (e.g. `4,500`)
+  * `{{5}}` -> `Formatted Due Date` (e.g. `10-Oct-2026`)
 * **Buttons:**
-  * URL Button: `View Online Invoice` -> `https://crm.energygurus.pk/portal/invoice/{{2}}`
-* **Meta API Payload Sample:**
-  ```json
-  {
-    "messaging_product": "whatsapp",
-    "recipient_type": "individual",
-    "to": "923164266004",
-    "type": "template",
-    "template": {
-      "name": "monthly_invoice_dispatch",
-      "language": { "code": "en" },
-      "components": [
-        {
-          "type": "header",
-          "parameters": [
-            {
-              "type": "document",
-              "document": {
-                "link": "https://crm.energygurus.pk/api/invoices/INV-2026-001/pdf",
-                "filename": "Invoice_INV-2026-001.pdf"
-              }
+  * URL Button: `View Online Invoice` ➔ `https://crm.energygurus.pk/api/invoice/{{1}}`
+
+#### Meta Graph API Payload:
+```json
+{
+  "messaging_product": "whatsapp",
+  "recipient_type": "individual",
+  "to": "923164266004",
+  "type": "template",
+  "template": {
+    "name": "monthly_invoice_dispatch",
+    "language": { "code": "en" },
+    "components": [
+      {
+        "type": "header",
+        "parameters": [
+          {
+            "type": "document",
+            "document": {
+              "link": "https://crm.energygurus.pk/api/invoice/inv_01/pdf",
+              "filename": "Invoice_INV-2026-001.pdf"
             }
-          ]
-        },
-        {
-          "type": "body",
-          "parameters": [
-            { "type": "text", "text": "Nouman Attique" },
-            { "type": "text", "text": "INV-2026-001" },
-            { "type": "text", "text": "October 2026" },
-            { "type": "text", "text": "4,500" },
-            { "type": "text", "text": "10-Oct-2026" }
-          ]
-        },
-        {
-          "type": "button",
-          "sub_type": "url",
-          "index": "0",
-          "parameters": [
-            { "type": "text", "text": "INV-2026-001" }
-          ]
-        }
-      ]
-    }
+          }
+        ]
+      },
+      {
+        "type": "body",
+        "parameters": [
+          { "type": "text", "text": "Nouman Attique" },
+          { "type": "text", "text": "INV-2026-001" },
+          { "type": "text", "text": "October 2026" },
+          { "type": "text", "text": "4,500.00" },
+          { "type": "text", "text": "10-Oct-2026" }
+        ]
+      },
+      {
+        "type": "button",
+        "sub_type": "url",
+        "index": "0",
+        "parameters": [
+          { "type": "text", "text": "inv_01" }
+        ]
+      }
+    ]
   }
-  ```
+}
+```
 
 ---
 
-### 3. Payment Due Reminder
-* **Template Name:** `payment_due_reminder`
+### Scenario 3: Payment Due Reminder
+* **Meta Template Name:** `payment_due_reminder`
 * **Meta Category:** `UTILITY`
-* **Trigger Event:** Automated scheduled job dispatched **1 day before the invoice due date** for all unpaid accounts.
+* **CRM Trigger:** Cron job at `src/app/api/cron/reminders/route.ts` running daily checking for unpaid invoices with `dueDate` in 1–3 days.
+* **Prisma Model Mapping:** `Invoice.invoiceNumber`, `Invoice.totalAmount`, `Invoice.dueDate`, `Customer.fullName`
 * **Header:** `TEXT` ("⏰ Energy Gurus - Payment Reminder")
-* **Key Dynamic Parameters:**
-  * `{{1}}` - Customer Name
-  * `{{2}}` - Invoice Number
-  * `{{3}}` - Amount Due (PKR)
-  * `{{4}}` - Due Date
-  * `{{5}}` - Support / Accounts Contact
-* **Template Body:**
-  > *"Dear {{1}}, this is a friendly reminder that invoice {{2}} of PKR {{3}} is due on {{4}}. Kindly settle the bill to avoid service disruption. For payment inquiries, contact {{5}}."*
+* **Body Text Template:**
+  > *"Dear {{1}}, this is a friendly reminder that your solar O&M bill for invoice {{2}} amounting to PKR {{3}} is due on {{4}}. Kindly settle your bill to ensure uninterrupted service. For inquiries, contact {{5}}."*
+* **Variable Replacements:**
+  * `{{1}}` -> `Customer.fullName`
+  * `{{2}}` -> `Invoice.invoiceNumber`
+  * `{{3}}` -> `Invoice.totalAmount`
+  * `{{4}}` -> `Formatted Due Date`
+  * `{{5}}` -> `+92 316 4266004`
 * **Buttons:**
   * Quick Reply: `Payment Proof Submitted`
 
 ---
 
-### 4. Overdue Payment Notice
-* **Template Name:** `payment_overdue_notice`
+### Scenario 4: Overdue Payment Notice
+* **Meta Template Name:** `payment_overdue_notice`
 * **Meta Category:** `UTILITY`
-* **Trigger Event:** 
-  1. Auto-dispatched after due date lapses.
-  2. Ad-hoc dispatch triggered from the CRM Billing Management screen.
-* **Header:** `TEXT` ("⚠️ Urgent: Overdue Notice")
-* **Key Dynamic Parameters:**
-  * `{{1}}` - Customer Name
-  * `{{2}}` - Invoice Number
-  * `{{3}}` - Overdue Amount (PKR)
-  * `{{4}}` - Days Past Due
-  * `{{5}}` - Helpline Contact
-* **Template Body:**
-  > *"Dear {{1}}, invoice {{2}} for PKR {{3}} is currently {{4}} days overdue. Please clear this outstanding balance immediately to prevent automated service suspension. Contact {{5}} for payment guidance."*
-
----
-
-### 5. Payment Receipt Confirmation
-* **Template Name:** `payment_receipt_confirmation`
-* **Meta Category:** `UTILITY`
-* **Trigger Event:** Real-time event triggered immediately when a customer payment (Bank Transfer, Online, Cash) is verified and posted in the CRM.
-* **Header:** `DOCUMENT` (Official Payment Receipt PDF - `Receipt_{{Receipt_Number}}.pdf`)
-* **Key Dynamic Parameters:**
-  * `{{1}}` - Customer Name
-  * `{{2}}` - Paid Amount (PKR)
-  * `{{3}}` - Receipt Number (e.g., `RCP-87654321`)
-  * `{{4}}` - Payment Date & Time
-  * `{{5}}` - Remaining Outstanding Balance (PKR)
-* **Template Body:**
-  > *"Dear {{1}}, we have received your payment of PKR {{2}}. Receipt Number: {{3}} dated {{4}}. Your updated balance is PKR {{5}}. Thank you for choosing Energy Gurus! Your receipt is attached."*
-
----
-
-### 6. Service Suspension (Non-Payment)
-* **Template Name:** `service_suspension_nonpayment`
-* **Meta Category:** `UTILITY`
-* **Trigger Event:** Real-time event triggered when account status is transitioned to `NON_PAYMENT_BLOCKED`.
-* **Header:** `TEXT` ("⛔ Service Suspended")
-* **Key Dynamic Parameters:**
-  * `{{1}}` - Customer Name
-  * `{{2}}` - Customer ID
-  * `{{3}}` - Total Outstanding Amount (PKR)
-  * `{{4}}` - Support Helpline
-* **Template Body:**
-  > *"Dear {{1}}, your solar monitoring and O&M service for Customer ID {{2}} has been temporarily suspended due to overdue dues of PKR {{3}}. Please clear the dues and share payment confirmation with {{4}} for immediate restoration."*
-
----
-
-### 7. Service Restoration (After Payment)
-* **Template Name:** `service_restored_confirmation`
-* **Meta Category:** `UTILITY`
-* **Trigger Event:** Real-time event triggered when overdue payment is cleared and status updates back to `CONNECTION_ACTIVE`.
-* **Header:** `TEXT` ("✅ Service Restored")
-* **Key Dynamic Parameters:**
-  * `{{1}}` - Customer Name
-  * `{{2}}` - Customer ID
-  * `{{3}}` - Restoration Timestamp
-* **Template Body:**
-  > *"Dear {{1}}, thank you for settling your dues! Your solar monitoring and O&M services for Customer ID {{2}} have been fully reactivated as of {{3}}."*
-
----
-
-### 8. Temporary Suspension Notice (Customer Request)
-* **Template Name:** `temporary_hold_notice`
-* **Meta Category:** `UTILITY`
-* **Trigger Event:** Real-time event when a customer request for temporary pause (renovations/vacation) is marked `TEMPORARY_BLOCKED`.
-* **Header:** `TEXT` ("⏸️ Service on Temporary Hold")
-* **Key Dynamic Parameters:**
-  * `{{1}}` - Customer Name
-  * `{{2}}` - Customer ID
-  * `{{3}}` - Effective Date
-  * `{{4}}` - Helpline Contact
-* **Template Body:**
-  > *"Dear {{1}}, as per your request, your solar O&M service (Customer ID: {{2}}) has been placed on temporary hold starting {{3}}. To reactivate your service anytime, contact {{4}}."*
-
----
-
-### 9. Temporary Suspension Reactivation
-* **Template Name:** `temporary_hold_reactivated`
-* **Meta Category:** `UTILITY`
-* **Trigger Event:** Real-time event when temporary hold is lifted back to `CONNECTION_ACTIVE`.
-* **Header:** `TEXT` ("⚡ Service Reactivated")
-* **Key Dynamic Parameters:**
-  * `{{1}}` - Customer Name
-  * `{{2}}` - Customer ID
-  * `{{3}}` - Reactivation Date
-* **Template Body:**
-  > *"Dear {{1}}, your solar service for Customer ID {{2}} is now reactivated on {{3}}. Active telemetry and health monitoring are live."*
-
----
-
-### 10. Ticket Registration
-* **Template Name:** `ticket_registered_ack`
-* **Meta Category:** `UTILITY`
-* **Trigger Event:** Real-time event when a customer support complaint or service ticket is opened.
-* **Header:** `TEXT` ("🎫 Support Ticket Created")
-* **Key Dynamic Parameters:**
-  * `{{1}}` - Customer Name
-  * `{{2}}` - Ticket Number (e.g., `TKT-2026-0042`)
-  * `{{3}}` - Ticket Category (e.g., `Inverter Fault`)
-  * `{{4}}` - SLA Resolution Target (e.g., `24 Hours`)
-  * `{{5}}` - Support Helpline
-* **Template Body:**
-  > *"Dear {{1}}, your support request is registered under Ticket #{{2}} (Category: {{3}}). Our technical team is reviewing it with an expected SLA of {{4}}. For urgent queries, reach us at {{5}}."*
-
----
-
-### 11. Ticket Resolution & Closure
-* **Template Name:** `ticket_resolved_closure`
-* **Meta Category:** `UTILITY`
-* **Trigger Event:** Real-time event when ticket status is updated to `RESOLVED` / `CLOSED`.
-* **Header:** `TEXT` ("✨ Ticket Resolved")
-* **Key Dynamic Parameters:**
-  * `{{1}}` - Customer Name
-  * `{{2}}` - Ticket Number
-  * `{{3}}` - Resolution Summary
-  * `{{4}}` - Closure Timestamp
-* **Template Body:**
-  > *"Dear {{1}}, your Ticket #{{2}} has been resolved and closed on {{4}}. Resolution Summary: {{3}}. Thank you for your patience!"*
+* **CRM Trigger:** Cron job at `src/app/api/cron/overdue/route.ts` (7+ days past due) + Ad-hoc reminder button on Billing screen.
+* **Prisma Model Mapping:** `Invoice.invoiceNumber`, `Invoice.totalAmount`, `Invoice.dueDate`, `Customer.fullName`
+* **Header:** `TEXT` ("⚠️ Urgent: Overdue Payment Notice")
+* **Body Text Template:**
+  > *"Dear {{1}}, invoice {{2}} for PKR {{3}} is past due (due was {{4}}). Please clear this outstanding balance immediately to avoid disconnection. Contact {{5}} for payment guidance."*
+* **Variable Replacements:**
+  * `{{1}}` -> `Customer.fullName`
+  * `{{2}}` -> `Invoice.invoiceNumber`
+  * `{{3}}` -> `Invoice.totalAmount`
+  * `{{4}}` -> `Formatted Due Date`
+  * `{{5}}` -> `+92 316 4266004`
 * **Buttons:**
-  * URL Button: `Rate Our Service` -> `https://crm.energygurus.pk/feedback/{{2}}`
+  * Quick Reply: `Request Extension`
 
 ---
 
-### 12. Daily Performance Report
-* **Template Name:** `daily_solar_generation_report`
+### Scenario 5: Payment Receipt Confirmation
+* **Meta Template Name:** `payment_receipt_confirmation`
 * **Meta Category:** `UTILITY`
-* **Trigger Event:** Scheduled cron job at **6:00 PM daily** fetching solar inverter generation data.
-* **Header:** `TEXT` ("☀️ Daily Solar Report")
-* **Key Dynamic Parameters:**
-  * `{{1}}` - Customer Name
-  * `{{2}}` - Report Date
-  * `{{3}}` - Generation Today (kWh)
-  * `{{4}}` - MTD Generation (kWh)
-  * `{{5}}` - YTD Generation (kWh)
-* **Template Body:**
-  > *"Dear {{1}}, here is your Solar Generation Summary for {{2}}:\n⚡ Today: {{3}} Units (kWh)\n📊 Month-to-Date: {{4}} Units (kWh)\n📈 Year-to-Date: {{5}} Units (kWh)\nThank you for choosing Energy Gurus!"*
+* **CRM Trigger:** Triggered in real time when a `Transaction` is approved or `LedgerEntry` credit is added.
+* **Prisma Model Mapping:** `Transaction.amount`, `Transaction.paymentMethod`, `LedgerEntry.balance`, `Customer.fullName`
+* **Header:** `DOCUMENT` (Official Receipt PDF: `{{NEXT_PUBLIC_APP_URL}}/api/receipt/{{Transaction_ID}}`)
+* **Body Text Template:**
+  > *"Dear {{1}}, we have received your payment of PKR {{2}} via {{3}} (Receipt #{{4}}). Your updated outstanding balance is PKR {{5}}. Thank you for choosing Energy Gurus! Your official receipt is attached."*
+* **Variable Replacements:**
+  * `{{1}}` -> `Customer.fullName`
+  * `{{2}}` -> `Transaction.amount`
+  * `{{3}}` -> `Transaction.paymentMethod`
+  * `{{4}}` -> `Receipt / Transaction Ref`
+  * `{{5}}` -> `Current Ledger Balance`
 
 ---
 
-### 13. Custom Broadcast / Maintenance Alert
-* **Template Name:** `operational_broadcast_alert`
+### Scenario 6: Service Suspension (Non-Payment)
+* **Meta Template Name:** `service_suspension_nonpayment`
+* **Meta Category:** `UTILITY`
+* **CRM Trigger:** Triggered when `CustomerStatus` changes to `NON_PAYMENT_BLOCKED`.
+* **Prisma Model Mapping:** `Customer.fullName`, `Customer.customerCode`, `LedgerEntry.balance`
+* **Header:** `TEXT` ("⛔ Service Suspended")
+* **Body Text Template:**
+  > *"Dear {{1}}, your solar monitoring and O&M service for Customer ID {{2}} has been temporarily suspended due to outstanding dues of PKR {{3}}. Please clear your dues and share proof of payment with {{4}} for immediate restoration."*
+* **Variable Replacements:**
+  * `{{1}}` -> `Customer.fullName`
+  * `{{2}}` -> `Customer.customerCode`
+  * `{{3}}` -> `Total Outstanding Balance`
+  * `{{4}}` -> `+92 316 4266004`
+
+---
+
+### Scenario 7: Service Restoration (After Payment)
+* **Meta Template Name:** `service_restored_confirmation`
+* **Meta Category:** `UTILITY`
+* **CRM Trigger:** Triggered when `CustomerStatus` transitions from `NON_PAYMENT_BLOCKED` back to `CONNECTION_ACTIVE`.
+* **Prisma Model Mapping:** `Customer.fullName`, `Customer.customerCode`
+* **Header:** `TEXT` ("✅ Service Restored")
+* **Body Text Template:**
+  > *"Dear {{1}}, thank you for clearing your outstanding dues! Your solar O&M service for Customer ID {{2}} has been fully restored as of {{3}}."*
+* **Variable Replacements:**
+  * `{{1}}` -> `Customer.fullName`
+  * `{{2}}` -> `Customer.customerCode`
+  * `{{3}}` -> `Formatted Current Date & Time`
+
+---
+
+### Scenario 8: Temporary Suspension Notice (Customer Request)
+* **Meta Template Name:** `temporary_hold_notice`
+* **Meta Category:** `UTILITY`
+* **CRM Trigger:** Triggered when `CustomerStatus` transitions to `TEMPORARY_BLOCKED`.
+* **Prisma Model Mapping:** `Customer.fullName`, `Customer.customerCode`
+* **Header:** `TEXT` ("⏸️ Service on Temporary Hold")
+* **Body Text Template:**
+  > *"Dear {{1}}, as per your request, your solar O&M service (Customer ID: {{2}}) has been placed on temporary hold effective {{3}}. To reactivate your service anytime, contact {{4}}."*
+* **Variable Replacements:**
+  * `{{1}}` -> `Customer.fullName`
+  * `{{2}}` -> `Customer.customerCode`
+  * `{{3}}` -> `Formatted Effective Date`
+  * `{{4}}` -> `+92 316 4266004`
+
+---
+
+### Scenario 9: Temporary Suspension Reactivation
+* **Meta Template Name:** `temporary_hold_reactivated`
+* **Meta Category:** `UTILITY`
+* **CRM Trigger:** Triggered when `CustomerStatus` transitions from `TEMPORARY_BLOCKED` to `CONNECTION_ACTIVE`.
+* **Prisma Model Mapping:** `Customer.fullName`, `Customer.customerCode`
+* **Header:** `TEXT` ("⚡ Service Reactivated")
+* **Body Text Template:**
+  > *"Dear {{1}}, your solar service for Customer ID {{2}} has been successfully reactivated on {{3}}. Active system monitoring and support features are now live."*
+* **Variable Replacements:**
+  * `{{1}}` -> `Customer.fullName`
+  * `{{2}}` -> `Customer.customerCode`
+  * `{{3}}` -> `Formatted Reactivation Date`
+
+---
+
+### Scenario 10: Ticket Registration / Complaint Acknowledgement
+* **Meta Template Name:** `ticket_registered_ack`
+* **Meta Category:** `UTILITY`
+* **CRM Trigger:** Triggered in `src/app/dashboard/customers/[id]/CustomerTicketForm.tsx` when a new `Ticket` is created.
+* **Prisma Model Mapping:** `Ticket.ticketNumber`, `Ticket.category`, `Ticket.assignedTo`, `Customer.fullName`
+* **Header:** `TEXT` ("🎫 Support Ticket Registered")
+* **Body Text Template:**
+  > *"Dear {{1}}, your support request has been registered under Ticket #{{2}} (Category: {{3}}). Our {{4}} team is reviewing your complaint with an expected resolution within {{5}}. Contact {{6}} for urgent updates."*
+* **Variable Replacements:**
+  * `{{1}}` -> `Customer.fullName`
+  * `{{2}}` -> `Ticket.ticketNumber` (e.g. `TKT-2026-0042`)
+  * `{{3}}` -> `Ticket.category` (e.g. `Inverter Fault`)
+  * `{{4}}` -> `Ticket.assignedTo` (e.g. `O&M Technical`)
+  * `{{5}}` -> `24 Hours`
+  * `{{6}}` -> `+92 316 4266004`
+
+---
+
+### Scenario 11: Ticket Resolution & Closure
+* **Meta Template Name:** `ticket_resolved_closure`
+* **Meta Category:** `UTILITY`
+* **CRM Trigger:** Triggered when `TicketStatus` is updated to `RESOLVED` or `CLOSED`.
+* **Prisma Model Mapping:** `Ticket.ticketNumber`, `TicketHistory.remarks`, `Customer.fullName`
+* **Header:** `TEXT` ("✨ Ticket Resolved")
+* **Body Text Template:**
+  > *"Dear {{1}}, your Ticket #{{2}} has been resolved on {{3}}. Remarks: {{4}}. Thank you for choosing Energy Gurus!"*
+* **Variable Replacements:**
+  * `{{1}}` -> `Customer.fullName`
+  * `{{2}}` -> `Ticket.ticketNumber`
+  * `{{3}}` -> `Formatted Closure Date`
+  * `{{4}}` -> `Resolution Summary Remarks`
+* **Buttons:**
+  * URL Button: `Rate Our Service` ➔ `https://crm.energygurus.pk/feedback/{{1}}`
+
+---
+
+### Scenario 12: Daily Solar Performance Report
+* **Meta Template Name:** `daily_solar_generation_report`
+* **Meta Category:** `UTILITY`
+* **CRM Trigger:** Cron job at `src/app/api/cron/solar-reports/route.ts` executed daily at **6:00 PM**.
+* **Prisma Model Mapping:** `SolarSystem.totalWattage`, Inverter Telemetry, `Customer.fullName`
+* **Header:** `TEXT` ("☀️ Daily Solar Generation Report")
+* **Body Text Template:**
+  > *"Dear {{1}}, your solar generation summary for {{2}}:\n⚡ Today's Generation: {{3}} kWh (Units)\n📊 Month-to-Date: {{4}} kWh (Units)\n📈 Year-to-Date: {{5}} kWh (Units)\nEnergy Gurus Solar Monitoring"*
+* **Variable Replacements:**
+  * `{{1}}` -> `Customer.fullName`
+  * `{{2}}` -> `Formatted Report Date`
+  * `{{3}}` -> `Today's Units (kWh)`
+  * `{{4}}` -> `Month-to-Date Units (kWh)`
+  * `{{5}}` -> `Year-to-Date Units (kWh)`
+
+---
+
+### Scenario 13: Operational Broadcast / Scheduled Maintenance Alert
+* **Meta Template Name:** `operational_broadcast_alert`
 * **Meta Category:** `MARKETING` / `UTILITY`
-* **Trigger Event:** Admin/Manager on-demand broadcast to all customers or filtered segments (e.g., grid downtime, scheduled maintenance).
-* **Header:** `IMAGE` (Optional Maintenance Banner) or `TEXT`
-* **Key Dynamic Parameters:**
-  * `{{1}}` - Customer Name
-  * `{{2}}` - Broadcast Notice Title
-  * `{{3}}` - Notice Message Body
-  * `{{4}}` - Support Contact
-* **Template Body:**
-  > *"Dear {{1}}, [Notice: {{2}}]\n{{3}}\nFor assistance, please reach out to {{4}}."*
+* **CRM Trigger:** Triggered on-demand by Admins from the CRM Broadcast / Notification screen.
+* **Prisma Model Mapping:** `Customer.fullName`
+* **Header:** `IMAGE` (Maintenance Banner URL) or `TEXT` ("📢 Energy Gurus Notice")
+* **Body Text Template:**
+  > *"Dear {{1}}, [Notice: {{2}}]\n{{3}}\nFor any assistance or questions, please contact our helpline at {{4}}."*
+* **Variable Replacements:**
+  * `{{1}}` -> `Customer.fullName`
+  * `{{2}}` -> `Broadcast Subject Title`
+  * `{{3}}` -> `Broadcast Message Body`
+  * `{{4}}` -> `+92 316 4266004`
 
 ---
 
-## 📊 Meta WhatsApp Templates Summary Matrix
+## 📊 4. Master Meta Template Summary Matrix
 
 | # | Scenario Name | Meta Template Name | Meta Category | Header Type | Interactive Buttons |
 |---|---|---|---|---|---|
-| **1** | **Customer Welcome / Registration** | `customer_welcome_crf` | `UTILITY` | 📄 Document (CRF PDF) | Quick Reply |
-| **2** | **Monthly Invoice Dispatch** | `monthly_invoice_dispatch` | `UTILITY` | 📄 Document (Invoice PDF) | Dynamic URL Button |
+| **1** | **Customer Welcome & CRF** | `customer_welcome_crf` | `UTILITY` | 📄 Document (`CRF.pdf`) | Quick Reply |
+| **2** | **Monthly Invoice Dispatch** | `monthly_invoice_dispatch` | `UTILITY` | 📄 Document (`Invoice.pdf`)| Dynamic URL |
 | **3** | **Payment Due Reminder** | `payment_due_reminder` | `UTILITY` | 📝 Text | Quick Reply |
-| **4** | **Overdue Payment Notice** | `payment_overdue_notice` | `UTILITY` | 📝 Text | Quick Reply / Call |
-| **5** | **Payment Receipt Confirmation** | `payment_receipt_confirmation` | `UTILITY` | 📄 Document (Receipt PDF) | — |
+| **4** | **Overdue Payment Notice** | `payment_overdue_notice` | `UTILITY` | 📝 Text | Quick Reply |
+| **5** | **Payment Receipt Confirmation** | `payment_receipt_confirmation` | `UTILITY` | 📄 Document (`Receipt.pdf`)| — |
 | **6** | **Service Suspension (Non-Payment)** | `service_suspension_nonpayment` | `UTILITY` | 📝 Text | Quick Reply |
 | **7** | **Service Restoration (After Payment)** | `service_restored_confirmation` | `UTILITY` | 📝 Text | — |
 | **8** | **Temporary Suspension (Customer Request)**| `temporary_hold_notice` | `UTILITY` | 📝 Text | Quick Reply |
 | **9** | **Temporary Suspension Reactivation** | `temporary_hold_reactivated` | `UTILITY` | 📝 Text | — |
 | **10**| **Ticket Registration** | `ticket_registered_ack` | `UTILITY` | 📝 Text | Quick Reply |
-| **11**| **Ticket Resolution & Closure** | `ticket_resolved_closure` | `UTILITY` | 📝 Text | Dynamic URL (Rating) |
+| **11**| **Ticket Resolution & Closure** | `ticket_resolved_closure` | `UTILITY` | 📝 Text | Dynamic URL |
 | **12**| **Daily Performance Report** | `daily_solar_generation_report` | `UTILITY` | 📝 Text | — |
-| **13**| **Custom Broadcast / Maintenance Alert** | `operational_broadcast_alert` | `MARKETING` | 🖼️ Image / Text | Quick Reply |
+| **13**| **Broadcast / Maintenance Alert** | `operational_broadcast_alert` | `MARKETING` | 🖼️ Image / Text | Quick Reply |
 
 ---
 
-## ⚙️ Meta Webhooks & Delivery Status Integration
+## 💻 5. Next.js Meta WhatsApp Client Implementation (`src/lib/whatsapp.ts`)
 
-### 1. Webhook Verification Endpoint (`GET /api/webhooks/whatsapp`)
 ```typescript
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url)
+// src/lib/whatsapp.ts
+import prisma from '@/lib/prisma'
+
+const WHATSAPP_API_URL = `https://graph.facebook.com/${process.env.WHATSAPP_API_VERSION || 'v21.0'}/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`
+
+interface SendWhatsAppTemplateParams {
+  customerId: string
+  recipientPhone: string
+  templateName: string
+  languageCode?: string
+  bodyParams: string[]
+  headerDocument?: {
+    link: string
+    filename: string
+  }
+  headerImage?: string
+  urlButtonParam?: string
+  type: 'INVOICE' | 'DUE_REMINDER' | 'OVERDUE_REMINDER' | 'RECEIPT' | 'WELCOME' | 'TICKET' | 'STATUS_CHANGE' | 'REPORT' | 'BROADCAST'
+  invoiceId?: string
+}
+
+export async function sendWhatsAppTemplate(params: SendWhatsAppTemplateParams) {
+  const { customerId, recipientPhone, templateName, languageCode = 'en', bodyParams, headerDocument, headerImage, urlButtonParam, type, invoiceId } = params
+
+  // Format recipient phone number: ensure country code (e.g., 923164266004)
+  const cleanPhone = recipientPhone.replace(/[^0-9]/g, '')
+  const formattedPhone = cleanPhone.startsWith('0') ? `92${cleanPhone.slice(1)}` : cleanPhone
+
+  const components: any[] = []
+
+  // 1. Header component (Document or Image)
+  if (headerDocument) {
+    components.push({
+      type: 'header',
+      parameters: [{ type: 'document', document: headerDocument }]
+    })
+  } else if (headerImage) {
+    components.push({
+      type: 'header',
+      parameters: [{ type: 'image', image: { link: headerImage } }]
+    })
+  }
+
+  // 2. Body parameters
+  if (bodyParams.length > 0) {
+    components.push({
+      type: 'body',
+      parameters: bodyParams.map((val) => ({ type: 'text', text: String(val) }))
+    })
+  }
+
+  // 3. Dynamic URL Button parameters
+  if (urlButtonParam) {
+    components.push({
+      type: 'button',
+      sub_type: 'url',
+      index: '0',
+      parameters: [{ type: 'text', text: urlButtonParam }]
+    })
+  }
+
+  const payload = {
+    messaging_product: 'whatsapp',
+    recipient_type: 'individual',
+    to: formattedPhone,
+    type: 'template',
+    template: {
+      name: templateName,
+      language: { code: languageCode },
+      components
+    }
+  }
+
+  try {
+    const res = await fetch(WHATSAPP_API_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    })
+
+    const data = await res.json()
+    const isSuccess = res.ok && data.messages?.[0]?.id
+
+    // Log to Prisma CommunicationLog
+    const log = await prisma.communicationLog.create({
+      data: {
+        customerId,
+        channel: 'WHATSAPP',
+        type,
+        recipient: formattedPhone,
+        messageBody: `[Template: ${templateName}] Params: ${bodyParams.join(', ')}`,
+        status: isSuccess ? 'SENT' : 'FAILED',
+        externalId: data.messages?.[0]?.id || null,
+        invoiceId: invoiceId || null,
+        errorDetails: !isSuccess ? JSON.stringify(data.error || data) : null,
+        sentAt: new Date()
+      }
+    })
+
+    return { success: isSuccess, wamid: data.messages?.[0]?.id, log, error: !isSuccess ? data.error : null }
+  } catch (err: any) {
+    console.error('Failed to dispatch Meta WhatsApp template:', err)
+    return { success: false, error: err.message }
+  }
+}
+```
+
+---
+
+## 🔄 6. Webhooks Route (`src/app/api/webhooks/whatsapp/route.ts`)
+
+```typescript
+import { NextRequest, NextResponse } from 'next/server'
+import prisma from '@/lib/prisma'
+
+// 1. Webhook Verification for Meta App Setup
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url)
   const mode = searchParams.get('hub.mode')
   const token = searchParams.get('hub.verify_token')
   const challenge = searchParams.get('hub.challenge')
@@ -369,9 +519,35 @@ export async function GET(req: Request) {
   }
   return new Response('Forbidden', { status: 403 })
 }
-```
 
-### 2. Real-Time Status & Inbound Message Processing (`POST /api/webhooks/whatsapp`)
-Meta sends instant JSON event notifications for:
-- **Message Status Updates:** `sent` ➔ `delivered` ➔ `read` ➔ `failed`. Updates the `CommunicationLog` table.
-- **Inbound Customer Replies:** 24-hour customer service window activation. Automatically logs conversation history or creates a support ticket.
+// 2. Real-time Status & Inbound Events Listener
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const entry = body.entry?.[0]
+    const changes = entry?.changes?.[0]?.value
+
+    // Process Status Updates: sent -> delivered -> read -> failed
+    if (changes?.statuses?.length > 0) {
+      const statusObj = changes.statuses[0]
+      const wamid = statusObj.id
+      const status = statusObj.status?.toUpperCase() // DELIVERED, READ, FAILED
+
+      const updateData: any = { status }
+      if (status === 'DELIVERED') updateData.deliveredAt = new Date(Number(statusObj.timestamp) * 1000)
+      if (status === 'READ') updateData.openedAt = new Date(Number(statusObj.timestamp) * 1000)
+      if (status === 'FAILED') updateData.errorDetails = JSON.stringify(statusObj.errors || statusObj)
+
+      await prisma.communicationLog.updateMany({
+        where: { externalId: wamid },
+        data: updateData
+      })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error: any) {
+    console.error('WhatsApp Webhook Error:', error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}
+```

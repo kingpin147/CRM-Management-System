@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
-import { logAndSendSms } from '@/utils/communication'
+import { sendWhatsAppTemplate } from '@/lib/whatsapp'
 import { formatDate } from '@/lib/utils'
 
 export async function GET(request: NextRequest) {
@@ -11,14 +11,14 @@ export async function GET(request: NextRequest) {
     }
 
     const now = new Date()
-    // Window for upcoming due date: 3 days ahead
-    const targetStartDate = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000)
-    const targetEndDate = new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000)
+    // Window for upcoming due date: 1 to 3 days ahead
+    const targetStartDate = new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000)
+    const targetEndDate = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
 
     // Find unpaid invoices whose due date falls within target window
     const upcomingInvoices = await prisma.invoice.findMany({
       where: {
-        status: 'UNPAID',
+        status: { in: ['UNPAID', 'Unpaid'] },
         dueDate: {
           gte: targetStartDate,
           lte: targetEndDate,
@@ -35,14 +35,14 @@ export async function GET(request: NextRequest) {
       const customer = invoice.customer
       if (!customer || !customer.contactNumber) continue
 
-      // Check if we already sent a due reminder for this invoice in the last 4 days
+      // Check if we already sent a due reminder for this invoice in the last 3 days
       const alreadySent = await prisma.communicationLog.findFirst({
         where: {
           customerId: customer.id,
           invoiceId: invoice.id,
           type: 'DUE_REMINDER',
           createdAt: {
-            gte: new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000),
+            gte: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000),
           },
         },
       })
@@ -52,12 +52,17 @@ export async function GET(request: NextRequest) {
         const amountNumber = Number(invoice.totalAmount) || 0
         const formattedAmount = amountNumber.toLocaleString(undefined, { minimumFractionDigits: 2 })
 
-        const message = `Dear ${customer.fullName}, kindly pay your solar bill for PKR ${formattedAmount} because the due date (${formattedDueDate}) is near. After this date, your bill will be marked overdue. Energy Gurus`
-
-        await logAndSendSms({
+        await sendWhatsAppTemplate({
           customerId: customer.id,
           recipientPhone: customer.contactNumber,
-          message,
+          templateName: 'payment_due_reminder',
+          bodyParams: [
+            customer.fullName,
+            invoice.invoiceNumber,
+            formattedAmount,
+            formattedDueDate,
+            '+92 316 4266004',
+          ],
           type: 'DUE_REMINDER',
           invoiceId: invoice.id,
         })
@@ -68,7 +73,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Checked upcoming invoices. Sent ${remindersSent} due date reminders.`,
+      message: `Checked upcoming invoices. Sent ${remindersSent} WhatsApp due date reminders.`,
+      remindersSent,
     })
   } catch (error: any) {
     console.error('Due reminder cron error:', error)

@@ -1,44 +1,57 @@
 import prisma from '@/lib/prisma'
-import { sendSms } from './sendpk'
+import { sendWhatsAppTemplate, sendWhatsAppText, formatWhatsAppPhone } from '@/lib/whatsapp'
 import { sendInvoiceEmail } from './brevo'
 import { formatDate } from '@/lib/utils'
 
-export interface LogAndSendSmsOptions {
+export interface LogAndSendWhatsAppOptions {
   customerId: string
   recipientPhone: string
-  message: string
-  type: 'INVOICE' | 'DUE_REMINDER' | 'OVERDUE_REMINDER' | 'MANUAL'
+  message?: string
+  templateName?: string
+  bodyParams?: (string | number)[]
+  headerDocument?: {
+    link: string
+    filename: string
+  }
+  headerImage?: string
+  urlButtonParam?: string
+  type: 'INVOICE' | 'DUE_REMINDER' | 'OVERDUE_REMINDER' | 'RECEIPT' | 'WELCOME' | 'TICKET' | 'STATUS_CHANGE' | 'REPORT' | 'BROADCAST' | 'MANUAL'
   invoiceId?: string
 }
 
-export async function logAndSendSms(options: LogAndSendSmsOptions) {
-  const { customerId, recipientPhone, message, type, invoiceId } = options
+/**
+ * Dispatches a WhatsApp notification via Meta Cloud API and logs to CommunicationLog table
+ */
+export async function logAndSendWhatsApp(options: LogAndSendWhatsAppOptions) {
+  const { customerId, recipientPhone, templateName, bodyParams, headerDocument, headerImage, urlButtonParam, type, invoiceId, message } = options
 
-  // 1. Send SMS via SendPK
-  const result = await sendSms(recipientPhone, message)
-
-  // 2. Persist to CommunicationLog
-  try {
-    const log = await prisma.communicationLog.create({
-      data: {
-        customerId,
-        channel: 'SMS',
-        type,
-        recipient: recipientPhone,
-        messageBody: message,
-        status: result.success ? 'DELIVERED' : 'FAILED',
-        externalId: result.messageId || null,
-        invoiceId: invoiceId || null,
-        errorDetails: result.error || null,
-        deliveredAt: result.success ? new Date() : null,
-      },
+  if (templateName) {
+    return await sendWhatsAppTemplate({
+      customerId,
+      recipientPhone,
+      templateName,
+      bodyParams: bodyParams || [],
+      headerDocument,
+      headerImage,
+      urlButtonParam,
+      type,
+      invoiceId,
     })
-    return { success: result.success, log, error: result.error }
-  } catch (err: any) {
-    console.error('Failed to log SMS to database:', err)
-    return { success: result.success, error: err.message }
+  } else if (message) {
+    return await sendWhatsAppText({
+      customerId,
+      recipientPhone,
+      message,
+      type,
+      invoiceId,
+    })
+  } else {
+    return { success: false, error: 'Neither templateName nor message provided' }
   }
 }
+
+// Backward-compatible alias for any legacy callers
+export const logAndSendSms = logAndSendWhatsApp
 
 export interface LogAndSendEmailOptions {
   customerId: string
@@ -98,7 +111,7 @@ export async function logAndSendInvoiceEmail(options: LogAndSendEmailOptions) {
 }
 
 /**
- * High-level helper: Send both Email & SMS when invoice is generated or sent
+ * High-level helper: Send both Meta WhatsApp Template & Email when invoice is generated
  */
 export async function sendInvoiceNotifications(params: {
   customer: {
@@ -122,17 +135,28 @@ export async function sendInvoiceNotifications(params: {
   const formattedDueDate = formatDate(invoice.dueDate)
   const amountNumber = Number(invoice.totalAmount) || 0
   const formattedAmount = amountNumber.toLocaleString(undefined, { minimumFractionDigits: 2 })
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://crm.energygurus.pk'
 
-  const smsText = `Dear ${customer.fullName}, your solar O&M bill for amount PKR ${formattedAmount} is due for the month of ${monthName} with due date ${formattedDueDate}. Kindly pay on time. Energy Gurus`
+  const results: { whatsapp?: any; email?: any } = {}
 
-  const results: { sms?: any; email?: any } = {}
-
-  // 1. Send SMS
+  // 1. Send WhatsApp Template
   if (customer.contactNumber) {
-    results.sms = await logAndSendSms({
+    results.whatsapp = await sendWhatsAppTemplate({
       customerId: customer.id,
       recipientPhone: customer.contactNumber,
-      message: smsText,
+      templateName: 'monthly_invoice_dispatch',
+      bodyParams: [
+        customer.fullName,
+        invoice.invoiceNumber,
+        monthName,
+        formattedAmount,
+        formattedDueDate,
+      ],
+      headerDocument: {
+        link: `${appUrl}/api/invoice/${invoice.id}/pdf`,
+        filename: `Invoice_${invoice.invoiceNumber}.pdf`,
+      },
+      urlButtonParam: invoice.id,
       type: 'INVOICE',
       invoiceId: invoice.id,
     })
