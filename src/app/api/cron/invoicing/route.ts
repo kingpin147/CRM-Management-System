@@ -145,6 +145,6 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('Automated Invoicing Error:', error)
-    return NextResponse.json({ error: error.message || 'Failed to run recurring invoicing job.' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to run recurring invoicing job. Check server logs.' }, { status: 500 })
   }
 }

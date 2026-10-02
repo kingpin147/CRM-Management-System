@@ -31,9 +31,27 @@ function parseDate(value: any): Date | null {
 }
 
 export async function createCustomer(formData: FormData) {
-  const fullName = formData.get('fullName') as string
+  const fullName = (formData.get('fullName') as string)?.trim() || ''
+  if (!fullName || fullName.length < 2) {
+    return { error: 'Customer full name is required (minimum 2 characters).' }
+  }
+
+  const contactNumber = (formData.get('contactNumber') as string)?.trim() || ''
+  if (!contactNumber || contactNumber.length < 8) {
+    return { error: 'Valid contact number is required.' }
+  }
+
+  const city = (formData.get('city') as string)?.trim() || ''
+  if (!city) {
+    return { error: 'City is required.' }
+  }
+
+  const address = (formData.get('address') as string)?.trim() || ''
+  if (!address || address.length < 3) {
+    return { error: 'Customer installation address is required.' }
+  }
+
   const customerType = (formData.get('customerType') as CustomerType) || CustomerType.RESIDENTIAL
-  const contactNumber = formData.get('contactNumber') as string
   const pocNumber = (formData.get('pocNumber') as string) || null
   const email = (formData.get('email') as string) || null
   const cnic = (formData.get('cnic') as string) || ''
@@ -45,10 +63,8 @@ export async function createCustomer(formData: FormData) {
   const block = (formData.get('block') as string) || null
   const subArea = (formData.get('subArea') as string) || null
   const area = (formData.get('area') as string) || null
-  const city = formData.get('city') as string
   const country = (formData.get('country') as string) || 'Pakistan'
   const coordinates = (formData.get('coordinates') as string) || null
-  const address = formData.get('address') as string
   const signUpDate = parseDate(formData.get('signUpDate')) || new Date()
   const activationDate = parseDate(formData.get('activationDate'))
   const cnicFrontUrl = (formData.get('cnicFrontUrl') as string) || null
@@ -353,6 +369,6 @@ export async function createCustomer(formData: FormData) {
     if (error.code === 'P2002') {
       return { error: 'A customer with this CNIC or Customer Code already exists in the system.' }
     }
-    return { error: `Server error (${error.message || 'Database transaction failed'}). Please contact site administrator.` }
+    return { error: 'Failed to create customer record. Please review the details and try again.' }
   }
 }

@@ -78,6 +78,6 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('Due reminder cron error:', error)
-    return NextResponse.json({ error: error.message || 'Failed to send due reminders' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to process due reminders. Check server logs.' }, { status: 500 })
   }
 }

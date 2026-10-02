@@ -445,6 +445,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, nextAuditDate })
   } catch (error: any) {
     console.error('API submit audit error:', error)
-    return NextResponse.json({ error: error.message || 'Failed to submit technical audit' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to submit technical audit. Please verify input data and try again.' }, { status: 500 })
   }
 }

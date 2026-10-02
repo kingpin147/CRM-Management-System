@@ -226,6 +226,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true })
   } catch (error: any) {
     console.error('API save specs error:', error)
-    return NextResponse.json({ error: error.message || 'Failed to save hardware specs' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to save hardware specs. Please try again.' }, { status: 500 })
   }
 }

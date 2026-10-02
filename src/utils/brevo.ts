@@ -125,7 +125,8 @@ export async function sendInvitationEmail(email: string, name: string, role: str
         "api-key": apiKey,
         "content-type": "application/json"
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(10000)
     });
 
     if (response.ok) {
@@ -299,7 +300,8 @@ export async function sendInvoiceEmail(params: SendInvoiceEmailParams): Promise<
         "api-key": apiKey,
         "content-type": "application/json"
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(10000)
     })
 
     const data = await response.json()

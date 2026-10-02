@@ -84,6 +84,6 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('Overdue reminder cron error:', error)
-    return NextResponse.json({ error: error.message || 'Failed to send overdue notices' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to process overdue notices. Check server logs.' }, { status: 500 })
   }
 }
