@@ -1110,7 +1110,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                     <div className="pt-2 border-t border-amber-200/60 flex items-center gap-2 text-[11px] text-amber-900">
                       <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                       <span>
-                        <strong>On-Boarding Policy:</strong> PKR 3,000/- on sign up. Basic package: waived on Yearly. Moderate &amp; Comprehensive: waived on Half Yearly &amp; Yearly.
+                        <strong>On-Boarding Policy:</strong> PKR 3,000/- on sign up (applicable to all packages, not waived on Yearly).
                       </span>
                     </div>
                   </div>

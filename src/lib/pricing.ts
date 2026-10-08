@@ -111,26 +111,12 @@ export function calculatePackageBreakdown(
   const salesTax = Math.round(priceAfterDiscount * 0.05) // 5% PRA Sales Tax
 
   // On-Boarding Charges Rules:
-  // - Waived Off ONLY on Yearly payment on all packages (0)
-  // - Charged on Monthly, Quarterly, Half Yearly (PKR 3,000)
+  // - On-Boarding fee (PKR 3,000) is charged on all packages and billing cycles (not waived on Yearly)
   // - FOC: 0 (Waived)
   let onboardingFee = 3000
   let isOnboardingWaived = false
 
   if (billingType === 'FOC') {
-    onboardingFee = 0
-    isOnboardingWaived = true
-  } else if (packageTier === 'Basic' && billingType === 'Yearly') {
-    onboardingFee = 0
-    isOnboardingWaived = true
-  } else if (
-    (packageTier === 'Moderate' || packageTier === 'Comprehensive') &&
-    (billingType === 'Half Yearly' || billingType === 'Yearly')
-  ) {
-    onboardingFee = 0
-    isOnboardingWaived = true
-  } else if (!packageTier && billingType === 'Yearly') {
-    // Fallback if package tier is not selected yet
     onboardingFee = 0
     isOnboardingWaived = true
   }
