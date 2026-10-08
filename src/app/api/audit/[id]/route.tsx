@@ -13,46 +13,66 @@ export async function GET(
   const { searchParams } = new URL(request.url)
   const isDownload = searchParams.get('download') === 'true'
 
+  // Handle synthetic/placeholder IDs like 'audit-baseline-1' that are client-side only
+  // These should never reach the API — the frontend should substitute the customer ID instead
+  if (id.startsWith('audit-baseline')) {
+    return new NextResponse(
+      'Invalid audit ID. This is a virtual baseline record. Please access the audit PDF from the customer profile page.',
+      { status: 400 }
+    )
+  }
+
   // Check if id corresponds to a SystemAudit record
-  const systemAudit = await prisma.systemAudit.findFirst({
-    where: {
-      OR: [
-        { id },
-        { auditNumber: id }
-      ]
-    },
-    include: {
-      details: true,
-      assignedInstaller: true,
-      customer: {
+  // Wrap in try-catch because non-UUID strings can cause Prisma errors on UUID id fields
+  let systemAudit: any = null
+  try {
+    systemAudit = await prisma.systemAudit.findFirst({
+      where: {
+        OR: [
+          { id },
+          { auditNumber: id }
+        ]
+      },
+      include: {
+        details: true,
+        assignedInstaller: true,
+        customer: {
+          include: {
+            solarSystem: true,
+            packagePlan: true,
+            accountExecutive: true,
+            assignedInstaller: true,
+          }
+        }
+      }
+    })
+  } catch (err) {
+    // ID might not be a valid UUID — that's okay, try customer lookup next
+    console.warn('SystemAudit lookup failed for id:', id, err)
+  }
+
+  let customer = systemAudit?.customer || null
+
+  if (!customer) {
+    try {
+      customer = await prisma.customer.findFirst({
+        where: {
+          OR: [
+            { id },
+            { customerCode: id },
+            { crfNumber: id }
+          ]
+        },
         include: {
           solarSystem: true,
           packagePlan: true,
           accountExecutive: true,
           assignedInstaller: true,
         }
-      }
+      })
+    } catch (err) {
+      console.warn('Customer lookup failed for id:', id, err)
     }
-  })
-
-  let customer = systemAudit?.customer || null
-
-  if (!customer) {
-    customer = await prisma.customer.findFirst({
-      where: {
-        OR: [
-          { id },
-          { customerCode: id },
-          { crfNumber: id }
-        ]
-      },
-      include: {
-        solarSystem: true,
-        packagePlan: true,
-        accountExecutive: true,
-        assignedInstaller: true,
-      }
-    })
   }
 
   if (!customer) {
@@ -104,6 +124,6 @@ export async function GET(
     return new NextResponse(stream as any, { headers })
   } catch (error: any) {
     console.error('Error generating System Audit PDF:', error)
-    return NextResponse.json({ error: 'Failed to generate System Audit PDF' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to generate System Audit PDF', details: error?.message || 'Unknown error' }, { status: 500 })
   }
 }

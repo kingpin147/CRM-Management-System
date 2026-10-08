@@ -84,8 +84,39 @@ export function InstallerJobsView({
     return customers.filter((c: any) => !isNewSignup(c) || c.status === 'CONNECTION_ACTIVE' || Boolean(c.solarSystem?.lastAuditDate) || (c.systemAudits && c.systemAudits.length > 0))
   }, [customers])
 
+  // Customers whose audit is DUE — next audit date is today or in the past, OR has a pending audit record
+  // Customers with completed audits whose next audit is still in the future are excluded
+  const auditDueCustomers = React.useMemo(() => {
+    const now = new Date()
+    now.setHours(0, 0, 0, 0) // Compare date only (start of today)
+    return systemAuditCustomers.filter((c: any) => {
+      // Always show if there's a pending system audit record
+      const hasPendingAudit = c.systemAudits?.some((sa: any) => sa.status === 'PENDING')
+      if (hasPendingAudit) return true
+
+      // Always show if there's a pending on-demand audit
+      const hasOnDemandPending = c.systemAudits?.some((sa: any) => sa.auditType === 'ON_DEMAND' && sa.status === 'PENDING')
+      if (hasOnDemandPending) return true
+
+      // If no audit has ever been done, show it (audit is due)
+      if (!c.solarSystem?.lastAuditDate) return true
+
+      // Calculate next audit date; if it's today or in the past, audit is due
+      const nextAuditDate = calculateNextAuditDate(
+        c.solarSystem?.lastAuditDate || c.activationDate || c.signupDate,
+        c.packagePlan?.packageTier
+      )
+      if (!nextAuditDate) return true // Can't determine, show it
+
+      const nextDate = new Date(nextAuditDate)
+      nextDate.setHours(0, 0, 0, 0)
+      return nextDate <= now // Due if next audit date is today or past
+    })
+  }, [systemAuditCustomers])
+
   // Customers for current view mode
-  const currentBaseList = viewMode === 'new-jobs' ? newSignupCustomers : systemAuditCustomers
+  // For audits view, use only audit-due customers (excludes completed whose next audit is in the future)
+  const currentBaseList = viewMode === 'new-jobs' ? newSignupCustomers : auditDueCustomers
 
   const filteredCustomers = React.useMemo(() => {
     let baseList = currentBaseList
@@ -136,9 +167,9 @@ export function InstallerJobsView({
   const newJobsPendingCount = newSignupCustomers.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT' || c.status === 'PENDING_IP_NOC' || !c.solarSystem?.lastAuditDate).length
   const newJobsTotalCount = newSignupCustomers.length
 
-  const auditPendingCount = systemAuditCustomers.filter((c: any) => c.systemAudits?.some((sa: any) => sa.status === 'PENDING') || c.status === 'PENDING_INSTALLER_AUDIT' || !c.solarSystem?.lastAuditDate).length
+  const auditPendingCount = auditDueCustomers.filter((c: any) => c.systemAudits?.some((sa: any) => sa.status === 'PENDING') || c.status === 'PENDING_INSTALLER_AUDIT' || !c.solarSystem?.lastAuditDate).length
   const auditCompletedCount = systemAuditCustomers.filter((c: any) => Boolean(c.solarSystem?.lastAuditDate) || c.systemAudits?.some((sa: any) => sa.status === 'COMPLETED')).length
-  const auditOnDemandCount = systemAuditCustomers.filter((c: any) => c.systemAudits?.some((sa: any) => sa.auditType === 'ON_DEMAND')).length
+  const auditOnDemandCount = auditDueCustomers.filter((c: any) => c.systemAudits?.some((sa: any) => sa.auditType === 'ON_DEMAND')).length
 
   const handleAssignInstaller = async (customerId: string, installerId: string, auditId?: string) => {
     if (!installerId) return
@@ -226,7 +257,7 @@ export function InstallerJobsView({
               <ShieldCheck className="h-3.5 w-3.5 text-amber-300" />
               <span>System Audits (Recurring)</span>
               <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-white/20 font-mono">
-                {systemAuditCustomers.length}
+                {auditDueCustomers.length}
               </span>
             </button>
           </div>
@@ -261,7 +292,7 @@ export function InstallerJobsView({
             <>
               <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
                 <p className="text-[10px] font-bold uppercase text-slate-700">Total Active Systems</p>
-                <p className="text-xl font-bold font-mono text-slate-900 mt-0.5">{systemAuditCustomers.length}</p>
+                <p className="text-xl font-bold font-mono text-slate-900 mt-0.5">{auditDueCustomers.length}</p>
               </div>
               <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-3">
                 <p className="text-[10px] font-bold uppercase text-amber-800">Audits Due / Pending</p>
