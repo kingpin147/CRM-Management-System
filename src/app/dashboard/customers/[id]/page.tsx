@@ -1421,7 +1421,7 @@ export default async function CustomerDetailPage({
                               <div className="flex items-center justify-end gap-1.5">
                                 <AuditDetailDialog audit={aud} customer={customer} />
                                 <a
-                                  href={`/api/audit/${aud.id || customer.id}?download=true`}
+                                  href={`/api/audit/${aud.id === 'audit-baseline-1' ? customer.id : (aud.id || customer.id)}?download=true`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded shadow-2xs transition-colors cursor-pointer"
