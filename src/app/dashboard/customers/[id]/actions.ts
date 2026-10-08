@@ -297,6 +297,7 @@ export async function saveSolarSystem(formData: FormData) {
 
   try {
     const currentSystem = await prisma.solarSystem.findUnique({ where: { customerId } })
+    const currentCustomer = await prisma.customer.findUnique({ where: { id: customerId } })
     
     const finalInverterImages = inverterImages !== undefined
       ? (inverterImages.length > 0 ? inverterImages : (currentSystem?.inverterImages || []))
@@ -309,6 +310,23 @@ export async function saveSolarSystem(formData: FormData) {
     const finalPanelImages = panelImages !== undefined
       ? (panelImages.length > 0 ? panelImages : (currentSystem?.panelImages || []))
       : (currentSystem?.panelImages || [])
+
+    // Track changes for equipment replacement / history audit
+    const changes: string[] = []
+
+    if (currentSystem) {
+      if (currentSystem.inverterBrand !== inverterBrand || currentSystem.inverterSerial !== inverterSerial) {
+        changes.push(`Inverter Replaced/Updated: ${currentSystem.inverterBrand || 'N/A'} (SN: ${currentSystem.inverterSerial || 'N/A'}) → ${inverterBrand} (SN: ${inverterSerial})`)
+      }
+      if (currentSystem.batteryBrand !== batteryBrand || currentSystem.batterySerial !== batterySerial) {
+        changes.push(`Battery Replaced/Updated: ${currentSystem.batteryBrand || 'N/A'} (SN: ${currentSystem.batterySerial || 'N/A'}) → ${batteryBrand} (SN: ${batterySerial})`)
+      }
+      if (currentSystem.panelBrand !== panelBrand || currentSystem.noOfPanels !== noOfPanels || currentSystem.panelWattage !== panelWattage) {
+        changes.push(`Panels Replaced/Updated: ${currentSystem.panelBrand || 'N/A'} ${currentSystem.panelWattage || 0}W x${currentSystem.noOfPanels || 0} → ${panelBrand} ${panelWattage}W x${noOfPanels}`)
+      }
+    } else {
+      changes.push(`Initial System Specs configured: Inverter ${inverterBrand} (${inverterSerial}), Battery ${batteryBrand} (${batterySerial}), Panels ${panelBrand} ${panelWattage}W x${noOfPanels}`)
+    }
 
     await prisma.solarSystem.upsert({
       where: { customerId },
@@ -423,6 +441,35 @@ export async function saveSolarSystem(formData: FormData) {
       }
     })
 
+    if (currentCustomer) {
+      const supabase = await createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      let performedBy = 'O&M Manager'
+      if (user) {
+        const dbUser = await prisma.user.findUnique({ where: { supabaseId: user.id }, select: { fullName: true, role: true } })
+        if (dbUser) {
+          performedBy = `${dbUser.fullName} (${dbUser.role.replace(/_/g, ' ')})`
+        }
+      }
+
+      const notes = changes.length > 0
+        ? `Solar system equipment updated by O&M Manager: ${changes.join(' | ')}`
+        : 'Solar system equipment details updated by O&M Manager.'
+
+      await prisma.customerHistory.create({
+        data: {
+          customerId,
+          customerCode: currentCustomer.customerCode,
+          customerName: currentCustomer.fullName,
+          actionType: 'SYSTEM_SPECS_UPDATE',
+          oldStatus: currentCustomer.status,
+          newStatus: currentCustomer.status,
+          notes,
+          performedBy,
+        }
+      })
+    }
+
     revalidatePath(`/dashboard/customers/${customerId}`)
     return { success: true }
   } catch (error: any) {
@@ -430,6 +477,7 @@ export async function saveSolarSystem(formData: FormData) {
     return { error: error.message || 'Failed to save solar system specifications.' }
   }
 }
+
 
 export async function recordPayment(formData: FormData) {
   const customerId = formData.get('customerId') as string
