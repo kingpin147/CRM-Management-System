@@ -3,11 +3,11 @@ import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/render
 
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 18,
-    paddingBottom: 14,
-    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 10,
+    paddingHorizontal: 16,
     fontFamily: 'Helvetica',
-    fontSize: 8.2,
+    fontSize: 7.8,
     color: '#000000',
     backgroundColor: '#FFFFFF',
     display: 'flex',
@@ -29,7 +29,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   logo: {
     width: 175,
@@ -71,16 +71,16 @@ const styles = StyleSheet.create({
   card: {
     border: '1px solid #c2d0e0',
     borderRadius: 3,
-    marginBottom: 7,
+    marginBottom: 4,
     overflow: 'hidden',
   },
   cardHeader: {
     backgroundColor: '#002868',
     color: '#FFFFFF',
-    paddingVertical: 3.5,
+    paddingVertical: 2.5,
     paddingHorizontal: 8,
     fontWeight: 'bold',
-    fontSize: 9.2,
+    fontSize: 8.8,
     letterSpacing: 0.5,
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -93,19 +93,19 @@ const styles = StyleSheet.create({
   },
   cardBody: {
     paddingHorizontal: 6,
-    paddingVertical: 3,
+    paddingVertical: 2,
   },
 
   // Grid Tables
   gridRow: {
     flexDirection: 'row',
     borderBottom: '1px solid #E5E7EB',
-    paddingVertical: 3.2,
+    paddingVertical: 2.5,
     alignItems: 'center',
   },
   gridRowLast: {
     flexDirection: 'row',
-    paddingVertical: 3.2,
+    paddingVertical: 2.5,
     alignItems: 'center',
   },
   gridColLeft: {
@@ -125,13 +125,13 @@ const styles = StyleSheet.create({
   label: {
     width: '42%',
     color: '#002868',
-    fontSize: 8.2,
+    fontSize: 7.8,
     fontWeight: 'bold',
   },
   value: {
     width: '58%',
     color: '#1F2937',
-    fontSize: 8.2,
+    fontSize: 7.8,
   },
   badgePill: {
     backgroundColor: '#002868',
@@ -175,10 +175,10 @@ const styles = StyleSheet.create({
   colHeader: {
     backgroundColor: '#F3F4F6',
     color: '#002868',
-    paddingVertical: 3,
+    paddingVertical: 2,
     paddingHorizontal: 6,
     fontWeight: 'bold',
-    fontSize: 8.2,
+    fontSize: 7.8,
     borderBottom: '1px solid #c2d0e0',
   },
 
@@ -192,10 +192,10 @@ const styles = StyleSheet.create({
   notesHeader: {
     backgroundColor: '#002868',
     color: '#FFFFFF',
-    paddingVertical: 2.5,
+    paddingVertical: 2,
     paddingHorizontal: 7,
     fontWeight: 'bold',
-    fontSize: 8.2,
+    fontSize: 7.8,
   },
   notesBody: {
     padding: 4.5,
@@ -207,8 +207,8 @@ const styles = StyleSheet.create({
   signRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 6,
-    marginBottom: 4,
+    marginTop: 4,
+    marginBottom: 2,
     paddingHorizontal: 10,
   },
   signBox: {
@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: 4,
-    marginTop: 4,
+    marginTop: 2,
   },
   footerAddress: {
     width: '49%',
@@ -243,8 +243,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 3,
-    marginTop: 4,
+    paddingVertical: 2,
+    marginTop: 2,
     borderRadius: 2,
   },
   footerBarText: {

@@ -114,15 +114,25 @@ export function calculatePackageBreakdown(
   // - Waived Off ONLY on Yearly payment on all packages (0)
   // - Charged on Monthly, Quarterly, Half Yearly (PKR 3,000)
   // - FOC: 0 (Waived)
-  let onboardingFee = 0
+  let onboardingFee = 3000
   let isOnboardingWaived = false
 
-  if (billingType === 'FOC' || billingType === 'Yearly') {
+  if (billingType === 'FOC') {
     onboardingFee = 0
     isOnboardingWaived = true
-  } else {
-    onboardingFee = 3000
-    isOnboardingWaived = false
+  } else if (packageTier === 'Basic' && billingType === 'Yearly') {
+    onboardingFee = 0
+    isOnboardingWaived = true
+  } else if (
+    (packageTier === 'Moderate' || packageTier === 'Comprehensive') &&
+    (billingType === 'Half Yearly' || billingType === 'Yearly')
+  ) {
+    onboardingFee = 0
+    isOnboardingWaived = true
+  } else if (!packageTier && billingType === 'Yearly') {
+    // Fallback if package tier is not selected yet
+    onboardingFee = 0
+    isOnboardingWaived = true
   }
 
   const grandTotal = billingType === 'FOC' ? 0 : Math.round(priceAfterDiscount + salesTax + onboardingFee)

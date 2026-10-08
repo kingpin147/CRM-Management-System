@@ -4,7 +4,7 @@ export const TICKET_SUBTYPES = {
     "Billing Plan Change", "Wrong Invoice Charged", "Others"
   ],
   SERVICE_REQUEST: [
-    "Solar System Audit Request", "Internal Shifting", "Package Change", 
+    "Solar System Audit Request", "Solar Panels Cleaning Request", "Internal Shifting", "Package Change", 
     "Temp. Blocked", "Permanent Disconnection", "Restoration", 
     "Profile Change Request", "Settings change in Solar system", 
     "Upgrade / extension in existing system", "Others"

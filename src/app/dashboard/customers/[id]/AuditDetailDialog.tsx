@@ -65,7 +65,7 @@ export function AuditDetailDialog({ audit, customer }: AuditDetailDialogProps) {
 
             <div className="flex items-center gap-2">
               <a
-                href={`/api/audit/${audit.id || customer.id}?download=true`}
+                href={`/api/audit/${audit.id === 'audit-baseline-1' ? customer.id : (audit.id || customer.id)}?download=true`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-lg shadow-2xs transition-colors cursor-pointer"
