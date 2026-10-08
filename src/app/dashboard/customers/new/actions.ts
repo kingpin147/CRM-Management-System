@@ -248,6 +248,7 @@ export async function createCustomer(formData: FormData) {
             monthlyBasePrice,
             appliedDiscount,
             salesTaxAmount,
+            onboardingFee,
             totalAmount,
             nextBillingDate: null,
           }
