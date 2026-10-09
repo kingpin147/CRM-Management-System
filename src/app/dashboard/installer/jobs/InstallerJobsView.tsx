@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Search, Wrench, CheckCircle2, Eye, Sun, RotateCcw, ShieldCheck, MapPin, Sparkles, Clock, AlertTriangle, ArrowRight } from 'lucide-react'
+import { Search, Wrench, CheckCircle2, Eye, Sun, RotateCcw, ShieldCheck, MapPin, Sparkles, Clock, AlertTriangle, ArrowRight, Download } from 'lucide-react'
 import { InstallerAuditModal } from './InstallerAuditModal'
 import { activateIpNocConnection, assignInstallerToAudit } from './actions'
 import { useRouter } from 'next/navigation'
@@ -600,16 +600,28 @@ export function InstallerJobsView({
                             </Button>
                           </div>
 
-                          {/* Dedicated System Audit Link / Button under Job Card */}
-                          <button
-                            type="button"
-                            onClick={() => openSystemAudit(c)}
-                            className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-950 bg-amber-50 hover:bg-amber-100 px-2 py-0.5 rounded-md border border-amber-300 hover:border-amber-400 transition-all cursor-pointer shadow-2xs group"
-                            title="Conduct or Review 7-Point System Audit (Part 3)"
-                          >
-                            <ShieldCheck className="h-3 w-3 text-amber-600 group-hover:text-amber-700" />
-                            <span>System Audit (Part 3) →</span>
-                          </button>
+                          {/* Dedicated System Audit Link & PDF Download */}
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => openSystemAudit(c)}
+                              className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-950 bg-amber-50 hover:bg-amber-100 px-2 py-0.5 rounded-md border border-amber-300 hover:border-amber-400 transition-all cursor-pointer shadow-2xs group"
+                              title="Conduct or Review 7-Point System Audit (Part 3)"
+                            >
+                              <ShieldCheck className="h-3 w-3 text-amber-600 group-hover:text-amber-700" />
+                              <span>System Audit →</span>
+                            </button>
+                            <a
+                              href={`/api/audit/${c.id}?download=true`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-[11px] font-bold text-[#002868] bg-slate-50 hover:bg-slate-100 px-2 py-0.5 rounded-md border border-slate-300 transition-all cursor-pointer shadow-2xs"
+                              title="Download Latest System Audit PDF"
+                            >
+                              <Download className="h-3 w-3 text-amber-600" />
+                              <span>PDF</span>
+                            </a>
+                          </div>
 
                           {/* IP NOC Process to Activate Action */}
                           {(c.status === 'PENDING_IP_NOC' || isIPNOC) && c.status !== 'CONNECTION_ACTIVE' && (

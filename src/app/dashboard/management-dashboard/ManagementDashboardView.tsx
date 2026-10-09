@@ -59,18 +59,31 @@ export function ManagementDashboardView({
     // Amount Payable for Sales Signups in period
     let amountPayable = 0
     signups.forEach((c) => {
-      // Check package plan total amount or initial invoices
-      const pkgAmount = Number(c.packagePlan?.totalAmount || c.packagePlan?.monthlyBasePrice || 0)
+      const isFOC = c.status === 'FOC_CONNECTION' || 
+                    c.packagePlan?.billingType === 'FOC' || 
+                    (c.packagePlan?.packageTier || '').toUpperCase() === 'FOC'
+
+      if (isFOC) {
+        // FOC signups have 0 payable
+        return
+      }
+
+      // Check signup invoices generated for this customer
       const signupInvoices = (c.invoices || []).filter((inv: any) => {
         const invDate = new Date(inv.createdAt || inv.billingPeriod || 0)
         return invDate >= start && invDate <= end
       })
+
       if (signupInvoices.length > 0) {
         amountPayable += signupInvoices.reduce((sum: number, inv: any) => sum + Number(inv.totalAmount || inv.amount || 0), 0)
-      } else if (pkgAmount > 0) {
-        amountPayable += pkgAmount
+      } else if (c.packagePlan && c.packagePlan.totalAmount != null) {
+        amountPayable += Number(c.packagePlan.totalAmount)
+      } else if (c.packagePlan && c.packagePlan.monthlyBasePrice != null) {
+        amountPayable += Number(c.packagePlan.monthlyBasePrice)
       } else {
-        amountPayable += 4000 // default minimum base package if none set
+        // Check initial ledger debits if any
+        const initialDebits = (c.ledgerEntries || []).reduce((sum: number, le: any) => sum + Number(le.debit || 0), 0)
+        amountPayable += initialDebits
       }
     })
 
@@ -98,10 +111,6 @@ export function ManagementDashboardView({
       })
     }
 
-    // Ensure realistic presentation if data exists
-    if (amountPayable === 0 && noOfSignups > 0) {
-      amountPayable = noOfSignups * 4000
-    }
     if (collection > amountPayable && amountPayable > 0) {
       amountPayable = collection
     }
@@ -122,7 +131,7 @@ export function ManagementDashboardView({
   const billingMetrics = React.useMemo(() => {
     const { start, end } = dateRange
 
-    // Active billing houses
+    // Active billing houses (excluding FOC connections)
     const activeHouses = initialCustomers.filter(
       (c) => c.status === 'CONNECTION_ACTIVE' || c.status === 'PENDING_ACTIVATION' || c.status === 'NON_PAYMENT_BLOCKED'
     )
@@ -151,8 +160,15 @@ export function ManagementDashboardView({
     })
 
     if (amountPayable === 0 && noOfHouses > 0) {
-      // Estimate from active package plans
-      amountPayable = activeHouses.reduce((sum, c) => sum + Number(c.packagePlan?.totalAmount || c.packagePlan?.monthlyBasePrice || 1000), 0)
+      // Estimate from active non-FOC package plans only
+      const nonFocHouses = activeHouses.filter((c) => 
+        c.status !== 'FOC_CONNECTION' && 
+        c.packagePlan?.billingType !== 'FOC' && 
+        (c.packagePlan?.packageTier || '').toUpperCase() !== 'FOC'
+      )
+      if (nonFocHouses.length > 0) {
+        amountPayable = nonFocHouses.reduce((sum, c) => sum + Number(c.packagePlan?.totalAmount || c.packagePlan?.monthlyBasePrice || 0), 0)
+      }
     }
 
     const balance = Math.max(0, amountPayable - collection)

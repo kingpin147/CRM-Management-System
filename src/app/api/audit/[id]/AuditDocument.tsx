@@ -556,13 +556,13 @@ export function AuditDocument({
               <View style={styles.safetyCol}>
                 <Text style={styles.safetyLabel}>AC Earthing Resistance</Text>
                 <Text style={styles.safetyValue}>
-                  {solar.earthingAcOhms != null ? `${solar.earthingAcOhms} Ω` : '0.6 Ω'}
+                  {solar.earthingAcOhms != null ? `${solar.earthingAcOhms} Ohms` : '0.6 Ohms'}
                 </Text>
               </View>
               <View style={styles.safetyCol}>
                 <Text style={styles.safetyLabel}>DC Earthing Resistance</Text>
                 <Text style={styles.safetyValue}>
-                  {solar.earthingDcOhms != null ? `${solar.earthingDcOhms} Ω (Normal)` : '0.8 Ω (Normal)'}
+                  {solar.earthingDcOhms != null ? `${solar.earthingDcOhms} Ohms (Normal)` : '0.8 Ohms (Normal)'}
                 </Text>
               </View>
               <View style={styles.safetyCol}>

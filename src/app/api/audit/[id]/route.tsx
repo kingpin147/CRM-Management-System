@@ -5,6 +5,8 @@ import { AuditDocument } from './AuditDocument'
 import fs from 'fs'
 import path from 'path'
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -12,55 +14,23 @@ export async function GET(
   const { id } = await params
   const { searchParams } = new URL(request.url)
   const isDownload = searchParams.get('download') === 'true'
+  const customerIdParam = searchParams.get('customerId')
 
-  // Handle synthetic/placeholder IDs like 'audit-baseline-1' that are client-side only
-  // These should never reach the API — the frontend should substitute the customer ID instead
-  if (id.startsWith('audit-baseline')) {
-    return new NextResponse(
-      'Invalid audit ID. This is a virtual baseline record. Please access the audit PDF from the customer profile page.',
-      { status: 400 }
-    )
-  }
-
-  // Check if id corresponds to a SystemAudit record
-  // Wrap in try-catch because non-UUID strings can cause Prisma errors on UUID id fields
+  let customer: any = null
   let systemAudit: any = null
-  try {
-    systemAudit = await prisma.systemAudit.findFirst({
-      where: {
-        OR: [
-          { id },
-          { auditNumber: id }
-        ]
-      },
-      include: {
-        details: true,
-        assignedInstaller: true,
-        customer: {
-          include: {
-            solarSystem: true,
-            packagePlan: true,
-            accountExecutive: true,
-            assignedInstaller: true,
-          }
-        }
-      }
-    })
-  } catch (err) {
-    // ID might not be a valid UUID — that's okay, try customer lookup next
-    console.warn('SystemAudit lookup failed for id:', id, err)
-  }
 
-  let customer = systemAudit?.customer || null
-
-  if (!customer) {
+  // 1. If explicit customerId provided via query parameter, load customer first
+  if (customerIdParam) {
+    const isCustomerParamUuid = UUID_REGEX.test(customerIdParam)
+    const customerNumericOnly = customerIdParam.replace(/\D/g, '')
     try {
       customer = await prisma.customer.findFirst({
         where: {
           OR: [
-            { id },
-            { customerCode: id },
-            { crfNumber: id }
+            ...(isCustomerParamUuid ? [{ id: customerIdParam }] : []),
+            { customerCode: customerIdParam },
+            { crfNumber: customerIdParam },
+            ...(customerNumericOnly ? [{ customerCode: { contains: customerNumericOnly, mode: 'insensitive' as const } }] : []),
           ]
         },
         include: {
@@ -68,6 +38,83 @@ export async function GET(
           packagePlan: true,
           accountExecutive: true,
           assignedInstaller: true,
+          systemAudits: {
+            include: {
+              details: true,
+              assignedInstaller: true,
+            },
+            orderBy: { createdAt: 'desc' }
+          }
+        }
+      })
+    } catch (err) {
+      console.warn('Customer lookup via customerId param failed:', customerIdParam, err)
+    }
+  }
+
+  // 2. Try looking up as SystemAudit record if not a virtual ID
+  if (!id.startsWith('audit-baseline')) {
+    const isIdUuid = UUID_REGEX.test(id)
+    try {
+      systemAudit = await prisma.systemAudit.findFirst({
+        where: {
+          OR: [
+            ...(isIdUuid ? [{ id }] : []),
+            { auditNumber: id },
+            { auditNumber: { contains: id, mode: 'insensitive' as const } },
+          ]
+        },
+        include: {
+          details: true,
+          assignedInstaller: true,
+          customer: {
+            include: {
+              solarSystem: true,
+              packagePlan: true,
+              accountExecutive: true,
+              assignedInstaller: true,
+            }
+          }
+        }
+      })
+    } catch (err) {
+      console.warn('SystemAudit lookup failed for id:', id, err)
+    }
+
+    if (systemAudit?.customer) {
+      customer = systemAudit.customer
+    }
+  }
+
+  // 3. If customer not yet found, look up customer by id, customerCode, crfNumber, or numeric digits
+  if (!customer) {
+    const isIdUuid = UUID_REGEX.test(id)
+    const numericOnly = id.replace(/\D/g, '')
+    try {
+      customer = await prisma.customer.findFirst({
+        where: {
+          OR: [
+            ...(isIdUuid ? [{ id }] : []),
+            { customerCode: id },
+            { crfNumber: id },
+            ...(numericOnly.length >= 3 ? [
+              { customerCode: { contains: numericOnly, mode: 'insensitive' as const } },
+              { crfNumber: { contains: numericOnly, mode: 'insensitive' as const } }
+            ] : [])
+          ]
+        },
+        include: {
+          solarSystem: true,
+          packagePlan: true,
+          accountExecutive: true,
+          assignedInstaller: true,
+          systemAudits: {
+            include: {
+              details: true,
+              assignedInstaller: true,
+            },
+            orderBy: { createdAt: 'desc' }
+          }
         }
       })
     } catch (err) {
@@ -80,22 +127,23 @@ export async function GET(
   }
 
   // If specific audit details exist, merge them for the PDF document
-  if (systemAudit && systemAudit.details && customer.solarSystem) {
+  const activeAudit = systemAudit || (customer.systemAudits && customer.systemAudits.length > 0 ? customer.systemAudits[0] : null)
+  if (activeAudit && activeAudit.details && customer.solarSystem) {
     customer = {
       ...customer,
       solarSystem: {
         ...customer.solarSystem,
-        inverterStatus: systemAudit.details.inverterStatus || customer.solarSystem.inverterStatus,
-        panelStatus: systemAudit.details.panelStatus || customer.solarSystem.panelStatus,
-        batteryStatus: systemAudit.details.batteryStatus || customer.solarSystem.batteryStatus,
-        structureStatus: systemAudit.details.structureStatus || customer.solarSystem.structureStatus,
-        cableStatus: systemAudit.details.cableStatus || customer.solarSystem.cableStatus,
-        earthingStatus: systemAudit.details.earthingStatus || customer.solarSystem.earthingStatus,
-        breakerStatus: systemAudit.details.breakerStatus || customer.solarSystem.breakerStatus,
-        earthingAcOhms: systemAudit.details.earthingAcOhms || customer.solarSystem.earthingAcOhms,
-        earthingDcOhms: systemAudit.details.earthingDcOhms || customer.solarSystem.earthingDcOhms,
-        installerName: systemAudit.details.installerName || systemAudit.performedBy || customer.solarSystem.installerName,
-        lastAuditDate: systemAudit.completedDate || systemAudit.scheduledDate || customer.solarSystem.lastAuditDate,
+        inverterStatus: activeAudit.details.inverterStatus || customer.solarSystem.inverterStatus,
+        panelStatus: activeAudit.details.panelStatus || customer.solarSystem.panelStatus,
+        batteryStatus: activeAudit.details.batteryStatus || customer.solarSystem.batteryStatus,
+        structureStatus: activeAudit.details.structureStatus || customer.solarSystem.structureStatus,
+        cableStatus: activeAudit.details.cableStatus || customer.solarSystem.cableStatus,
+        earthingStatus: activeAudit.details.earthingStatus || customer.solarSystem.earthingStatus,
+        breakerStatus: activeAudit.details.breakerStatus || customer.solarSystem.breakerStatus,
+        earthingAcOhms: activeAudit.details.earthingAcOhms || customer.solarSystem.earthingAcOhms,
+        earthingDcOhms: activeAudit.details.earthingDcOhms || customer.solarSystem.earthingDcOhms,
+        installerName: activeAudit.details.installerName || activeAudit.performedBy || customer.solarSystem.installerName,
+        lastAuditDate: activeAudit.completedDate || activeAudit.scheduledDate || customer.solarSystem.lastAuditDate,
       }
     }
   }
@@ -116,14 +164,28 @@ export async function GET(
       />
     )
 
-    const headers = new Headers()
-    headers.set('Content-Type', 'application/pdf')
-    const fileName = `System-Audit-Report-${customer.crfNumber || customer.customerCode || 'Audit'}.pdf`
-    headers.set('Content-Disposition', `${isDownload ? 'attachment' : 'inline'}; filename="${fileName}"`)
+    // Convert Node stream to Web ReadableStream for reliable Next.js response handling
+    const webStream = new ReadableStream({
+      start(controller) {
+        stream.on('data', (chunk) => controller.enqueue(chunk))
+        stream.on('end', () => controller.close())
+        stream.on('error', (err) => controller.error(err))
+      }
+    })
 
-    return new NextResponse(stream as any, { headers })
+    const fileName = `System-Audit-Report-${customer.crfNumber || customer.customerCode || 'Audit'}.pdf`
+    const disposition = isDownload ? `attachment; filename="${fileName}"` : `inline; filename="${fileName}"`
+
+    return new NextResponse(webStream, {
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': disposition,
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+      }
+    })
   } catch (error: any) {
     console.error('Error generating System Audit PDF:', error)
     return NextResponse.json({ error: 'Failed to generate System Audit PDF', details: error?.message || 'Unknown error' }, { status: 500 })
   }
 }
+

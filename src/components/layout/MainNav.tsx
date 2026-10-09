@@ -37,9 +37,9 @@ export function MainNav({
   }
 
   const triggerClass = (baseActive: boolean) => {
-    const base = "flex items-center gap-1 xl:gap-1.5 text-xs xl:text-sm font-semibold rounded-lg transition-all duration-200 cursor-pointer select-none whitespace-nowrap shrink-0"
+    const base = "flex items-center gap-1 xl:gap-1 text-xs xl:text-xs 2xl:text-sm font-semibold rounded-md transition-all duration-200 cursor-pointer select-none whitespace-nowrap shrink-0"
     const layout = orientation === 'horizontal' 
-      ? "px-2 py-1.5 lg:px-2.5 lg:py-1.5 xl:px-3 xl:py-2" 
+      ? "px-1.5 py-1.5 lg:px-2 lg:py-1.5 xl:px-2 xl:py-1.5" 
       : "w-full justify-between px-3 py-2 text-xs"
     
     if (baseActive) {
@@ -49,9 +49,9 @@ export function MainNav({
   }
 
   const linkClass = (path: string) => {
-    const base = "flex items-center text-xs xl:text-sm font-medium rounded-lg transition-all duration-200 whitespace-nowrap shrink-0 cursor-pointer"
+    const base = "flex items-center text-xs xl:text-xs 2xl:text-sm font-medium rounded-md transition-all duration-200 whitespace-nowrap shrink-0 cursor-pointer"
     const layout = orientation === 'horizontal' 
-      ? "px-2 py-1.5 lg:px-2.5 lg:py-1.5 xl:px-3 xl:py-2" 
+      ? "px-1.5 py-1.5 lg:px-2 lg:py-1.5 xl:px-2 xl:py-1.5" 
       : "px-3 py-2 text-xs w-full block"
 
     if (isActive(path)) {
@@ -103,14 +103,14 @@ export function MainNav({
 
   if (orientation === 'horizontal') {
     return (
-      <nav className="flex items-center gap-0.5 lg:gap-1 xl:gap-1.5">
+      <nav className="flex items-center gap-0.5 lg:gap-1">
         {/* Customer Search Tab */}
         <Link 
           href="/dashboard/customers" 
           className={linkClass('/dashboard/customers')}
         >
-          <span className="flex items-center gap-1 xl:gap-1.5 font-semibold">
-            <Search className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
+          <span className="flex items-center gap-1 font-semibold">
+            <Search className="h-3.5 w-3.5 text-[var(--color-amber)] shrink-0" />
             <span>Customer Search</span>
           </span>
         </Link>
@@ -122,8 +122,8 @@ export function MainNav({
               href="/dashboard/sales/leads" 
               className={linkClass('/dashboard/sales/leads')}
             >
-              <span className="flex items-center gap-1 xl:gap-1.5 font-semibold">
-                <ShoppingBag className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
+              <span className="flex items-center gap-1 font-semibold">
+                <ShoppingBag className="h-3.5 w-3.5 text-[var(--color-amber)] shrink-0" />
                 <span>Sales Lead Create</span>
               </span>
             </Link>
@@ -132,8 +132,8 @@ export function MainNav({
               href="/dashboard/customers/new" 
               className={linkClass('/dashboard/customers/new')}
             >
-              <span className="flex items-center gap-1 xl:gap-1.5 font-semibold">
-                <ShoppingBag className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
+              <span className="flex items-center gap-1 font-semibold">
+                <ShoppingBag className="h-3.5 w-3.5 text-[var(--color-amber)] shrink-0" />
                 <span>Create Sales</span>
               </span>
             </Link>
@@ -142,8 +142,8 @@ export function MainNav({
               href="/dashboard/installer/jobs?view=new-jobs" 
               className={linkClass('/dashboard/installer/jobs?view=new-jobs')}
             >
-              <span className="flex items-center gap-1 xl:gap-1.5 font-semibold">
-                <ShoppingBag className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
+              <span className="flex items-center gap-1 font-semibold">
+                <ShoppingBag className="h-3.5 w-3.5 text-[var(--color-amber)] shrink-0" />
                 <span>Assigned Jobs</span>
               </span>
             </Link>
@@ -151,11 +151,11 @@ export function MainNav({
         ) : (canViewApproval || isSuperAdmin || isSalesManager) ? (
           <DropdownMenu>
             <DropdownMenuTrigger className={triggerClass(pathname.startsWith('/dashboard/sales') || pathname === '/dashboard/customers/new')}>
-              <span className="flex items-center gap-1 xl:gap-1.5">
-                <ShoppingBag className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
+              <span className="flex items-center gap-1">
+                <ShoppingBag className="h-3.5 w-3.5 text-[var(--color-amber)] shrink-0" />
                 <span>Sales</span>
               </span>
-              <ChevronDown className="h-3 w-3 xl:h-3.5 xl:w-3.5 opacity-70 shrink-0 ml-0.5" />
+              <ChevronDown className="h-3 w-3 opacity-70 shrink-0 ml-0.5" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56 bg-white p-1.5 shadow-lg border-line rounded-xl animate-in fade-in-50 zoom-in-95">
               <DropdownMenuItem>
@@ -192,8 +192,8 @@ export function MainNav({
             href="/dashboard/installer/jobs?view=audits" 
             className={linkClass('/dashboard/installer/jobs')}
           >
-            <span className="flex items-center gap-1 xl:gap-1.5 font-semibold">
-              <Wrench className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
+            <span className="flex items-center gap-1 font-semibold">
+              <Wrench className="h-3.5 w-3.5 text-[var(--color-amber)] shrink-0" />
               <span>System Audits</span>
             </span>
           </Link>
@@ -203,11 +203,11 @@ export function MainNav({
         {canViewBilling && (
           <DropdownMenu>
             <DropdownMenuTrigger className={triggerClass(pathname.startsWith('/dashboard/billing-cpm'))}>
-              <span className="flex items-center gap-1 xl:gap-1.5">
-                <CreditCard className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
+              <span className="flex items-center gap-1">
+                <CreditCard className="h-3.5 w-3.5 text-[var(--color-amber)] shrink-0" />
                 <span>Billing & CPM</span>
               </span>
-              <ChevronDown className="h-3 w-3 xl:h-3.5 xl:w-3.5 opacity-70 shrink-0 ml-0.5" />
+              <ChevronDown className="h-3 w-3 opacity-70 shrink-0 ml-0.5" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56 bg-white p-1.5 shadow-lg border-line rounded-xl animate-in fade-in-50 zoom-in-95">
               <DropdownMenuItem>
@@ -237,11 +237,11 @@ export function MainNav({
         {/* 3. Complaint Management Tab with Sub-menu */}
         <DropdownMenu>
           <DropdownMenuTrigger className={triggerClass(pathname.startsWith('/dashboard/tickets'))}>
-            <span className="flex items-center gap-1 xl:gap-1.5">
-              <AlertCircle className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
+            <span className="flex items-center gap-1">
+              <AlertCircle className="h-3.5 w-3.5 text-[var(--color-amber)] shrink-0" />
               <span>Complaints</span>
             </span>
-            <ChevronDown className="h-3 w-3 xl:h-3.5 xl:w-3.5 opacity-70 shrink-0 ml-0.5" />
+            <ChevronDown className="h-3 w-3 opacity-70 shrink-0 ml-0.5" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-48 bg-white p-1.5 shadow-lg border-line rounded-xl animate-in fade-in-50 zoom-in-95">
             <DropdownMenuItem>
@@ -261,11 +261,11 @@ export function MainNav({
         {canViewReports && (
           <DropdownMenu>
             <DropdownMenuTrigger className={triggerClass(pathname.startsWith('/dashboard/reports'))}>
-              <span className="flex items-center gap-1 xl:gap-1.5">
-                <BarChart3 className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
+              <span className="flex items-center gap-1">
+                <BarChart3 className="h-3.5 w-3.5 text-[var(--color-amber)] shrink-0" />
                 <span>Reports</span>
               </span>
-              <ChevronDown className="h-3 w-3 xl:h-3.5 xl:w-3.5 opacity-70 shrink-0 ml-0.5" />
+              <ChevronDown className="h-3 w-3 opacity-70 shrink-0 ml-0.5" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56 bg-white p-1.5 shadow-lg border-line rounded-xl animate-in fade-in-50 zoom-in-95">
               <DropdownMenuItem>
@@ -337,8 +337,8 @@ export function MainNav({
             href="/dashboard/management-dashboard" 
             className={linkClass('/dashboard/management-dashboard')}
           >
-            <span className="flex items-center gap-1 xl:gap-1.5 font-semibold">
-              <LayoutDashboard className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
+            <span className="flex items-center gap-1 font-semibold">
+              <LayoutDashboard className="h-3.5 w-3.5 text-[var(--color-amber)] shrink-0" />
               <span>Management Dashboard</span>
             </span>
           </Link>
@@ -347,8 +347,8 @@ export function MainNav({
         {/* Admin Management if Authorized */}
         {canViewAdmin && (
           <Link href="/dashboard/admin" className={linkClass('/dashboard/admin')}>
-            <span className="flex items-center gap-1 xl:gap-1.5">
-              <Users className="h-3.5 w-3.5 xl:h-4 xl:w-4 text-[var(--color-amber)] shrink-0" />
+            <span className="flex items-center gap-1">
+              <Users className="h-3.5 w-3.5 text-[var(--color-amber)] shrink-0" />
               <span>User Roles</span>
             </span>
           </Link>

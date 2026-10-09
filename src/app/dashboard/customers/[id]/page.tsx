@@ -137,7 +137,17 @@ export default async function CustomerDetailPage({
         
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
           <CustomerIdQuickSwitch currentCustomerCode={customer.customerCode} />
-          <div className="flex gap-2 shrink-0 items-center">
+          <div className="flex gap-2 shrink-0 items-center flex-wrap">
+            <a
+              href={`/api/audit/${customer.id}?download=true`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-lg shadow-sm transition-colors cursor-pointer"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Download System Audit PDF Report"
+            >
+              <Download className="h-3.5 w-3.5" />
+              <span>Download Audit PDF</span>
+            </a>
             {canEditProfile && (
               <EditCustomerDialog customer={customer} />
             )}
