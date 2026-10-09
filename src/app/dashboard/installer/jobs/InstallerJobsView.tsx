@@ -115,8 +115,12 @@ export function InstallerJobsView({
   }, [systemAuditCustomers])
 
   // Customers for current view mode
-  // For audits view, use only audit-due customers (excludes completed whose next audit is in the future)
-  const currentBaseList = viewMode === 'new-jobs' ? newSignupCustomers : auditDueCustomers
+  // For audits view, use only audit-due customers by default, but use all system audit customers when viewing COMPLETED tab
+  const currentBaseList = React.useMemo(() => {
+    if (viewMode === 'new-jobs') return newSignupCustomers
+    if (filterTab === 'COMPLETED' || filterTab === 'ON_DEMAND') return systemAuditCustomers
+    return auditDueCustomers
+  }, [viewMode, filterTab, newSignupCustomers, systemAuditCustomers, auditDueCustomers])
 
   const filteredCustomers = React.useMemo(() => {
     let baseList = currentBaseList
