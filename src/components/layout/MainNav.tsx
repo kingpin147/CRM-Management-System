@@ -103,7 +103,7 @@ export function MainNav({
 
   if (orientation === 'horizontal') {
     return (
-      <nav className="flex items-center gap-0.5 lg:gap-1">
+      <nav className="flex flex-wrap items-center gap-1 lg:gap-1.5">
         {/* Customer Search Tab */}
         <Link 
           href="/dashboard/customers" 

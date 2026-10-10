@@ -50,7 +50,7 @@ export default async function DashboardLayout({
       <SessionTimeout timeoutMinutes={20} />
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="h-16 flex items-center justify-between px-2 sm:px-3 lg:px-4 border-b border-[var(--color-line)] bg-white/90 backdrop-blur-md sticky top-0 z-30 shadow-2xs shrink-0">
+        <header className="min-h-[4rem] py-2 flex items-center justify-between px-2 sm:px-3 lg:px-4 border-b border-[var(--color-line)] bg-white/90 backdrop-blur-md sticky top-0 z-30 shadow-2xs shrink-0">
           
           {/* Mobile Navigation */}
           <MobileNav role={userRole} fullName={userFullName} designation={userDesignation} />
@@ -58,7 +58,7 @@ export default async function DashboardLayout({
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center flex-1 gap-2 lg:gap-3 xl:gap-4 min-w-0">
             <Logo href="/dashboard/customers" iconSize={26} className="hover:opacity-80 transition-opacity" />
-            <div className="flex-1 min-w-0 overflow-x-auto no-scrollbar">
+            <div className="flex-1 min-w-0">
               <MainNav role={userRole} fullName={userFullName} designation={userDesignation} orientation="horizontal" />
             </div>
           </div>
