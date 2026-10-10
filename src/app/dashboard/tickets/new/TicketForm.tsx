@@ -256,6 +256,7 @@ export function TicketForm({ customers }: { customers: { id: string, fullName: s
                     <SelectItem value="Sales">Sales</SelectItem>
                     <SelectItem value="Customer Service">Customer Service</SelectItem>
                     <SelectItem value="Support">Support</SelectItem>
+                    <SelectItem value="NOC">NOC</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />

@@ -179,6 +179,7 @@ export function TicketUpdateDialog({ ticket }: { ticket: TicketWithCustomer }) {
                     <option value="Billing">Billing</option>
                     <option value="Sales">Sales</option>
                     <option value="Customer Support">Customer Support</option>
+                    <option value="NOC">NOC</option>
                   </select>
                 </div>
 

@@ -371,6 +371,7 @@ export function TicketsView({ tickets, userRole, initialStatusParam }: TicketsVi
                 <option value="Sales">Sales</option>
                 <option value="O&M">Operations & Maintenance (O&M)</option>
                 <option value="Customer Support">Customer Support</option>
+                <option value="NOC">NOC</option>
               </select>
             </div>
           </div>

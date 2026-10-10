@@ -219,7 +219,7 @@ export function CustomerTicketForm({ customerId }: { customerId: string }) {
                   <AutoSuggestInput
                     value={assignedTo}
                     onChange={setAssignedTo}
-                    options={['Operation & Maintenance', 'Billing', 'Sales', 'Customer Service', 'Support']}
+                    options={['Operation & Maintenance', 'Billing', 'Sales', 'Customer Service', 'Support', 'NOC']}
                     placeholder="Type or select department..."
                     className="h-9 text-xs bg-white"
                   />
