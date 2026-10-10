@@ -17,6 +17,17 @@ interface ManagementDashboardViewProps {
 
 type PeriodFilter = 'MTD' | 'YTD'
 
+export const ACTIVE_CUSTOMER_STATUSES = ['CONNECTION_ACTIVE', 'FOC_CONNECTION', 'IN_HOUSE_CONNECTION'] as const
+
+export function isActiveCustomerStatus(status?: string | null) {
+  const normalizedStatus = (status || '').trim().toUpperCase()
+  return ACTIVE_CUSTOMER_STATUSES.some((activeStatus) => activeStatus === normalizedStatus)
+}
+
+export function getActiveHouseCount(customers: any[]) {
+  return customers.filter((customer) => isActiveCustomerStatus(customer?.status)).length
+}
+
 export function ManagementDashboardView({
   initialCustomers,
   initialTickets,
@@ -131,11 +142,9 @@ export function ManagementDashboardView({
   const billingMetrics = React.useMemo(() => {
     const { start, end } = dateRange
 
-    // Active billing houses (excluding FOC connections)
-    const activeHouses = initialCustomers.filter(
-      (c) => c.status === 'CONNECTION_ACTIVE' || c.status === 'PENDING_ACTIVATION' || c.status === 'NON_PAYMENT_BLOCKED'
-    )
-    const noOfHouses = activeHouses.length
+    // Only currently active customers should count as houses in the dashboard.
+    const activeHouses = initialCustomers.filter((c) => isActiveCustomerStatus(c?.status))
+    const noOfHouses = getActiveHouseCount(initialCustomers)
 
     // Recurring Invoices billed in period
     let amountPayable = 0
