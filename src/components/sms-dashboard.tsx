@@ -101,14 +101,73 @@ export default function SMSDashboard() {
   const [duplicateCount, setDuplicateCount] = useState(0);
   const [invalidCount, setInvalidCount] = useState(0);
 
-  const [campaignName, setCampaignName] = useState('Energy Gurus Solar Special Offer');
+  const [campaignName, setCampaignName] = useState('Energy Gurus Solar Monitoring & O&M');
   const [broadcastTemplate, setBroadcastTemplate] = useState('solar_promotional_offer');
-  const [pamphletUrl, setPamphletUrl] = useState('https://images.unsplash.com/photo-1509391365360-2e959784a276?q=80&w=800&auto=format&fit=crop');
+  const [pamphletUrl, setPamphletUrl] = useState('https://crm.energygurus.online/solar_flyer.png');
   const [isBroadcasting, setIsBroadcasting] = useState(false);
+  const [broadcastBodyText, setBroadcastBodyText] = useState(
+`Protect Your Solar Investment!
+
+Dear Customer,
+
+Your solar system is a valuable investment. Keep it performing efficiently with professional solar monitoring, operations, and maintenance services from EnergyGurusOnline.
+Give your solar system the care it deserves!
+
+Contact us today to learn more.
+Regards,
+Team – EnergyGurusOnline
+WhatsApp +923009433303
+Info@energygurus.online
+www.energygurus.online`
+  );
+  const [isUploadingFlyer, setIsUploadingFlyer] = useState(false);
+  const flyerInputRef = useRef<HTMLInputElement>(null);
+  const cancelBroadcastRef = useRef(false);
+
+  const handleFlyerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file (PNG, JPG, WebP)');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size must be under 5MB');
+      return;
+    }
+
+    setIsUploadingFlyer(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', 'marketing_flyers');
+
+      const res = await fetch('/api/upload/r2', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.url) {
+        throw new Error(data.error || 'Failed to upload flyer');
+      }
+
+      setPamphletUrl(data.url);
+      setSuccess('Flyer uploaded successfully!');
+    } catch (err: any) {
+      console.error('Flyer upload error:', err);
+      setError('Failed to upload flyer: ' + err.message);
+    } finally {
+      setIsUploadingFlyer(false);
+      if (flyerInputRef.current) flyerInputRef.current.value = '';
+    }
+  };
+
   const [broadcastProgress, setBroadcastProgress] = useState(0);
   const [broadcastStats, setBroadcastStats] = useState({ sent: 0, failed: 0, total: 0 });
   const [broadcastLogs, setBroadcastLogs] = useState<BroadcastResultItem[]>([]);
-  const cancelBroadcastRef = useRef(false);
 
   useEffect(() => {
     loadTemplates();
@@ -558,20 +617,87 @@ export default function SMSDashboard() {
                     </div>
                   </div>
 
-                  <div>
-                    <Label className="text-xs font-semibold flex items-center gap-1.5">
-                      <ImageIcon className="h-3.5 w-3.5 text-blue-500" />
-                      Pamphlet / Brochure Snapshot Image URL
-                    </Label>
+                  {/* Flyer Upload & Snapshot Selection */}
+                  <div className="space-y-2 p-3 bg-gray-50/70 rounded-lg border">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <Label className="text-xs font-semibold flex items-center gap-1.5">
+                        <ImageIcon className="h-3.5 w-3.5 text-blue-600" />
+                        Campaign Flyer / Pamphlet Image
+                      </Label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="file"
+                          ref={flyerInputRef}
+                          onChange={handleFlyerUpload}
+                          accept="image/png,image/jpeg,image/webp"
+                          className="hidden"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={isUploadingFlyer || isBroadcasting}
+                          onClick={() => flyerInputRef.current?.click()}
+                          className="text-xs font-semibold h-7 px-2.5 bg-white border-blue-200 text-blue-700 hover:bg-blue-50"
+                        >
+                          {isUploadingFlyer ? (
+                            <>
+                              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                              Uploading...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="mr-1.5 h-3.5 w-3.5" />
+                              Upload New Flyer
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          disabled={isBroadcasting}
+                          onClick={() => setPamphletUrl('https://crm.energygurus.online/solar_flyer.png')}
+                          className="text-[11px] text-gray-600 h-7 px-2"
+                        >
+                          Use Default Flyer
+                        </Button>
+                      </div>
+                    </div>
+
                     <Input
                       value={pamphletUrl}
                       onChange={(e) => setPamphletUrl(e.target.value)}
                       disabled={isBroadcasting}
-                      placeholder="https://your-domain.com/pamphlet.jpg (Image will be attached at top of WhatsApp message)"
-                      className="text-xs mt-1 font-mono"
+                      placeholder="Public image URL (or upload a file using the button above)"
+                      className="text-xs font-mono bg-white"
                     />
-                    <p className="text-[11px] text-gray-500 mt-1">
-                      Must be a publicly accessible image URL (JPG, PNG, WebP) under 5MB.
+                    <p className="text-[11px] text-gray-500">
+                      Upload any solar flyer snapshot (PNG, JPG) or specify a public image URL. Attached automatically to the top of each message.
+                    </p>
+                  </div>
+
+                  {/* Body Text Editor */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs font-semibold flex items-center gap-1.5">
+                        <FileText className="h-3.5 w-3.5 text-emerald-600" />
+                        Promotional Message Body Text
+                      </Label>
+                      <span className="text-[11px] font-mono text-gray-500">
+                        {broadcastBodyText.length} / 1024 chars
+                      </span>
+                    </div>
+                    <Textarea
+                      value={broadcastBodyText}
+                      onChange={(e) => setBroadcastBodyText(e.target.value)}
+                      disabled={isBroadcasting}
+                      rows={7}
+                      className="text-xs font-sans leading-relaxed resize-y"
+                      placeholder="Enter promotional message content..."
+                    />
+                    <p className="text-[11px] text-gray-500">
+                      This text matches your approved Meta Marketing template. Real-time changes appear in the live WhatsApp preview.
                     </p>
                   </div>
 
@@ -629,7 +755,7 @@ export default function SMSDashboard() {
                           alt="Flyer Preview" 
                           className="w-full h-full object-cover"
                           onError={(e) => {
-                            (e.target as any).src = 'https://images.unsplash.com/photo-1509391365360-2e959784a276?q=80&w=800&auto=format&fit=crop';
+                            (e.target as any).src = 'https://crm.energygurus.online/solar_flyer.png';
                           }}
                         />
                       </div>
@@ -640,9 +766,9 @@ export default function SMSDashboard() {
                     )}
 
                     {/* Body Text */}
-                    <p className="text-xs text-gray-800 leading-relaxed font-sans">
-                      Assalam-o-Alaikum! Energy Gurus ki taraf se commercial aur residential solar system par special discount offer... Mazeed maloomat ke liye helpline par rabta karein.
-                    </p>
+                    <div className="text-xs text-gray-800 leading-relaxed font-sans whitespace-pre-wrap">
+                      {broadcastBodyText}
+                    </div>
 
                     <div className="text-[10px] text-gray-400 text-right">
                       12:00 PM • Delivered

@@ -130,8 +130,8 @@ export async function GET() {
         category: 'MARKETING',
         headerType: 'IMAGE (Pamphlet / Flyer Snapshot)',
         trigger: 'On-Demand: Sent to bulk lead contacts (1,000–1,500 numbers)',
-        description: 'Marketing: Special discount advertisement for residential & commercial solar systems with image pamphlet.',
-        sample: 'Assalam-o-Alaikum! Energy Gurus ki taraf se commercial aur residential solar system par special discount offer. Mazeed maloomat ke liye helpline par rabta karein.'
+        description: 'Marketing: Solar monitoring & O&M advertisement with image flyer snapshot.',
+        sample: 'Protect Your Solar Investment!\n\nDear Customer,\n\nYour solar system is a valuable investment. Keep it performing efficiently with professional solar monitoring, operations, and maintenance services from EnergyGurusOnline. Give your solar system the care it deserves!\n\nContact us today to learn more.\nRegards,\nTeam – EnergyGurusOnline\nWhatsApp +923009433303\nInfo@energygurus.online\nwww.energygurus.online'
       }
     };
 
