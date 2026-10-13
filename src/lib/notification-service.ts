@@ -18,7 +18,7 @@ export class NotificationService {
         throw new Error('Customer or contact number not found');
       }
 
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://crm.energygurus.pk';
+      const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://crm.energygurus.online').replace(/\/+$/, '');
 
       const result = await this.smsService.sendSMS({
         to: customer.contactNumber,
@@ -58,7 +58,7 @@ export class NotificationService {
         throw new Error('Invoice or customer contact not found');
       }
 
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://crm.energygurus.pk';
+      const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://crm.energygurus.online').replace(/\/+$/, '');
       const monthName = new Date(invoice.billingPeriod).toLocaleString('en-US', { month: 'long', year: 'numeric' });
       const dueDateStr = SMSTemplateService.formatDate(invoice.dueDate);
       const formattedAmount = Number(invoice.totalAmount).toLocaleString(undefined, { minimumFractionDigits: 2 });
@@ -143,7 +143,7 @@ export class NotificationService {
         throw new Error('Transaction or customer not found');
       }
 
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://crm.energygurus.pk';
+      const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://crm.energygurus.online').replace(/\/+$/, '');
       const receiptNumber = `RCP-${transaction.id.slice(-8).toUpperCase()}`;
       const formattedAmount = Number(transaction.amount).toLocaleString(undefined, { minimumFractionDigits: 2 });
       const paymentDate = SMSTemplateService.formatDate(transaction.createdAt);

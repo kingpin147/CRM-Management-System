@@ -3,95 +3,135 @@ import { SMSTemplateService } from '@/lib/sms-service';
 
 export async function GET() {
   try {
-    // Return available SMS templates with sample data
+    const today = SMSTemplateService.formatDate(new Date());
+
+    // Return all 13 official Meta WhatsApp templates with full scenario definitions
     const templates = {
-      REGISTRATION_COMPLETE: {
-        name: 'Registration Complete',
-        description: 'Sent when customer registration is completed',
-        sample: SMSTemplateService.generateRegistrationMessage({
-          customer: {} as any,
-          customerCode: 'EG-001234',
-          customerName: 'John Doe',
-          contactNumber: '+923001234567',
-          currentDate: SMSTemplateService.formatDate(new Date())
-        })
+      CUSTOMER_WELCOME_CRF: {
+        name: '1. Customer Welcome & Registration (CRF)',
+        metaTemplateName: 'customer_welcome_crf',
+        category: 'UTILITY',
+        headerType: 'DOCUMENT (CRF.pdf)',
+        trigger: 'Automatic: Sent when customer will be activated in CRM',
+        description: 'Account Onboarding: Confirms account registration and delivers the official CRF document.',
+        sample: 'Dear Nouman Attique, welcome to Energy Gurus! Your solar O&M service account has been successfully registered. Your Customer Code is 101 (CRF #CRF-2026-00101). Please find your official Customer Registration Form attached. For assistance, contact our helpline at +92 316 4266004.'
       },
-      INVOICE_GENERATED: {
-        name: 'Invoice Generated',
-        description: 'Sent when a new invoice is generated',
-        sample: SMSTemplateService.generateInvoiceMessage({
-          customer: {} as any,
-          customerCode: 'EG-001234',
-          customerName: 'John Doe',
-          contactNumber: '+923001234567',
-          amount: 15000,
-          invoiceNumber: 'INV-2024-001',
-          dueDate: '15-Nov-2024',
-          currentDate: SMSTemplateService.formatDate(new Date())
-        })
+      MONTHLY_INVOICE_DISPATCH: {
+        name: '2. Monthly Invoice Dispatch',
+        metaTemplateName: 'monthly_invoice_dispatch',
+        category: 'UTILITY',
+        headerType: 'DOCUMENT (Invoice.pdf)',
+        trigger: 'Automatic: On 1st of every month (Due date: 10th)',
+        description: 'Billing: Transactional monthly invoice and payment due date.',
+        sample: 'Dear Nouman Attique, your solar O&M invoice INV-2026-001 for October 2026 amounting to PKR 4,500 has been generated. The payment due date is 10-Oct-2026. Please review your invoice PDF attached below.'
       },
       PAYMENT_DUE_REMINDER: {
-        name: 'Payment Due Reminder',
-        description: 'Sent one day before payment due date',
-        sample: SMSTemplateService.generatePaymentDueMessage({
-          customer: {} as any,
-          customerCode: 'EG-001234',
-          customerName: 'John Doe',
-          contactNumber: '+923001234567',
-          amount: 15000,
-          invoiceNumber: 'INV-2024-001',
-          dueDate: '15-Nov-2024'
-        })
+        name: '3. Payment Due Reminder',
+        metaTemplateName: 'payment_due_reminder',
+        category: 'UTILITY',
+        headerType: 'TEXT',
+        trigger: 'Automatic: As Due date is 10th of every month, reminder msg will be sent on 9th',
+        description: 'Billing Alert: Reminder of an existing active bill.',
+        sample: 'Dear Nouman Attique, this is a friendly reminder that your solar O&M bill for invoice INV-2026-001 amounting to PKR 4,500 is due on 10-Oct-2026. Kindly settle your bill to ensure uninterrupted service. For inquiries, contact +92 316 4266004.'
       },
-      PAYMENT_RECEIVED: {
-        name: 'Payment Received',
-        description: 'Sent when payment is received and confirmed',
-        sample: SMSTemplateService.generatePaymentReceivedMessage({
-          customer: {} as any,
-          customerCode: 'EG-001234',
-          customerName: 'John Doe',
-          contactNumber: '+923001234567',
-          amount: 15000,
-          receiptNumber: 'RCP-12345678',
-          currentDate: SMSTemplateService.formatDate(new Date())
-        })
+      PAYMENT_OVERDUE_NOTICE: {
+        name: '4. Overdue Payment Notice',
+        metaTemplateName: 'payment_overdue_notice',
+        category: 'UTILITY',
+        headerType: 'TEXT',
+        trigger: 'Automatic: Sent on 12th of every month, and after that as required',
+        description: 'Billing / Account Alert: Warning of past-due payment.',
+        sample: 'Dear Nouman Attique, invoice INV-2026-001 for PKR 4,500 is past due (due was 10-Oct-2026). Please clear this outstanding balance immediately to avoid disconnection. Contact +92 316 4266004 for payment guidance.'
       },
-      COMPLAINT_REGISTERED: {
-        name: 'Complaint Registered',
-        description: 'Sent when a customer complaint is registered',
-        sample: SMSTemplateService.generateComplaintRegisteredMessage({
-          customer: {} as any,
-          customerCode: 'EG-001234',
-          customerName: 'John Doe',
-          contactNumber: '+923001234567',
-          complaintNumber: 'TKT-2024-001',
-          currentDate: SMSTemplateService.formatDate(new Date())
-        })
+      PAYMENT_RECEIPT_CONFIRMATION: {
+        name: '5. Payment Receipt Confirmation',
+        metaTemplateName: 'payment_receipt_confirmation',
+        category: 'UTILITY',
+        headerType: 'DOCUMENT (Receipt.pdf)',
+        trigger: 'Automatic: Payment Receipt, with Thank you msg on entry and after posting',
+        description: 'Transaction Confirmation: Proof of received payment and updated balance.',
+        sample: 'Dear Nouman Attique, we have received your payment of PKR 4,500 via Bank Transfer (Receipt #RCP-8831). Your updated outstanding balance is PKR 0.00. Thank you for choosing Energy Gurus! Your official receipt is attached.'
       },
-      COMPLAINT_RESOLVED: {
-        name: 'Complaint Resolved',
-        description: 'Sent when a customer complaint is resolved',
-        sample: SMSTemplateService.generateComplaintResolvedMessage({
-          customer: {} as any,
-          customerCode: 'EG-001234',
-          customerName: 'John Doe',
-          contactNumber: '+923001234567',
-          complaintNumber: 'TKT-2024-001',
-          closureDate: SMSTemplateService.formatDate(new Date())
-        })
+      SERVICE_SUSPENSION_NONPAYMENT: {
+        name: '6. Service Suspension (Non-Payment)',
+        metaTemplateName: 'service_suspension_nonpayment',
+        category: 'UTILITY',
+        headerType: 'TEXT',
+        trigger: 'Triggered when customer status moves to NON_PAYMENT_BLOCKED',
+        description: 'Notifies customer that monitoring & O&M service is suspended due to unpaid dues.',
+        sample: 'Dear Nouman Attique, your solar monitoring and O&M service for Customer ID 101 has been temporarily suspended due to outstanding dues of PKR 9,000. Please clear your dues and share proof of payment with +92 316 4266004 for immediate restoration.'
       },
-      DAILY_SOLAR_REPORT: {
-        name: 'Daily Solar Report',
-        description: 'Daily solar system production report',
-        sample: SMSTemplateService.generateDailySolarReportMessage({
-          customer: {} as any,
-          customerCode: 'EG-001234',
-          customerName: 'John Doe',
-          contactNumber: '+923001234567',
-          todayUnits: 45,
-          mtdUnits: 1350,
-          ytdUnits: 16200
-        })
+      SERVICE_RESTORED_CONFIRMATION: {
+        name: '7. Service Restoration (After Payment)',
+        metaTemplateName: 'service_restored_confirmation',
+        category: 'UTILITY',
+        headerType: 'TEXT',
+        trigger: 'Triggered when status transitions back to CONNECTION_ACTIVE',
+        description: 'Confirms that O&M services have been restored following dues clearance.',
+        sample: `Dear Nouman Attique, thank you for clearing your outstanding dues! Your solar O&M service for Customer ID 101 has been fully restored as of ${today}.`
+      },
+      TEMPORARY_HOLD_NOTICE: {
+        name: '8. Temporary Hold Notice (Customer Request)',
+        metaTemplateName: 'temporary_hold_notice',
+        category: 'UTILITY',
+        headerType: 'TEXT',
+        trigger: 'Triggered when customer status is set to TEMPORARY_BLOCKED',
+        description: 'Confirms customer request to pause service temporarily.',
+        sample: `Dear Nouman Attique, as per your request, your solar O&M service (Customer ID: 101) has been placed on temporary hold effective ${today}. To reactivate your service anytime, contact +92 316 4266004.`
+      },
+      TEMPORARY_HOLD_REACTIVATED: {
+        name: '9. Temporary Hold Reactivated',
+        metaTemplateName: 'temporary_hold_reactivated',
+        category: 'UTILITY',
+        headerType: 'TEXT',
+        trigger: 'Triggered when temporarily blocked service is un-paused',
+        description: 'Confirms successful reactivation after a voluntary pause.',
+        sample: `Dear Nouman Attique, your solar service for Customer ID 101 has been successfully reactivated on ${today}. Active system monitoring and support features are now live.`
+      },
+      TICKET_REGISTERED_ACK: {
+        name: '10. Support Ticket Registered',
+        metaTemplateName: 'ticket_registered_ack',
+        category: 'UTILITY',
+        headerType: 'TEXT',
+        trigger: 'Triggered when a support ticket or complaint is opened in CRM',
+        description: 'Acknowledges ticket registration with assigned team and SLA timeline.',
+        sample: 'Dear Nouman Attique, your support request has been registered under Ticket #TKT-2026-0042 (Category: Inverter Fault). Our O&M Technical team is reviewing your complaint with an expected resolution within 24 Hours. Contact +92 316 4266004 for urgent updates.'
+      },
+      TICKET_RESOLVED_CLOSURE: {
+        name: '11. Support Ticket Resolved & Closed',
+        metaTemplateName: 'ticket_resolved_closure',
+        category: 'UTILITY',
+        headerType: 'TEXT',
+        trigger: 'Triggered when a support ticket status is changed to RESOLVED',
+        description: 'Notifies customer of resolution with technician remarks and feedback URL button.',
+        sample: `Dear Nouman Attique, your Ticket #TKT-2026-0042 has been resolved on ${today}. Remarks: Inverter grid sync restored. Thank you for choosing Energy Gurus!`
+      },
+      DAILY_SOLAR_GENERATION_REPORT: {
+        name: '12. Solar Performance Report (Weekly & Monthly)',
+        metaTemplateName: 'daily_solar_generation_report',
+        category: 'UTILITY',
+        headerType: 'TEXT',
+        trigger: 'Automatic: Weekly (Sundays) and Monthly (1st of month) only',
+        description: 'Informational / Telemetry: Routine performance report for active monitoring subscribers (weekly and monthly only).',
+        sample: `Dear Nouman Attique, your solar generation summary for ${today}:\n⚡ Today's Generation: 45.2 kWh (Units)\n📊 Month-to-Date: 520.4 kWh (Units)\n📈 Year-to-Date: 6,430 kWh (Units)\nEnergy Gurus Solar Monitoring`
+      },
+      OPERATIONAL_BROADCAST_ALERT: {
+        name: '13. Operational Broadcast / Maintenance Alert',
+        metaTemplateName: 'operational_broadcast_alert',
+        category: 'MARKETING',
+        headerType: 'IMAGE / TEXT',
+        trigger: 'Triggered on-demand by Admins for sector-wide notices',
+        description: 'Mass notification for scheduled grid maintenance or operational updates.',
+        sample: 'Dear Nouman Attique, [Notice: Scheduled Grid Maintenance]\nGrid maintenance scheduled in your area on Sunday from 10:00 AM to 2:00 PM. Inverters will stay in auto-standby.\nFor any assistance or questions, please contact our helpline at +92 316 4266004.'
+      },
+      SOLAR_PROMOTIONAL_OFFER: {
+        name: '14. Promotional Flyer / Pamphlet Campaign',
+        metaTemplateName: 'solar_promotional_offer',
+        category: 'MARKETING',
+        headerType: 'IMAGE (Pamphlet / Flyer Snapshot)',
+        trigger: 'On-Demand: Sent to bulk lead contacts (1,000–1,500 numbers)',
+        description: 'Marketing: Special discount advertisement for residential & commercial solar systems with image pamphlet.',
+        sample: 'Assalam-o-Alaikum! Energy Gurus ki taraf se commercial aur residential solar system par special discount offer. Mazeed maloomat ke liye helpline par rabta karein.'
       }
     };
 

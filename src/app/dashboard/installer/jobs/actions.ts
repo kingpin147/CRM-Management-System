@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { calculateNextAuditDate, getAuditFrequencyLabel, formatDate } from '@/lib/utils'
 import { calculateNextBillingDate } from '@/lib/pricing'
+import { triggerRegistrationSMS } from '@/lib/integration-helpers'
 
 function parseDateSafe(val: any): Date | null {
   if (!val || typeof val !== 'string' || val.trim() === '') return null
@@ -743,6 +744,9 @@ export async function activateIpNocConnection(formData: FormData) {
       performedBy: ipNocUser
     }
   })
+
+  // Automatic Client Requirement: Welcome & CRF sent when customer is activated in CRM
+  triggerRegistrationSMS(customerId).catch((e) => console.error('Error triggering welcome CRF on IP NOC activation:', e))
 
   revalidatePath('/dashboard/installer/jobs')
   revalidatePath('/dashboard/sales/pending')

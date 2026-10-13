@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { notificationService } from '@/lib/notification-service';
+import { createClient } from '@/utils/supabase/server';
+import prisma from '@/lib/prisma';
 import { z } from 'zod';
 
 const sendSMSSchema = z.object({
@@ -27,6 +29,39 @@ const sendSMSSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    // 1. Role Authorization Check: Only Super Admin, Admin, Sales Manager & CEO
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized: Authentication required.' }, { status: 401 });
+    }
+
+    const dbUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { supabaseId: user.id },
+          ...(user.email ? [{ email: { equals: user.email, mode: 'insensitive' as const } }] : [])
+        ]
+      },
+      select: { role: true, designation: true, isActive: true }
+    });
+
+    const role = (dbUser?.role || '').toUpperCase().trim();
+    const designation = (dbUser?.designation || '').toLowerCase().trim();
+    const isCEO = designation.includes('ceo') || designation.includes('chief executive');
+
+    const isAuthorized = Boolean(
+      dbUser?.isActive && (
+        ['SUPER_ADMIN', 'ADMIN', 'SALES_MANAGER', 'BILLING_MANAGER', 'MANAGER'].includes(role) ||
+        isCEO
+      )
+    );
+
+    if (!isAuthorized) {
+      return NextResponse.json({ error: 'Forbidden: Only Super Admin, Admin, and Sales Managers are permitted to dispatch SMS/WhatsApp messages.' }, { status: 403 });
+    }
+
     const body = await request.json();
     const data = sendSMSSchema.parse(body);
 

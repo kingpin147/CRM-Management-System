@@ -6,6 +6,7 @@ import prisma from '@/lib/prisma'
 import { createClient } from '@/utils/supabase/server'
 import { sendInvoiceNotifications } from '@/utils/communication'
 import { calculateNextBillingDate } from '@/lib/pricing'
+import { triggerRegistrationSMS } from '@/lib/integration-helpers'
 
 export async function updateCustomer(formData: FormData) {
   const customerId = formData.get('customerId') as string
@@ -92,6 +93,11 @@ export async function updateCustomer(formData: FormData) {
         } : {})
       },
     })
+
+    // Automatic Client Requirement: Welcome & CRF sent when customer is activated in CRM
+    if (isNowActive) {
+      triggerRegistrationSMS(customerId).catch((e) => console.error('Error triggering welcome CRF on activation:', e))
+    }
 
     revalidatePath(`/dashboard/customers/${customerId}`)
     revalidatePath('/dashboard/customers')

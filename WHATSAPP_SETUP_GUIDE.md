@@ -43,7 +43,7 @@ WHATSAPP_ACCESS_TOKEN=EAAG...your_permanent_system_user_token_here
 WHATSAPP_WEBHOOK_VERIFY_TOKEN=energy_gurus_crm_webhook_secure_token_2026
 
 # CRM Public Application URL (Used for hosting downloadable PDFs)
-NEXT_PUBLIC_APP_URL=https://crm.energygurus.pk
+NEXT_PUBLIC_APP_URL=https://crm.energygurus.online
 
 # Cron Security Token
 CRON_SECRET=your_secure_cron_secret_here
@@ -86,7 +86,7 @@ Go to **WhatsApp Manager** ➔ **Account Tools** ➔ **Message Templates** ➔ *
 ### 5. Configure Meta Webhooks
 1. In Meta App Dashboard, go to **WhatsApp** ➔ **Configuration** ➔ **Webhook**.
 2. Click **Edit**:
-   * **Callback URL:** `https://crm.energygurus.pk/api/webhooks/whatsapp`
+   * **Callback URL:** `https://crm.energygurus.online/api/webhooks/whatsapp`
    * **Verify Token:** `energy_gurus_crm_webhook_secure_token_2026` (Matches `WHATSAPP_WEBHOOK_VERIFY_TOKEN`).
 3. Under **Webhook Fields**, subscribe to:
    * `messages` (Real-time delivery status: `sent`, `delivered`, `read`, `failed` + inbound replies).
@@ -98,7 +98,7 @@ Go to **WhatsApp Manager** ➔ **Account Tools** ➔ **Message Templates** ➔ *
 You can test message dispatch directly via the Next.js API or curl:
 
 ```bash
-curl -X POST https://crm.energygurus.pk/api/cron/invoicing \
+curl -X POST https://crm.energygurus.online/api/cron/invoicing \
   -H "Authorization: Bearer your_secure_cron_secret_here"
 ```
 

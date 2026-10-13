@@ -50,7 +50,7 @@ WHATSAPP_ACCESS_TOKEN=EAAG...your_permanent_system_user_token
 WHATSAPP_WEBHOOK_VERIFY_TOKEN=energy_gurus_crm_webhook_secure_token_2026
 
 # CRM Public URL for Dynamic Media & Document Hosting
-NEXT_PUBLIC_APP_URL=https://crm.energygurus.pk
+NEXT_PUBLIC_APP_URL=https://crm.energygurus.online
 CRON_SECRET=your_secure_cron_secret
 ```
 
@@ -63,7 +63,7 @@ CRON_SECRET=your_secure_cron_secret
 ### Scenario 1: Customer Welcome & Registration Form (CRF)
 * **Meta Template Name:** `customer_welcome_crf`
 * **Meta Category:** `UTILITY`
-* **CRM Trigger:** Triggered in `src/app/api/signup/route.ts` or when customer status moves to `CONNECTION_ACTIVE` / `PENDING_ACTIVATION`.
+* **CRM Trigger:** **Automatic:** Will be sent when customer will be activated in CRM (`status` transitions to `CONNECTION_ACTIVE` via profile activation or IP NOC configuration).
 * **Prisma Model Mapping:** `Customer.fullName`, `Customer.customerCode`, `Customer.crfNumber`
 * **Header:** `DOCUMENT` (Auto-generated CRF PDF: `{{NEXT_PUBLIC_APP_URL}}/api/customers/{{Customer_ID}}/crf`)
 * **Body Text Template:**
@@ -93,7 +93,7 @@ CRON_SECRET=your_secure_cron_secret
           {
             "type": "document",
             "document": {
-              "link": "https://crm.energygurus.pk/api/customers/c0a80101-0001-4000-8000-000000000001/crf",
+              "link": "https://crm.energygurus.online/api/customers/c0a80101-0001-4000-8000-000000000001/crf",
               "filename": "Customer_Registration_Form_101.pdf"
             }
           }
@@ -118,7 +118,7 @@ CRON_SECRET=your_secure_cron_secret
 ### Scenario 2: Monthly Invoice Dispatch
 * **Meta Template Name:** `monthly_invoice_dispatch`
 * **Meta Category:** `UTILITY`
-* **CRM Trigger:** Automated cron job at `src/app/api/cron/invoicing/route.ts` executed on the **1st of every month** or via manual single invoice dispatch in Billing Management.
+* **CRM Trigger:** **Automatic:** Executed on the **1st of every month** (`src/app/api/cron/invoicing/route.ts`). Fixed Due Date is set to the **10th of every month**.
 * **Prisma Model Mapping:** `Invoice.invoiceNumber`, `Invoice.totalAmount`, `Invoice.dueDate`, `Invoice.billingPeriod`, `Customer.fullName`
 * **Header:** `DOCUMENT` (Official Tax Invoice PDF: `{{NEXT_PUBLIC_APP_URL}}/api/invoice/{{Invoice_ID}}/pdf`)
 * **Body Text Template:**
@@ -130,60 +130,14 @@ CRON_SECRET=your_secure_cron_secret
   * `{{4}}` -> `Formatted Invoice Total` (e.g. `4,500`)
   * `{{5}}` -> `Formatted Due Date` (e.g. `10-Oct-2026`)
 * **Buttons:**
-  * URL Button: `View Online Invoice` ➔ `https://crm.energygurus.pk/api/invoice/{{1}}`
-
-#### Meta Graph API Payload:
-```json
-{
-  "messaging_product": "whatsapp",
-  "recipient_type": "individual",
-  "to": "923164266004",
-  "type": "template",
-  "template": {
-    "name": "monthly_invoice_dispatch",
-    "language": { "code": "en" },
-    "components": [
-      {
-        "type": "header",
-        "parameters": [
-          {
-            "type": "document",
-            "document": {
-              "link": "https://crm.energygurus.pk/api/invoice/inv_01/pdf",
-              "filename": "Invoice_INV-2026-001.pdf"
-            }
-          }
-        ]
-      },
-      {
-        "type": "body",
-        "parameters": [
-          { "type": "text", "text": "Nouman Attique" },
-          { "type": "text", "text": "INV-2026-001" },
-          { "type": "text", "text": "October 2026" },
-          { "type": "text", "text": "4,500.00" },
-          { "type": "text", "text": "10-Oct-2026" }
-        ]
-      },
-      {
-        "type": "button",
-        "sub_type": "url",
-        "index": "0",
-        "parameters": [
-          { "type": "text", "text": "inv_01" }
-        ]
-      }
-    ]
-  }
-}
-```
+  * URL Button: `View Online Invoice` ➔ `https://crm.energygurus.online/api/invoice/{{1}}`
 
 ---
 
 ### Scenario 3: Payment Due Reminder
 * **Meta Template Name:** `payment_due_reminder`
 * **Meta Category:** `UTILITY`
-* **CRM Trigger:** Cron job at `src/app/api/cron/reminders/route.ts` running daily checking for unpaid invoices with `dueDate` in 1–3 days.
+* **CRM Trigger:** **Automatic:** As Due date is 10th of every month, reminder msg will be sent on the **9th of every month** (`src/app/api/cron/reminders/route.ts`).
 * **Prisma Model Mapping:** `Invoice.invoiceNumber`, `Invoice.totalAmount`, `Invoice.dueDate`, `Customer.fullName`
 * **Header:** `TEXT` ("⏰ Energy Gurus - Payment Reminder")
 * **Body Text Template:**
@@ -192,7 +146,7 @@ CRON_SECRET=your_secure_cron_secret
   * `{{1}}` -> `Customer.fullName`
   * `{{2}}` -> `Invoice.invoiceNumber`
   * `{{3}}` -> `Invoice.totalAmount`
-  * `{{4}}` -> `Formatted Due Date`
+  * `{{4}}` -> `Formatted Due Date` (e.g. `10-Oct-2026`)
   * `{{5}}` -> `+92 316 4266004`
 * **Buttons:**
   * Quick Reply: `Payment Proof Submitted`
@@ -202,7 +156,7 @@ CRON_SECRET=your_secure_cron_secret
 ### Scenario 4: Overdue Payment Notice
 * **Meta Template Name:** `payment_overdue_notice`
 * **Meta Category:** `UTILITY`
-* **CRM Trigger:** Cron job at `src/app/api/cron/overdue/route.ts` (7+ days past due) + Ad-hoc reminder button on Billing screen.
+* **CRM Trigger:** **Automatic:** Payment overdue alert will be sent on the **12th of every month** (`src/app/api/cron/overdue/route.ts`), and after that as required / ad-hoc.
 * **Prisma Model Mapping:** `Invoice.invoiceNumber`, `Invoice.totalAmount`, `Invoice.dueDate`, `Customer.fullName`
 * **Header:** `TEXT` ("⚠️ Urgent: Overdue Payment Notice")
 * **Body Text Template:**
@@ -221,7 +175,7 @@ CRON_SECRET=your_secure_cron_secret
 ### Scenario 5: Payment Receipt Confirmation
 * **Meta Template Name:** `payment_receipt_confirmation`
 * **Meta Category:** `UTILITY`
-* **CRM Trigger:** Triggered in real time when a `Transaction` is approved or `LedgerEntry` credit is added.
+* **CRM Trigger:** **Automatic:** Payment Receipt with Thank you msg on entry and after posting to ledger (`src/app/dashboard/billing-cpm/actions.ts`).
 * **Prisma Model Mapping:** `Transaction.amount`, `Transaction.paymentMethod`, `LedgerEntry.balance`, `Customer.fullName`
 * **Header:** `DOCUMENT` (Official Receipt PDF: `{{NEXT_PUBLIC_APP_URL}}/api/receipt/{{Transaction_ID}}`)
 * **Body Text Template:**
@@ -329,14 +283,14 @@ CRON_SECRET=your_secure_cron_secret
   * `{{3}}` -> `Formatted Closure Date`
   * `{{4}}` -> `Resolution Summary Remarks`
 * **Buttons:**
-  * URL Button: `Rate Our Service` ➔ `https://crm.energygurus.pk/feedback/{{1}}`
+  * URL Button: `Rate Our Service` ➔ `https://crm.energygurus.online/feedback/{{1}}`
 
 ---
 
-### Scenario 12: Daily Solar Performance Report
+### Scenario 12: Solar Performance Report (Weekly & Monthly)
 * **Meta Template Name:** `daily_solar_generation_report`
 * **Meta Category:** `UTILITY`
-* **CRM Trigger:** Cron job at `src/app/api/cron/solar-reports/route.ts` executed daily at **6:00 PM**.
+* **CRM Trigger:** **Automatic:** Executed **weekly (Sundays) and monthly (1st of month) only** via `src/app/api/cron/solar-reports/route.ts` at 6:00 PM. (Daily send skipped per client schedule to optimize costs).
 * **Prisma Model Mapping:** `SolarSystem.totalWattage`, Inverter Telemetry, `Customer.fullName`
 * **Header:** `TEXT` ("☀️ Daily Solar Generation Report")
 * **Body Text Template:**

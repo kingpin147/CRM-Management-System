@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ChevronDown, ShoppingBag, AlertCircle, BarChart3, Users, Settings, Search, CreditCard, Wrench, LayoutDashboard } from 'lucide-react'
+import { ChevronDown, ShoppingBag, AlertCircle, BarChart3, Users, Settings, Search, CreditCard, Wrench, LayoutDashboard, MessageSquare } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -100,6 +100,7 @@ export function MainNav({
   const canViewBilling = isSuperAdmin || isSalesManager
   const canViewReports = !isOMOrFieldTeam && !isOMManager && !isInstaller && !isIpNoc
   const canViewSystemAudits = isOMManager || isSuperAdmin || isInstaller || isIpNoc || isSalesManager
+  const canViewSMS = isSuperAdmin || isSalesManager || canViewManagementDashboard
 
   if (orientation === 'horizontal') {
     return (
@@ -353,6 +354,16 @@ export function MainNav({
             </span>
           </Link>
         )}
+
+        {/* WhatsApp & SMS Broadcasts if Authorized (Super Admin, Sales Manager, CEO) */}
+        {canViewSMS && (
+          <Link href="/dashboard/sms" className={linkClass('/dashboard/sms')}>
+            <span className="flex items-center gap-1 font-semibold">
+              <MessageSquare className="h-3.5 w-3.5 text-[var(--color-amber)] shrink-0" />
+              <span>Broadcast & SMS</span>
+            </span>
+          </Link>
+        )}
       </nav>
     )
   }
@@ -507,6 +518,20 @@ export function MainNav({
           <Link href="/dashboard/admin" className={linkClass('/dashboard/admin')} onClick={onItemClick}>
             User Roles & Permissions
           </Link>
+        </div>
+      )}
+
+      {canViewSMS && (
+        <div>
+          <p className="px-3 text-xs font-bold text-[var(--color-slate-custom)] uppercase tracking-wider mb-1">Communications</p>
+          <div className="space-y-0.5">
+            <Link href="/dashboard/sms" className={linkClass('/dashboard/sms')} onClick={onItemClick}>
+              <span className="flex items-center gap-1.5 font-semibold">
+                <MessageSquare className="h-4 w-4 text-[var(--color-amber)]" />
+                Broadcast &amp; SMS
+              </span>
+            </Link>
+          </div>
         </div>
       )}
 

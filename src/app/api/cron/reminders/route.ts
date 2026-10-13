@@ -11,9 +11,10 @@ export async function GET(request: NextRequest) {
     }
 
     const now = new Date()
-    // Window for upcoming due date: 1 to 3 days ahead
-    const targetStartDate = new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000)
-    const targetEndDate = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
+    // Automatic Client Requirement: Due date is 10th of every month, reminder msg sent on 9th
+    // Target window: Unpaid invoices whose due date is tomorrow (or within the next 24-48 hours)
+    const targetStartDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0)
+    const targetEndDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2, 23, 59, 59)
 
     // Find unpaid invoices whose due date falls within target window
     const upcomingInvoices = await prisma.invoice.findMany({

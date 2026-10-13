@@ -3,6 +3,7 @@
 import prisma from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { CustomerStatus } from '@prisma/client'
+import { triggerPaymentReceivedSMS } from '@/lib/integration-helpers'
 
 // 1. Search Customer by ID, Code, Name, Phone, CNIC, or CRF
 export async function searchCustomerForBilling(query: string) {
@@ -347,7 +348,7 @@ export async function createPaymentEntry(formData: FormData) {
     const amount = parseFloat(amountStr)
 
     // Save as UNPOSTED_PAYMENT
-    await prisma.transaction.create({
+    const transaction = await prisma.transaction.create({
       data: {
         customerId,
         amount,
@@ -356,6 +357,9 @@ export async function createPaymentEntry(formData: FormData) {
         createdAt: entryDate,
       }
     })
+
+    // Automatic Client Requirement: Payment Receipt / Thank you msg on entry
+    triggerPaymentReceivedSMS(transaction.id).catch((err) => console.error('Error triggering payment entry SMS:', err))
 
     revalidatePath('/dashboard/billing-cpm')
     return { 
@@ -443,6 +447,11 @@ export async function postTransaction(transactionId: string) {
       where: { id: transactionId },
       data: { status: 'POSTED' }
     })
+
+    // Automatic Client Requirement: Payment Receipt sent after posting to ledger
+    if (isPayment) {
+      triggerPaymentReceivedSMS(transactionId).catch((err) => console.error('Error triggering posted payment receipt:', err))
+    }
 
     revalidatePath('/dashboard/billing-cpm')
     revalidatePath('/dashboard/customers')

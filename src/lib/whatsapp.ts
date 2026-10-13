@@ -6,7 +6,7 @@
 import prisma from '@/lib/prisma'
 
 export interface SendWhatsAppTemplateOptions {
-  customerId: string
+  customerId?: string
   recipientPhone: string
   templateName: string
   languageCode?: string
@@ -22,7 +22,7 @@ export interface SendWhatsAppTemplateOptions {
 }
 
 export interface SendWhatsAppTextOptions {
-  customerId: string
+  customerId?: string
   recipientPhone: string
   message: string
   type: 'INVOICE' | 'DUE_REMINDER' | 'OVERDUE_REMINDER' | 'RECEIPT' | 'WELCOME' | 'TICKET' | 'STATUS_CHANGE' | 'REPORT' | 'BROADCAST' | 'MANUAL'
@@ -179,27 +179,31 @@ export async function sendWhatsAppTemplate(options: SendWhatsAppTemplateOptions)
     wamid = `wamid.simulated.${Date.now()}`
   }
 
-  // Persist to Prisma CommunicationLog
-  try {
-    const log = await prisma.communicationLog.create({
-      data: {
-        customerId,
-        channel: 'WHATSAPP',
-        type,
-        recipient: formattedPhone,
-        messageBody: `[Template: ${templateName}] Variables: ${bodyParams.join(' | ')}`,
-        status: isSuccess ? 'SENT' : 'FAILED',
-        externalId: wamid,
-        invoiceId: invoiceId || null,
-        errorDetails: errorDetails,
-        sentAt: new Date(),
-      },
-    })
-    return { success: isSuccess, wamid, log, error: errorDetails }
-  } catch (dbErr: any) {
-    console.error('Failed to log WhatsApp communication to DB:', dbErr)
-    return { success: isSuccess, wamid, error: dbErr.message }
+  // Persist to Prisma CommunicationLog if customerId is provided
+  if (customerId) {
+    try {
+      const log = await prisma.communicationLog.create({
+        data: {
+          customerId,
+          channel: 'WHATSAPP',
+          type,
+          recipient: formattedPhone,
+          messageBody: `[Template: ${templateName}] Variables: ${bodyParams.join(' | ')}`,
+          status: isSuccess ? 'SENT' : 'FAILED',
+          externalId: wamid,
+          invoiceId: invoiceId || null,
+          errorDetails: errorDetails,
+          sentAt: new Date(),
+        },
+      })
+      return { success: isSuccess, wamid, log, error: errorDetails }
+    } catch (dbErr: any) {
+      console.error('Failed to log WhatsApp communication to DB:', dbErr)
+      return { success: isSuccess, wamid, error: dbErr.message }
+    }
   }
+
+  return { success: isSuccess, wamid, error: errorDetails }
 }
 
 /**
@@ -260,23 +264,27 @@ export async function sendWhatsAppText(options: SendWhatsAppTextOptions) {
     wamid = `wamid.simulated.${Date.now()}`
   }
 
-  try {
-    const log = await prisma.communicationLog.create({
-      data: {
-        customerId,
-        channel: 'WHATSAPP',
-        type,
-        recipient: formattedPhone,
-        messageBody: message,
-        status: isSuccess ? 'SENT' : 'FAILED',
-        externalId: wamid,
-        invoiceId: invoiceId || null,
-        errorDetails: errorDetails,
-        sentAt: new Date(),
-      },
-    })
-    return { success: isSuccess, wamid, log, error: errorDetails }
-  } catch (dbErr: any) {
-    return { success: isSuccess, wamid, error: dbErr.message }
+  if (customerId) {
+    try {
+      const log = await prisma.communicationLog.create({
+        data: {
+          customerId,
+          channel: 'WHATSAPP',
+          type,
+          recipient: formattedPhone,
+          messageBody: message,
+          status: isSuccess ? 'SENT' : 'FAILED',
+          externalId: wamid,
+          invoiceId: invoiceId || null,
+          errorDetails: errorDetails,
+          sentAt: new Date(),
+        },
+      })
+      return { success: isSuccess, wamid, log, error: errorDetails }
+    } catch (dbErr: any) {
+      return { success: isSuccess, wamid, error: dbErr.message }
+    }
   }
+
+  return { success: isSuccess, wamid, error: errorDetails }
 }

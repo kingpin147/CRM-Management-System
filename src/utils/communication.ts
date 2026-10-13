@@ -135,7 +135,8 @@ export async function sendInvoiceNotifications(params: {
   const formattedDueDate = formatDate(invoice.dueDate)
   const amountNumber = Number(invoice.totalAmount) || 0
   const formattedAmount = amountNumber.toLocaleString(undefined, { minimumFractionDigits: 2 })
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://crm.energygurus.pk'
+  const rawAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://crm.energygurus.online'
+  const appUrl = rawAppUrl.replace(/\/+$/, '')
 
   const results: { whatsapp?: any; email?: any } = {}
 

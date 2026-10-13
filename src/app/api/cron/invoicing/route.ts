@@ -75,7 +75,8 @@ export async function GET(request: NextRequest) {
         }
 
         const invoiceNumber = `INV-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}-${customer.customerCode}`
-        const dueDate = new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000)
+        // Automatic Client Requirement: Invoice generated on 1st, Due date is always 10th of every month
+        const dueDate = new Date(now.getFullYear(), now.getMonth(), 10, 23, 59, 59)
 
         let createdInvoice: any = null
 

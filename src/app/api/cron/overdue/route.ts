@@ -11,7 +11,8 @@ export async function GET(request: NextRequest) {
     }
 
     const now = new Date()
-    // Overdue cutoff: Invoices whose dueDate is past
+    // Automatic Client Requirement: Payment overdue alert sent on 12th of every month (due was 10th), and after that as required
+    // Overdue cutoff: Invoices whose dueDate is past (e.g. past the 10th)
     const overdueInvoices = await prisma.invoice.findMany({
       where: {
         status: { in: ['UNPAID', 'OVERDUE', 'Unpaid', 'Overdue'] },
