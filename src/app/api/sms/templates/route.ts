@@ -14,7 +14,7 @@ export async function GET() {
         headerType: 'DOCUMENT (CRF.pdf)',
         trigger: 'Automatic: Sent when customer will be activated in CRM',
         description: 'Account Onboarding: Confirms account registration and delivers the official CRF document.',
-        sample: 'Dear Nouman Attique, welcome to Energy Gurus! Your solar O&M service account has been successfully registered. Your Customer Code is 101 (CRF #CRF-2026-00101). Please find your official Customer Registration Form attached. For assistance, contact our helpline at +92 316 4266004.'
+        sample: 'Dear Nouman Attique, welcome to Energy Gurus! Your solar O&M service account has been successfully registered. Your Customer Code is 101 (CRF #CRF-2026-00101). Please find your official Customer Registration Form attached. For assistance, contact our helpline at +92 316 4266004 - Energy Gurus Team.'
       },
       MONTHLY_INVOICE_DISPATCH: {
         name: '2. Monthly Invoice Dispatch',
