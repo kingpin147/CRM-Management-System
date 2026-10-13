@@ -67,6 +67,7 @@ export const STRUCTURE_TYPES = [
   'H.D.G.I. - L2 Z-Type Structure',
   'H.D.G.I. - L3 Z-Type Structure',
   'M.S. - Elevated Structure with Walkway',
+  'M.S. - Elevated Structure Without Walkway',
   'M.S. - L2 Z-Type Elevated Structure',
   'M.S. - L3 Z-Type Elevated Structure',
   'H.D.G.I. / Aluminium - L2 Z-Type Structure',
