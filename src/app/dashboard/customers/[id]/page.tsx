@@ -22,6 +22,8 @@ import { createClient } from '@/utils/supabase/server'
 import { SectionHeader } from '@/components/ui/section-header'
 import { CustomerIdQuickSwitch } from './CustomerIdQuickSwitch'
 import { AuditDetailDialog } from './AuditDetailDialog'
+import { canUserEditCustomerProfile, canUserEditSolarSpecs } from '@/lib/permissions'
+import { CustomerHistoryNotes } from './CustomerHistoryNotes'
 
 
 export default async function CustomerDetailPage({ 
@@ -36,8 +38,12 @@ export default async function CustomerDetailPage({
   
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  const dbUser = user ? await prisma.user.findUnique({ where: { supabaseId: user.id }, select: { role: true } }) : null
+  const dbUser = user ? await prisma.user.findUnique({ 
+    where: { supabaseId: user.id }, 
+    select: { role: true, email: true, fullName: true, designation: true } 
+  }) : null
   const userRole = dbUser?.role
+  const userEmail = (dbUser?.email || user?.email || '').toLowerCase()
 
   const rawCustomer = await prisma.customer.findFirst({
     where: {
@@ -92,8 +98,18 @@ export default async function CustomerDetailPage({
   const customer = JSON.parse(JSON.stringify(rawCustomer))
 
   const canViewLedger = userRole ? ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'BILLING_MANAGER', 'SALES_MANAGER', 'SALES'].includes(userRole) : false
-  const canEditProfile = userRole ? ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'SALES_MANAGER', 'SALES'].includes(userRole) : false
-  const canEditSolarSpecs = userRole ? ['SUPER_ADMIN', 'ADMIN', 'OM_MANAGER'].includes(userRole) : false
+  const canEditProfile = canUserEditCustomerProfile({
+    role: userRole,
+    email: userEmail,
+    fullName: dbUser?.fullName,
+    designation: dbUser?.designation
+  })
+  const canEditSolarSpecs = canUserEditSolarSpecs({
+    role: userRole,
+    email: userEmail,
+    fullName: dbUser?.fullName,
+    designation: dbUser?.designation
+  })
   const canRecordPayment = userRole ? ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'BILLING_MANAGER', 'SALES_MANAGER', 'SALES'].includes(userRole) : false
 
   const smsLogs = (customer.communicationLogs || []).filter((l: any) => l.channel === 'SMS')
@@ -150,6 +166,9 @@ export default async function CustomerDetailPage({
             </a>
             {canEditProfile && (
               <EditCustomerDialog customer={customer} />
+            )}
+            {canEditSolarSpecs && (
+              <SolarSystemDialog customerId={customer.id} solarSystem={customer.solarSystem} />
             )}
           </div>
         </div>
@@ -1881,8 +1900,8 @@ export default async function CustomerDetailPage({
                           )}
                         </TableCell>
 
-                        <TableCell className="border-r text-slate-700 max-w-[280px]">
-                          {h.notes || 'Status transition recorded'}
+                        <TableCell className="border-r text-slate-700 min-w-[240px] max-w-[500px]">
+                          <CustomerHistoryNotes notes={h.notes} />
                         </TableCell>
 
                         <TableCell className="text-right font-medium text-slate-600">

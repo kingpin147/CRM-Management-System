@@ -7,6 +7,7 @@ import { createClient } from '@/utils/supabase/server'
 import { sendInvoiceNotifications } from '@/utils/communication'
 import { calculateNextBillingDate } from '@/lib/pricing'
 import { triggerRegistrationSMS } from '@/lib/integration-helpers'
+import { canUserEditCustomerProfile, canUserEditSolarSpecs } from '@/lib/permissions'
 
 export async function updateCustomer(formData: FormData) {
   const customerId = formData.get('customerId') as string
@@ -27,16 +28,92 @@ export async function updateCustomer(formData: FormData) {
   const area = formData.get('area') as string || null
   const subArea = formData.get('subArea') as string || null
   const coordinates = formData.get('coordinates') as string || null
+  const inverterUsername = formData.has('inverterUsername') ? (formData.get('inverterUsername') as string) : null
+  const inverterPassword = formData.has('inverterPassword') ? (formData.get('inverterPassword') as string) : null
 
   if (!customerId || !fullName || !contactNumber || !cnic) {
     return { error: 'Full Name, Contact Number, and CNIC are required.' }
   }
 
+  // Permission check: strictly SUPER_ADMIN, ADMIN, and Muhammad Ajmal (m.ajmal@energygurus.online)
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return { error: 'Authentication required to update customer profile.' }
+  }
+
+  const dbUser = await prisma.user.findUnique({
+    where: { supabaseId: user.id },
+    select: { fullName: true, role: true, email: true, designation: true }
+  })
+  const userEmail = (dbUser?.email || user.email || '').toLowerCase()
+  const userRole = dbUser?.role
+
+  if (!canUserEditCustomerProfile({ role: userRole, email: userEmail, fullName: dbUser?.fullName, designation: dbUser?.designation })) {
+    return { error: 'Access denied: You do not have permission to edit customer profile.' }
+  }
+
+  let performedBy = 'Authorized Manager'
+  if (dbUser) {
+    performedBy = `${dbUser.fullName} (${dbUser.designation || dbUser.role.replace(/_/g, ' ')})`
+  } else if (user?.email) {
+    performedBy = user.email
+  }
+
   try {
     const currentCustomer = await prisma.customer.findUnique({
       where: { id: customerId },
-      include: { packagePlan: true }
+      include: { packagePlan: true, solarSystem: true }
     })
+
+    if (!currentCustomer) {
+      return { error: 'Customer not found.' }
+    }
+
+    // Collect field differences for history tracking
+    const diffs: string[] = []
+    const addDiff = (label: string, oldVal: any, newVal: any) => {
+      const v1 = (oldVal ?? '').toString().trim()
+      const v2 = (newVal ?? '').toString().trim()
+      if (v1 !== v2) {
+        const from = v1 || '(Not Specified)'
+        const to = v2 || '(Cleared)'
+        diffs.push(`• ${label}: "${from}" → "${to}"`)
+      }
+    }
+
+    addDiff('Customer Name', currentCustomer.fullName, fullName)
+    addDiff('Contact Number', currentCustomer.contactNumber, contactNumber)
+    addDiff('POC Number', currentCustomer.pocNumber, pocNumber)
+    addDiff('Email', currentCustomer.email, email)
+    addDiff('CNIC', currentCustomer.cnic, cnic)
+    addDiff('Passport #', currentCustomer.passportNumber, passportNumber)
+    addDiff('NTN Number', currentCustomer.ntnNumber, ntnNumber)
+    addDiff('Customer Type', currentCustomer.customerType, customerType)
+    addDiff(
+      'Customer Status',
+      currentCustomer.status ? currentCustomer.status.replace(/_/g, ' ') : '',
+      status ? status.replace(/_/g, ' ') : ''
+    )
+    addDiff('Full Address', currentCustomer.address, address)
+    addDiff('City', currentCustomer.city, city)
+    addDiff('House #', currentCustomer.houseNumber, houseNumber)
+    addDiff('Street #', currentCustomer.streetNumber, streetNumber)
+    addDiff('Block / Sector', currentCustomer.block, block)
+    addDiff('Area / Society', currentCustomer.area, area)
+    addDiff('Sub Area / Phase', currentCustomer.subArea, subArea)
+    addDiff('GPS Coordinates', currentCustomer.coordinates, coordinates)
+
+    if (inverterUsername !== null && currentCustomer.solarSystem) {
+      addDiff('Inverter User Name', currentCustomer.solarSystem.inverterUsername, inverterUsername)
+    }
+    if (inverterPassword !== null && currentCustomer.solarSystem) {
+      const oldPwd = (currentCustomer.solarSystem.inverterPassword || '').trim()
+      const newPwd = inverterPassword.trim()
+      if (oldPwd !== newPwd) {
+        diffs.push(`• Inverter Password: "(Updated)"`)
+      }
+    }
 
     const isNowActive = status === CustomerStatus.CONNECTION_ACTIVE && currentCustomer?.status !== CustomerStatus.CONNECTION_ACTIVE
     const activationDate = isNowActive ? (currentCustomer?.activationDate || new Date()) : undefined
@@ -48,17 +125,24 @@ export async function updateCustomer(formData: FormData) {
       calculatedNextBillingDate = calculateNextBillingDate(activationDate, bType, freeM)
     }
 
-    if (currentCustomer && currentCustomer.status !== status) {
+    const statusChanged = currentCustomer.status !== status
+
+    if (diffs.length > 0) {
+      const notes = [
+        `Customer profile updated (${diffs.length} field${diffs.length > 1 ? 's' : ''} modified):`,
+        ...diffs
+      ].join('\n')
+
       await prisma.customerHistory.create({
         data: {
           customerId,
           customerCode: currentCustomer.customerCode,
           customerName: fullName || currentCustomer.fullName,
-          actionType: 'STATUS_CHANGE',
-          oldStatus: currentCustomer.status,
-          newStatus: status,
-          notes: `Customer status updated via profile edit to ${status.replace(/_/g, ' ')}`,
-          performedBy: 'Account Admin / Manager',
+          actionType: statusChanged ? 'STATUS_CHANGE' : 'PROFILE_UPDATE',
+          oldStatus: statusChanged ? currentCustomer.status : null,
+          newStatus: statusChanged ? status : null,
+          notes,
+          performedBy,
         }
       })
     }
@@ -93,6 +177,16 @@ export async function updateCustomer(formData: FormData) {
         } : {})
       },
     })
+
+    if (currentCustomer.solarSystem && (inverterUsername !== null || inverterPassword !== null)) {
+      await prisma.solarSystem.update({
+        where: { customerId },
+        data: {
+          ...(inverterUsername !== null ? { inverterUsername } : {}),
+          ...(inverterPassword !== null ? { inverterPassword } : {}),
+        }
+      })
+    }
 
     // Automatic Client Requirement: Welcome & CRF sent when customer is activated in CRM
     if (isNowActive) {
@@ -158,6 +252,25 @@ export async function createPackagePlan(formData: FormData) {
 
 export async function saveSolarSystem(formData: FormData) {
   const customerId = formData.get('customerId') as string
+  if (!customerId) return { error: 'Customer ID is required' }
+
+  // Permission check: strictly SUPER_ADMIN, ADMIN, OM_MANAGER, and Muhammad Ajmal (m.ajmal@energygurus.online)
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return { error: 'Authentication required to save solar system specifications.' }
+  }
+
+  const dbUser = await prisma.user.findUnique({
+    where: { supabaseId: user.id },
+    select: { fullName: true, role: true, email: true, designation: true }
+  })
+  const userEmail = (dbUser?.email || user.email || '').toLowerCase()
+  const userRole = dbUser?.role
+
+  if (!canUserEditSolarSpecs({ role: userRole, email: userEmail, fullName: dbUser?.fullName, designation: dbUser?.designation })) {
+    return { error: 'Access denied: You do not have permission to edit solar system specifications.' }
+  }
   const disco = formData.get('disco') as string || null
   const discoRefNo = formData.get('discoRefNo') as string || null
   const meterType = formData.get('meterType') as string || 'Green Meter'
@@ -317,21 +430,100 @@ export async function saveSolarSystem(formData: FormData) {
       ? (panelImages.length > 0 ? panelImages : (currentSystem?.panelImages || []))
       : (currentSystem?.panelImages || [])
 
-    // Track changes for equipment replacement / history audit
+    // Track comprehensive changes for equipment & specs history audit with old and new values
     const changes: string[] = []
 
+    const addSolarDiff = (label: string, oldVal: any, newVal: any) => {
+      const v1 = (oldVal ?? '').toString().trim()
+      const v2 = (newVal ?? '').toString().trim()
+      if (v1 !== v2) {
+        const from = v1 || '(Not Specified)'
+        const to = v2 || '(Cleared)'
+        changes.push(`• ${label}: "${from}" → "${to}"`)
+      }
+    }
+
+    const addDateDiff = (label: string, oldDate?: Date | null, newDate?: Date | null) => {
+      const d1 = oldDate ? new Date(oldDate).toISOString().split('T')[0] : ''
+      const d2 = newDate ? new Date(newDate).toISOString().split('T')[0] : ''
+      if (d1 !== d2) {
+        const from = d1 || '(Not Set)'
+        const to = d2 || '(Cleared)'
+        changes.push(`• ${label}: "${from}" → "${to}"`)
+      }
+    }
+
+    const addArrayDiff = (label: string, oldArr: string[] = [], newArr: string[] = []) => {
+      const a1 = (oldArr || []).filter(Boolean).join(', ')
+      const a2 = (newArr || []).filter(Boolean).join(', ')
+      if (a1 !== a2) {
+        const from = a1 || '(None)'
+        const to = a2 || '(Cleared)'
+        changes.push(`• ${label}: "${from}" → "${to}"`)
+      }
+    }
+
     if (currentSystem) {
-      if (currentSystem.inverterBrand !== inverterBrand || currentSystem.inverterSerial !== inverterSerial) {
-        changes.push(`Inverter Replaced/Updated: ${currentSystem.inverterBrand || 'N/A'} (SN: ${currentSystem.inverterSerial || 'N/A'}) → ${inverterBrand} (SN: ${inverterSerial})`)
+      // Grid & Metering
+      addSolarDiff('DISCO', currentSystem.disco, disco)
+      addSolarDiff('DISCO Ref No', currentSystem.discoRefNo, discoRefNo)
+      addSolarDiff('Meter Type', currentSystem.meterType, meterType)
+      addSolarDiff('Meter Phase', currentSystem.meterPhase, meterPhase)
+      addSolarDiff('Zero Export Device', currentSystem.zeroExportDevice ? 'Installed' : 'Not Installed', zeroExportDevice ? 'Installed' : 'Not Installed')
+      addSolarDiff('Net Metering', currentSystem.netMetering, netMetering)
+      addSolarDiff('Lightning Arrestor', currentSystem.lightningArrestor, lightningArrestor)
+      addSolarDiff('Energy Analyzer', currentSystem.energyAnalyzer, energyAnalyzer)
+
+      // Inverter System
+      addSolarDiff('Inverter Brand', currentSystem.inverterBrand, inverterBrand)
+      addSolarDiff('Inverter Type', currentSystem.inverterType, inverterType)
+      addSolarDiff('Inverter Phase', currentSystem.inverterPhase, inverterPhase)
+      addSolarDiff('Inverter Category', currentSystem.inverterCategory, inverterCategory)
+      addSolarDiff('Inverter Size', currentSystem.inverterSize, inverterSize)
+      addSolarDiff('No of Inverters', currentSystem.noOfInverters, noOfInverters)
+      addSolarDiff('Inverter Serial', currentSystem.inverterSerial, inverterSerial)
+      addArrayDiff('Inverter Serials', currentSystem.inverterSerials, inverterSerials)
+      addDateDiff('Inverter Warranty End', currentSystem.inverterWarrantyEnd, inverterWarrantyEnd)
+      addSolarDiff('Inverter Portal Username', currentSystem.inverterUsername, inverterUsername)
+      if (inverterPassword && inverterPassword !== currentSystem.inverterPassword) {
+        changes.push(`• Inverter Portal Password: "(Updated)"`)
       }
-      if (currentSystem.batteryBrand !== batteryBrand || currentSystem.batterySerial !== batterySerial) {
-        changes.push(`Battery Replaced/Updated: ${currentSystem.batteryBrand || 'N/A'} (SN: ${currentSystem.batterySerial || 'N/A'}) → ${batteryBrand} (SN: ${batterySerial})`)
-      }
-      if (currentSystem.panelBrand !== panelBrand || currentSystem.noOfPanels !== noOfPanels || currentSystem.panelWattage !== panelWattage) {
-        changes.push(`Panels Replaced/Updated: ${currentSystem.panelBrand || 'N/A'} ${currentSystem.panelWattage || 0}W x${currentSystem.noOfPanels || 0} → ${panelBrand} ${panelWattage}W x${noOfPanels}`)
-      }
+
+      // Controller & Monitoring
+      addSolarDiff('PV DG Controller', currentSystem.pvDgController, pvDgController)
+      addSolarDiff('PV DG Controller Brand', currentSystem.pvDgControllerBrand, pvDgControllerBrand)
+      addSolarDiff('Datalogger', currentSystem.datalogger, datalogger)
+      addSolarDiff('Datalogger Brand', currentSystem.dataloggerBrand, dataloggerBrand)
+      addSolarDiff('Monitoring Ecosystem', currentSystem.monitoringEcosystem, monitoringEcosystem)
+
+      // Solar Panels
+      addSolarDiff('Panel Brand', currentSystem.panelBrand, panelBrand)
+      addSolarDiff('Panel Type', currentSystem.panelType, panelType)
+      addSolarDiff('Panel Technology', currentSystem.panelTechnology, panelTechnology)
+      addSolarDiff('Panel Wattage', currentSystem.panelWattage ? `${currentSystem.panelWattage}W` : '', panelWattage ? `${panelWattage}W` : '')
+      addSolarDiff('No of Panels', currentSystem.noOfPanels, noOfPanels)
+      addSolarDiff('Total Wattage', currentSystem.totalWattage ? `${currentSystem.totalWattage}W` : '', totalWattage ? `${totalWattage}W` : '')
+      addDateDiff('Panel Warranty End', currentSystem.panelWarrantyEnd, panelWarrantyEnd)
+
+      // Battery Storage
+      addSolarDiff('Battery Brand', currentSystem.batteryBrand, batteryBrand)
+      addSolarDiff('Battery Type', currentSystem.batteryType, batteryType)
+      addSolarDiff('Battery Category', currentSystem.batteryCategory, batteryCategory)
+      addSolarDiff('No of Batteries', currentSystem.noOfBatteries, noOfBatteries)
+      addSolarDiff('Battery Serial', currentSystem.batterySerial, batterySerial)
+      addArrayDiff('Battery Serials', currentSystem.batterySerials, batterySerials)
+      addDateDiff('Battery Warranty End', currentSystem.batteryWarrantyEnd, batteryWarrantyEnd)
+
+      // Grounding & Installation
+      addSolarDiff('Earthing', currentSystem.earthing, earthing)
+      addSolarDiff('Earthing AC Ohms', currentSystem.earthingAcOhms, earthingAcOhms)
+      addSolarDiff('Earthing DC Ohms', currentSystem.earthingDcOhms, earthingDcOhms)
+      addSolarDiff('Breaker Specs', currentSystem.breakerName, breakerName)
+      addSolarDiff('Structure Type', currentSystem.structureType, structureType)
+      addSolarDiff('Installer Name', currentSystem.installerName, installerName)
+      addSolarDiff('Installer Company', currentSystem.installerCompany, installerCompany)
     } else {
-      changes.push(`Initial System Specs configured: Inverter ${inverterBrand} (${inverterSerial}), Battery ${batteryBrand} (${batterySerial}), Panels ${panelBrand} ${panelWattage}W x${noOfPanels}`)
+      changes.push(`Initial System Specs configured: Inverter ${inverterBrand} ${inverterSize || ''} (${inverterSerial}), Battery ${batteryBrand} (${batterySerial}), Panels ${panelBrand} ${panelWattage}W x${noOfPanels} (${totalWattage}W)`)
     }
 
     await prisma.solarSystem.upsert({
@@ -447,29 +639,37 @@ export async function saveSolarSystem(formData: FormData) {
       }
     })
 
-    if (currentCustomer) {
+    if (currentCustomer && changes.length > 0) {
       const supabase = await createClient()
       const { data: { user } } = await supabase.auth.getUser()
-      let performedBy = 'O&M Manager'
+      let performedBy = 'O&M Team'
       if (user) {
-        const dbUser = await prisma.user.findUnique({ where: { supabaseId: user.id }, select: { fullName: true, role: true } })
+        const dbUser = await prisma.user.findUnique({
+          where: { supabaseId: user.id },
+          select: { fullName: true, role: true, email: true, designation: true }
+        })
         if (dbUser) {
-          performedBy = `${dbUser.fullName} (${dbUser.role.replace(/_/g, ' ')})`
+          performedBy = `${dbUser.fullName} (${dbUser.designation || dbUser.role.replace(/_/g, ' ')})`
+        } else if (user.email) {
+          performedBy = user.email
         }
       }
 
-      const notes = changes.length > 0
-        ? `Solar system equipment updated by O&M Manager: ${changes.join(' | ')}`
-        : 'Solar system equipment details updated by O&M Manager.'
+      const notes = [
+        currentSystem
+          ? `Solar system details updated (${changes.length} field${changes.length > 1 ? 's' : ''} modified):`
+          : 'Initial solar system specifications configured:',
+        ...changes
+      ].join('\n')
 
       await prisma.customerHistory.create({
         data: {
           customerId,
           customerCode: currentCustomer.customerCode,
           customerName: currentCustomer.fullName,
-          actionType: 'SYSTEM_SPECS_UPDATE',
-          oldStatus: currentCustomer.status,
-          newStatus: currentCustomer.status,
+          actionType: currentSystem ? 'SYSTEM_SPECS_UPDATE' : 'SYSTEM_SPECS_CREATED',
+          oldStatus: null,
+          newStatus: null,
           notes,
           performedBy,
         }
@@ -732,6 +932,23 @@ export async function toggleInvoiceStatus(invoiceId: string, currentStatus: stri
 
 export async function deleteCustomer(customerId: string) {
   if (!customerId) return { error: 'Customer ID is required.' }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return { error: 'Authentication required.' }
+  }
+
+  const dbUser = await prisma.user.findUnique({
+    where: { supabaseId: user.id },
+    select: { fullName: true, role: true, email: true, designation: true }
+  })
+  const userEmail = (dbUser?.email || user.email || '').toLowerCase()
+  const userRole = dbUser?.role
+
+  if (!canUserEditCustomerProfile({ role: userRole, email: userEmail, fullName: dbUser?.fullName, designation: dbUser?.designation })) {
+    return { error: 'Access denied: You do not have permission to delete customer accounts.' }
+  }
 
   try {
     await prisma.$transaction(async (tx) => {

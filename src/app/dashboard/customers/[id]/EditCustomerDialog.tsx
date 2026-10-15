@@ -19,7 +19,7 @@ import { updateCustomer } from './actions'
 import { AutoSuggestInput } from '@/components/ui/auto-suggest-input'
 import { CITIES_LIST, getAreasForCity, getSubAreasForArea } from '@/lib/pakistan-cities-areas'
 
-export function EditCustomerDialog({ customer }: { customer: Customer }) {
+export function EditCustomerDialog({ customer }: { customer: any }) {
   const router = useRouter()
   const [open, setOpen] = React.useState(false)
   const [loading, setLoading] = React.useState(false)
@@ -42,6 +42,8 @@ export function EditCustomerDialog({ customer }: { customer: Customer }) {
   const [area, setArea] = React.useState(customer.area || '')
   const [subArea, setSubArea] = React.useState(customer.subArea || '')
   const [coordinates, setCoordinates] = React.useState(customer.coordinates || '')
+  const [inverterUsername, setInverterUsername] = React.useState(customer.solarSystem?.inverterUsername || '')
+  const [inverterPassword, setInverterPassword] = React.useState(customer.solarSystem?.inverterPassword || '')
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
@@ -67,6 +69,10 @@ export function EditCustomerDialog({ customer }: { customer: Customer }) {
     formData.append('area', area)
     formData.append('subArea', subArea)
     formData.append('coordinates', coordinates)
+    if (customer.solarSystem) {
+      formData.append('inverterUsername', inverterUsername)
+      formData.append('inverterPassword', inverterPassword)
+    }
 
     const res = await updateCustomer(formData)
     setLoading(false)
@@ -338,6 +344,42 @@ export function EditCustomerDialog({ customer }: { customer: Customer }) {
               </div>
             </div>
           </div>
+
+          {/* Section 3: Inverter Portal & Monitoring Credentials */}
+          {customer.solarSystem && (
+            <div className="bg-sky-50/70 p-4 rounded-xl border border-sky-200/80 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-1 border-b border-sky-200">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[#002868]">
+                  3. Inverter Portal & Monitoring Credentials
+                </h4>
+                <span className="text-[11px] text-slate-500 font-medium">
+                  Inverter monitoring mobile app & portal login credentials
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-[var(--color-ink)]">Inverter User Name</Label>
+                  <Input
+                    value={inverterUsername}
+                    onChange={(e) => setInverterUsername(e.target.value)}
+                    placeholder="e.g. customer@gmail.com or portal username"
+                    className="border-[var(--color-line)] focus-visible:ring-[var(--color-amber)] bg-white h-9 text-xs"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-[var(--color-ink)]">Inverter Password</Label>
+                  <Input
+                    value={inverterPassword}
+                    onChange={(e) => setInverterPassword(e.target.value)}
+                    placeholder="e.g. Inverter portal password"
+                    className="border-[var(--color-line)] focus-visible:ring-[var(--color-amber)] bg-white h-9 text-xs font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           <DialogFooter className="pt-3 flex justify-between items-center border-t border-[var(--color-line)]">
             <Button
