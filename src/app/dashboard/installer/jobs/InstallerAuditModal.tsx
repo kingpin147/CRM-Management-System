@@ -1321,17 +1321,17 @@ export function InstallerAuditModal({
                   </div>
                 </div>
 
-                {/* Datalogger Brands, Monitoring Ecosystem & Credentials - ONLY SHOWN WHEN INSTALLED */}
+                {/* Datalogger Brands, Monitoring Ecosystem - ONLY SHOWN WHEN INSTALLED */}
                 {datalogger === 'Installed' && (
                   <div className="mt-4 p-4 rounded-xl border-2 border-amber-400 bg-amber-50/40 space-y-4 animate-in fade-in-50 shadow-xs">
                     <div className="flex items-center justify-between pb-2 border-b border-amber-200">
                       <div>
                         <h4 className="text-xs font-bold text-[#002868] uppercase tracking-wide flex items-center gap-2">
                           <ShieldCheck className="h-4 w-4 text-amber-600" />
-                          Datalogger &amp; Monitoring Ecosystem Credentials
+                          Datalogger Hardware &amp; Monitoring Ecosystem
                         </h4>
                         <p className="text-[11px] text-amber-900 mt-0.5">
-                          Configure datalogger brand, ecosystem setup, and monitoring portal credentials.
+                          Configure datalogger brand and ecosystem setup.
                         </p>
                       </div>
                       <span className="text-[10px] bg-amber-100 border border-amber-300 text-amber-950 font-bold px-2 py-0.5 rounded">
@@ -1360,67 +1360,45 @@ export function InstallerAuditModal({
                         />
                       </div>
                     </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-amber-200/60">
-                      <div className="space-y-1">
-                        <Label className="text-xs font-semibold text-[#002868]">User Name</Label>
-                        <Input
-                          value={inverterUsername}
-                          onChange={(e) => setInverterUsername(e.target.value)}
-                          placeholder="e.g. customer@gmail.com or GoodWe username"
-                          className="h-9 text-xs bg-white border-amber-200"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs font-semibold text-[#002868]">Password</Label>
-                        <Input
-                          value={inverterPassword}
-                          onChange={(e) => setInverterPassword(e.target.value)}
-                          placeholder="e.g. Inverter / Datalogger portal password"
-                          className="h-9 text-xs bg-white font-mono border-amber-200"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="pt-2 border-t border-amber-200/60">
-                      <CameraPhotoCapture
-                        label="Inverter Invoice Snapshot"
-                        badge="Invoice Proof"
-                        guideType="general"
-                        compact
-                        value={inverterInvoiceUrl || null}
-                        onValueChange={(url) => setInverterInvoiceUrl(url || '')}
-                        onUpload={async (file) => {
-                          setUploadingInverterInvoice(true)
-                          try {
-                            const url = await uploadEquipmentPhoto(file, 'equipment/inverter-invoices')
-                            if (url) {
-                              setInverterInvoiceUrl(url)
-                              return url
-                            }
-                          } catch (err: any) {
-                            setError(`Inverter Invoice Upload Error: ${err.message}`)
-                          } finally {
-                            setUploadingInverterInvoice(false)
-                          }
-                        }}
-                        disabled={uploadingInverterInvoice}
-                        fileNamePrefix="inverter_invoice"
-                        subtext="Take a photo of the Inverter Purchase Invoice or upload document from gallery."
-                      />
-                    </div>
                   </div>
                 )}
 
-                {/* If Datalogger is NOT installed, we can still provide Inverter Invoice snapshot below */}
-                {datalogger !== 'Installed' && (
-                  <div className="mt-4 p-4 rounded-xl border border-slate-200 bg-white space-y-3">
-                    <div className="pb-2 border-b border-slate-100">
+                {/* Inverter Portal Credentials & Invoice Snapshot - ALWAYS VISIBLE */}
+                <div className="mt-4 p-4 rounded-xl border border-slate-200 bg-white space-y-3">
+                  <div className="pb-2 border-b border-slate-100 flex items-center justify-between">
+                    <div>
                       <h4 className="text-xs font-bold text-[#002868] uppercase tracking-wide flex items-center gap-2">
-                        <ShieldCheck className="h-4 w-4 text-slate-500" />
-                        Inverter Invoice Snapshot
+                        <ShieldCheck className="h-4 w-4 text-slate-600" />
+                        Inverter Portal Credentials &amp; Invoice Snapshot
                       </h4>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        Inverter mobile app / portal login credentials and purchase invoice proof.
+                      </p>
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-[#002868]">Inverter User Name</Label>
+                      <Input
+                        value={inverterUsername}
+                        onChange={(e) => setInverterUsername(e.target.value)}
+                        placeholder="e.g. customer@gmail.com or GoodWe username"
+                        className="h-9 text-xs bg-white"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-[#002868]">Inverter Password</Label>
+                      <Input
+                        value={inverterPassword}
+                        onChange={(e) => setInverterPassword(e.target.value)}
+                        placeholder="e.g. Inverter / Datalogger portal password"
+                        className="h-9 text-xs bg-white font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-100">
                     <CameraPhotoCapture
                       label="Inverter Invoice Snapshot"
                       badge="Invoice Proof"
@@ -1447,7 +1425,7 @@ export function InstallerAuditModal({
                       subtext="Take a photo of the Inverter Purchase Invoice or upload document from gallery."
                     />
                   </div>
-                )}
+                </div>
 
                 {Array.from({ length: noOfInverters }).map((_, index) => (
                   <div key={`inverter-${index}`} className="mt-4 p-4 rounded-xl border border-amber-200/60 bg-amber-50/30 space-y-4">

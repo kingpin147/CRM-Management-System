@@ -291,8 +291,8 @@ export async function saveSolarSystem(formData: FormData) {
   const dataloggerBrand = (formData.get('dataloggerBrand') as string) || null
   const monitoringEcosystem = (formData.get('monitoringEcosystem') as string) || null
 
-  const inverterUsername = formData.get('inverterUsername') as string || null
-  const inverterPassword = formData.get('inverterPassword') as string || null
+  const rawInverterUsername = formData.get('inverterUsername')
+  const rawInverterPassword = formData.get('inverterPassword')
   const inverterInvoiceUrl = formData.get('inverterInvoiceUrl') as string || null
   
   let inverterSerial = formData.get('inverterSerial') as string || 'SN-INV-' + Date.now().toString().slice(-6)
@@ -418,6 +418,12 @@ export async function saveSolarSystem(formData: FormData) {
     const currentSystem = await prisma.solarSystem.findUnique({ where: { customerId } })
     const currentCustomer = await prisma.customer.findUnique({ where: { id: customerId } })
     const breakerName = inputBreakerName || currentSystem?.breakerName || 'Schneider 32A MCB'
+    const inverterUsername = rawInverterUsername !== null
+      ? ((rawInverterUsername as string).trim() || null)
+      : (currentSystem?.inverterUsername || null)
+    const inverterPassword = rawInverterPassword !== null
+      ? ((rawInverterPassword as string).trim() || null)
+      : (currentSystem?.inverterPassword || null)
     
     const finalInverterImages = inverterImages !== undefined
       ? (inverterImages.length > 0 ? inverterImages : (currentSystem?.inverterImages || []))

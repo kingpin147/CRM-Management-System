@@ -1032,13 +1032,13 @@ export function EditCrfModal({
                   <div className="flex items-center justify-between border-b border-sky-100 pb-1.5">
                     <div className="flex items-center gap-2">
                       <span className="h-2 w-2 rounded-full bg-sky-500 animate-pulse" />
-                      <span className="text-xs font-bold text-[#002868]">Datalogger &amp; Monitoring Ecosystem Setup</span>
+                      <span className="text-xs font-bold text-[#002868]">Datalogger Hardware &amp; Monitoring Ecosystem Setup</span>
                     </div>
                     <Badge className="bg-sky-100 text-sky-800 text-[10px] font-semibold border-sky-200">
                       Hardware Active
                     </Badge>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <Label className="text-xs font-semibold text-slate-700">Datalogger Brand *</Label>
                       <AutoSuggestInput 
@@ -1057,27 +1057,36 @@ export function EditCrfModal({
                         placeholder="Auto-suggested ecosystem..."
                       />
                     </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-slate-700">Portal / Inverter Username</Label>
-                      <Input 
-                        value={inverterUsername} 
-                        onChange={(e) => setInverterUsername(e.target.value)} 
-                        className="h-9 text-xs" 
-                        placeholder="e.g. customer@gmail.com"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-slate-700">Portal / Inverter Password</Label>
-                      <Input 
-                        value={inverterPassword} 
-                        onChange={(e) => setInverterPassword(e.target.value)} 
-                        className="h-9 text-xs font-mono" 
-                        placeholder="Portal login password"
-                      />
-                    </div>
                   </div>
                 </div>
               )}
+
+              {/* Inverter Portal Credentials - ALWAYS VISIBLE */}
+              <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
+                  <span className="text-xs font-bold text-[#002868]">Inverter Portal &amp; Monitoring Credentials</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-slate-700">Portal / Inverter Username</Label>
+                    <Input 
+                      value={inverterUsername} 
+                      onChange={(e) => setInverterUsername(e.target.value)} 
+                      className="h-9 text-xs" 
+                      placeholder="e.g. customer@gmail.com"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-slate-700">Portal / Inverter Password</Label>
+                    <Input 
+                      value={inverterPassword} 
+                      onChange={(e) => setInverterPassword(e.target.value)} 
+                      className="h-9 text-xs font-mono" 
+                      placeholder="Portal login password"
+                    />
+                  </div>
+                </div>
+              </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-slate-200/80">
                 <CameraPhotoCapture

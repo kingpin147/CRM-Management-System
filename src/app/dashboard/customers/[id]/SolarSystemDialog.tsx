@@ -542,17 +542,17 @@ export function SolarSystemDialog({
                   </div>
                 </div>
 
-                {/* Datalogger Options Card - ONLY SHOWS WHEN SELECTED INSTALLED */}
+                {/* Datalogger Hardware Card - ONLY SHOWS WHEN SELECTED INSTALLED */}
                 {datalogger === 'Installed' && (
                   <div className="p-4 rounded-xl border border-sky-300 bg-sky-50/60 space-y-4 animate-fadeIn">
                     <div className="flex items-center justify-between pb-2 border-b border-sky-200">
                       <div>
                         <h4 className="text-xs font-bold text-[#002868] uppercase tracking-wide flex items-center gap-2">
                           <Zap className="h-4 w-4 text-sky-600" />
-                          Datalogger Ecosystem &amp; Credentials
+                          Datalogger Hardware &amp; Monitoring Ecosystem
                         </h4>
                         <p className="text-[11px] text-slate-600 mt-0.5">
-                          Configure datalogger hardware, auto-mapped ecosystem, and remote portal credentials.
+                          Configure external datalogger hardware brand and auto-mapped ecosystem.
                         </p>
                       </div>
                     </div>
@@ -579,29 +579,44 @@ export function SolarSystemDialog({
                         />
                       </div>
                     </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-sky-200/60">
-                      <div className="space-y-1">
-                        <Label className="text-xs font-semibold text-[#002868]">Inverter User Name</Label>
-                        <Input
-                          value={inverterUsername}
-                          onChange={(e) => setInverterUsername(e.target.value)}
-                          placeholder="e.g. customer@gmail.com or portal username"
-                          className="h-9 text-xs bg-white"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs font-semibold text-[#002868]">Inverter Password</Label>
-                        <Input
-                          value={inverterPassword}
-                          onChange={(e) => setInverterPassword(e.target.value)}
-                          placeholder="e.g. Inverter portal password"
-                          className="h-9 text-xs bg-white font-mono"
-                        />
-                      </div>
-                    </div>
                   </div>
                 )}
+
+                {/* Inverter Portal Credentials - ALWAYS VISIBLE */}
+                <div className="p-4 rounded-xl border border-sky-200 bg-sky-50/60 space-y-3">
+                  <div className="flex items-center justify-between pb-2 border-b border-sky-200/80">
+                    <div>
+                      <h4 className="text-xs font-bold text-[#002868] uppercase tracking-wide flex items-center gap-2">
+                        <ShieldCheck className="h-4 w-4 text-sky-600" />
+                        Inverter Portal &amp; Monitoring Credentials
+                      </h4>
+                      <p className="text-[11px] text-slate-600 mt-0.5">
+                        Inverter monitoring app / portal login credentials (e.g. FusionSolar, SEMS, SolisCloud)
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-[#002868]">Inverter User Name</Label>
+                      <Input
+                        value={inverterUsername}
+                        onChange={(e) => setInverterUsername(e.target.value)}
+                        placeholder="e.g. customer@gmail.com or portal username"
+                        className="h-9 text-xs bg-white"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-[#002868]">Inverter Password</Label>
+                      <Input
+                        value={inverterPassword}
+                        onChange={(e) => setInverterPassword(e.target.value)}
+                        placeholder="e.g. Inverter portal password"
+                        className="h-9 text-xs bg-white font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
 
                 {/* Inverter Invoice Snapshot (Always available for invoice record) */}
                 <div className="pt-3 border-t border-slate-200/80">
