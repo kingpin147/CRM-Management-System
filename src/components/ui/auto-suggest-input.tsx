@@ -65,7 +65,7 @@ export function AutoSuggestInput({
             onChange(e.target.value)
             if (!isOpen) setIsOpen(true)
           }}
-          onFocus={() => {
+          onClick={() => {
             setIsTyping(false)
             setIsOpen(true)
           }}
