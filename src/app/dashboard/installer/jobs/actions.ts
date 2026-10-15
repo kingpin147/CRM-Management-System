@@ -135,7 +135,7 @@ export async function submitInstallerAudit(formData: FormData) {
   if (!structureType.trim()) throw new Error('Structure Type is required in Section 5.')
   if (!structureMaterial.trim()) throw new Error('Structure Material is required in Section 5.')
   if (!ingressProtection.trim()) throw new Error('Ingress Protection rating is required in Section 5.')
-  if (!breakerName.trim()) throw new Error('Breaker & Switchgear Specification is required in Section 5.')
+  if (!breakerName.trim()) throw new Error('Breaker & Switchgear Specification is required in Section 2 (Inverter Specs).')
   if (!earthing.trim()) throw new Error('Earthing Protection Type is required in Section 5.')
   if (!systemInstallationDate) {
     throw new Error('Valid System Installation Date is required in Section 5.')

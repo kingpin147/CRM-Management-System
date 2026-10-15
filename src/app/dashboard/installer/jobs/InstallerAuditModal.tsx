@@ -703,6 +703,9 @@ export function InstallerAuditModal({
         return `Please select the Warranty Expiry Date for Inverter Unit ${i + 1} in Section 2.`
       }
     }
+    if (!breakerName?.trim()) {
+      return 'Please enter the Breaker & Switchgear specification in Section 2 (Inverter Specs).'
+    }
     if (pvDgController === 'Installed' && !pvDgControllerBrand?.trim()) {
       return 'Please select or specify the PV DG Controller Brand in Section 2.'
     }
@@ -763,9 +766,6 @@ export function InstallerAuditModal({
     }
     if (!ingressProtection?.trim()) {
       return 'Please select the Ingress Protection (IP) rating in Section 5.'
-    }
-    if (!breakerName?.trim()) {
-      return 'Please enter the Breaker & Switchgear specification in Section 5.'
     }
     if (!earthing?.trim()) {
       return 'Please select the Earthing Protection Type in Section 5.'
@@ -1271,6 +1271,18 @@ export function InstallerAuditModal({
                       className="h-9 text-xs font-mono bg-white font-bold"
                     />
                   </div>
+                  <div className="space-y-1 sm:col-span-2 md:col-span-2">
+                    <Label className="text-xs font-semibold">Breaker &amp; Switchgear Spec <span className="text-red-500">*</span></Label>
+                    <Input
+                      value={breakerName}
+                      onChange={(e) => setBreakerName(e.target.value)}
+                      placeholder="e.g. Schneider / ABB AC/DC Breakers"
+                      className="h-9 text-xs bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold text-rose-700">PV DG controller <span className="text-red-500">*</span></Label>
                     <Select value={pvDgController} onValueChange={(val) => setPvDgController(val || 'Not Installed')}>
@@ -1283,7 +1295,7 @@ export function InstallerAuditModal({
                       </SelectContent>
                     </Select>
                   </div>
-                  {pvDgController === 'Installed' ? (
+                  {pvDgController === 'Installed' && (
                     <div className="space-y-1 animate-in fade-in-50">
                       <Label className="text-xs font-semibold text-rose-700">PV DG Controller Brand <span className="text-red-500">*</span></Label>
                       <AutoSuggestInput
@@ -1294,38 +1306,20 @@ export function InstallerAuditModal({
                         className="h-9 text-xs bg-white border-rose-300"
                       />
                     </div>
-                  ) : (
-                    <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-rose-700">Datalogger <span className="text-red-500">*</span></Label>
-                      <Select value={datalogger} onValueChange={handleDataloggerStatusChange}>
-                        <SelectTrigger className="h-9 text-xs bg-white border-rose-300">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Not Installed">Not Installed</SelectItem>
-                          <SelectItem value="Installed">Installed</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
                   )}
-                </div>
-
-                {pvDgController === 'Installed' && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-                    <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-rose-700">Datalogger <span className="text-red-500">*</span></Label>
-                      <Select value={datalogger} onValueChange={handleDataloggerStatusChange}>
-                        <SelectTrigger className="h-9 text-xs bg-white border-rose-300">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Not Installed">Not Installed</SelectItem>
-                          <SelectItem value="Installed">Installed</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-rose-700">Datalogger <span className="text-red-500">*</span></Label>
+                    <Select value={datalogger} onValueChange={handleDataloggerStatusChange}>
+                      <SelectTrigger className="h-9 text-xs bg-white border-rose-300">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Not Installed">Not Installed</SelectItem>
+                        <SelectItem value="Installed">Installed</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                )}
+                </div>
 
                 {/* Datalogger Brands, Monitoring Ecosystem & Credentials - ONLY SHOWN WHEN INSTALLED */}
                 {datalogger === 'Installed' && (
@@ -2035,16 +2029,7 @@ export function InstallerAuditModal({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Breaker &amp; Switchgear Spec <span className="text-red-500">*</span></Label>
-                    <Input
-                      value={breakerName}
-                      onChange={(e) => setBreakerName(e.target.value)}
-                      placeholder="e.g. Schneider / ABB AC/DC Breakers"
-                      className="h-9 text-xs bg-white"
-                    />
-                  </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold">Earthing Protection <span className="text-red-500">*</span></Label>
                     <Select value={earthing} onValueChange={(val) => setEarthing(val || 'Both')}>

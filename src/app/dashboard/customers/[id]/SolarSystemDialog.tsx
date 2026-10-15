@@ -56,6 +56,7 @@ export function SolarSystemDialog({
   const [datalogger, setDatalogger] = React.useState<string>(solarSystem?.datalogger || 'Not Installed')
   const [dataloggerBrand, setDataloggerBrand] = React.useState<string>(solarSystem?.dataloggerBrand || '')
   const [monitoringEcosystem, setMonitoringEcosystem] = React.useState<string>(solarSystem?.monitoringEcosystem || '')
+  const [breakerName, setBreakerName] = React.useState<string>(solarSystem?.breakerName || 'Schneider / ABB')
 
   const [inverterUsername, setInverterUsername] = React.useState(solarSystem?.inverterUsername || '')
   const [inverterPassword, setInverterPassword] = React.useState(solarSystem?.inverterPassword || '')
@@ -138,6 +139,7 @@ export function SolarSystemDialog({
       setDatalogger(solarSystem.datalogger || 'Not Installed')
       setDataloggerBrand(solarSystem.dataloggerBrand || '')
       setMonitoringEcosystem(solarSystem.monitoringEcosystem || '')
+      setBreakerName(solarSystem.breakerName || 'Schneider / ABB')
 
       setPanelBrand(solarSystem.panelBrand || '')
       setPanelType(solarSystem.panelType || '')
@@ -311,6 +313,7 @@ export function SolarSystemDialog({
       formData.append('datalogger', datalogger)
       if (dataloggerBrand) formData.append('dataloggerBrand', dataloggerBrand)
       if (monitoringEcosystem) formData.append('monitoringEcosystem', monitoringEcosystem)
+      formData.append('breakerName', breakerName)
 
       formData.append('panelBrand', panelBrand)
       formData.append('panelType', panelType)
@@ -484,6 +487,18 @@ export function SolarSystemDialog({
                         +
                       </Button>
                     </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-[var(--color-ink)]">Breaker &amp; Switchgear Spec</Label>
+                    <Input
+                      value={breakerName}
+                      onChange={(e) => setBreakerName(e.target.value)}
+                      placeholder="e.g. Schneider / ABB AC/DC Breakers"
+                      className="h-9 text-xs bg-white"
+                    />
                   </div>
                 </div>
 

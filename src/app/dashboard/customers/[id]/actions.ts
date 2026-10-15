@@ -372,7 +372,7 @@ export async function saveSolarSystem(formData: FormData) {
   const lightningProtection = formData.get('lightningProtection') === 'true' || formData.get('lightningProtection') === 'Installed' || true
   const lightningArrestor = (formData.get('lightningArrestor') as string) || 'Not Installed'
   const energyAnalyzer = (formData.get('energyAnalyzer') as string) || 'Not Installed'
-  const breakerName = formData.get('breakerName') as string || 'Schneider 32A MCB'
+  const inputBreakerName = (formData.get('breakerName') as string)?.trim()
   const structureType = formData.get('structureType') as string || 'Elevated GI Structure'
   const installerName = formData.get('installerName') as string || 'EnergyGurus Technical Team'
   const installerCompany = formData.get('installerCompany') as string || 'EnergyGurus Private Limited'
@@ -417,6 +417,7 @@ export async function saveSolarSystem(formData: FormData) {
   try {
     const currentSystem = await prisma.solarSystem.findUnique({ where: { customerId } })
     const currentCustomer = await prisma.customer.findUnique({ where: { id: customerId } })
+    const breakerName = inputBreakerName || currentSystem?.breakerName || 'Schneider 32A MCB'
     
     const finalInverterImages = inverterImages !== undefined
       ? (inverterImages.length > 0 ? inverterImages : (currentSystem?.inverterImages || []))

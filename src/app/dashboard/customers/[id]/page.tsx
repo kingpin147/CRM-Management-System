@@ -801,6 +801,20 @@ export default async function CustomerDetailPage({
                             </TableCell>
                           </TableRow>
 
+                          {/* Breaker & Switchgear Spec */}
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Breaker &amp; Switchgear Spec</TableCell>
+                            <TableCell className="text-xs">
+                              {customer.solarSystem?.breakerName ? (
+                                <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                                  {customer.solarSystem.breakerName}
+                                </Badge>
+                              ) : (
+                                <span className="text-slate-400 font-medium">—</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+
                           {/* Earthing / OHMs */}
                           <TableRow className="border-b hover:bg-transparent">
                             <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Earthing & OHMs</TableCell>

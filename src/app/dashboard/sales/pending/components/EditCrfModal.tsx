@@ -956,6 +956,15 @@ export function EditCrfModal({
                   />
                 </div>
                 <div className="space-y-1 sm:col-span-2">
+                  <Label className="text-xs font-semibold text-slate-700">Breakers / Switchgear</Label>
+                  <Input 
+                    value={breakerName} 
+                    onChange={(e) => setBreakerName(e.target.value)} 
+                    className="h-9 text-xs" 
+                    placeholder="e.g. Schneider / ABB"
+                  />
+                </div>
+                <div className="space-y-1 sm:col-span-2">
                   <Label className="text-xs font-semibold text-slate-700">Inverter Serial #</Label>
                   <Input 
                     value={inverterSerial} 
@@ -1284,15 +1293,6 @@ export function EditCrfModal({
                     onChange={setStructureMaterial}
                     options={STRUCTURE_MATERIALS}
                     placeholder="e.g. Hot Dip Galvanized"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs font-semibold text-slate-700">Breakers / Switchgear</Label>
-                  <Input 
-                    value={breakerName} 
-                    onChange={(e) => setBreakerName(e.target.value)} 
-                    className="h-9 text-xs" 
-                    placeholder="e.g. Schneider / ABB"
                   />
                 </div>
                 <div className="space-y-1">

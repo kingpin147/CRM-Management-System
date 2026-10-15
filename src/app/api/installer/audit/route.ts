@@ -136,7 +136,7 @@ export async function POST(req: NextRequest) {
     if (!structureType.trim()) return NextResponse.json({ error: 'Structure Type is required in Section 5.' }, { status: 400 })
     if (!structureMaterial.trim()) return NextResponse.json({ error: 'Structure Material is required in Section 5.' }, { status: 400 })
     if (!ingressProtection.trim()) return NextResponse.json({ error: 'Ingress Protection rating is required in Section 5.' }, { status: 400 })
-    if (!breakerName.trim()) return NextResponse.json({ error: 'Breaker & Switchgear Specification is required in Section 5.' }, { status: 400 })
+    if (!breakerName.trim()) return NextResponse.json({ error: 'Breaker & Switchgear Specification is required in Section 2 (Inverter Specs).' }, { status: 400 })
     if (!earthing.trim()) return NextResponse.json({ error: 'Earthing Protection Type is required in Section 5.' }, { status: 400 })
     if (!systemInstallationDate) {
       return NextResponse.json({ error: 'Valid System Installation Date is required in Section 5.' }, { status: 400 })
