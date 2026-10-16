@@ -1,7 +1,7 @@
 # Meta WhatsApp Cloud API Specification & Scenarios
 
 > **Client / Organization:** Energy Gurus (Solar O&M Management System)  
-> **Contact / Helpline Reference:** +92 316 4266004  
+> **Contact / Helpline Reference:** +92 326 4022002  
 > **CRM Tech Stack:** Next.js (App Router), Prisma ORM, PostgreSQL, Tailwind CSS  
 > **API Protocol:** Meta WhatsApp Cloud API (Graph API v21.0) via Official Meta Endpoints  
 > **Rule Requirement:** All automated/system-initiated messages require **Meta Pre-Approved Templates** under the **`UTILITY`** category.
@@ -72,7 +72,7 @@ CRON_SECRET=your_secure_cron_secret
   * `{{1}}` -> `Customer.fullName`
   * `{{2}}` -> `Customer.customerCode` (e.g. `101`)
   * `{{3}}` -> `Customer.crfNumber` (e.g. `CRF-2026-00101`)
-  * `{{4}}` -> `+92 316 4266004`
+  * `{{4}}` -> `+92 326 4022002`
 * **Buttons:**
   * Quick Reply: `Contact Support`
 
@@ -81,7 +81,7 @@ CRON_SECRET=your_secure_cron_secret
 {
   "messaging_product": "whatsapp",
   "recipient_type": "individual",
-  "to": "923164266004",
+  "to": "923264022002",
   "type": "template",
   "template": {
     "name": "customer_welcome_crf",
@@ -105,7 +105,7 @@ CRON_SECRET=your_secure_cron_secret
           { "type": "text", "text": "Nouman Attique" },
           { "type": "text", "text": "101" },
           { "type": "text", "text": "CRF-2026-00101" },
-          { "type": "text", "text": "+92 316 4266004" }
+          { "type": "text", "text": "+92 326 4022002" }
         ]
       }
     ]
@@ -147,7 +147,7 @@ CRON_SECRET=your_secure_cron_secret
   * `{{2}}` -> `Invoice.invoiceNumber`
   * `{{3}}` -> `Invoice.totalAmount`
   * `{{4}}` -> `Formatted Due Date` (e.g. `10-Oct-2026`)
-  * `{{5}}` -> `+92 316 4266004`
+  * `{{5}}` -> `+92 326 4022002`
 * **Buttons:**
   * Quick Reply: `Payment Proof Submitted`
 
@@ -166,7 +166,7 @@ CRON_SECRET=your_secure_cron_secret
   * `{{2}}` -> `Invoice.invoiceNumber`
   * `{{3}}` -> `Invoice.totalAmount`
   * `{{4}}` -> `Formatted Due Date`
-  * `{{5}}` -> `+92 316 4266004`
+  * `{{5}}` -> `+92 326 4022002`
 * **Buttons:**
   * Quick Reply: `Request Extension`
 
@@ -201,7 +201,7 @@ CRON_SECRET=your_secure_cron_secret
   * `{{1}}` -> `Customer.fullName`
   * `{{2}}` -> `Customer.customerCode`
   * `{{3}}` -> `Total Outstanding Balance`
-  * `{{4}}` -> `+92 316 4266004`
+  * `{{4}}` -> `+92 326 4022002`
 
 ---
 
@@ -232,7 +232,7 @@ CRON_SECRET=your_secure_cron_secret
   * `{{1}}` -> `Customer.fullName`
   * `{{2}}` -> `Customer.customerCode`
   * `{{3}}` -> `Formatted Effective Date`
-  * `{{4}}` -> `+92 316 4266004`
+  * `{{4}}` -> `+92 326 4022002`
 
 ---
 
@@ -265,7 +265,7 @@ CRON_SECRET=your_secure_cron_secret
   * `{{3}}` -> `Ticket.category` (e.g. `Inverter Fault`)
   * `{{4}}` -> `Ticket.assignedTo` (e.g. `O&M Technical`)
   * `{{5}}` -> `24 Hours`
-  * `{{6}}` -> `+92 316 4266004`
+  * `{{6}}` -> `+92 326 4022002`
 
 ---
 
@@ -316,7 +316,7 @@ CRON_SECRET=your_secure_cron_secret
   * `{{1}}` -> `Customer.fullName`
   * `{{2}}` -> `Broadcast Subject Title`
   * `{{3}}` -> `Broadcast Message Body`
-  * `{{4}}` -> `+92 316 4266004`
+  * `{{4}}` -> `+92 326 4022002`
 
 ---
 
@@ -367,7 +367,7 @@ interface SendWhatsAppTemplateParams {
 export async function sendWhatsAppTemplate(params: SendWhatsAppTemplateParams) {
   const { customerId, recipientPhone, templateName, languageCode = 'en', bodyParams, headerDocument, headerImage, urlButtonParam, type, invoiceId } = params
 
-  // Format recipient phone number: ensure country code (e.g., 923164266004)
+  // Format recipient phone number: ensure country code (e.g., 923264022002)
   const cleanPhone = recipientPhone.replace(/[^0-9]/g, '')
   const formattedPhone = cleanPhone.startsWith('0') ? `92${cleanPhone.slice(1)}` : cleanPhone
 

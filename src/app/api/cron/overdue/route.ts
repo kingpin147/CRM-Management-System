@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
             invoice.invoiceNumber,
             formattedAmount,
             daysPastDue,
-            '+92 316 4266004',
+            '+92 326 4022002',
           ],
           type: 'OVERDUE_REMINDER',
           invoiceId: invoice.id,

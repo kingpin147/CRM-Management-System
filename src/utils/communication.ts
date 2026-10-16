@@ -157,7 +157,6 @@ export async function sendInvoiceNotifications(params: {
         link: `${appUrl}/api/invoice/${invoice.id}/pdf`,
         filename: `Invoice_${invoice.invoiceNumber}.pdf`,
       },
-      urlButtonParam: invoice.id,
       type: 'INVOICE',
       invoiceId: invoice.id,
     })

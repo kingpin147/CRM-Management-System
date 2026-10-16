@@ -26,7 +26,7 @@ Energy Gurus CRM uses the official **Meta WhatsApp Cloud API** for:
 1. Navigate to the [Meta for Developers Portal](https://developers.facebook.com/).
 2. Click **My Apps** ➔ **Create App** ➔ Select **Other** ➔ Choose **Business** as the app type.
 3. Under *Add products to your app*, click **Set up** on **WhatsApp**.
-4. Link your Meta Business Manager and verify your official WhatsApp business phone number (`+92 316 4266004`).
+4. Link your Meta Business Manager and verify your official WhatsApp business phone number (`+92 326 4022002`).
 
 ---
 

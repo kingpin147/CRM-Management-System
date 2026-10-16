@@ -521,7 +521,7 @@ www.energygurus.online`
                     <div>
                       <Textarea
                         rows={6}
-                        placeholder="Paste up to 1,500 mobile numbers here (separated by new line, commas, or spaces)&#10;Example:&#10;03001234567&#10;03164266004&#10;+923219876543&#10;923335551234"
+                        placeholder="Paste up to 1,500 mobile numbers here (separated by new line, commas, or spaces)&#10;Example:&#10;03001234567&#10;03264022002&#10;+923219876543&#10;923335551234"
                         value={rawNumbersText}
                         onChange={handleRawTextChange}
                         disabled={isBroadcasting}

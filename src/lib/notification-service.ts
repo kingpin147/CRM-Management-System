@@ -28,7 +28,7 @@ export class NotificationService {
           customer.fullName,
           customer.customerCode,
           customer.crfNumber || `CRF-${customer.customerCode}`,
-          '+92 316 4266004'
+          '+92 326 4022002'
         ],
         headerDocument: {
           link: `${appUrl}/api/customers/${customer.id}/crf`,
@@ -78,7 +78,6 @@ export class NotificationService {
           link: `${appUrl}/api/invoice/${invoice.id}/pdf`,
           filename: `Invoice_${invoice.invoiceNumber}.pdf`
         },
-        urlButtonParam: invoice.id,
         type: 'INVOICE',
         invoiceId: invoice.id
       });
@@ -116,7 +115,7 @@ export class NotificationService {
           invoice.invoiceNumber,
           formattedAmount,
           dueDateStr,
-          '+92 316 4266004'
+          '+92 326 4022002'
         ],
         type: 'DUE_REMINDER',
         invoiceId: invoice.id
@@ -204,7 +203,7 @@ export class NotificationService {
           ticket.category || 'General Support',
           ticket.assignedTo || 'O&M Team',
           '24 Hours',
-          '+92 316 4266004'
+          '+92 326 4022002'
         ],
         type: 'TICKET'
       });
@@ -330,7 +329,7 @@ export class NotificationService {
             invoice.invoiceNumber,
             formattedAmount,
             daysPastDue,
-            '+92 316 4266004'
+            '+92 326 4022002'
           ],
           type: 'OVERDUE_REMINDER',
           invoiceId: invoice.id
