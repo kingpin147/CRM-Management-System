@@ -21,6 +21,9 @@ interface InstallerJobsViewProps {
   currentUserId: string
   currentUserName: string
   userRole: string
+  isOMManager?: boolean
+  isIPNOC?: boolean
+  isSuperAdmin?: boolean
 }
 
 export function InstallerJobsView({
@@ -29,6 +32,9 @@ export function InstallerJobsView({
   currentUserId,
   currentUserName,
   userRole,
+  isOMManager: propIsOMManager,
+  isIPNOC: propIsIPNOC,
+  isSuperAdmin: propIsSuperAdmin,
 }: InstallerJobsViewProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -58,16 +64,37 @@ export function InstallerJobsView({
   const [isActivatingId, setIsActivatingId] = React.useState<string | null>(null)
   const [assigningCustomerId, setAssigningCustomerId] = React.useState<string | null>(null)
 
-  const isIPNOC = userRole === 'IP_NOC_EXECUTIVE'
-  const isOMManager = userRole === 'OM_MANAGER' || (userRole || '').toUpperCase().includes('OM')
+  const isIPNOC = propIsIPNOC ?? (userRole === 'IP_NOC_EXECUTIVE')
+  const isOMManager = propIsOMManager ?? (userRole === 'OM_MANAGER' || (userRole || '').toUpperCase().includes('OM'))
   const isInstaller = userRole === 'INSTALLATION' || userRole === 'INSTALLER'
   const isSales = userRole === 'SALES'
-  const canAssign = isOMManager || userRole === 'SUPER_ADMIN' || userRole === 'ADMIN' || userRole === 'MANAGER'
+  const isSuperAdmin = propIsSuperAdmin ?? ['SUPER_ADMIN', 'ADMIN', 'MANAGER'].includes(userRole)
+  const canAssign = isOMManager || isSuperAdmin
 
   // Partition Customers into:
   // 1. New Signups (Job Queue): Pending initial onboarding & setup
   // 2. Active Installations (System Audits): For continuous / recurring audits
   const isNewSignup = (c: any) => {
+    // For pure IP NOC users, their assigned new jobs queue contains exclusively PENDING_IP_NOC jobs ready for activation
+    if (isIPNOC && !isSuperAdmin) {
+      return c.status === 'PENDING_IP_NOC'
+    }
+
+    // For O&M Manager and Field Installers:
+    // Once approved by O&M Manager, the job transitions to PENDING_IP_NOC and is pending on NOC Manager end.
+    // It must NOT appear in O&M Manager's assigned new jobs queue.
+    if ((isOMManager || isInstaller) && !isIPNOC && !isSuperAdmin) {
+      if (c.status === 'PENDING_IP_NOC' || c.status === 'CONNECTION_ACTIVE') {
+        return false
+      }
+      return c.status === 'SIGNUP_GENERATED' || 
+             c.status === 'PENDING_PAYMENT_VERIFICATION' || 
+             c.status === 'PENDING_INSTALLER_AUDIT' || 
+             c.status === 'PENDING_ACTIVATION' || 
+             (!c.solarSystem?.lastAuditDate)
+    }
+
+    // For Super Admin / other global oversight roles:
     return c.status === 'SIGNUP_GENERATED' || 
            c.status === 'PENDING_PAYMENT_VERIFICATION' || 
            c.status === 'PENDING_INSTALLER_AUDIT' || 
@@ -78,7 +105,7 @@ export function InstallerJobsView({
 
   const newSignupCustomers = React.useMemo(() => {
     return customers.filter(isNewSignup)
-  }, [customers])
+  }, [customers, isIPNOC, isOMManager, isInstaller, isSuperAdmin])
 
   const systemAuditCustomers = React.useMemo(() => {
     return customers.filter((c: any) => !isNewSignup(c) || c.status === 'CONNECTION_ACTIVE' || Boolean(c.solarSystem?.lastAuditDate) || (c.systemAudits && c.systemAudits.length > 0))
@@ -134,7 +161,13 @@ export function InstallerJobsView({
       )
     } else if (filterTab === 'PENDING') {
       if (viewMode === 'new-jobs') {
-        baseList = baseList.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT' || c.status === 'PENDING_IP_NOC' || !c.solarSystem?.lastAuditDate)
+        if (isIPNOC && !isSuperAdmin) {
+          baseList = baseList.filter((c: any) => c.status === 'PENDING_IP_NOC')
+        } else if ((isOMManager || isInstaller) && !isIPNOC && !isSuperAdmin) {
+          baseList = baseList.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT' || c.status === 'PENDING_ACTIVATION' || (!c.solarSystem?.lastAuditDate && c.status !== 'PENDING_IP_NOC' && c.status !== 'CONNECTION_ACTIVE'))
+        } else {
+          baseList = baseList.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT' || c.status === 'PENDING_ACTIVATION' || c.status === 'PENDING_IP_NOC' || !c.solarSystem?.lastAuditDate)
+        }
       } else {
         baseList = baseList.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT' || c.systemAudits?.some((sa: any) => sa.status === 'PENDING') || !c.solarSystem?.lastAuditDate)
       }
@@ -165,10 +198,18 @@ export function InstallerJobsView({
       c.assignedInstaller?.fullName?.toLowerCase().includes(q) ||
       c.solarSystem?.installerName?.toLowerCase().includes(q)
     )
-  }, [currentBaseList, viewMode, searchQuery, isInstaller, filterTab, currentUserId])
+  }, [currentBaseList, viewMode, searchQuery, isInstaller, isOMManager, isIPNOC, isSuperAdmin, filterTab, currentUserId])
 
   // Dynamic KPI counts for current view mode
-  const newJobsPendingCount = newSignupCustomers.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT' || c.status === 'PENDING_IP_NOC' || !c.solarSystem?.lastAuditDate).length
+  const newJobsPendingCount = React.useMemo(() => {
+    if (isIPNOC && !isSuperAdmin) {
+      return newSignupCustomers.filter((c: any) => c.status === 'PENDING_IP_NOC').length
+    }
+    if ((isOMManager || isInstaller) && !isIPNOC && !isSuperAdmin) {
+      return newSignupCustomers.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT' || c.status === 'PENDING_ACTIVATION' || (!c.solarSystem?.lastAuditDate && c.status !== 'CONNECTION_ACTIVE')).length
+    }
+    return newSignupCustomers.filter((c: any) => c.status === 'PENDING_INSTALLER_AUDIT' || c.status === 'PENDING_ACTIVATION' || c.status === 'PENDING_IP_NOC' || !c.solarSystem?.lastAuditDate).length
+  }, [newSignupCustomers, isIPNOC, isOMManager, isInstaller, isSuperAdmin])
   const newJobsTotalCount = newSignupCustomers.length
 
   const auditPendingCount = auditDueCustomers.filter((c: any) => c.systemAudits?.some((sa: any) => sa.status === 'PENDING') || c.status === 'PENDING_INSTALLER_AUDIT' || !c.solarSystem?.lastAuditDate).length
@@ -276,19 +317,21 @@ export function InstallerJobsView({
                 <p className="text-xl font-bold font-mono text-amber-950 mt-0.5">{newJobsTotalCount}</p>
               </div>
               <div className="bg-sky-50/70 border border-sky-200 rounded-xl p-3">
-                <p className="text-[10px] font-bold uppercase text-sky-800">Pending Initial Setup</p>
+                <p className="text-[10px] font-bold uppercase text-sky-800">
+                  {isIPNOC ? 'Pending NOC Activation' : 'Pending Initial Setup'}
+                </p>
                 <p className="text-xl font-bold font-mono text-sky-950 mt-0.5">{newJobsPendingCount}</p>
               </div>
               <div className="bg-indigo-50/70 border border-indigo-200 rounded-xl p-3">
                 <p className="text-[10px] font-bold uppercase text-indigo-800">Pending IP NOC</p>
                 <p className="text-xl font-bold font-mono text-indigo-950 mt-0.5">
-                  {newSignupCustomers.filter((c: any) => c.status === 'PENDING_IP_NOC').length}
+                  {customers.filter((c: any) => c.status === 'PENDING_IP_NOC').length}
                 </p>
               </div>
               <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3">
                 <p className="text-[10px] font-bold uppercase text-emerald-800">Ready to Activate</p>
                 <p className="text-xl font-bold font-mono text-emerald-950 mt-0.5">
-                  {newSignupCustomers.filter((c: any) => c.status === 'PENDING_ACTIVATION' || c.status === 'PENDING_IP_NOC').length}
+                  {customers.filter((c: any) => c.status === 'PENDING_ACTIVATION' || c.status === 'PENDING_IP_NOC').length}
                 </p>
               </div>
             </>
@@ -624,7 +667,7 @@ export function InstallerJobsView({
                           </div>
 
                           {/* IP NOC Process to Activate Action */}
-                          {(c.status === 'PENDING_IP_NOC' || isIPNOC) && c.status !== 'CONNECTION_ACTIVE' && (
+                          {c.status === 'PENDING_IP_NOC' && (isIPNOC || isSuperAdmin) && c.status !== 'CONNECTION_ACTIVE' && (
                             <Button
                               size="sm"
                               disabled={isActivatingId === c.id}

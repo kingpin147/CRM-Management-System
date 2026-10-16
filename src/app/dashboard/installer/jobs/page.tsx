@@ -112,6 +112,9 @@ export default async function InstallerJobsPage() {
         currentUserId={dbUser.id}
         currentUserName={dbUser.fullName || 'Installer'}
         userRole={userRole} 
+        isOMManager={isOMManager}
+        isIPNOC={isIPNOC}
+        isSuperAdmin={isSuperAdmin}
       />
     </div>
   )

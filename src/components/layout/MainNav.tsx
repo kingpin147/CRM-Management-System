@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ChevronDown, ShoppingBag, AlertCircle, BarChart3, Users, Settings, Search, CreditCard, Wrench, LayoutDashboard, MessageSquare } from 'lucide-react'
+import { ChevronDown, ShoppingBag, AlertCircle, BarChart3, Users, Settings, Search, CreditCard, Wrench, LayoutDashboard, MessageSquare, CheckCircle2 } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -186,6 +186,19 @@ export function MainNav({
             </DropdownMenuContent>
           </DropdownMenu>
         ) : null}
+
+        {/* Dedicated IP NOC Activation Queue Tab for IP NOC Executives */}
+        {isIpNoc && (
+          <Link 
+            href="/dashboard/installer/jobs?view=new-jobs" 
+            className={linkClass('/dashboard/installer/jobs?view=new-jobs')}
+          >
+            <span className="flex items-center gap-1 font-semibold">
+              <CheckCircle2 className="h-3.5 w-3.5 text-[var(--color-amber)] shrink-0" />
+              <span>IP NOC Activation Queue</span>
+            </span>
+          </Link>
+        )}
 
         {/* 2. Dedicated Recurring System Audits Tab */}
         {canViewSystemAudits && (
