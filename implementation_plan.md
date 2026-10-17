@@ -250,7 +250,7 @@ enum TicketStatus { PENDING RESOLVED CANCELED ON_HOLD CLOSED }
 - Build Role-Based Access Control (RBAC) middleware to protect routes based on User/Manager role.
 
 ### Phase 3: Customer Management & Sales Flow
-- Develop the **User Search Page** (data table with search filters by Customer Code, CRF #, Full Name, Contact #, CNIC, Email).
+- Develop the **User Search Page** (data table with search filters by Customer ID, CRF #, Full Name, Contact #, CNIC, Email).
 - Implement the complex **Create Sale** form that auto-generates the **CRF Number** upon submission, includes dropdown selection fields for Package Details (System Type, Package, Billing Type [Monthly, Quarterly, Half Yearly, Yearly, FOC], Monitoring Time), calendar date pickers for Inverter/Panel/Battery Warranty End dates, and handles conditional logic.
 - Implement **CRF Form PDF Generator**: After sale submission, automatically generate a printable PDF version of the complete CRF Form.
 - Implement the **Pricing Engine** to auto-calculate Package pricing with discounts (Quarterly @ 10%, Half Yearly @ 20%, Yearly @ 40%, FOC @ 100%/Free) and support Custom manual pricing for 30kW+.

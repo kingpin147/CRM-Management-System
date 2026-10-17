@@ -68,7 +68,7 @@ Go to **WhatsApp Manager** ➔ **Account Tools** ➔ **Message Templates** ➔ *
 
 | Template Name | Category | Header | Body Template Text |
 |---|---|---|---|
-| `customer_welcome_crf` | `UTILITY` | Document (PDF) | *"Dear {{1}}, welcome to Energy Gurus! Your solar O&M service account has been successfully registered. Your Customer Code is {{2}} (CRF #{{3}}). Please find your official Customer Registration Form attached. For assistance, contact {{4}}."* |
+| `customer_welcome_crf` | `UTILITY` | Document (PDF) | *"Dear {{1}}, welcome to Energy Gurus! Your solar O&M service account has been successfully registered. Your Customer ID is {{2}} (CRF #{{3}}). Please find your official Customer Registration Form attached. For assistance, contact {{4}}."* |
 | `monthly_invoice_dispatch` | `UTILITY` | Document (PDF) | *"Dear {{1}}, your solar O&M invoice {{2}} for {{3}} amounting to PKR {{4}} has been generated. The payment due date is {{5}}. Please review your invoice PDF attached below."* |
 | `payment_due_reminder` | `UTILITY` | Text | *"Dear {{1}}, this is a friendly reminder that your solar O&M bill for invoice {{2}} amounting to PKR {{3}} is due on {{4}}. Kindly settle your bill to ensure uninterrupted service. For inquiries, contact {{5}}."* |
 | `payment_overdue_notice` | `UTILITY` | Text | *"Dear {{1}}, invoice {{2}} for PKR {{3}} is past due (due was {{4}}). Please clear this outstanding balance immediately to avoid disconnection. Contact {{5}} for payment guidance."* |

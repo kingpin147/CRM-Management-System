@@ -62,6 +62,7 @@ export default async function AdminPage() {
                            user.role === 'SALES' ? 'Executive Manager (Sales)' :
                            user.role === 'OM_MANAGER' ? 'O & M Manager' :
                            user.role === 'INSTALLATION' ? 'Installer' :
+                           user.role === 'IP_NOC_EXECUTIVE' ? 'NOC Executive' :
                            user.role.replace(/_/g, ' ')}
                         </Badge>
                       </TableCell>

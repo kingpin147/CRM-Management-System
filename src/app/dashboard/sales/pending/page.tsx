@@ -19,10 +19,10 @@ export default async function PendingSalesPage() {
     } else if (currentStatus === 'PENDING_PAYMENT_VERIFICATION') {
       nextStatus = 'PENDING_INSTALLER_AUDIT' // Payment verified -> Sent to Installer
     } else if (currentStatus === 'PENDING_ACTIVATION') {
-      nextStatus = 'PENDING_IP_NOC' // Approved by O&M Manager -> IP NOC Executive
+      nextStatus = 'PENDING_IP_NOC' // Approved by O&M Manager -> NOC Executive
     }
 
-    const isActivating = false // Activation happens at IP NOC stage now, so this won't be triggered here, but keeping logic structure
+    const isActivating = false // Activation happens at NOC stage now, so this won't be triggered here, but keeping logic structure
     const activationDate = isActivating ? new Date() : undefined
 
     const customer = await prisma.customer.findUnique({

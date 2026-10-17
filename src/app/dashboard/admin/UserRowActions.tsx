@@ -223,7 +223,7 @@ export function UserRowActions({ user }: { user: UserProps }) {
                   <SelectItem value="OM_MANAGER">O & M Manager</SelectItem>
                   <SelectItem value="INSTALLATION">Installer (O&M Team)</SelectItem>
                   <SelectItem value="CUSTOMER_SUPPORT">Customer Support</SelectItem>
-                  <SelectItem value="IP_NOC_EXECUTIVE">IP NOC Executive</SelectItem>
+                  <SelectItem value="IP_NOC_EXECUTIVE">NOC Executive</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -20,7 +20,7 @@ content = content.replace('<DialogContent className="max-w-4xl max-h-[92vh] over
           <ChevronRight className="h-4 w-4 text-slate-300" />
           <div className="flex items-center gap-2 text-slate-500">
             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 text-[10px]">3</span>
-            <span>IP NOC Update</span>
+            <span>NOC Update</span>
           </div>
           <ChevronRight className="h-4 w-4 text-slate-300" />
           <div className="flex items-center gap-2 text-slate-500">

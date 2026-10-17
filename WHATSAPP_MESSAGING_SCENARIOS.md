@@ -63,11 +63,11 @@ CRON_SECRET=your_secure_cron_secret
 ### Scenario 1: Customer Welcome & Registration Form (CRF)
 * **Meta Template Name:** `customer_welcome_crf`
 * **Meta Category:** `UTILITY`
-* **CRM Trigger:** **Automatic:** Will be sent when customer will be activated in CRM (`status` transitions to `CONNECTION_ACTIVE` via profile activation or IP NOC configuration).
+* **CRM Trigger:** **Automatic:** Will be sent when customer will be activated in CRM (`status` transitions to `CONNECTION_ACTIVE` via profile activation or NOC configuration).
 * **Prisma Model Mapping:** `Customer.fullName`, `Customer.customerCode`, `Customer.crfNumber`
 * **Header:** `DOCUMENT` (Auto-generated CRF PDF: `{{NEXT_PUBLIC_APP_URL}}/api/customers/{{Customer_ID}}/crf`)
 * **Body Text Template:**
-  > *"Dear {{1}}, welcome to Energy Gurus! Your solar O&M service account has been successfully registered. Your Customer Code is {{2}} (CRF #{{3}}). Please find your official Customer Registration Form attached. For assistance, contact our helpline at {{4}} - Energy Gurus Team."*
+  > *"Dear {{1}}, welcome to Energy Gurus! Your solar O&M service account has been successfully registered. Your Customer ID is {{2}} (CRF #{{3}}). Please find your official Customer Registration Form attached. For assistance, contact our helpline at {{4}} - Energy Gurus Team."*
 * **Variable Replacements:**
   * `{{1}}` -> `Customer.fullName`
   * `{{2}}` -> `Customer.customerCode` (e.g. `101`)

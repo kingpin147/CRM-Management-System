@@ -6,7 +6,7 @@ import prisma from '@/lib/prisma'
 import { calculateNextBillingDate } from '@/lib/pricing'
 
 async function generateCustomerCode(): Promise<string> {
-  // Fetch existing customer codes to determine the next sequential ID starting from 101
+  // Fetch existing customer IDs to determine the next sequential ID starting from 101
   const existingCustomers = await prisma.customer.findMany({
     select: { customerCode: true }
   })
@@ -368,7 +368,7 @@ export async function createCustomer(formData: FormData) {
   } catch (error: any) {
     console.error('Database/Server error in createCustomer:', error)
     if (error.code === 'P2002') {
-      return { error: 'A customer with this CNIC or Customer Code already exists in the system.' }
+      return { error: 'A customer with this CNIC or Customer ID already exists in the system.' }
     }
     return { error: 'Failed to create customer record. Please review the details and try again.' }
   }

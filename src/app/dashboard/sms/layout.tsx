@@ -40,7 +40,7 @@ export default async function SMSDashboardLayout({
     )
   )
 
-  // Explicitly deny Field Installers, IP NOC, and basic Sales Reps
+  // Explicitly deny Field Installers, NOC, and basic Sales Reps
   if (!isAuthorized) {
     redirect('/dashboard/customers')
   }

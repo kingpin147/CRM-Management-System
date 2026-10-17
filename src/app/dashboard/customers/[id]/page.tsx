@@ -316,6 +316,9 @@ export default async function CustomerDetailPage({
                               if (st === 'PENDING_ACTIVATION') {
                                 return <Badge variant="outline" className="bg-sky-100 text-sky-950 border-sky-300 font-bold shadow-xs">Pending for O&M</Badge>
                               }
+                              if (st === 'PENDING_IP_NOC') {
+                                return <Badge variant="outline" className="bg-indigo-100 text-indigo-950 border-indigo-300 font-bold shadow-xs">Pending NOC</Badge>
+                              }
                               if (st === 'CONNECTION_ACTIVE') {
                                 return <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">Active</Badge>
                               }

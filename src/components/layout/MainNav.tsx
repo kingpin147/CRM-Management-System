@@ -86,7 +86,7 @@ export function MainNav({
                                      (fullName || '').toLowerCase().includes('ajmal') ||
                                      (designation || '').toLowerCase().includes('ajmal')
 
-  // Exclude O&M team / Installers / IP NOC from Reports access
+  // Exclude O&M team / Installers / NOC from Reports access
   const isOMOrFieldTeam = isOMManager || 
                           isInstaller || 
                           isIpNoc ||
@@ -187,7 +187,7 @@ export function MainNav({
           </DropdownMenu>
         ) : null}
 
-        {/* Dedicated IP NOC Activation Queue Tab for IP NOC Executives */}
+        {/* Dedicated NOC Activation Queue Tab for NOC Executives */}
         {isIpNoc && (
           <Link 
             href="/dashboard/installer/jobs?view=new-jobs" 
@@ -195,7 +195,7 @@ export function MainNav({
           >
             <span className="flex items-center gap-1 font-semibold">
               <CheckCircle2 className="h-3.5 w-3.5 text-[var(--color-amber)] shrink-0" />
-              <span>IP NOC Activation Queue</span>
+              <span>NOC Activation Queue</span>
             </span>
           </Link>
         )}

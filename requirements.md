@@ -23,7 +23,7 @@ The top menu contains basic tabs with specific sub-menus:
 
 ### 4.1 User Search Page (Post-Login)
 Automatically displays a search form and data table upon login.
-* **Search Fields**: Customer Code, CRF #, Full Name, Contact Number, CNIC, Email.
+* **Search Fields**: Customer ID, CRF #, Full Name, Contact Number, CNIC, Email.
 
 ### 4.2 Customer Profile Page
 Accessed by clicking a customer from the search table. It contains a detailed profile with the following tabs:
@@ -118,7 +118,7 @@ Used to log and track issues specifically tailored to solar hardware and billing
 * **Service Request**: Internal Shifting, Package Change, Temp. Blocked, Termination, Restoration, Profile Change Request.
 
 **Ticket Closed Setup & History Table:**
-* The ticket closure form includes: Customer Code, Customer Name, Customer Address, Contact #, Action (High, Medium, Low), Department, Complain Status, Remarks, and Submit.
+* The ticket closure form includes: Customer ID, Customer Name, Customer Address, Contact #, Action (High, Medium, Low), Department, Complain Status, Remarks, and Submit.
 * A History Table displays the audit trail: Status, Department, Remarks, CreatedBy, CreatedAt, Time in Department.
 
 ## 5. Packages & Pricing Plans

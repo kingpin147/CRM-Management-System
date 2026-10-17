@@ -75,7 +75,7 @@ export function InstallerJobsView({
   // 1. New Signups (Job Queue): Pending initial onboarding & setup
   // 2. Active Installations (System Audits): For continuous / recurring audits
   const isNewSignup = (c: any) => {
-    // For pure IP NOC users, their assigned new jobs queue contains exclusively PENDING_IP_NOC jobs ready for activation
+    // For pure NOC users, their assigned new jobs queue contains exclusively PENDING_IP_NOC jobs ready for activation
     if (isIPNOC && !isSuperAdmin) {
       return c.status === 'PENDING_IP_NOC'
     }
@@ -261,7 +261,7 @@ export function InstallerJobsView({
             </div>
             <p className="text-xs text-slate-500 mt-1">
               {viewMode === 'new-jobs'
-                ? 'Job Queue is strictly for new customer sign-ups: Fill Hardware Specs (Part 2), Initial Audit (Part 3), and Activate IP NOC.'
+                ? 'Job Queue is strictly for new customer sign-ups: Fill Hardware Specs (Part 2), Initial Audit (Part 3), and Activate NOC.'
                 : 'System Audits are due repeatedly over the customer lifecycle (Quarterly, Half-Yearly, Yearly) or requested On-Demand.'}
             </p>
           </div>
@@ -323,7 +323,7 @@ export function InstallerJobsView({
                 <p className="text-xl font-bold font-mono text-sky-950 mt-0.5">{newJobsPendingCount}</p>
               </div>
               <div className="bg-indigo-50/70 border border-indigo-200 rounded-xl p-3">
-                <p className="text-[10px] font-bold uppercase text-indigo-800">Pending IP NOC</p>
+                <p className="text-[10px] font-bold uppercase text-indigo-800">Pending NOC</p>
                 <p className="text-xl font-bold font-mono text-indigo-950 mt-0.5">
                   {customers.filter((c: any) => c.status === 'PENDING_IP_NOC').length}
                 </p>
@@ -666,7 +666,7 @@ export function InstallerJobsView({
                             </a>
                           </div>
 
-                          {/* IP NOC Process to Activate Action */}
+                          {/* NOC Process to Activate Action */}
                           {c.status === 'PENDING_IP_NOC' && (isIPNOC || isSuperAdmin) && c.status !== 'CONNECTION_ACTIVE' && (
                             <Button
                               size="sm"

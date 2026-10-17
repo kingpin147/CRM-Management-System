@@ -313,7 +313,7 @@ export function SalesLeadForm({ recentLeads = [] }: { recentLeads?: any[] }) {
             <Table>
               <TableHeader className="bg-slate-50 border-b border-slate-200">
                 <TableRow>
-                  <TableHead className="font-bold text-xs text-[#002868]">Customer Code</TableHead>
+                  <TableHead className="font-bold text-xs text-[#002868]">Customer ID</TableHead>
                   <TableHead className="font-bold text-xs text-[#002868]">Customer Name</TableHead>
                   <TableHead className="font-bold text-xs text-[#002868]">Contact #</TableHead>
                   <TableHead className="font-bold text-xs text-[#002868]">City</TableHead>

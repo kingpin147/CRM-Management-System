@@ -701,7 +701,7 @@ export async function saveSolarSpecsOnly(formData: FormData) {
 export async function activateIpNocConnection(formData: FormData) {
   const customerId = formData.get('customerId') as string
   const ipNocNotes = (formData.get('ipNocNotes') as string) || ''
-  const ipNocUser = (formData.get('ipNocUser') as string) || 'IP NOC Executive'
+  const ipNocUser = (formData.get('ipNocUser') as string) || 'NOC Executive'
 
   if (!customerId) throw new Error('Customer ID is required')
 
@@ -740,13 +740,13 @@ export async function activateIpNocConnection(formData: FormData) {
       actionType: 'CONNECTION_ACTIVE',
       oldStatus: customer.status,
       newStatus: 'CONNECTION_ACTIVE',
-      notes: `IP NOC Connection Configured & Activated by ${ipNocUser}.${ipNocNotes ? ' Notes: ' + ipNocNotes : ''}`,
+      notes: `NOC Connection Configured & Activated by ${ipNocUser}.${ipNocNotes ? ' Notes: ' + ipNocNotes : ''}`,
       performedBy: ipNocUser
     }
   })
 
   // Automatic Client Requirement: Welcome & CRF sent when customer is activated in CRM
-  triggerRegistrationSMS(customerId).catch((e) => console.error('Error triggering welcome CRF on IP NOC activation:', e))
+  triggerRegistrationSMS(customerId).catch((e) => console.error('Error triggering welcome CRF on NOC activation:', e))
 
   revalidatePath('/dashboard/installer/jobs')
   revalidatePath('/dashboard/sales/pending')

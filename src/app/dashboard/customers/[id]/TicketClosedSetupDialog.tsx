@@ -114,7 +114,7 @@ export function TicketClosedSetupDialog({ ticket }: { ticket: any }) {
             </div>
           )}
 
-          {/* Customer Code & Name Header */}
+          {/* Customer ID & Name Header */}
           <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs border-b border-gray-200 pb-3">
             <div>
               <span className="font-bold text-gray-700">Customer ID: </span>

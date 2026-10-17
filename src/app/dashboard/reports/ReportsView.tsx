@@ -51,6 +51,7 @@ const STATUS_OPTIONS = [
   { key: 'SIGNUP_GENERATED', label: 'Sign up Generated' },
   { key: 'PENDING_PAYMENT_VERIFICATION', label: 'Pending For Payment Verification' },
   { key: 'PENDING_ACTIVATION', label: 'Pending For Activation' },
+  { key: 'PENDING_IP_NOC', label: 'Pending NOC' },
   { key: 'CONNECTION_ACTIVE', label: 'Connection Active' },
   { key: 'NON_PAYMENT_BLOCKED', label: 'Non Payment Blocked' },
   { key: 'TEMPORARY_BLOCKED', label: 'Temporary Blocked' },
