@@ -308,9 +308,25 @@ www.energygurus.online`
           setBroadcastLogs(prev => [...mappedLogs, ...prev]);
         } else {
           failedAcc += chunk.length;
+          const nowTime = new Date().toLocaleTimeString();
+          const errorLogs: BroadcastResultItem[] = chunk.map(phone => ({
+            phone,
+            status: 'FAILED',
+            error: data.error || 'Server rejected request',
+            timestamp: nowTime
+          }));
+          setBroadcastLogs(prev => [...errorLogs, ...prev]);
         }
       } catch (err: any) {
         failedAcc += chunk.length;
+        const nowTime = new Date().toLocaleTimeString();
+        const errorLogs: BroadcastResultItem[] = chunk.map(phone => ({
+          phone,
+          status: 'FAILED',
+          error: err.message || 'Network / connection error',
+          timestamp: nowTime
+        }));
+        setBroadcastLogs(prev => [...errorLogs, ...prev]);
       }
 
       const processedSoFar = Math.min(i + batchSize, total);
@@ -388,13 +404,43 @@ www.energygurus.online`
 
       const result = await response.json();
 
+      const nowTime = new Date().toLocaleTimeString();
       if (result.success) {
-        setSuccess('SMS sent successfully!');
+        setSuccess('WhatsApp message sent successfully!');
+        setBroadcastLogs(prev => [
+          {
+            phone: `Customer: ${customerId}`,
+            status: 'SENT',
+            timestamp: nowTime
+          },
+          ...prev
+        ]);
       } else {
-        setError(result.error || 'Failed to send SMS');
+        const errorMsg = result.error || 'Failed to send WhatsApp message';
+        setError(errorMsg);
+        setBroadcastLogs(prev => [
+          {
+            phone: `Customer: ${customerId}`,
+            status: 'FAILED',
+            error: errorMsg,
+            timestamp: nowTime
+          },
+          ...prev
+        ]);
       }
     } catch (err: any) {
-      setError('Failed to send SMS: ' + err.message);
+      const errorMsg = 'Failed to send: ' + err.message;
+      setError(errorMsg);
+      const nowTime = new Date().toLocaleTimeString();
+      setBroadcastLogs(prev => [
+        {
+          phone: `Customer: ${customerId}`,
+          status: 'FAILED',
+          error: errorMsg,
+          timestamp: nowTime
+        },
+        ...prev
+      ]);
     } finally {
       setLoading(false);
     }

@@ -49,7 +49,7 @@ export function MainNav({
   }
 
   const linkClass = (path: string) => {
-    const base = "flex items-center text-xs xl:text-xs 2xl:text-sm font-medium rounded-md transition-all duration-200 whitespace-nowrap shrink-0 cursor-pointer"
+    const base = "flex items-center text-xs xl:text-xs 2xl:text-sm font-semibold rounded-md transition-all duration-200 whitespace-nowrap shrink-0 cursor-pointer"
     const layout = orientation === 'horizontal' 
       ? "px-1.5 py-1.5 lg:px-2 lg:py-1.5 xl:px-2 xl:py-1.5" 
       : "px-3 py-2 text-xs w-full block"
@@ -361,7 +361,7 @@ export function MainNav({
         {/* Admin Management if Authorized */}
         {canViewAdmin && (
           <Link href="/dashboard/admin" className={linkClass('/dashboard/admin')}>
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 font-semibold">
               <Users className="h-3.5 w-3.5 text-[var(--color-amber)] shrink-0" />
               <span>User Roles</span>
             </span>
@@ -528,9 +528,14 @@ export function MainNav({
       {canViewAdmin && (
         <div>
           <p className="px-3 text-xs font-bold text-[var(--color-slate-custom)] uppercase tracking-wider mb-1">Management</p>
-          <Link href="/dashboard/admin" className={linkClass('/dashboard/admin')} onClick={onItemClick}>
-            User Roles & Permissions
-          </Link>
+          <div className="space-y-0.5">
+            <Link href="/dashboard/admin" className={linkClass('/dashboard/admin')} onClick={onItemClick}>
+              <span className="flex items-center gap-1.5 font-semibold">
+                <Users className="h-4 w-4 text-[var(--color-amber)]" />
+                User Roles
+              </span>
+            </Link>
+          </div>
         </div>
       )}
 
