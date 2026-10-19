@@ -105,6 +105,8 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
       batteryBrand: '',
       noOfBatteries: 0,
       batteryWarrantyExpiry: '',
+      inverterIngressProtection: 'IP65',
+      batteryIngressProtection: 'IP65',
       earthingType: '',
       earthingOhms: '0',
       lastCheckDate: '',
@@ -301,8 +303,8 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
       'meterType', 'zeroExportDevice', 'disco', 'discoRefNo', 'inverterBrand', 'inverterType',
       'inverterPhase', 'noOfInverters', 'inverterSerial', 'inverterCategory', 'inverterSize',
       'meterPhase', 'panelTechnology', 'panelBrand', 'panelWattage', 'noOfPanels', 'panelType',
-      'batteryCategory', 'batteryType', 'batteryBrand', 'noOfBatteries', 'earthingType',
-      'earthingOhms', 'ingressProtection', 'structureType', 'structureMaterial', 'installationDate'
+      'batteryCategory', 'batteryType', 'batteryBrand', 'noOfBatteries', 'batteryIngressProtection', 'earthingType',
+      'earthingOhms', 'inverterIngressProtection', 'structureType', 'structureMaterial', 'installationDate'
     ]
 
     const hasTab1Error = errorKeys.some(k => tab1Fields.includes(k))
@@ -1405,6 +1407,25 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                       </FormItem>
                     )} />
 
+                    {/* Inverter Ingress Protection (IP) */}
+                    <FormField control={form.control} name="inverterIngressProtection" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold">inverter Ingress Protection (IP)</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || 'IP65'}>
+                          <FormControl>
+                            <SelectTrigger className="h-10 text-xs">
+                              <SelectValue placeholder="Select IP Rating..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {IP_LIST.map((ip) => (
+                              <SelectItem key={ip} value={ip}>{ip}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )} />
+
                     {/* Meter Phase */}
                     <FormField control={form.control} name="meterPhase" render={({ field }) => (
                       <FormItem>
@@ -1739,6 +1760,25 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                       </FormItem>
                     )} />
 
+                    {/* Battery Ingress Protection (IP) */}
+                    <FormField control={form.control} name="batteryIngressProtection" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold">Battery Ingress Protection (IP)</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || 'IP65'}>
+                          <FormControl>
+                            <SelectTrigger className="h-10 text-xs">
+                              <SelectValue placeholder="Select IP Rating..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {IP_LIST.map((ip) => (
+                              <SelectItem key={ip} value={ip}>{ip}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )} />
+
                     {/* No. of Batteries */}
                     <FormField control={form.control} name="noOfBatteries" render={({ field }) => (
                       <FormItem>
@@ -1892,25 +1932,6 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                             className="h-10"
                           />
                         </FormControl>
-                      </FormItem>
-                    )} />
-
-                    {/* Ingress Protection (IP) */}
-                    <FormField control={form.control} name="ingressProtection" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs font-semibold">Ingress Protection (IP)</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || ''}>
-                          <FormControl>
-                            <SelectTrigger className="h-10 text-xs">
-                              <SelectValue placeholder="Select IP Rating..." />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {IP_LIST.map((ip) => (
-                              <SelectItem key={ip} value={ip}>{ip}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
                       </FormItem>
                     )} />
 

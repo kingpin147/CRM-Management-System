@@ -32,6 +32,7 @@ import {
   getDataloggerEcosystem,
 } from '@/lib/solar-constants'
 import { CITIES_LIST, getAreasForCity, getSubAreasForArea } from '@/lib/pakistan-cities-areas'
+import { cn } from '@/lib/utils'
 import { CheckCircle2, Edit3, Loader2, Save, FileText, User, Zap, Wrench, ShieldCheck, Sun, Battery, HardHat, Gift } from 'lucide-react'
 import { calculatePackageBreakdown, getEligibleFreeMonths, calculateBillingDurationMonths } from '@/lib/pricing'
 import { SectionHeader } from '@/components/ui/section-header'
@@ -99,6 +100,7 @@ export function EditCrfModal({
   const [pvDgControllerBrand, setPvDgControllerBrand] = React.useState('')
 
   const [inverterBrand, setInverterBrand] = React.useState('')
+  const [customInverterBrand, setCustomInverterBrand] = React.useState('')
   const [inverterSize, setInverterSize] = React.useState('')
   const [inverterType, setInverterType] = React.useState('Hybrid')
   const [inverterPhase, setInverterPhase] = React.useState('Three Phase')
@@ -141,6 +143,7 @@ export function EditCrfModal({
   const [panelWarrantyEnd, setPanelWarrantyEnd] = React.useState('')
 
   const [batteryBrand, setBatteryBrand] = React.useState('')
+  const [customBatteryBrand, setCustomBatteryBrand] = React.useState('')
   const [batteryType, setBatteryType] = React.useState('Lithium-ion')
   const [batteryCategory, setBatteryCategory] = React.useState('Low Voltage (LV)')
   const [batteryQty, setBatteryQty] = React.useState('0')
@@ -149,6 +152,8 @@ export function EditCrfModal({
 
   const [structureType, setStructureType] = React.useState('Elevated GI Structure')
   const [structureMaterial, setStructureMaterial] = React.useState('Hot Dip Galvanized (HDG)')
+  const [inverterIngressProtection, setInverterIngressProtection] = React.useState('IP65')
+  const [batteryIngressProtection, setBatteryIngressProtection] = React.useState('IP65')
   const [ingressProtection, setIngressProtection] = React.useState('IP65')
   const [breakerName, setBreakerName] = React.useState('Schneider / ABB')
   const [earthingType, setEarthingType] = React.useState('Both')
@@ -234,6 +239,11 @@ export function EditCrfModal({
         setInverterPassword(s.inverterPassword || '')
         setInverterInvoiceUrl(s.inverterInvoiceUrl || '')
 
+        // Inverter Brand
+        const isCustomInv = Boolean(s.inverterBrand && !INVERTER_BRANDS.includes(s.inverterBrand))
+        setInverterBrand(isCustomInv ? 'Other' : (s.inverterBrand || ''))
+        setCustomInverterBrand(isCustomInv ? s.inverterBrand : '')
+
         // Datalogger
         setDatalogger(s.datalogger || (s.inverterUsername || s.inverterPassword ? 'Installed' : 'Not Installed'))
         setDataloggerBrand(s.dataloggerBrand || s.inverterBrand || '')
@@ -255,7 +265,9 @@ export function EditCrfModal({
         setPanelQuantity(pQty !== undefined && pQty !== null ? String(pQty) : '')
         setPanelWarrantyEnd(s.panelWarrantyEnd ? new Date(s.panelWarrantyEnd).toISOString().split('T')[0] : '')
 
-        setBatteryBrand(s.batteryBrand || '')
+        const isCustomBat = Boolean(s.batteryBrand && !BATTERY_BRANDS.includes(s.batteryBrand))
+        setBatteryBrand(isCustomBat ? 'Other' : (s.batteryBrand || ''))
+        setCustomBatteryBrand(isCustomBat ? s.batteryBrand : '')
         setBatteryType(s.batteryType || 'Lithium-ion')
         setBatteryCategory(s.batteryCategory || 'Low Voltage (LV)')
         const bQty = s.noOfBatteries !== undefined ? s.noOfBatteries : s.batteryQty
@@ -271,7 +283,9 @@ export function EditCrfModal({
 
         setStructureType(s.structureType || 'Elevated GI Structure')
         setStructureMaterial(s.structureMaterial || 'Hot Dip Galvanized (HDG)')
-        setIngressProtection(s.ingressProtection || 'IP65')
+        setInverterIngressProtection((s as any).inverterIngressProtection || s.ingressProtection || 'IP65')
+        setBatteryIngressProtection((s as any).batteryIngressProtection || 'IP65')
+        setIngressProtection((s as any).inverterIngressProtection || s.ingressProtection || 'IP65')
         setBreakerName(s.breakerName || 'Schneider / ABB')
         setEarthingType(s.earthing || 'Both')
         setLightningProtection(s.lightningProtection ? 'Yes' : 'No')
@@ -398,7 +412,10 @@ export function EditCrfModal({
       formData.append('dataloggerBrand', dataloggerBrand)
       formData.append('monitoringEcosystem', monitoringEcosystem)
 
-      formData.append('inverterBrand', inverterBrand)
+      const effectiveInverterBrand = inverterBrand === 'Other' && customInverterBrand.trim()
+        ? customInverterBrand.trim()
+        : inverterBrand
+      formData.append('inverterBrand', effectiveInverterBrand)
       formData.append('inverterSize', inverterSize)
       formData.append('inverterType', inverterType)
       formData.append('inverterPhase', inverterPhase)
@@ -419,9 +436,13 @@ export function EditCrfModal({
       formData.append('panelWarrantyEnd', panelWarrantyEnd)
 
       // Battery specs
-      formData.append('batteryBrand', batteryBrand)
+      const effectiveBatteryBrand = batteryBrand === 'Other' && customBatteryBrand.trim()
+        ? customBatteryBrand.trim()
+        : batteryBrand
+      formData.append('batteryBrand', effectiveBatteryBrand)
       formData.append('batteryType', batteryType)
       formData.append('batteryCategory', batteryCategory)
+      formData.append('batteryIngressProtection', batteryIngressProtection)
       formData.append('batteryQty', batteryQty)
       formData.append('batterySerial', batterySerial)
       formData.append('batteryWarrantyEnd', batteryWarrantyEnd)
@@ -429,7 +450,8 @@ export function EditCrfModal({
       // Structure & Protection specs
       formData.append('structureType', structureType)
       formData.append('structureMaterial', structureMaterial)
-      formData.append('ingressProtection', ingressProtection)
+      formData.append('inverterIngressProtection', inverterIngressProtection)
+      formData.append('ingressProtection', inverterIngressProtection)
       formData.append('breakerName', breakerName)
       formData.append('earthingType', earthingType)
       formData.append('lightningProtection', lightningProtection)
@@ -896,7 +918,7 @@ export function EditCrfModal({
                 <Sun className="h-3.5 w-3.5 text-amber-600" />
                 3.2 Inverter &amp; System Control Specifications
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+              <div className={cn("grid grid-cols-1 sm:grid-cols-2 gap-3", inverterBrand === 'Other' ? "md:grid-cols-5" : "md:grid-cols-4")}>
                 <div className="space-y-1">
                   <Label className="text-xs font-semibold text-slate-700">Inverter Brand</Label>
                   <AutoSuggestInput 
@@ -906,6 +928,23 @@ export function EditCrfModal({
                     placeholder="e.g. Knox, Fronius, Growatt"
                   />
                 </div>
+                {inverterBrand === 'Other' && (
+                  <div className="space-y-1 animate-in fade-in duration-200">
+                    <Label className="text-xs font-semibold text-sky-800">Specify Inverter Brand</Label>
+                    <Input
+                      value={customInverterBrand}
+                      onChange={(e) => {
+                        setCustomInverterBrand(e.target.value)
+                        if (dataloggerBrand === customInverterBrand || dataloggerBrand === '' || dataloggerBrand === 'Other') {
+                          setDataloggerBrand(e.target.value)
+                        }
+                      }}
+                      placeholder="Enter brand name"
+                      className="h-9 text-xs bg-white border-sky-300 focus:border-sky-500"
+                      autoFocus
+                    />
+                  </div>
+                )}
                 <div className="space-y-1">
                   <Label className="text-xs font-semibold text-slate-700">Inverter Size / Capacity</Label>
                   <AutoSuggestInput 
@@ -955,7 +994,18 @@ export function EditCrfModal({
                     className="h-9 text-xs font-mono"
                   />
                 </div>
-                <div className="space-y-1 sm:col-span-2">
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-slate-700">Inverter Ingress Protection (IP)</Label>
+                  <Select value={inverterIngressProtection} onValueChange={(v) => setInverterIngressProtection(v || 'IP65')}>
+                    <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {IP_LIST.map((ip) => (
+                        <SelectItem key={ip} value={ip} className="text-xs">{ip}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
                   <Label className="text-xs font-semibold text-slate-700">Breakers / Switchgear</Label>
                   <Input 
                     value={breakerName} 
@@ -1214,7 +1264,7 @@ export function EditCrfModal({
                 <Battery className="h-3.5 w-3.5 text-amber-600" />
                 3.3 Battery Storage &amp; Mounting Structure
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+              <div className={cn("grid grid-cols-1 sm:grid-cols-2 gap-3", batteryBrand === 'Other' ? "md:grid-cols-5" : "md:grid-cols-4")}>
                 <div className="space-y-1">
                   <Label className="text-xs font-semibold text-slate-700">Battery Brand</Label>
                   <AutoSuggestInput 
@@ -1224,6 +1274,18 @@ export function EditCrfModal({
                     placeholder="e.g. Narada, Pylontech"
                   />
                 </div>
+                {batteryBrand === 'Other' && (
+                  <div className="space-y-1 animate-in fade-in duration-200">
+                    <Label className="text-xs font-semibold text-sky-800">Specify Battery Brand</Label>
+                    <Input
+                      value={customBatteryBrand}
+                      onChange={(e) => setCustomBatteryBrand(e.target.value)}
+                      placeholder="Enter brand name"
+                      className="h-9 text-xs bg-white border-sky-300 focus:border-sky-500"
+                      autoFocus
+                    />
+                  </div>
+                )}
                 <div className="space-y-1">
                   <Label className="text-xs font-semibold text-slate-700">Battery Quantity</Label>
                   <Input 
@@ -1242,6 +1304,17 @@ export function EditCrfModal({
                       <SelectItem value="Tubular Lead Acid" className="text-xs">Tubular Deep Cycle</SelectItem>
                       <SelectItem value="Dry Gel / AGM" className="text-xs">Dry Gel / AGM</SelectItem>
                       <SelectItem value="None / N/A" className="text-xs">None / N/A</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-slate-700">Battery Ingress Protection (IP)</Label>
+                  <Select value={batteryIngressProtection} onValueChange={(v) => setBatteryIngressProtection(v || 'IP65')}>
+                    <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {IP_LIST.map((ip) => (
+                        <SelectItem key={ip} value={ip} className="text-xs">{ip}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

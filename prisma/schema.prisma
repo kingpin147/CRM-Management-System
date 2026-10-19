@@ -119,6 +119,7 @@ model SolarSystem {
   inverterSerials        String[]  @default([])
   inverterWarrantyEnd    DateTime?
   inverterWarrantyEnds   DateTime[] @default([])
+  inverterIngressProtection String? // IP20, IP65, IP66, etc.
   panelBrand             String
   panelType              String // Monofacial, Bifacial
   panelTechnology        String // Mono Perc, Topcon, HJT, ABC, HIBC, etc.
@@ -134,13 +135,14 @@ model SolarSystem {
   batterySerials         String[]  @default([])
   batteryWarrantyEnd     DateTime?
   batteryWarrantyEnds    DateTime[] @default([])
+  batteryIngressProtection String? // IP20, IP65, IP66, etc.
   earthing               String // AC, DC, Both
   earthingLastCheck      DateTime?
   earthingAcOhms         Decimal?
   earthingDcOhms         Decimal?
   lightningProtection    Boolean
   breakerName            String
-  ingressProtection      String? // 20, 65, 67, etc.
+  ingressProtection      String? // 20, 65, 67, etc. (legacy)
   structureType          String? // Elevated, Standard, etc.
   structureMaterial      String? // Painted, Aluminium, Hot Dip Galvanized, etc.
   systemInstallationDate DateTime?

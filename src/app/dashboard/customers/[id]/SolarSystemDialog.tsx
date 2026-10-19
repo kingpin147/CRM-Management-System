@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/dialog'
 import { saveSolarSystem } from './actions'
 import { AutoSuggestInput } from '@/components/ui/auto-suggest-input'
-import { formatDiscoRefNo } from '@/lib/utils'
+import { formatDiscoRefNo, cn } from '@/lib/utils'
 import { INVERTER_SIZES, INVERTER_BRANDS, PANEL_BRANDS, BATTERY_BRANDS, PV_DG_CONTROLLER_BRANDS, ENERGY_ANALYZER_BRANDS, DATALOGGER_BRANDS, getDataloggerEcosystem } from '@/lib/solar-constants'
 import { Camera, UploadCloud, Loader2, Image as ImageIcon, CheckCircle2, Trash2, ShieldCheck, Zap, Activity } from 'lucide-react'
 import { CameraPhotoCapture } from '@/components/ui/CameraPhotoCapture'
@@ -37,7 +37,9 @@ export function SolarSystemDialog({
   const [error, setError] = React.useState<string | null>(null)
 
   // Inverter Specs
-  const [inverterBrand, setInverterBrand] = React.useState(solarSystem?.inverterBrand || '')
+  const isCustomInvInitial = Boolean(solarSystem?.inverterBrand && !INVERTER_BRANDS.includes(solarSystem.inverterBrand))
+  const [inverterBrand, setInverterBrand] = React.useState(isCustomInvInitial ? 'Other' : (solarSystem?.inverterBrand || ''))
+  const [customInverterBrand, setCustomInverterBrand] = React.useState(isCustomInvInitial ? solarSystem.inverterBrand : '')
   const [inverterType, setInverterType] = React.useState(solarSystem?.inverterType || '')
   const [inverterPhase, setInverterPhase] = React.useState(solarSystem?.inverterPhase || '')
   const [inverterCategory, setInverterCategory] = React.useState(solarSystem?.inverterCategory || '')
@@ -74,7 +76,9 @@ export function SolarSystemDialog({
   )
 
   // Battery Specs & Grid
-  const [batteryBrand, setBatteryBrand] = React.useState(solarSystem?.batteryBrand || '')
+  const isCustomBatInitial = Boolean(solarSystem?.batteryBrand && !BATTERY_BRANDS.includes(solarSystem.batteryBrand))
+  const [batteryBrand, setBatteryBrand] = React.useState(isCustomBatInitial ? 'Other' : (solarSystem?.batteryBrand || ''))
+  const [customBatteryBrand, setCustomBatteryBrand] = React.useState(isCustomBatInitial ? solarSystem.batteryBrand : '')
   const [batteryType, setBatteryType] = React.useState(solarSystem?.batteryType || '')
   const [batteryCategory, setBatteryCategory] = React.useState(solarSystem?.batteryCategory || '')
   const [noOfBatteries, setNoOfBatteries] = React.useState<number>(solarSystem?.noOfBatteries ?? 0)
@@ -297,7 +301,10 @@ export function SolarSystemDialog({
 
       const formData = new FormData()
       formData.append('customerId', customerId)
-      formData.append('inverterBrand', inverterBrand)
+      const effectiveInverterBrand = inverterBrand === 'Other' && customInverterBrand.trim()
+        ? customInverterBrand.trim()
+        : inverterBrand
+      formData.append('inverterBrand', effectiveInverterBrand)
       formData.append('inverterType', inverterType)
       formData.append('inverterPhase', inverterPhase)
       formData.append('inverterCategory', inverterCategory)
@@ -322,7 +329,10 @@ export function SolarSystemDialog({
       formData.append('noOfPanels', String(noOfPanels))
       if (panelWarrantyEnd) formData.append('panelWarrantyEnd', panelWarrantyEnd)
 
-      formData.append('batteryBrand', batteryBrand)
+      const effectiveBatteryBrand = batteryBrand === 'Other' && customBatteryBrand.trim()
+        ? customBatteryBrand.trim()
+        : batteryBrand
+      formData.append('batteryBrand', effectiveBatteryBrand)
       formData.append('batteryType', batteryType)
       formData.append('batteryCategory', batteryCategory)
       formData.append('noOfBatteries', String(noOfBatteries))
@@ -395,7 +405,7 @@ export function SolarSystemDialog({
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className={cn("grid gap-3", inverterBrand === 'Other' ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2 sm:grid-cols-3")}>
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold text-[var(--color-ink)]">Brand</Label>
                     <AutoSuggestInput
@@ -406,6 +416,23 @@ export function SolarSystemDialog({
                       className="h-9 text-xs bg-white"
                     />
                   </div>
+                  {inverterBrand === 'Other' && (
+                    <div className="space-y-1 animate-in fade-in duration-200">
+                      <Label className="text-xs font-semibold text-sky-800">Specify Brand</Label>
+                      <Input
+                        value={customInverterBrand}
+                        onChange={(e) => {
+                          setCustomInverterBrand(e.target.value)
+                          if (dataloggerBrand === customInverterBrand || dataloggerBrand === '' || dataloggerBrand === 'Other') {
+                            setDataloggerBrand(e.target.value)
+                          }
+                        }}
+                        placeholder="Enter brand name"
+                        className="h-9 text-xs bg-white border-sky-300 focus:border-sky-500"
+                        autoFocus
+                      />
+                    </div>
+                  )}
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold text-[var(--color-ink)]">Type</Label>
                     <select
@@ -830,7 +857,7 @@ export function SolarSystemDialog({
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className={cn("grid gap-3", batteryBrand === 'Other' ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-2")}>
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold text-[var(--color-ink)]">Battery Brand</Label>
                     <AutoSuggestInput
@@ -841,6 +868,18 @@ export function SolarSystemDialog({
                       className="h-9 text-xs bg-white"
                     />
                   </div>
+                  {batteryBrand === 'Other' && (
+                    <div className="space-y-1 animate-in fade-in duration-200">
+                      <Label className="text-xs font-semibold text-sky-800">Specify Brand</Label>
+                      <Input
+                        value={customBatteryBrand}
+                        onChange={(e) => setCustomBatteryBrand(e.target.value)}
+                        placeholder="Enter brand name"
+                        className="h-9 text-xs bg-white border-sky-300 focus:border-sky-500"
+                        autoFocus
+                      />
+                    </div>
+                  )}
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold text-[var(--color-ink)]">Battery Chemistry</Label>
                     <select

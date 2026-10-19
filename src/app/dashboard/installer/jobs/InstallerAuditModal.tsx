@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AutoSuggestInput } from '@/components/ui/auto-suggest-input'
 import { DateInput } from '@/components/ui/date-input'
 import { submitInstallerAudit, saveSolarSpecsOnly } from './actions'
-import { formatDiscoRefNo } from '@/lib/utils'
+import { formatDiscoRefNo, cn } from '@/lib/utils'
 import {
   SYSTEM_SIZES,
   INVERTER_SIZES,
@@ -98,7 +98,10 @@ export function InstallerAuditModal({
 
   // 2. Inverter Unit Specifications
   const initialInvCount = Math.max(1, Number(solar.noOfInverters) || 1)
-  const [inverterBrand, setInverterBrand] = React.useState(solar.inverterBrand || '')
+  const initialInvBrand = solar.inverterBrand || ''
+  const isCustomInvInitial = Boolean(initialInvBrand && !INVERTER_BRANDS.includes(initialInvBrand))
+  const [inverterBrand, setInverterBrand] = React.useState(isCustomInvInitial ? 'Other' : initialInvBrand)
+  const [customInverterBrand, setCustomInverterBrand] = React.useState(isCustomInvInitial ? initialInvBrand : '')
   const [inverterSize, setInverterSize] = React.useState(solar.inverterSize || plan.systemSizeKw || '')
   const [inverterType, setInverterType] = React.useState(solar.inverterType || 'Hybrid')
   const [inverterPhase, setInverterPhase] = React.useState(solar.inverterPhase || 'Three Phase')
@@ -139,10 +142,23 @@ export function InstallerAuditModal({
   // Auto sync datalogger brand and ecosystem with inverter brand changes
   const handleInverterBrandChange = (brand: string) => {
     setInverterBrand(brand)
-    if (!dataloggerBrand || dataloggerBrand === inverterBrand || dataloggerBrand === '') {
-      setDataloggerBrand(brand)
-      const eco = getDataloggerEcosystem(brand)
-      if (eco) setMonitoringEcosystem(eco)
+    if (brand !== 'Other') {
+      if (!dataloggerBrand || dataloggerBrand === inverterBrand || dataloggerBrand === '' || dataloggerBrand === 'Other' || dataloggerBrand === customInverterBrand) {
+        setDataloggerBrand(brand)
+        const eco = getDataloggerEcosystem(brand)
+        if (eco) setMonitoringEcosystem(eco)
+      }
+    } else if (customInverterBrand) {
+      if (!dataloggerBrand || dataloggerBrand === inverterBrand || dataloggerBrand === '' || dataloggerBrand === 'Other') {
+        setDataloggerBrand(customInverterBrand)
+      }
+    }
+  }
+
+  const handleCustomInverterBrandChange = (val: string) => {
+    setCustomInverterBrand(val)
+    if (dataloggerBrand === customInverterBrand || dataloggerBrand === '' || dataloggerBrand === 'Other' || dataloggerBrand === inverterBrand) {
+      setDataloggerBrand(val)
     }
   }
 
@@ -226,7 +242,24 @@ export function InstallerAuditModal({
 
   // 4. Battery Energy Storage System (BESS)
   const initialBatCount = Math.max(0, Number(solar.noOfBatteries) || (solar.batteryBrand && solar.batteryBrand !== 'None' ? 1 : 0))
-  const [batteryBrand, setBatteryBrand] = React.useState(solar.batteryBrand || '')
+  const initialBatBrand = solar.batteryBrand || ''
+  const isCustomBatInitial = Boolean(initialBatBrand && !BATTERY_BRANDS.includes(initialBatBrand))
+  const [batteryBrand, setBatteryBrand] = React.useState(isCustomBatInitial ? 'Other' : initialBatBrand)
+  const [customBatteryBrand, setCustomBatteryBrand] = React.useState(isCustomBatInitial ? initialBatBrand : '')
+
+  const handleBatteryBrandChange = (brand: string) => {
+    setBatteryBrand(brand)
+    if (brand && brand.trim() !== '' && brand !== 'None' && noOfBatteries === 0) {
+      updateNoOfBatteries(1)
+    }
+  }
+
+  const handleCustomBatteryBrandChange = (brand: string) => {
+    setCustomBatteryBrand(brand)
+    if (brand && brand.trim() !== '' && noOfBatteries === 0) {
+      updateNoOfBatteries(1)
+    }
+  }
   const [batteryType, setBatteryType] = React.useState(solar.batteryType || 'Lithium-ion')
   const [batteryCategory, setBatteryCategory] = React.useState(solar.batteryCategory || 'Low Voltage (LV)')
   const [noOfBatteries, setNoOfBatteries] = React.useState<number>(initialBatCount)
@@ -277,10 +310,13 @@ export function InstallerAuditModal({
     })
   }
 
+  // 2. Inverter & 3. Battery Ingress Protection
+  const [inverterIngressProtection, setInverterIngressProtection] = React.useState(solar.inverterIngressProtection || solar.ingressProtection || 'IP65')
+  const [batteryIngressProtection, setBatteryIngressProtection] = React.useState(solar.batteryIngressProtection || 'IP65')
+
   // 5. Mounting Structure, Earthing & Protection Specs
   const [structureType, setStructureType] = React.useState(solar.structureType || 'Aluminium - L1 Z-Type Structure')
   const [structureMaterial, setStructureMaterial] = React.useState(solar.structureMaterial || 'Hot Dip Galvanized')
-  const [ingressProtection, setIngressProtection] = React.useState(solar.ingressProtection || 'IP65')
   const [breakerName, setBreakerName] = React.useState(solar.breakerName || 'Standard DC/AC Breakers')
   const [earthing, setEarthing] = React.useState(solar.earthing || 'Both')
   const [systemInstallationDate, setSystemInstallationDate] = React.useState(
@@ -328,7 +364,19 @@ export function InstallerAuditModal({
       setNetMetering(s.netMetering || draft?.netMetering || 'Yes')
 
       // Section 2
-      setInverterBrand(s.inverterBrand || draft?.inverterBrand || '')
+      const rawInvBrand = draft?.inverterBrand !== undefined ? draft.inverterBrand : (s.inverterBrand || '')
+      const isCustomSavedInv = Boolean(rawInvBrand && !INVERTER_BRANDS.includes(rawInvBrand))
+      const rawCustomInv = draft?.customInverterBrand !== undefined 
+        ? draft.customInverterBrand 
+        : (isCustomSavedInv ? rawInvBrand : '')
+
+      if (rawInvBrand === 'Other' || isCustomSavedInv) {
+        setInverterBrand('Other')
+        setCustomInverterBrand(rawCustomInv)
+      } else {
+        setInverterBrand(rawInvBrand)
+        setCustomInverterBrand(rawCustomInv || '')
+      }
       setInverterSize(s.inverterSize || draft?.inverterSize || p.systemSizeKw || '')
       setInverterType(s.inverterType || draft?.inverterType || 'Hybrid')
       setInverterPhase(s.inverterPhase || draft?.inverterPhase || 'Three Phase')
@@ -397,7 +445,19 @@ export function InstallerAuditModal({
       setPanelImageUrls(pImgs)
 
       // Section 4
-      setBatteryBrand(s.batteryBrand || draft?.batteryBrand || '')
+      const rawBatBrand = draft?.batteryBrand !== undefined ? draft.batteryBrand : (s.batteryBrand || '')
+      const isCustomSavedBat = Boolean(rawBatBrand && !BATTERY_BRANDS.includes(rawBatBrand))
+      const rawCustomBat = draft?.customBatteryBrand !== undefined
+        ? draft.customBatteryBrand
+        : (isCustomSavedBat ? rawBatBrand : '')
+
+      if (rawBatBrand === 'Other' || isCustomSavedBat) {
+        setBatteryBrand('Other')
+        setCustomBatteryBrand(rawCustomBat)
+      } else {
+        setBatteryBrand(rawBatBrand)
+        setCustomBatteryBrand(rawCustomBat || '')
+      }
       setBatteryType(s.batteryType || draft?.batteryType || 'Lithium-ion')
       setBatteryCategory(s.batteryCategory || draft?.batteryCategory || 'Low Voltage (LV)')
       const batCnt = Math.max(0, Number(s.noOfBatteries) || Number(draft?.noOfBatteries) || (s.batteryBrand && s.batteryBrand !== 'None' ? 1 : 0))
@@ -414,10 +474,12 @@ export function InstallerAuditModal({
 
       setBatteryImageUrls(s.batteryImages?.length ? s.batteryImages : (draft?.batteryImageUrls || []))
 
+      setInverterIngressProtection(s.inverterIngressProtection || s.ingressProtection || draft?.inverterIngressProtection || draft?.ingressProtection || 'IP65')
+      setBatteryIngressProtection(s.batteryIngressProtection || draft?.batteryIngressProtection || 'IP65')
+
       // Section 5
       setStructureType(s.structureType || draft?.structureType || 'Aluminium - L1 Z-Type Structure')
       setStructureMaterial(s.structureMaterial || draft?.structureMaterial || 'Hot Dip Galvanized')
-      setIngressProtection(s.ingressProtection || draft?.ingressProtection || 'IP65')
       setBreakerName(s.breakerName || draft?.breakerName || 'Standard DC/AC Breakers')
       setEarthing(s.earthing || draft?.earthing || 'Both')
       setSystemInstallationDate(s.systemInstallationDate ? new Date(s.systemInstallationDate).toISOString().split('T')[0] : (draft?.systemInstallationDate || ''))
@@ -451,6 +513,7 @@ export function InstallerAuditModal({
       zeroExportDevice,
       netMetering,
       inverterBrand,
+      customInverterBrand,
       inverterSize,
       inverterType,
       inverterPhase,
@@ -476,15 +539,16 @@ export function InstallerAuditModal({
       panelWarrantyEnds,
       panelImageUrls,
       batteryBrand,
+      customBatteryBrand,
       batteryType,
       batteryCategory,
       noOfBatteries,
       batterySerials,
       batteryWarrantyEnds,
-      batteryImageUrls,
+      inverterIngressProtection,
+      batteryIngressProtection,
       structureType,
       structureMaterial,
-      ingressProtection,
       breakerName,
       earthing,
       systemInstallationDate,
@@ -516,6 +580,7 @@ export function InstallerAuditModal({
     zeroExportDevice,
     netMetering,
     inverterBrand,
+    customInverterBrand,
     inverterSize,
     inverterType,
     inverterPhase,
@@ -541,15 +606,17 @@ export function InstallerAuditModal({
     panelWarrantyEnds,
     panelImageUrls,
     batteryBrand,
+    customBatteryBrand,
     batteryType,
     batteryCategory,
     noOfBatteries,
     batterySerials,
     batteryWarrantyEnds,
     batteryImageUrls,
+    inverterIngressProtection,
+    batteryIngressProtection,
     structureType,
     structureMaterial,
-    ingressProtection,
     breakerName,
     earthing,
     systemInstallationDate,
@@ -680,6 +747,9 @@ export function InstallerAuditModal({
     if (!inverterBrand?.trim()) {
       return 'Please enter or select the Inverter Brand in Section 2.'
     }
+    if (inverterBrand === 'Other' && !customInverterBrand?.trim()) {
+      return 'Please specify the custom Inverter Brand name in Section 2.'
+    }
     if (!inverterSize?.trim()) {
       return 'Please enter the Inverter Capacity / Size in Section 2.'
     }
@@ -691,6 +761,9 @@ export function InstallerAuditModal({
     }
     if (!inverterCategory?.trim()) {
       return 'Please select the Inverter Category in Section 2.'
+    }
+    if (!inverterIngressProtection?.trim()) {
+      return 'Please select the Inverter Ingress Protection (IP) rating in Section 2.'
     }
     if (!noOfInverters || Number(noOfInverters) <= 0) {
       return 'Please enter a valid Number of Inverters (at least 1) in Section 2.'
@@ -718,11 +791,17 @@ export function InstallerAuditModal({
       if (!batteryBrand?.trim()) {
         return 'Please specify the Battery Brand in Section 3 since number of batteries is greater than 0.'
       }
+      if (batteryBrand === 'Other' && !customBatteryBrand?.trim()) {
+        return 'Please specify the custom Battery Brand name in Section 3.'
+      }
       if (!batteryType?.trim() || batteryType === 'None') {
         return 'Please select the Battery Chemistry / Type in Section 3.'
       }
       if (!batteryCategory?.trim() || batteryCategory === 'N/A') {
         return 'Please select the Battery Category in Section 3.'
+      }
+      if (!batteryIngressProtection?.trim()) {
+        return 'Please select the Battery Ingress Protection (IP) rating in Section 3.'
       }
       for (let i = 0; i < noOfBatteries; i++) {
         if (!batterySerials[i]?.trim()) {
@@ -763,9 +842,6 @@ export function InstallerAuditModal({
     }
     if (!structureMaterial?.trim()) {
       return 'Please select the Structure Material in Section 5.'
-    }
-    if (!ingressProtection?.trim()) {
-      return 'Please select the Ingress Protection (IP) rating in Section 5.'
     }
     if (!earthing?.trim()) {
       return 'Please select the Earthing Protection Type in Section 5.'
@@ -818,11 +894,16 @@ export function InstallerAuditModal({
     formData.append('zeroExportDevice', zeroExportDevice)
     formData.append('netMetering', netMetering)
 
-    formData.append('inverterBrand', inverterBrand)
+    const effectiveInverterBrand = inverterBrand === 'Other' && customInverterBrand.trim()
+      ? customInverterBrand.trim()
+      : inverterBrand
+
+    formData.append('inverterBrand', effectiveInverterBrand)
     formData.append('inverterSize', inverterSize)
     formData.append('inverterType', inverterType)
     formData.append('inverterPhase', inverterPhase)
     formData.append('inverterCategory', inverterCategory)
+    formData.append('inverterIngressProtection', inverterIngressProtection)
     formData.append('noOfInverters', String(Math.max(1, Number(noOfInverters) || 1)))
     formData.append('inverterSerials', JSON.stringify(inverterSerials.slice(0, Math.max(1, noOfInverters))))
     formData.append('inverterWarrantyEnds', JSON.stringify(inverterWarrantyEnds.slice(0, Math.max(1, noOfInverters))))
@@ -857,9 +938,14 @@ export function InstallerAuditModal({
     formData.append('panelImages', JSON.stringify(activeImages))
     formData.append('panelImageUrls', JSON.stringify(activeImages))
 
-    formData.append('batteryBrand', batteryBrand)
+    const effectiveBatteryBrand = batteryBrand === 'Other' && customBatteryBrand.trim()
+      ? customBatteryBrand.trim()
+      : batteryBrand
+
+    formData.append('batteryBrand', effectiveBatteryBrand)
     formData.append('batteryType', batteryType)
     formData.append('batteryCategory', batteryCategory)
+    formData.append('batteryIngressProtection', batteryIngressProtection || '')
     formData.append('noOfBatteries', String(noOfBatteries))
     formData.append('batterySerials', JSON.stringify(batterySerials.slice(0, noOfBatteries)))
     formData.append('batteryWarrantyEnds', JSON.stringify(batteryWarrantyEnds.slice(0, noOfBatteries)))
@@ -867,7 +953,7 @@ export function InstallerAuditModal({
 
     formData.append('structureType', structureType)
     formData.append('structureMaterial', structureMaterial)
-    formData.append('ingressProtection', ingressProtection)
+    formData.append('ingressProtection', inverterIngressProtection)
     formData.append('breakerName', breakerName)
     formData.append('earthing', earthing)
     formData.append('lightningProtection', lightningProtection)
@@ -1198,7 +1284,7 @@ export function InstallerAuditModal({
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                <div className={cn("grid grid-cols-1 sm:grid-cols-2 gap-3", inverterBrand === 'Other' ? "md:grid-cols-5" : "md:grid-cols-4")}>
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold">Inverter Brand <span className="text-red-500">*</span></Label>
                     <AutoSuggestInput
@@ -1209,6 +1295,18 @@ export function InstallerAuditModal({
                       className="h-9 text-xs bg-white"
                     />
                   </div>
+                  {inverterBrand === 'Other' && (
+                    <div className="space-y-1 animate-in fade-in duration-200">
+                      <Label className="text-xs font-semibold text-sky-800">Specify Inverter Brand <span className="text-red-500">*</span></Label>
+                      <Input
+                        value={customInverterBrand}
+                        onChange={(e) => handleCustomInverterBrandChange(e.target.value)}
+                        placeholder="Enter brand name"
+                        className="h-9 text-xs bg-white border-sky-300 focus:border-sky-500"
+                        autoFocus
+                      />
+                    </div>
+                  )}
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold">Inverter Capacity / Size <span className="text-red-500">*</span></Label>
                     <AutoSuggestInput
@@ -1262,6 +1360,19 @@ export function InstallerAuditModal({
                     </Select>
                   </div>
                   <div className="space-y-1">
+                    <Label className="text-xs font-semibold">inverter Ingress Protection (IP) <span className="text-red-500">*</span></Label>
+                    <Select value={inverterIngressProtection} onValueChange={(val) => setInverterIngressProtection(val || 'IP65')}>
+                      <SelectTrigger className="h-9 text-xs bg-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {IP_LIST.map((ip) => (
+                          <SelectItem key={ip} value={ip}>{ip}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
                     <Label className="text-xs font-semibold">No. of Inverters <span className="text-red-500">*</span></Label>
                     <Input
                       type="number"
@@ -1271,7 +1382,7 @@ export function InstallerAuditModal({
                       className="h-9 text-xs font-mono bg-white font-bold"
                     />
                   </div>
-                  <div className="space-y-1 sm:col-span-2 md:col-span-2">
+                  <div className="space-y-1">
                     <Label className="text-xs font-semibold">Breaker &amp; Switchgear Spec <span className="text-red-500">*</span></Label>
                     <Input
                       value={breakerName}
@@ -1518,22 +1629,29 @@ export function InstallerAuditModal({
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                <div className={cn("grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3", batteryBrand === 'Other' ? "lg:grid-cols-6" : "lg:grid-cols-5")}>
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold">Battery Brand {noOfBatteries > 0 && <span className="text-red-500">*</span>}</Label>
                     <AutoSuggestInput
                       value={batteryBrand}
-                      onChange={(brand) => {
-                        setBatteryBrand(brand)
-                        if (brand && brand.trim() !== '' && brand !== 'None' && noOfBatteries === 0) {
-                          updateNoOfBatteries(1)
-                        }
-                      }}
+                      onChange={handleBatteryBrandChange}
                       options={BATTERY_BRANDS}
                       placeholder="e.g. Narada, Pylontech"
                       className="h-9 text-xs bg-white"
                     />
                   </div>
+                  {batteryBrand === 'Other' && (
+                    <div className="space-y-1 animate-in fade-in duration-200">
+                      <Label className="text-xs font-semibold text-sky-800">Specify Battery Brand {noOfBatteries > 0 && <span className="text-red-500">*</span>}</Label>
+                      <Input
+                        value={customBatteryBrand}
+                        onChange={(e) => handleCustomBatteryBrandChange(e.target.value)}
+                        placeholder="Enter brand name"
+                        className="h-9 text-xs bg-white border-sky-300 focus:border-sky-500"
+                        autoFocus
+                      />
+                    </div>
+                  )}
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold">Battery Chemistry / Type {noOfBatteries > 0 && <span className="text-red-500">*</span>}</Label>
                     <Select value={batteryType} onValueChange={(val) => {
@@ -1565,6 +1683,19 @@ export function InstallerAuditModal({
                         <SelectItem value="Low Voltage (LV)">Low Voltage (LV) 48V</SelectItem>
                         <SelectItem value="High Voltage (HV)">High Voltage (HV)</SelectItem>
                         <SelectItem value="N/A">N/A</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold">Battery Ingress Protection (IP) {noOfBatteries > 0 && <span className="text-red-500">*</span>}</Label>
+                    <Select value={batteryIngressProtection} onValueChange={(val) => setBatteryIngressProtection(val || 'IP65')}>
+                      <SelectTrigger className="h-9 text-xs bg-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {IP_LIST.map((ip) => (
+                          <SelectItem key={ip} value={ip}>{ip}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1965,7 +2096,7 @@ export function InstallerAuditModal({
                 <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                   <p className="text-xs font-bold text-[#002868] uppercase tracking-wide">5. Mounting Structure, Protection &amp; Installation Specs</p>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold">Structure Type <span className="text-red-500">*</span></Label>
                     <Select value={structureType} onValueChange={(val) => setStructureType(val || 'Aluminium - L1 Z-Type Structure')}>
@@ -1988,19 +2119,6 @@ export function InstallerAuditModal({
                       <SelectContent>
                         {STRUCTURE_MATERIALS.map((sm) => (
                           <SelectItem key={sm} value={sm}>{sm}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Ingress Protection (IP) <span className="text-red-500">*</span></Label>
-                    <Select value={ingressProtection} onValueChange={(val) => setIngressProtection(val || 'IP65')}>
-                      <SelectTrigger className="h-9 text-xs bg-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {IP_LIST.map((ip) => (
-                          <SelectItem key={ip} value={ip}>{ip}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>

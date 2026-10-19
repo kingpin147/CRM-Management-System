@@ -39,6 +39,7 @@ export async function POST(req: NextRequest) {
     const inverterType = (formData.get('inverterType') as string) || 'Hybrid'
     const inverterPhase = (formData.get('inverterPhase') as string) || 'Three Phase'
     const inverterCategory = (formData.get('inverterCategory') as string) || 'Low Voltage'
+    const inverterIngressProtection = (formData.get('inverterIngressProtection') as string) || (formData.get('ingressProtection') as string) || 'IP65'
     const inverterSize = (formData.get('inverterSize') as string) || ''
     const noOfInverters = Math.max(1, Number(formData.get('noOfInverters')) || 1)
     
@@ -71,6 +72,7 @@ export async function POST(req: NextRequest) {
     const batteryBrand = (formData.get('batteryBrand') as string) || ''
     const batteryType = (formData.get('batteryType') as string) || 'Lithium-ion'
     const batteryCategory = (formData.get('batteryCategory') as string) || 'Low Voltage'
+    const batteryIngressProtection = (formData.get('batteryIngressProtection') as string) || 'IP65'
     const noOfBatteries = Number(formData.get('noOfBatteries') || 0)
     
     const batterySerials = parseJsonArraySafe<string>(formData.get('batterySerials') as string, [])
@@ -153,7 +155,9 @@ export async function POST(req: NextRequest) {
         lightningArrestor,
         energyAnalyzer,
         breakerName,
-        ingressProtection,
+        inverterIngressProtection,
+        batteryIngressProtection,
+        ingressProtection: inverterIngressProtection,
         structureType,
         structureMaterial,
         systemInstallationDate,
@@ -206,7 +210,9 @@ export async function POST(req: NextRequest) {
         lightningArrestor,
         energyAnalyzer,
         breakerName,
-        ingressProtection,
+        inverterIngressProtection,
+        batteryIngressProtection,
+        ingressProtection: inverterIngressProtection,
         structureType,
         structureMaterial,
         systemInstallationDate,

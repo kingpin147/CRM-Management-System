@@ -531,6 +531,10 @@ export function SignupDocument({ customer, logoSrc }: { customer: any; logoSrc?:
                       <Text style={styles.value}>{solar?.inverterSize || '—'}</Text>
                     </View>
                     <View style={styles.gridRow}>
+                      <Text style={styles.label}>Inverter IP:</Text>
+                      <Text style={styles.value}>{(solar as any)?.inverterIngressProtection || solar?.ingressProtection ? (((solar as any)?.inverterIngressProtection || solar?.ingressProtection)!.startsWith('IP') ? ((solar as any)?.inverterIngressProtection || solar?.ingressProtection) : `IP${(solar as any)?.inverterIngressProtection || solar?.ingressProtection}`) : '—'}</Text>
+                    </View>
+                    <View style={styles.gridRow}>
                       <Text style={styles.label}>No. of Inverters:</Text>
                       <Text style={styles.value}>{solar?.noOfInverters && Number(solar.noOfInverters) > 0 ? String(solar.noOfInverters) : '—'}</Text>
                     </View>
@@ -561,10 +565,6 @@ export function SignupDocument({ customer, logoSrc }: { customer: any; logoSrc?:
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>Earthing & OHMs:</Text>
                       <Text style={styles.value}>{earthingDisplay}</Text>
-                    </View>
-                    <View style={styles.gridRow}>
-                      <Text style={styles.label}>Ingress Protection:</Text>
-                      <Text style={styles.value}>{solar?.ingressProtection ? (solar.ingressProtection.startsWith('IP') ? solar.ingressProtection : `IP${solar.ingressProtection}`) : '—'}</Text>
                     </View>
                     <View style={styles.gridRowLast}>
                       <Text style={styles.label}>Structure:</Text>
@@ -614,6 +614,10 @@ export function SignupDocument({ customer, logoSrc }: { customer: any; logoSrc?:
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>No. of Batteries:</Text>
                       <Text style={styles.value}>{solar?.noOfBatteries && Number(solar.noOfBatteries) > 0 ? String(solar.noOfBatteries) : '—'}</Text>
+                    </View>
+                    <View style={styles.gridRow}>
+                      <Text style={styles.label}>Battery IP:</Text>
+                      <Text style={styles.value}>{(solar as any)?.batteryIngressProtection ? ((solar as any).batteryIngressProtection.startsWith('IP') ? (solar as any).batteryIngressProtection : `IP${(solar as any).batteryIngressProtection}`) : '—'}</Text>
                     </View>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>Battery Serial #:</Text>

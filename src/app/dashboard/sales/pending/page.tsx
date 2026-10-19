@@ -152,7 +152,9 @@ export default async function PendingSalesPage() {
     const lightningArrestor = (formData.get('lightningArrestor') as string) || undefined
     const energyAnalyzer = (formData.get('energyAnalyzer') as string) || undefined
     const breakerName = (formData.get('breakerName') as string) || undefined
-    const ingressProtection = (formData.get('ingressProtection') as string) || undefined
+    const inverterIngressProtection = (formData.get('inverterIngressProtection') as string) || (formData.get('ingressProtection') as string) || undefined
+    const batteryIngressProtection = (formData.get('batteryIngressProtection') as string) || undefined
+    const ingressProtection = inverterIngressProtection
     const structureType = (formData.get('structureType') as string) || undefined
     const structureMaterial = (formData.get('structureMaterial') as string) || undefined
     const systemInstallationDateStr = formData.get('systemInstallationDate') as string
@@ -357,6 +359,8 @@ export default async function PendingSalesPage() {
         lightningArrestor: lightningArrestor || 'Not Installed',
         energyAnalyzer: energyAnalyzer || 'Not Installed',
         breakerName: breakerName || 'Schneider / ABB',
+        inverterIngressProtection: inverterIngressProtection,
+        batteryIngressProtection: batteryIngressProtection,
         ingressProtection: ingressProtection,
         structureType: structureType,
         structureMaterial: structureMaterial,
@@ -432,7 +436,8 @@ export default async function PendingSalesPage() {
         ...(lightningArrestor !== undefined ? { lightningArrestor } : {}),
         ...(energyAnalyzer !== undefined ? { energyAnalyzer } : {}),
         breakerName,
-        ingressProtection,
+        ...(inverterIngressProtection !== undefined ? { inverterIngressProtection, ingressProtection: inverterIngressProtection } : {}),
+        ...(batteryIngressProtection !== undefined ? { batteryIngressProtection } : {}),
         structureType,
         structureMaterial,
         ...(sysInstDate !== undefined ? { systemInstallationDate: sysInstDate } : {}),

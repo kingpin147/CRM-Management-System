@@ -138,7 +138,9 @@ export async function createCustomer(formData: FormData) {
   const earthingOhmsRaw = formData.get('earthingOhms') ? String(formData.get('earthingOhms')) : null
   const earthingAcOhms = earthingOhmsRaw && Number(earthingOhmsRaw) > 0 ? Number(earthingOhmsRaw) : null
   const earthingLastCheck = parseDate(formData.get('lastCheckDate'))
-  const ingressProtection = (formData.get('ingressProtection') as string) || null
+  const inverterIngressProtection = (formData.get('inverterIngressProtection') as string) || (formData.get('ingressProtection') as string) || null
+  const batteryIngressProtection = (formData.get('batteryIngressProtection') as string) || null
+  const ingressProtection = inverterIngressProtection
   const structureType = (formData.get('structureType') as string) || null
   const structureMaterial = (formData.get('structureMaterial') as string) || null
   const lightningArrestor = (formData.get('lightningArrestor') as string) || (formData.get('lightningProtection') === 'true' || formData.get('lightningProtection') === 'Installed' ? 'Installed' : 'Not Installed')
@@ -290,6 +292,8 @@ export async function createCustomer(formData: FormData) {
             earthing,
             earthingLastCheck,
             earthingAcOhms,
+            inverterIngressProtection,
+            batteryIngressProtection,
             ingressProtection,
             structureType,
             structureMaterial,

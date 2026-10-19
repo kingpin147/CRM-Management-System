@@ -627,6 +627,22 @@ export default async function CustomerDetailPage({
                             </TableCell>
                           </TableRow>
 
+                          {/* Inverter Ingress Protection (IP) */}
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">inverter Ingress Protection (IP)</TableCell>
+                            <TableCell className="text-xs">
+                              {(customer.solarSystem?.inverterIngressProtection || customer.solarSystem?.ingressProtection) ? (
+                                <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                                  {(customer.solarSystem.inverterIngressProtection || customer.solarSystem.ingressProtection)!.startsWith('IP')
+                                    ? (customer.solarSystem.inverterIngressProtection || customer.solarSystem.ingressProtection)
+                                    : `IP ${customer.solarSystem.inverterIngressProtection || customer.solarSystem.ingressProtection}`}
+                                </Badge>
+                              ) : (
+                                <span className="text-slate-400 font-medium">—</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+
                           {/* Meter Phase */}
                           <TableRow className="border-b hover:bg-transparent">
                             <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Meter Phase</TableCell>
@@ -877,20 +893,6 @@ export default async function CustomerDetailPage({
                             </TableCell>
                           </TableRow>
 
-                          {/* Ingress Protection (IP) */}
-                          <TableRow className="border-b hover:bg-transparent">
-                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Ingress Protection (IP)</TableCell>
-                            <TableCell className="text-xs">
-                              {customer.solarSystem?.ingressProtection ? (
-                                <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
-                                  {customer.solarSystem.ingressProtection.startsWith('IP') ? customer.solarSystem.ingressProtection : `IP ${customer.solarSystem.ingressProtection}`}
-                                </Badge>
-                              ) : (
-                                <span className="text-slate-400 font-medium">—</span>
-                              )}
-                            </TableCell>
-                          </TableRow>
-
                           {/* Structure Type */}
                           <TableRow className="border-b hover:bg-transparent">
                             <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Structure Type & Material</TableCell>
@@ -1058,6 +1060,22 @@ export default async function CustomerDetailPage({
                             <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">No. of Batteries</TableCell>
                             <TableCell className="text-xs font-semibold text-[var(--color-ink)]">
                               {noOfBatteries > 0 ? noOfBatteries : '—'}
+                            </TableCell>
+                          </TableRow>
+
+                          {/* Battery Ingress Protection (IP) */}
+                          <TableRow className="border-b hover:bg-transparent">
+                            <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Battery Ingress Protection (IP)</TableCell>
+                            <TableCell className="text-xs">
+                              {customer.solarSystem?.batteryIngressProtection ? (
+                                <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
+                                  {customer.solarSystem.batteryIngressProtection.startsWith('IP')
+                                    ? customer.solarSystem.batteryIngressProtection
+                                    : `IP ${customer.solarSystem.batteryIngressProtection}`}
+                                </Badge>
+                              ) : (
+                                <span className="text-slate-400 font-medium">—</span>
+                              )}
                             </TableCell>
                           </TableRow>
 

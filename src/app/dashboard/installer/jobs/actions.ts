@@ -45,6 +45,7 @@ export async function submitInstallerAudit(formData: FormData) {
   const inverterType = (formData.get('inverterType') as string) || 'Hybrid'
   const inverterPhase = (formData.get('inverterPhase') as string) || 'Three Phase'
   const inverterCategory = (formData.get('inverterCategory') as string) || 'Low Voltage'
+  const inverterIngressProtection = (formData.get('inverterIngressProtection') as string) || (formData.get('ingressProtection') as string) || 'IP65'
   const inverterSize = (formData.get('inverterSize') as string) || ''
   const noOfInverters = Math.max(1, Number(formData.get('noOfInverters')) || 1)
   
@@ -83,6 +84,7 @@ export async function submitInstallerAudit(formData: FormData) {
   if (!inverterType.trim()) throw new Error('Inverter Type is required in Section 2.')
   if (!inverterPhase.trim()) throw new Error('Inverter Phase is required in Section 2.')
   if (!inverterCategory.trim()) throw new Error('Inverter Category is required in Section 2.')
+  if (!inverterIngressProtection.trim()) throw new Error('Inverter Ingress Protection rating is required in Section 2.')
   if (inverterSerials.length === 0 || inverterSerials.slice(0, noOfInverters).some((s: string) => !s || !s.trim())) {
     throw new Error('All Inverter Unit Serial numbers must be provided in Section 2.')
   }
@@ -102,6 +104,7 @@ export async function submitInstallerAudit(formData: FormData) {
   const batteryBrand = (formData.get('batteryBrand') as string) || ''
   const batteryType = (formData.get('batteryType') as string) || 'Lithium-ion'
   const batteryCategory = (formData.get('batteryCategory') as string) || 'Low Voltage'
+  const batteryIngressProtection = (formData.get('batteryIngressProtection') as string) || 'IP65'
   const noOfBatteries = Number(formData.get('noOfBatteries') || 0)
   
   const batterySerials = parseJsonArraySafe<string>(formData.get('batterySerials') as string, [])
@@ -120,6 +123,9 @@ export async function submitInstallerAudit(formData: FormData) {
     if (batteryWarrantyEnds.length === 0 || batteryWarrantyEnds.length < noOfBatteries) {
       throw new Error('All Battery Unit Warranty Expiry Dates must be provided in Section 4.')
     }
+    if (!batteryIngressProtection.trim()) {
+      throw new Error('Battery Ingress Protection rating is required in Section 3.')
+    }
   }
 
   // Mounting Structure, Protection & Installation Details
@@ -134,7 +140,6 @@ export async function submitInstallerAudit(formData: FormData) {
 
   if (!structureType.trim()) throw new Error('Structure Type is required in Section 5.')
   if (!structureMaterial.trim()) throw new Error('Structure Material is required in Section 5.')
-  if (!ingressProtection.trim()) throw new Error('Ingress Protection rating is required in Section 5.')
   if (!breakerName.trim()) throw new Error('Breaker & Switchgear Specification is required in Section 2 (Inverter Specs).')
   if (!earthing.trim()) throw new Error('Earthing Protection Type is required in Section 5.')
   if (!systemInstallationDate) {
@@ -247,7 +252,9 @@ export async function submitInstallerAudit(formData: FormData) {
       lightningArrestor,
       energyAnalyzer,
       breakerName,
-      ingressProtection,
+      inverterIngressProtection,
+      batteryIngressProtection,
+      ingressProtection: inverterIngressProtection,
       structureType,
       structureMaterial,
       systemInstallationDate,
@@ -313,7 +320,9 @@ export async function submitInstallerAudit(formData: FormData) {
       lightningArrestor,
       energyAnalyzer,
       breakerName,
-      ingressProtection,
+      inverterIngressProtection,
+      batteryIngressProtection,
+      ingressProtection: inverterIngressProtection,
       structureType,
       structureMaterial,
       systemInstallationDate,
@@ -510,6 +519,7 @@ export async function saveSolarSpecsOnly(formData: FormData) {
   const inverterType = (formData.get('inverterType') as string) || 'Hybrid'
   const inverterPhase = (formData.get('inverterPhase') as string) || 'Three Phase'
   const inverterCategory = (formData.get('inverterCategory') as string) || 'Low Voltage'
+  const inverterIngressProtection = (formData.get('inverterIngressProtection') as string) || (formData.get('ingressProtection') as string) || 'IP65'
   const inverterSize = (formData.get('inverterSize') as string) || ''
   const noOfInverters = Math.max(1, Number(formData.get('noOfInverters')) || 1)
   
@@ -542,6 +552,7 @@ export async function saveSolarSpecsOnly(formData: FormData) {
   const batteryBrand = (formData.get('batteryBrand') as string) || ''
   const batteryType = (formData.get('batteryType') as string) || 'Lithium-ion'
   const batteryCategory = (formData.get('batteryCategory') as string) || 'Low Voltage'
+  const batteryIngressProtection = (formData.get('batteryIngressProtection') as string) || 'IP65'
   const noOfBatteries = Number(formData.get('noOfBatteries') || 0)
   
   const batterySerials = parseJsonArraySafe<string>(formData.get('batterySerials') as string, [])
@@ -624,7 +635,9 @@ export async function saveSolarSpecsOnly(formData: FormData) {
       lightningArrestor,
       energyAnalyzer,
       breakerName,
-      ingressProtection,
+      inverterIngressProtection,
+      batteryIngressProtection,
+      ingressProtection: inverterIngressProtection,
       structureType,
       structureMaterial,
       systemInstallationDate,
@@ -677,7 +690,9 @@ export async function saveSolarSpecsOnly(formData: FormData) {
       lightningArrestor,
       energyAnalyzer,
       breakerName,
-      ingressProtection,
+      inverterIngressProtection,
+      batteryIngressProtection,
+      ingressProtection: inverterIngressProtection,
       structureType,
       structureMaterial,
       systemInstallationDate,

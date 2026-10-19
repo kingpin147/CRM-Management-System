@@ -46,6 +46,7 @@ export async function POST(req: NextRequest) {
     const inverterType = (formData.get('inverterType') as string) || 'Hybrid'
     const inverterPhase = (formData.get('inverterPhase') as string) || 'Three Phase'
     const inverterCategory = (formData.get('inverterCategory') as string) || 'Low Voltage'
+    const inverterIngressProtection = (formData.get('inverterIngressProtection') as string) || (formData.get('ingressProtection') as string) || 'IP65'
     const inverterSize = (formData.get('inverterSize') as string) || ''
     const noOfInverters = Math.max(1, Number(formData.get('noOfInverters')) || 1)
     
@@ -84,6 +85,7 @@ export async function POST(req: NextRequest) {
     if (!inverterType.trim()) return NextResponse.json({ error: 'Inverter Type is required in Section 2.' }, { status: 400 })
     if (!inverterPhase.trim()) return NextResponse.json({ error: 'Inverter Phase is required in Section 2.' }, { status: 400 })
     if (!inverterCategory.trim()) return NextResponse.json({ error: 'Inverter Category is required in Section 2.' }, { status: 400 })
+    if (!inverterIngressProtection.trim()) return NextResponse.json({ error: 'Inverter Ingress Protection rating is required in Section 2.' }, { status: 400 })
     if (inverterSerials.length === 0 || inverterSerials.slice(0, noOfInverters).some((s: string) => !s || !s.trim())) {
       return NextResponse.json({ error: 'All Inverter Unit Serial numbers must be provided in Section 2.' }, { status: 400 })
     }
@@ -103,6 +105,7 @@ export async function POST(req: NextRequest) {
     const batteryBrand = (formData.get('batteryBrand') as string) || ''
     const batteryType = (formData.get('batteryType') as string) || 'Lithium-ion'
     const batteryCategory = (formData.get('batteryCategory') as string) || 'Low Voltage'
+    const batteryIngressProtection = (formData.get('batteryIngressProtection') as string) || 'IP65'
     const noOfBatteries = Number(formData.get('noOfBatteries') || 0)
     
     const batterySerials = parseJsonArraySafe<string>(formData.get('batterySerials') as string, [])
@@ -121,6 +124,9 @@ export async function POST(req: NextRequest) {
       if (batteryWarrantyEnds.length === 0 || batteryWarrantyEnds.length < noOfBatteries) {
         return NextResponse.json({ error: 'All Battery Unit Warranty Expiry Dates must be provided in Section 4.' }, { status: 400 })
       }
+      if (!batteryIngressProtection.trim()) {
+        return NextResponse.json({ error: 'Battery Ingress Protection rating is required in Section 3.' }, { status: 400 })
+      }
     }
 
     // Mounting Structure, Protection & Installation Details
@@ -135,7 +141,6 @@ export async function POST(req: NextRequest) {
 
     if (!structureType.trim()) return NextResponse.json({ error: 'Structure Type is required in Section 5.' }, { status: 400 })
     if (!structureMaterial.trim()) return NextResponse.json({ error: 'Structure Material is required in Section 5.' }, { status: 400 })
-    if (!ingressProtection.trim()) return NextResponse.json({ error: 'Ingress Protection rating is required in Section 5.' }, { status: 400 })
     if (!breakerName.trim()) return NextResponse.json({ error: 'Breaker & Switchgear Specification is required in Section 2 (Inverter Specs).' }, { status: 400 })
     if (!earthing.trim()) return NextResponse.json({ error: 'Earthing Protection Type is required in Section 5.' }, { status: 400 })
     if (!systemInstallationDate) {
@@ -248,7 +253,9 @@ export async function POST(req: NextRequest) {
         lightningArrestor,
         energyAnalyzer,
         breakerName,
-        ingressProtection,
+        inverterIngressProtection,
+        batteryIngressProtection,
+        ingressProtection: inverterIngressProtection,
         structureType,
         structureMaterial,
         systemInstallationDate,
@@ -314,7 +321,9 @@ export async function POST(req: NextRequest) {
         lightningArrestor,
         energyAnalyzer,
         breakerName,
-        ingressProtection,
+        inverterIngressProtection,
+        batteryIngressProtection,
+        ingressProtection: inverterIngressProtection,
         structureType,
         structureMaterial,
         systemInstallationDate,
