@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge'
 import { createCustomer } from './actions'
 import { uploadFile } from '@/utils/supabase/storage'
 import { CustomerType } from '@prisma/client'
-import { ChevronRight, ChevronLeft, CheckCircle2, Check, Sparkles, Loader2, AlertCircle, Download, FileText, Camera, UploadCloud, Image as ImageIcon, X, Users, Gift } from 'lucide-react'
+import { ChevronRight, ChevronLeft, CheckCircle2, Check, Sparkles, Loader2, AlertCircle, Download, FileText, Camera, UploadCloud, Image as ImageIcon, X, Users, Gift, Zap } from 'lucide-react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { AutoSuggestInput } from '@/components/ui/auto-suggest-input'
 import { CITIES_LIST, getAreasForCity, getDefaultDiscoForCity, getSubAreasForArea } from '@/lib/pakistan-cities-areas'
@@ -136,6 +136,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
   const packageTier    = form.watch('packageTier')
   const billingType    = form.watch('billingType')
   const monitoringTime = form.watch('monitoringTime')
+  const isGridTied     = (monitoringTime || '').trim().toLowerCase() === 'grid tied' || (monitoringTime || '').trim() === '24 hours'
   const panelWattage   = form.watch('panelWattage') || 0
   const noOfPanels     = form.watch('noOfPanels')   || 0
   const totalPanelWattage = panelWattage * noOfPanels
@@ -153,6 +154,22 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
       form.setValue('freeMonths', eligible)
     }
   }, [billingType, form])
+
+  // When Grid Tied is selected, clear battery fields and align inverter type
+  useEffect(() => {
+    if (isGridTied) {
+      form.setValue('noOfBatteries', 0)
+      form.setValue('batteryCategory', 'Not Installed')
+      form.setValue('batteryType', 'Not Installed')
+      form.setValue('batteryBrand', '')
+      form.setValue('batteryAuditStatus', 'Good')
+      setBatteryWarrantyList([])
+      setBatteryPhotos([])
+      if (form.getValues('inverterType') === 'Hybrid') {
+        form.setValue('inverterType', 'OnGrid')
+      }
+    }
+  }, [isGridTied, form])
 
   const breakdown = calculatePackageBreakdown(systemSizeKw, packageTier, billingType, monitoringTime)
   const {
@@ -303,8 +320,8 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
       'meterType', 'zeroExportDevice', 'disco', 'discoRefNo', 'inverterBrand', 'inverterType',
       'inverterPhase', 'noOfInverters', 'inverterSerial', 'inverterCategory', 'inverterSize',
       'meterPhase', 'panelTechnology', 'panelBrand', 'panelWattage', 'noOfPanels', 'panelType',
-      'batteryCategory', 'batteryType', 'batteryBrand', 'noOfBatteries', 'batteryIngressProtection', 'earthingType',
-      'earthingOhms', 'inverterIngressProtection', 'structureType', 'structureMaterial', 'installationDate'
+      ...(!isGridTied ? ['batteryCategory', 'batteryType', 'batteryBrand', 'noOfBatteries', 'batteryIngressProtection'] : []),
+      'earthingType', 'earthingOhms', 'inverterIngressProtection', 'structureType', 'structureMaterial', 'installationDate'
     ]
 
     const hasTab1Error = errorKeys.some(k => tab1Fields.includes(k))
@@ -445,8 +462,18 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
       if (inverterImageUrls.length > 0) {
         formData.append('inverterImages', JSON.stringify(inverterImageUrls))
       }
-      if (batteryImageUrls.length > 0) {
-        formData.append('batteryImages', JSON.stringify(batteryImageUrls))
+      if (isGridTied) {
+        formData.set('noOfBatteries', '0')
+        formData.set('batteryBrand', '')
+        formData.set('batteryType', 'None')
+        formData.set('batteryCategory', 'N/A')
+        formData.set('batteryIngressProtection', '')
+        formData.set('batteryAuditStatus', 'N/A')
+        formData.delete('batteryImages')
+      } else {
+        if (batteryImageUrls.length > 0) {
+          formData.append('batteryImages', JSON.stringify(batteryImageUrls))
+        }
       }
       if (panelUrl) {
         formData.append('panelImageUrl', panelUrl)
@@ -1700,9 +1727,10 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                   </div>
                 </div>
 
-                {/* 4. Battery Storage Section */}
-                <div className="space-y-4 pt-2 border-t border-line/60">
-                  <h3 className="text-xs font-bold text-[#002868] uppercase tracking-wider">Battery Storage Specifications</h3>
+                {/* 4. Battery Storage Section - Only for Hybrid / Non-Grid-Tied */}
+                {!isGridTied && (
+                  <div className="space-y-4 pt-2 border-t border-line/60">
+                    <h3 className="text-xs font-bold text-[#002868] uppercase tracking-wider">Battery Storage Specifications</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
                     {/* Battery Category */}
                     <FormField control={form.control} name="batteryCategory" render={({ field }) => (
@@ -1881,6 +1909,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                     </div>
                   )}
                 </div>
+              )}
 
                 {/* 5. Earthing, Protection & Structure */}
                 <div className="space-y-4 pt-2 border-t border-line/60">
@@ -2079,7 +2108,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                       {[
                         { name: 'inverterAuditStatus',   label: 'Inverter Status' },
                         { name: 'panelAuditStatus',      label: 'Panel Status' },
-                        { name: 'batteryAuditStatus',    label: 'Battery Status' },
+                        ...(!isGridTied ? [{ name: 'batteryAuditStatus',    label: 'Battery Status' }] : []),
                         { name: 'structureAuditStatus',  label: 'Structure Status' },
                         { name: 'cableAuditStatus',      label: 'Cable Status' },
                         { name: 'earthingAuditStatus',   label: 'AC/DC Earthing Status' },

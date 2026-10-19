@@ -168,7 +168,7 @@ export default async function CustomerDetailPage({
               <EditCustomerDialog customer={customer} />
             )}
             {canEditSolarSpecs && (
-              <SolarSystemDialog customerId={customer.id} solarSystem={customer.solarSystem} />
+              <SolarSystemDialog customerId={customer.id} solarSystem={customer.solarSystem} defaultMonitoringTime={customer.packagePlan?.monitoringTime} />
             )}
           </div>
         </div>
@@ -482,7 +482,7 @@ export default async function CustomerDetailPage({
                 <SectionHeader
                   action={
                     canEditSolarSpecs && (
-                      <SolarSystemDialog customerId={customer.id} solarSystem={customer.solarSystem} />
+                      <SolarSystemDialog customerId={customer.id} solarSystem={customer.solarSystem} defaultMonitoringTime={customer.packagePlan?.monitoringTime} />
                     )
                   }
                 >

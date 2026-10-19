@@ -88,6 +88,7 @@ export async function createCustomer(formData: FormData) {
   const packageTier = (formData.get('packageTier') as string) || 'Comprehensive'
   const billingType = (formData.get('billingType') as string) || 'Yearly'
   const monitoringTime = (formData.get('monitoringTime') as string) || 'Grid Tied'
+  const isGridTied = monitoringTime.trim().toLowerCase() === 'grid tied' || monitoringTime.trim() === '24 hours'
   const freeMonths = Math.max(0, Number(formData.get('freeMonths') || 0))
   const monthlyBasePrice = Number(formData.get('monthlyBasePrice') || 0)
   const appliedDiscount = Number(formData.get('appliedDiscount') || 0)
@@ -128,18 +129,18 @@ export async function createCustomer(formData: FormData) {
   const noOfPanels = Number(formData.get('noOfPanels') || 0)
   const totalWattage = panelWattage * noOfPanels
   const panelWarrantyEnd = parseDate(formData.get('panelWarrantyExpiry'))
-  const batteryCategory = (formData.get('batteryCategory') as string) || ''
-  const batteryType = (formData.get('batteryType') as string) || ''
-  const batteryBrand = (formData.get('batteryBrand') as string) || ''
-  const noOfBatteries = Number(formData.get('noOfBatteries') || 0)
-  const batterySerial = (formData.get('batterySerial') as string) || ''
-  const batteryWarrantyEnd = parseDate(formData.get('batteryWarrantyExpiry'))
+  const batteryCategory = isGridTied ? 'N/A' : ((formData.get('batteryCategory') as string) || '')
+  const batteryType = isGridTied ? 'None' : ((formData.get('batteryType') as string) || '')
+  const batteryBrand = isGridTied ? '' : ((formData.get('batteryBrand') as string) || '')
+  const noOfBatteries = isGridTied ? 0 : Number(formData.get('noOfBatteries') || 0)
+  const batterySerial = isGridTied ? '' : ((formData.get('batterySerial') as string) || '')
+  const batteryWarrantyEnd = isGridTied ? null : parseDate(formData.get('batteryWarrantyExpiry'))
   const earthing = (formData.get('earthingType') as string) || ''
   const earthingOhmsRaw = formData.get('earthingOhms') ? String(formData.get('earthingOhms')) : null
   const earthingAcOhms = earthingOhmsRaw && Number(earthingOhmsRaw) > 0 ? Number(earthingOhmsRaw) : null
   const earthingLastCheck = parseDate(formData.get('lastCheckDate'))
   const inverterIngressProtection = (formData.get('inverterIngressProtection') as string) || (formData.get('ingressProtection') as string) || null
-  const batteryIngressProtection = (formData.get('batteryIngressProtection') as string) || null
+  const batteryIngressProtection = isGridTied ? null : ((formData.get('batteryIngressProtection') as string) || null)
   const ingressProtection = inverterIngressProtection
   const structureType = (formData.get('structureType') as string) || null
   const structureMaterial = (formData.get('structureMaterial') as string) || null
@@ -156,7 +157,7 @@ export async function createCustomer(formData: FormData) {
   const lastAuditDate = parseDate(formData.get('lastAuditDate'))
   const inverterStatus = (formData.get('inverterAuditStatus') as string) || null
   const panelStatus = (formData.get('panelAuditStatus') as string) || null
-  const batteryStatus = (formData.get('batteryAuditStatus') as string) || null
+  const batteryStatus = isGridTied ? 'N/A' : ((formData.get('batteryAuditStatus') as string) || null)
   const structureStatus = (formData.get('structureAuditStatus') as string) || null
   const cableStatus = (formData.get('cableAuditStatus') as string) || null
   const earthingStatus = (formData.get('earthingAuditStatus') as string) || null
@@ -173,7 +174,7 @@ export async function createCustomer(formData: FormData) {
   }
 
   let batteryImages: string[] = []
-  const batteryImagesRaw = formData.get('batteryImages')
+  const batteryImagesRaw = isGridTied ? null : formData.get('batteryImages')
   if (batteryImagesRaw && typeof batteryImagesRaw === 'string') {
     try {
       batteryImages = JSON.parse(batteryImagesRaw)

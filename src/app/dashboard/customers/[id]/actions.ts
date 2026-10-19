@@ -332,37 +332,43 @@ export async function saveSolarSystem(formData: FormData) {
   const panelWarrantyRaw = formData.get('panelWarrantyEnd') as string
   const panelWarrantyEnd = panelWarrantyRaw ? new Date(panelWarrantyRaw) : undefined
   
+  // Monitoring Time & Grid-Tied Mode
+  const monitoringTime = ((formData.get('monitoringTime') as string) || '').trim()
+  const isGridTied = monitoringTime.toLowerCase() === 'grid tied' || monitoringTime === '24 hours' || inverterType === 'OnGrid'
+
   // Battery
-  const batteryBrand = formData.get('batteryBrand') as string || 'Narada'
-  const batteryType = formData.get('batteryType') as string || 'Lithium'
-  const batteryCategory = formData.get('batteryCategory') as string || 'Low Voltage'
-  const noOfBatteries = Number(formData.get('noOfBatteries')) || 1
+  const batteryBrand = isGridTied ? '' : ((formData.get('batteryBrand') as string) || '')
+  const batteryType = isGridTied ? 'None' : ((formData.get('batteryType') as string) || 'Lithium')
+  const batteryCategory = isGridTied ? 'N/A' : ((formData.get('batteryCategory') as string) || 'Low Voltage')
+  const noOfBatteries = isGridTied ? 0 : (Number(formData.get('noOfBatteries')) || 0)
   
-  let batterySerial = formData.get('batterySerial') as string || 'SN-BAT-' + Date.now().toString().slice(-6)
-  let batteryWarrantyRaw = formData.get('batteryWarrantyEnd') as string
-  let batteryWarrantyEnd = batteryWarrantyRaw ? new Date(batteryWarrantyRaw) : undefined
+  let batterySerial = isGridTied ? '' : ((formData.get('batterySerial') as string) || '')
+  let batteryWarrantyRaw = isGridTied ? '' : (formData.get('batteryWarrantyEnd') as string)
+  let batteryWarrantyEnd = (!isGridTied && batteryWarrantyRaw) ? new Date(batteryWarrantyRaw) : undefined
 
   let batterySerials: string[] = []
   let batteryWarrantyEnds: Date[] = []
   
-  try {
-    const rawSerials = formData.get('batterySerials') as string
-    if (rawSerials) batterySerials = JSON.parse(rawSerials)
-    
-    const rawWarranties = formData.get('batteryWarrantyEnds') as string
-    if (rawWarranties) {
-      const parsed = JSON.parse(rawWarranties) as string[]
-      batteryWarrantyEnds = parsed.map(w => w ? new Date(w) : new Date())
+  if (!isGridTied) {
+    try {
+      const rawSerials = formData.get('batterySerials') as string
+      if (rawSerials) batterySerials = JSON.parse(rawSerials)
+      
+      const rawWarranties = formData.get('batteryWarrantyEnds') as string
+      if (rawWarranties) {
+        const parsed = JSON.parse(rawWarranties) as string[]
+        batteryWarrantyEnds = parsed.map(w => w ? new Date(w) : new Date())
+      }
+    } catch (e) {
+      console.error('Failed to parse battery arrays', e)
     }
-  } catch (e) {
-    console.error('Failed to parse battery arrays', e)
-  }
 
-  if (batterySerials.length > 0) {
-    batterySerial = batterySerials[0]
-  }
-  if (batteryWarrantyEnds.length > 0) {
-    batteryWarrantyEnd = batteryWarrantyEnds[0]
+    if (batterySerials.length > 0) {
+      batterySerial = batterySerials[0]
+    }
+    if (batteryWarrantyEnds.length > 0) {
+      batteryWarrantyEnd = batteryWarrantyEnds[0]
+    }
   }
 
   // Earthing & Specs
@@ -429,9 +435,11 @@ export async function saveSolarSystem(formData: FormData) {
       ? (inverterImages.length > 0 ? inverterImages : (currentSystem?.inverterImages || []))
       : (currentSystem?.inverterImages || [])
 
-    const finalBatteryImages = batteryImages !== undefined
-      ? (batteryImages.length > 0 ? batteryImages : (currentSystem?.batteryImages || []))
-      : (currentSystem?.batteryImages || [])
+    const finalBatteryImages = isGridTied
+      ? []
+      : (batteryImages !== undefined
+          ? (batteryImages.length > 0 ? batteryImages : (currentSystem?.batteryImages || []))
+          : (currentSystem?.batteryImages || []))
 
     const finalPanelImages = panelImages !== undefined
       ? (panelImages.length > 0 ? panelImages : (currentSystem?.panelImages || []))
@@ -680,6 +688,13 @@ export async function saveSolarSystem(formData: FormData) {
           notes,
           performedBy,
         }
+      })
+    }
+
+    if (monitoringTime) {
+      await prisma.packagePlan.updateMany({
+        where: { customerId },
+        data: { monitoringTime }
       })
     }
 

@@ -101,19 +101,21 @@ export async function submitInstallerAudit(formData: FormData) {
   }
 
   // Battery Energy Storage System (BESS)
-  const batteryBrand = (formData.get('batteryBrand') as string) || ''
-  const batteryType = (formData.get('batteryType') as string) || 'Lithium-ion'
-  const batteryCategory = (formData.get('batteryCategory') as string) || 'Low Voltage'
-  const batteryIngressProtection = (formData.get('batteryIngressProtection') as string) || 'IP65'
-  const noOfBatteries = Number(formData.get('noOfBatteries') || 0)
+  const monitoringTime = (formData.get('monitoringTime') as string) || ''
+  const isGridTied = monitoringTime.trim().toLowerCase() === 'grid tied' || monitoringTime.trim() === '24 hours'
+  const batteryBrand = isGridTied ? '' : ((formData.get('batteryBrand') as string) || '')
+  const batteryType = isGridTied ? 'None' : ((formData.get('batteryType') as string) || 'Lithium-ion')
+  const batteryCategory = isGridTied ? 'N/A' : ((formData.get('batteryCategory') as string) || 'Low Voltage')
+  const batteryIngressProtection = isGridTied ? '' : ((formData.get('batteryIngressProtection') as string) || 'IP65')
+  const noOfBatteries = isGridTied ? 0 : Number(formData.get('noOfBatteries') || 0)
   
-  const batterySerials = parseJsonArraySafe<string>(formData.get('batterySerials') as string, [])
-  const rawBatteryWarrantyEnds = parseJsonArraySafe<string>(formData.get('batteryWarrantyEnds') as string, [])
+  const batterySerials = isGridTied ? [] : parseJsonArraySafe<string>(formData.get('batterySerials') as string, [])
+  const rawBatteryWarrantyEnds = isGridTied ? [] : parseJsonArraySafe<string>(formData.get('batteryWarrantyEnds') as string, [])
   const batteryWarrantyEnds: Date[] = rawBatteryWarrantyEnds
     .map(d => parseDateSafe(d))
     .filter((d): d is Date => d !== null)
 
-  if (noOfBatteries > 0) {
+  if (!isGridTied && noOfBatteries > 0) {
     if (!batteryBrand.trim() || batteryBrand.trim().toUpperCase() === 'N/A') {
       throw new Error('Battery Brand is required in Section 4 when number of batteries is greater than 0.')
     }
@@ -146,10 +148,9 @@ export async function submitInstallerAudit(formData: FormData) {
     throw new Error('Valid System Installation Date is required in Section 5.')
   }
 
-  // Part 3: 7-Point Audit Checklist Validations
   const inverterStatus = (formData.get('inverterStatus') as string) || 'Good'
   const panelStatus = (formData.get('panelStatus') as string) || 'Good'
-  const batteryStatus = (formData.get('batteryStatus') as string) || 'Good'
+  const batteryStatus = isGridTied ? 'N/A' : ((formData.get('batteryStatus') as string) || 'Good')
   const structureStatus = (formData.get('structureStatus') as string) || 'Good'
   const cableStatus = (formData.get('cableStatus') as string) || 'Good'
   const earthingStatus = (formData.get('earthingStatus') as string) || 'Good'
@@ -157,7 +158,7 @@ export async function submitInstallerAudit(formData: FormData) {
 
   if (!inverterStatus.trim()) throw new Error('Inverter Operating Condition is required in Part 3 Checklist.')
   if (!panelStatus.trim()) throw new Error('Solar PV Panels Status is required in Part 3 Checklist.')
-  if (!batteryStatus.trim()) throw new Error('Battery Storage Health Status is required in Part 3 Checklist.')
+  if (!isGridTied && !batteryStatus.trim()) throw new Error('Battery Storage Health Status is required in Part 3 Checklist.')
   if (!structureStatus.trim()) throw new Error('Mounting Structure Status is required in Part 3 Checklist.')
   if (!cableStatus.trim()) throw new Error('Cabling & Conduits Status is required in Part 3 Checklist.')
   if (!earthingStatus.trim()) throw new Error('Earthing & Protection Status is required in Part 3 Checklist.')
@@ -344,6 +345,13 @@ export async function submitInstallerAudit(formData: FormData) {
       inverterInvoiceUrl,
     }
   })
+
+  if (monitoringTime) {
+    await prisma.packagePlan.updateMany({
+      where: { customerId },
+      data: { monitoringTime }
+    })
+  }
 
   // Record historical SystemAudit & SystemAuditDetail
   try {
@@ -549,14 +557,16 @@ export async function saveSolarSpecsOnly(formData: FormData) {
   const panelWarrantyEnd = parseDateSafe(formData.get('panelWarrantyEnd') as string)
 
   // Battery Energy Storage System (BESS)
-  const batteryBrand = (formData.get('batteryBrand') as string) || ''
-  const batteryType = (formData.get('batteryType') as string) || 'Lithium-ion'
-  const batteryCategory = (formData.get('batteryCategory') as string) || 'Low Voltage'
-  const batteryIngressProtection = (formData.get('batteryIngressProtection') as string) || 'IP65'
-  const noOfBatteries = Number(formData.get('noOfBatteries') || 0)
+  const monitoringTime = (formData.get('monitoringTime') as string) || ''
+  const isGridTied = monitoringTime.trim().toLowerCase() === 'grid tied' || monitoringTime.trim() === '24 hours'
+  const batteryBrand = isGridTied ? '' : ((formData.get('batteryBrand') as string) || '')
+  const batteryType = isGridTied ? 'None' : ((formData.get('batteryType') as string) || 'Lithium-ion')
+  const batteryCategory = isGridTied ? 'N/A' : ((formData.get('batteryCategory') as string) || 'Low Voltage')
+  const batteryIngressProtection = isGridTied ? '' : ((formData.get('batteryIngressProtection') as string) || 'IP65')
+  const noOfBatteries = isGridTied ? 0 : Number(formData.get('noOfBatteries') || 0)
   
-  const batterySerials = parseJsonArraySafe<string>(formData.get('batterySerials') as string, [])
-  const rawBatteryWarrantyEnds = parseJsonArraySafe<string>(formData.get('batteryWarrantyEnds') as string, [])
+  const batterySerials = isGridTied ? [] : parseJsonArraySafe<string>(formData.get('batterySerials') as string, [])
+  const rawBatteryWarrantyEnds = isGridTied ? [] : parseJsonArraySafe<string>(formData.get('batteryWarrantyEnds') as string, [])
   const batteryWarrantyEnds: Date[] = rawBatteryWarrantyEnds
     .map(d => parseDateSafe(d))
     .filter((d): d is Date => d !== null)
@@ -704,6 +714,13 @@ export async function saveSolarSpecsOnly(formData: FormData) {
       inverterInvoiceUrl,
     }
   })
+
+  if (monitoringTime) {
+    await prisma.packagePlan.updateMany({
+      where: { customerId },
+      data: { monitoringTime }
+    })
+  }
 
   revalidatePath('/dashboard/installer/jobs')
   revalidatePath('/dashboard/sales/pending')

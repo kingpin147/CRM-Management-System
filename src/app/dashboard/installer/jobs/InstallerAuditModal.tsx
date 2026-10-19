@@ -104,6 +104,31 @@ export function InstallerAuditModal({
   const [customInverterBrand, setCustomInverterBrand] = React.useState(isCustomInvInitial ? initialInvBrand : '')
   const [inverterSize, setInverterSize] = React.useState(solar.inverterSize || plan.systemSizeKw || '')
   const [inverterType, setInverterType] = React.useState(solar.inverterType || 'Hybrid')
+  const [monitoringTime, setMonitoringTime] = React.useState<string>(
+    plan.monitoringTime || solar.monitoringTime || (solar.inverterType === 'OnGrid' ? 'Grid Tied' : 'Hybrid')
+  )
+  const isGridTied = (monitoringTime || '').trim().toLowerCase() === 'grid tied' || (monitoringTime || '').trim() === '24 hours'
+
+  const handleMonitoringTimeChange = (val: string | null) => {
+    const v = val || 'Hybrid'
+    setMonitoringTime(v)
+    if (v === 'Grid Tied') {
+      if (inverterType === 'Hybrid') setInverterType('OnGrid')
+    } else if (v === 'Hybrid') {
+      if (inverterType === 'OnGrid') setInverterType('Hybrid')
+    }
+  }
+
+  const handleInverterTypeChange = (val: string | null) => {
+    const v = val || 'Hybrid'
+    setInverterType(v)
+    if (v === 'OnGrid') {
+      setMonitoringTime('Grid Tied')
+    } else if (v === 'Hybrid') {
+      setMonitoringTime('Hybrid')
+    }
+  }
+
   const [inverterPhase, setInverterPhase] = React.useState(solar.inverterPhase || 'Three Phase')
   const [inverterCategory, setInverterCategory] = React.useState(solar.inverterCategory || 'Low Voltage')
   const [noOfInverters, setNoOfInverters] = React.useState<number>(initialInvCount)
@@ -378,7 +403,12 @@ export function InstallerAuditModal({
         setCustomInverterBrand(rawCustomInv || '')
       }
       setInverterSize(s.inverterSize || draft?.inverterSize || p.systemSizeKw || '')
-      setInverterType(s.inverterType || draft?.inverterType || 'Hybrid')
+      const initialInvType = s.inverterType || draft?.inverterType || 'Hybrid'
+      setInverterType(initialInvType)
+      const loadedMonitoring = draft?.monitoringTime !== undefined
+        ? draft.monitoringTime
+        : (p.monitoringTime || s.monitoringTime || (initialInvType === 'OnGrid' ? 'Grid Tied' : 'Hybrid'))
+      setMonitoringTime(loadedMonitoring)
       setInverterPhase(s.inverterPhase || draft?.inverterPhase || 'Three Phase')
       setInverterCategory(s.inverterCategory || draft?.inverterCategory || 'Low Voltage')
       const invCnt = Math.max(1, Number(s.noOfInverters) || Number(draft?.noOfInverters) || 1)
@@ -516,6 +546,7 @@ export function InstallerAuditModal({
       customInverterBrand,
       inverterSize,
       inverterType,
+      monitoringTime,
       inverterPhase,
       inverterCategory,
       noOfInverters,
@@ -787,7 +818,7 @@ export function InstallerAuditModal({
     }
 
     // Section 3: Battery Energy Storage System (BESS)
-    if (noOfBatteries > 0) {
+    if (!isGridTied && noOfBatteries > 0) {
       if (!batteryBrand?.trim()) {
         return 'Please specify the Battery Brand in Section 3 since number of batteries is greater than 0.'
       }
@@ -813,47 +844,50 @@ export function InstallerAuditModal({
       }
     }
 
-    // Section 4: Solar PV Panels Specifications
+    const panelSecNum = isGridTied ? '3' : '4'
+    const mountSecNum = isGridTied ? '4' : '5'
+
+    // Solar PV Panels Specifications
     for (let i = 0; i < noOfPanelBrands; i++) {
       const brandNum = noOfPanelBrands > 1 ? ` for Brand #${i + 1}` : ''
       if (!panelBrands[i]?.trim()) {
-        return `Please enter or select the Solar Panel Brand${brandNum} in Section 4.`
+        return `Please enter or select the Solar Panel Brand${brandNum} in Section ${panelSecNum}.`
       }
       if (!panelTechnologies[i]?.trim()) {
-        return `Please select the Panel Technology${brandNum} in Section 4.`
+        return `Please select the Panel Technology${brandNum} in Section ${panelSecNum}.`
       }
       if (!panelTypes[i]?.trim()) {
-        return `Please select the Panel Type${brandNum} in Section 4.`
+        return `Please select the Panel Type${brandNum} in Section ${panelSecNum}.`
       }
       if (!panelWattages[i] || Number(panelWattages[i]) <= 0) {
-        return `Please enter a valid Panel Wattage (W)${brandNum} in Section 4.`
+        return `Please enter a valid Panel Wattage (W)${brandNum} in Section ${panelSecNum}.`
       }
       if (!noOfPanelsList[i] || Number(noOfPanelsList[i]) <= 0) {
-        return `Please enter the Number of Solar Panels${brandNum} in Section 4.`
+        return `Please enter the Number of Solar Panels${brandNum} in Section ${panelSecNum}.`
       }
       if (!panelWarrantyEnds[i]?.trim()) {
-        return `Please select the Panel Warranty Expiry Date${brandNum} in Section 4.`
+        return `Please select the Panel Warranty Expiry Date${brandNum} in Section ${panelSecNum}.`
       }
     }
 
-    // Section 5: Mounting Structure, Earthing & Protection Specs
+    // Mounting Structure, Earthing & Protection Specs
     if (!structureType?.trim()) {
-      return 'Please select the Structure Type in Section 5.'
+      return `Please select the Structure Type in Section ${mountSecNum}.`
     }
     if (!structureMaterial?.trim()) {
-      return 'Please select the Structure Material in Section 5.'
+      return `Please select the Structure Material in Section ${mountSecNum}.`
     }
     if (!earthing?.trim()) {
-      return 'Please select the Earthing Protection Type in Section 5.'
+      return `Please select the Earthing Protection Type in Section ${mountSecNum}.`
     }
     if (!systemInstallationDate?.trim()) {
-      return 'Please select the System Installation Date in Section 5.'
+      return `Please select the System Installation Date in Section ${mountSecNum}.`
     }
     if (!lightningArrestor?.trim()) {
-      return 'Please select the Lightning Arrestor status in Section 5.'
+      return `Please select the Lightning Arrestor status in Section ${mountSecNum}.`
     }
     if (!energyAnalyzer?.trim()) {
-      return 'Please select the Energy Analyzer in Section 5.'
+      return `Please select the Energy Analyzer in Section ${mountSecNum}.`
     }
 
     return null
@@ -862,7 +896,7 @@ export function InstallerAuditModal({
   const validateAudit = (): string | null => {
     if (!inverterStatus?.trim()) return 'Please select Inverter Operating Condition in Part 3.'
     if (!panelStatus?.trim()) return 'Please select Solar PV Panels Status in Part 3.'
-    if (!batteryStatus?.trim()) return 'Please select Battery Storage Health Status in Part 3.'
+    if (!isGridTied && !batteryStatus?.trim()) return 'Please select Battery Storage Health Status in Part 3.'
     if (!structureStatus?.trim()) return 'Please select Mounting Structure & GI Material Status in Part 3.'
     if (!cableStatus?.trim()) return 'Please select Cabling & Conduits Status in Part 3.'
     if (!earthingStatus?.trim()) return 'Please select Earthing & Protection Status in Part 3.'
@@ -938,18 +972,22 @@ export function InstallerAuditModal({
     formData.append('panelImages', JSON.stringify(activeImages))
     formData.append('panelImageUrls', JSON.stringify(activeImages))
 
-    const effectiveBatteryBrand = batteryBrand === 'Other' && customBatteryBrand.trim()
-      ? customBatteryBrand.trim()
-      : batteryBrand
+    formData.append('monitoringTime', monitoringTime)
+
+    const effectiveBatteryBrand = isGridTied
+      ? ''
+      : (batteryBrand === 'Other' && customBatteryBrand.trim()
+          ? customBatteryBrand.trim()
+          : batteryBrand)
 
     formData.append('batteryBrand', effectiveBatteryBrand)
-    formData.append('batteryType', batteryType)
-    formData.append('batteryCategory', batteryCategory)
-    formData.append('batteryIngressProtection', batteryIngressProtection || '')
-    formData.append('noOfBatteries', String(noOfBatteries))
-    formData.append('batterySerials', JSON.stringify(batterySerials.slice(0, noOfBatteries)))
-    formData.append('batteryWarrantyEnds', JSON.stringify(batteryWarrantyEnds.slice(0, noOfBatteries)))
-    formData.append('batteryImageUrls', JSON.stringify(batteryImageUrls.slice(0, noOfBatteries)))
+    formData.append('batteryType', isGridTied ? 'None' : batteryType)
+    formData.append('batteryCategory', isGridTied ? 'N/A' : batteryCategory)
+    formData.append('batteryIngressProtection', isGridTied ? '' : (batteryIngressProtection || ''))
+    formData.append('noOfBatteries', String(isGridTied ? 0 : noOfBatteries))
+    formData.append('batterySerials', JSON.stringify(isGridTied ? [] : batterySerials.slice(0, noOfBatteries)))
+    formData.append('batteryWarrantyEnds', JSON.stringify(isGridTied ? [] : batteryWarrantyEnds.slice(0, noOfBatteries)))
+    formData.append('batteryImageUrls', JSON.stringify(isGridTied ? [] : batteryImageUrls.slice(0, noOfBatteries)))
 
     formData.append('structureType', structureType)
     formData.append('structureMaterial', structureMaterial)
@@ -1061,7 +1099,7 @@ export function InstallerAuditModal({
 
       formData.append('inverterStatus', inverterStatus)
       formData.append('panelStatus', panelStatus)
-      formData.append('batteryStatus', batteryStatus)
+      formData.append('batteryStatus', isGridTied ? 'N/A' : batteryStatus)
       formData.append('structureStatus', structureStatus)
       formData.append('cableStatus', cableStatus)
       formData.append('earthingStatus', earthingStatus)
@@ -1113,10 +1151,18 @@ export function InstallerAuditModal({
                 <Wrench className="h-5 w-5 text-amber-600" />
                 Technical Specs &amp; System Audit Entry
               </DialogTitle>
-              <DialogDescription className="text-xs text-slate-500 mt-1">
-                Customer: <strong className="text-slate-800">{customer.fullName}</strong> | ID:{' '}
-                <strong className="font-mono text-amber-700">{customerIdDisplay}</strong> | CRF:{' '}
-                <strong className="font-mono">{crfDisplay}</strong>
+              <DialogDescription className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-1.5">
+                <span>Customer: <strong className="text-slate-800">{customer.fullName}</strong></span>
+                <span>| ID: <strong className="font-mono text-amber-700">{customerIdDisplay}</strong></span>
+                <span>| CRF: <strong className="font-mono">{crfDisplay}</strong></span>
+                <span className={cn(
+                  "ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase",
+                  isGridTied 
+                    ? "bg-amber-100 text-amber-900 border border-amber-300" 
+                    : "bg-sky-100 text-sky-900 border border-sky-300"
+                )}>
+                  {monitoringTime || 'Hybrid'} System {isGridTied ? '(No Battery)' : '(BESS Active)'}
+                </span>
               </DialogDescription>
             </div>
 
@@ -1319,7 +1365,7 @@ export function InstallerAuditModal({
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold">Inverter Type <span className="text-red-500">*</span></Label>
-                    <Select value={inverterType} onValueChange={(val) => setInverterType(val || 'Hybrid')}>
+                    <Select value={inverterType} onValueChange={(val) => handleInverterTypeChange(val || 'Hybrid')}>
                       <SelectTrigger className="h-9 text-xs bg-white">
                         <SelectValue />
                       </SelectTrigger>
@@ -1347,6 +1393,20 @@ export function InstallerAuditModal({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                   <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-[#002868] flex items-center gap-1">
+                      Monitoring Time <span className="text-red-500">*</span>
+                    </Label>
+                    <Select value={monitoringTime} onValueChange={handleMonitoringTimeChange}>
+                      <SelectTrigger className="h-9 text-xs bg-white font-semibold">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Hybrid">Hybrid</SelectItem>
+                        <SelectItem value="Grid Tied">Grid Tied</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
                     <Label className="text-xs font-semibold">Inverter Category <span className="text-red-500">*</span></Label>
                     <Select value={inverterCategory} onValueChange={(val) => setInverterCategory(val || 'Low Voltage')}>
                       <SelectTrigger className="h-9 text-xs bg-white">
@@ -1360,7 +1420,7 @@ export function InstallerAuditModal({
                     </Select>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">inverter Ingress Protection (IP) <span className="text-red-500">*</span></Label>
+                    <Label className="text-xs font-semibold">Inverter Ingress Protection (IP) <span className="text-red-500">*</span></Label>
                     <Select value={inverterIngressProtection} onValueChange={(val) => setInverterIngressProtection(val || 'IP65')}>
                       <SelectTrigger className="h-9 text-xs bg-white">
                         <SelectValue />
@@ -1618,182 +1678,184 @@ export function InstallerAuditModal({
                 ))}
               </div>
 
-              {/* 3. Battery Energy Storage System (BESS) */}
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
-                <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                  <p className="text-xs font-bold text-[#002868] uppercase tracking-wide">3. Battery Energy Storage System (BESS)</p>
-                  {batteryImageUrls.some(Boolean) && (
-                    <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Photo Uploaded
-                    </span>
-                  )}
-                </div>
-
-                <div className={cn("grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3", batteryBrand === 'Other' ? "lg:grid-cols-6" : "lg:grid-cols-5")}>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Battery Brand {noOfBatteries > 0 && <span className="text-red-500">*</span>}</Label>
-                    <AutoSuggestInput
-                      value={batteryBrand}
-                      onChange={handleBatteryBrandChange}
-                      options={BATTERY_BRANDS}
-                      placeholder="e.g. Narada, Pylontech"
-                      className="h-9 text-xs bg-white"
-                    />
+              {/* 3. Battery Energy Storage System (BESS) - Only for Hybrid / Non-Grid-Tied */}
+              {!isGridTied && (
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                    <p className="text-xs font-bold text-[#002868] uppercase tracking-wide">3. Battery Energy Storage System (BESS)</p>
+                    {batteryImageUrls.some(Boolean) && (
+                      <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Photo Uploaded
+                      </span>
+                    )}
                   </div>
-                  {batteryBrand === 'Other' && (
-                    <div className="space-y-1 animate-in fade-in duration-200">
-                      <Label className="text-xs font-semibold text-sky-800">Specify Battery Brand {noOfBatteries > 0 && <span className="text-red-500">*</span>}</Label>
-                      <Input
-                        value={customBatteryBrand}
-                        onChange={(e) => handleCustomBatteryBrandChange(e.target.value)}
-                        placeholder="Enter brand name"
-                        className="h-9 text-xs bg-white border-sky-300 focus:border-sky-500"
-                        autoFocus
+
+                  <div className={cn("grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3", batteryBrand === 'Other' ? "lg:grid-cols-6" : "lg:grid-cols-5")}>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold">Battery Brand {noOfBatteries > 0 && <span className="text-red-500">*</span>}</Label>
+                      <AutoSuggestInput
+                        value={batteryBrand}
+                        onChange={handleBatteryBrandChange}
+                        options={BATTERY_BRANDS}
+                        placeholder="e.g. Narada, Pylontech"
+                        className="h-9 text-xs bg-white"
                       />
                     </div>
-                  )}
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Battery Chemistry / Type {noOfBatteries > 0 && <span className="text-red-500">*</span>}</Label>
-                    <Select value={batteryType} onValueChange={(val) => {
-                      const newType = val || 'Lithium-ion'
-                      setBatteryType(newType)
-                      if (newType !== 'None' && noOfBatteries === 0) {
-                        updateNoOfBatteries(1)
-                      }
-                    }}>
-                      <SelectTrigger className="h-9 text-xs bg-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Lithium-ion">Lithium LiFePO4</SelectItem>
-                        <SelectItem value="Tubular">Tubular</SelectItem>
-                        <SelectItem value="Lead Acid">Lead Acid</SelectItem>
-                        <SelectItem value="Dry">Dry Cell</SelectItem>
-                        <SelectItem value="None">None</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Battery Category {noOfBatteries > 0 && <span className="text-red-500">*</span>}</Label>
-                    <Select value={batteryCategory} onValueChange={(val) => setBatteryCategory(val || 'Low Voltage (LV)')}>
-                      <SelectTrigger className="h-9 text-xs bg-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Low Voltage (LV)">Low Voltage (LV) 48V</SelectItem>
-                        <SelectItem value="High Voltage (HV)">High Voltage (HV)</SelectItem>
-                        <SelectItem value="N/A">N/A</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Battery Ingress Protection (IP) {noOfBatteries > 0 && <span className="text-red-500">*</span>}</Label>
-                    <Select value={batteryIngressProtection} onValueChange={(val) => setBatteryIngressProtection(val || 'IP65')}>
-                      <SelectTrigger className="h-9 text-xs bg-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {IP_LIST.map((ip) => (
-                          <SelectItem key={ip} value={ip}>{ip}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">No. of Batteries</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={noOfBatteries}
-                      onChange={(e) => updateNoOfBatteries(Math.max(0, Number(e.target.value) || 0))}
-                      className="h-9 text-xs font-mono bg-white font-bold"
-                    />
-                  </div>
-                </div>
-
-                {Array.from({ length: noOfBatteries }).map((_, index) => (
-                  <div key={`battery-${index}`} className="mt-4 p-4 rounded-xl border border-slate-300 bg-slate-50/50 space-y-4">
-                    <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-                      <h4 className="text-sm font-bold text-[#002868] flex items-center gap-2">
-                        <Battery className="h-4 w-4 text-sky-600" />
-                        Battery Unit {index + 1}
-                      </h4>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
-                      <div className="space-y-1">
-                        <Label className="text-xs font-semibold">Battery {index + 1} Serial # <span className="text-red-500">*</span></Label>
+                    {batteryBrand === 'Other' && (
+                      <div className="space-y-1 animate-in fade-in duration-200">
+                        <Label className="text-xs font-semibold text-sky-800">Specify Battery Brand {noOfBatteries > 0 && <span className="text-red-500">*</span>}</Label>
                         <Input
-                          value={batterySerials[index] || ''}
-                          onChange={(e) => {
-                            const newSerials = [...batterySerials];
-                            newSerials[index] = e.target.value;
-                            setBatterySerials(newSerials);
-                          }}
-                          placeholder="e.g. SN-BAT-092819"
-                          className="h-9 text-xs font-mono bg-white"
-                          required
+                          value={customBatteryBrand}
+                          onChange={(e) => handleCustomBatteryBrandChange(e.target.value)}
+                          placeholder="Enter brand name"
+                          className="h-9 text-xs bg-white border-sky-300 focus:border-sky-500"
+                          autoFocus
                         />
                       </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs font-semibold text-amber-900">Warranty Expiry Date <span className="text-red-500">*</span></Label>
-                        <DateInput
-                          value={batteryWarrantyEnds[index] || ''}
-                          onChange={(e) => {
-                            const newWarranties = [...batteryWarrantyEnds];
-                            newWarranties[index] = e.target.value;
-                            setBatteryWarrantyEnds(newWarranties);
-                          }}
-                          className="h-9"
-                        />
-                      </div>
+                    )}
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold">Battery Chemistry / Type {noOfBatteries > 0 && <span className="text-red-500">*</span>}</Label>
+                      <Select value={batteryType} onValueChange={(val) => {
+                        const newType = val || 'Lithium-ion'
+                        setBatteryType(newType)
+                        if (newType !== 'None' && noOfBatteries === 0) {
+                          updateNoOfBatteries(1)
+                        }
+                      }}>
+                        <SelectTrigger className="h-9 text-xs bg-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Lithium-ion">Lithium LiFePO4</SelectItem>
+                          <SelectItem value="Tubular">Tubular</SelectItem>
+                          <SelectItem value="Lead Acid">Lead Acid</SelectItem>
+                          <SelectItem value="Dry">Dry Cell</SelectItem>
+                          <SelectItem value="None">None</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-
-                    <div className="pt-2 border-t border-slate-200 space-y-3">
-                      <CameraPhotoCapture
-                        label={`Battery #${index + 1} Hardware Photo`}
-                        badge={`BATTERY #${index + 1}`}
-                        guideType="equipment"
-                        compact
-                        value={batteryImageUrls[index] || null}
-                        onValueChange={(url) => {
-                          setBatteryImageUrls(prev => {
-                            const newUrls = [...prev]
-                            newUrls[index] = url || ''
-                            return newUrls
-                          })
-                        }}
-                        onUpload={async (file) => {
-                          setUploadingBatteryIndex(index)
-                          try {
-                            const url = await uploadEquipmentPhoto(file, 'equipment/batteries')
-                            if (url) {
-                              setBatteryImageUrls(prev => {
-                                const newUrls = [...prev]
-                                newUrls[index] = url
-                                return newUrls
-                              })
-                              return url
-                            }
-                          } catch (err: any) {
-                            setError(`Battery Photo Upload Error: ${err.message}`)
-                          } finally {
-                            setUploadingBatteryIndex(null)
-                          }
-                        }}
-                        disabled={uploadingBatteryIndex === index}
-                        fileNamePrefix={`battery_${index + 1}`}
-                        subtext={`Take photo of Battery #${index + 1} or upload from gallery.`}
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold">Battery Category {noOfBatteries > 0 && <span className="text-red-500">*</span>}</Label>
+                      <Select value={batteryCategory} onValueChange={(val) => setBatteryCategory(val || 'Low Voltage (LV)')}>
+                        <SelectTrigger className="h-9 text-xs bg-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Low Voltage (LV)">Low Voltage (LV) 48V</SelectItem>
+                          <SelectItem value="High Voltage (HV)">High Voltage (HV)</SelectItem>
+                          <SelectItem value="N/A">N/A</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold">Battery Ingress Protection (IP) {noOfBatteries > 0 && <span className="text-red-500">*</span>}</Label>
+                      <Select value={batteryIngressProtection} onValueChange={(val) => setBatteryIngressProtection(val || 'IP65')}>
+                        <SelectTrigger className="h-9 text-xs bg-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {IP_LIST.map((ip) => (
+                            <SelectItem key={ip} value={ip}>{ip}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold">No. of Batteries</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={noOfBatteries}
+                        onChange={(e) => updateNoOfBatteries(Math.max(0, Number(e.target.value) || 0))}
+                        className="h-9 text-xs font-mono bg-white font-bold"
                       />
                     </div>
                   </div>
-                ))}
-              </div>
 
-              {/* 4. Solar Panels Specs */}
+                  {Array.from({ length: noOfBatteries }).map((_, index) => (
+                    <div key={`battery-${index}`} className="mt-4 p-4 rounded-xl border border-slate-300 bg-slate-50/50 space-y-4">
+                      <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                        <h4 className="text-sm font-bold text-[#002868] flex items-center gap-2">
+                          <Battery className="h-4 w-4 text-sky-600" />
+                          Battery Unit {index + 1}
+                        </h4>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
+                        <div className="space-y-1">
+                          <Label className="text-xs font-semibold">Battery {index + 1} Serial # <span className="text-red-500">*</span></Label>
+                          <Input
+                            value={batterySerials[index] || ''}
+                            onChange={(e) => {
+                              const newSerials = [...batterySerials];
+                              newSerials[index] = e.target.value;
+                              setBatterySerials(newSerials);
+                            }}
+                            placeholder="e.g. SN-BAT-092819"
+                            className="h-9 text-xs font-mono bg-white"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs font-semibold text-amber-900">Warranty Expiry Date <span className="text-red-500">*</span></Label>
+                          <DateInput
+                            value={batteryWarrantyEnds[index] || ''}
+                            onChange={(e) => {
+                              const newWarranties = [...batteryWarrantyEnds];
+                              newWarranties[index] = e.target.value;
+                              setBatteryWarrantyEnds(newWarranties);
+                            }}
+                            className="h-9"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="pt-2 border-t border-slate-200 space-y-3">
+                        <CameraPhotoCapture
+                          label={`Battery #${index + 1} Hardware Photo`}
+                          badge={`BATTERY #${index + 1}`}
+                          guideType="equipment"
+                          compact
+                          value={batteryImageUrls[index] || null}
+                          onValueChange={(url) => {
+                            setBatteryImageUrls(prev => {
+                              const newUrls = [...prev]
+                              newUrls[index] = url || ''
+                              return newUrls
+                            })
+                          }}
+                          onUpload={async (file) => {
+                            setUploadingBatteryIndex(index)
+                            try {
+                              const url = await uploadEquipmentPhoto(file, 'equipment/batteries')
+                              if (url) {
+                                setBatteryImageUrls(prev => {
+                                  const newUrls = [...prev]
+                                  newUrls[index] = url
+                                  return newUrls
+                                })
+                                return url
+                              }
+                            } catch (err: any) {
+                              setError(`Battery Photo Upload Error: ${err.message}`)
+                            } finally {
+                              setUploadingBatteryIndex(null)
+                            }
+                          }}
+                          disabled={uploadingBatteryIndex === index}
+                          fileNamePrefix={`battery_${index + 1}`}
+                          subtext={`Take photo of Battery #${index + 1} or upload from gallery.`}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Solar Panels Specs */}
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                  <p className="text-xs font-bold text-[#002868] uppercase tracking-wide">4. Solar PV Panels Specifications</p>
+                  <p className="text-xs font-bold text-[#002868] uppercase tracking-wide">{isGridTied ? '3.' : '4.'} Solar PV Panels Specifications</p>
                   {panelImageUrls.some(Boolean) && (
                     <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Photo Uploaded
@@ -2091,10 +2153,10 @@ export function InstallerAuditModal({
                 })()}
               </div>
 
-              {/* 5. Mounting Structure, Earthing & Protection Specs */}
+              {/* Mounting Structure, Earthing & Protection Specs */}
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
                 <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                  <p className="text-xs font-bold text-[#002868] uppercase tracking-wide">5. Mounting Structure, Protection &amp; Installation Specs</p>
+                  <p className="text-xs font-bold text-[#002868] uppercase tracking-wide">{isGridTied ? '4.' : '5.'} Mounting Structure, Protection &amp; Installation Specs</p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
@@ -2189,11 +2251,13 @@ export function InstallerAuditModal({
                 </p>
               </div>
 
-              {/* 7-Point Audit Checklist Table */}
+              {/* Physical Audit Checklist Table */}
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
-                <p className="text-xs font-bold text-[#002868] uppercase tracking-wide">7-Point Physical Audit</p>
+                <p className="text-xs font-bold text-[#002868] uppercase tracking-wide">
+                  {isGridTied ? '6-Point Physical Audit (Grid-Tied System)' : '7-Point Physical Audit'}
+                </p>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                <div className={cn("grid grid-cols-1 sm:grid-cols-2 gap-3", isGridTied ? "md:grid-cols-3" : "md:grid-cols-4")}>
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold">1. Inverter Condition <span className="text-red-500">*</span></Label>
                     <Select value={inverterStatus} onValueChange={(val) => setInverterStatus(val || 'Good')}>
@@ -2220,21 +2284,23 @@ export function InstallerAuditModal({
                       </SelectContent>
                     </Select>
                   </div>
+                  {!isGridTied && (
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold">3. Battery Storage Status <span className="text-red-500">*</span></Label>
+                      <Select value={batteryStatus} onValueChange={(val) => setBatteryStatus(val || 'Good')}>
+                        <SelectTrigger className="h-9 text-xs bg-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {AUDIT_STATUSES.map((st) => (
+                            <SelectItem key={st} value={st}>{st}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">3. Battery Storage Status <span className="text-red-500">*</span></Label>
-                    <Select value={batteryStatus} onValueChange={(val) => setBatteryStatus(val || 'Good')}>
-                      <SelectTrigger className="h-9 text-xs bg-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {AUDIT_STATUSES.map((st) => (
-                          <SelectItem key={st} value={st}>{st}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">4. Structure &amp; GI Material <span className="text-red-500">*</span></Label>
+                    <Label className="text-xs font-semibold">{isGridTied ? '3.' : '4.'} Structure &amp; GI Material <span className="text-red-500">*</span></Label>
                     <Select value={structureStatus} onValueChange={(val) => setStructureStatus(val || 'Good')}>
                       <SelectTrigger className="h-9 text-xs bg-white">
                         <SelectValue />
@@ -2250,7 +2316,7 @@ export function InstallerAuditModal({
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">5. Cabling &amp; Conduits <span className="text-red-500">*</span></Label>
+                    <Label className="text-xs font-semibold">{isGridTied ? '4.' : '5.'} Cabling &amp; Conduits <span className="text-red-500">*</span></Label>
                     <Select value={cableStatus} onValueChange={(val) => setCableStatus(val || 'Good')}>
                       <SelectTrigger className="h-9 text-xs bg-white">
                         <SelectValue />
@@ -2263,7 +2329,7 @@ export function InstallerAuditModal({
                     </Select>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">6. Earthing &amp; Protection <span className="text-red-500">*</span></Label>
+                    <Label className="text-xs font-semibold">{isGridTied ? '5.' : '6.'} Earthing &amp; Protection <span className="text-red-500">*</span></Label>
                     <Select value={earthingStatus} onValueChange={(val) => setEarthingStatus(val || 'Good')}>
                       <SelectTrigger className="h-9 text-xs bg-white">
                         <SelectValue />
@@ -2276,7 +2342,7 @@ export function InstallerAuditModal({
                     </Select>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">7. Breakers &amp; Switchgear <span className="text-red-500">*</span></Label>
+                    <Label className="text-xs font-semibold">{isGridTied ? '6.' : '7.'} Breakers &amp; Switchgear <span className="text-red-500">*</span></Label>
                     <Select value={breakerStatus} onValueChange={(val) => setBreakerStatus(val || 'Good')}>
                       <SelectTrigger className="h-9 text-xs bg-white">
                         <SelectValue />

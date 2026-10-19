@@ -27,9 +27,11 @@ const DISCO_LIST = ['LESCO', 'IESCO', 'K-Electric', 'FESCO', 'MEPCO', 'PESCO', '
 export function SolarSystemDialog({
   customerId,
   solarSystem,
+  defaultMonitoringTime,
 }: {
   customerId: string
   solarSystem?: any
+  defaultMonitoringTime?: string
 }) {
   const router = useRouter()
   const [open, setOpen] = React.useState(false)
@@ -41,6 +43,28 @@ export function SolarSystemDialog({
   const [inverterBrand, setInverterBrand] = React.useState(isCustomInvInitial ? 'Other' : (solarSystem?.inverterBrand || ''))
   const [customInverterBrand, setCustomInverterBrand] = React.useState(isCustomInvInitial ? solarSystem.inverterBrand : '')
   const [inverterType, setInverterType] = React.useState(solarSystem?.inverterType || '')
+  const [monitoringTime, setMonitoringTime] = React.useState<string>(
+    defaultMonitoringTime || (solarSystem?.inverterType === 'OnGrid' ? 'Grid Tied' : 'Hybrid')
+  )
+  const isGridTied = (monitoringTime || '').trim().toLowerCase() === 'grid tied' || (monitoringTime || '').trim() === '24 hours' || inverterType === 'OnGrid'
+
+  const handleInverterTypeChange = (val: string) => {
+    setInverterType(val)
+    if (val === 'OnGrid') {
+      setMonitoringTime('Grid Tied')
+    } else if (val === 'Hybrid') {
+      setMonitoringTime('Hybrid')
+    }
+  }
+
+  const handleMonitoringTimeChange = (val: string) => {
+    setMonitoringTime(val)
+    if (val === 'Grid Tied') {
+      if (inverterType === 'Hybrid') setInverterType('OnGrid')
+    } else if (val === 'Hybrid') {
+      if (inverterType === 'OnGrid') setInverterType('Hybrid')
+    }
+  }
   const [inverterPhase, setInverterPhase] = React.useState(solarSystem?.inverterPhase || '')
   const [inverterCategory, setInverterCategory] = React.useState(solarSystem?.inverterCategory || '')
   const [inverterSize, setInverterSize] = React.useState(solarSystem?.inverterSize || '')
@@ -329,15 +353,19 @@ export function SolarSystemDialog({
       formData.append('noOfPanels', String(noOfPanels))
       if (panelWarrantyEnd) formData.append('panelWarrantyEnd', panelWarrantyEnd)
 
-      const effectiveBatteryBrand = batteryBrand === 'Other' && customBatteryBrand.trim()
-        ? customBatteryBrand.trim()
-        : batteryBrand
+      formData.append('monitoringTime', isGridTied ? 'Grid Tied' : (monitoringTime || 'Hybrid'))
+
+      const effectiveBatteryBrand = isGridTied
+        ? ''
+        : (batteryBrand === 'Other' && customBatteryBrand.trim()
+            ? customBatteryBrand.trim()
+            : batteryBrand)
       formData.append('batteryBrand', effectiveBatteryBrand)
-      formData.append('batteryType', batteryType)
-      formData.append('batteryCategory', batteryCategory)
-      formData.append('noOfBatteries', String(noOfBatteries))
-      formData.append('batterySerials', JSON.stringify(batterySerials.slice(0, noOfBatteries)))
-      formData.append('batteryWarrantyEnds', JSON.stringify(batteryWarrantyEnds.slice(0, noOfBatteries)))
+      formData.append('batteryType', isGridTied ? 'None' : batteryType)
+      formData.append('batteryCategory', isGridTied ? 'N/A' : batteryCategory)
+      formData.append('noOfBatteries', String(isGridTied ? 0 : noOfBatteries))
+      formData.append('batterySerials', JSON.stringify(isGridTied ? [] : batterySerials.slice(0, noOfBatteries)))
+      formData.append('batteryWarrantyEnds', JSON.stringify(isGridTied ? [] : batteryWarrantyEnds.slice(0, noOfBatteries)))
 
       formData.append('disco', disco)
       formData.append('discoRefNo', discoRefNo)
@@ -349,7 +377,7 @@ export function SolarSystemDialog({
       formData.append('energyAnalyzer', energyAnalyzer)
 
       formData.append('inverterImageUrls', JSON.stringify(inverterImageUrls.slice(0, noOfInverters)))
-      formData.append('batteryImageUrls', JSON.stringify(batteryImageUrls.slice(0, noOfBatteries)))
+      formData.append('batteryImageUrls', JSON.stringify(isGridTied ? [] : batteryImageUrls.slice(0, noOfBatteries)))
       if (panelImageUrl) formData.append('panelImageUrls', JSON.stringify([panelImageUrl]))
 
       const res = await saveSolarSystem(formData)
@@ -437,13 +465,24 @@ export function SolarSystemDialog({
                     <Label className="text-xs font-semibold text-[var(--color-ink)]">Type</Label>
                     <select
                       value={inverterType}
-                      onChange={(e) => setInverterType(e.target.value)}
+                      onChange={(e) => handleInverterTypeChange(e.target.value)}
                       className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white focus:ring-2 focus:ring-[var(--color-amber)]"
                     >
                       <option value="">Select Type...</option>
                       <option value="Hybrid">Hybrid</option>
                       <option value="OnGrid">On-Grid</option>
                       <option value="OffGrid">Off-Grid</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-[#002868]">Monitoring Time</Label>
+                    <select
+                      value={monitoringTime}
+                      onChange={(e) => handleMonitoringTimeChange(e.target.value)}
+                      className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-semibold text-[var(--color-ink)] bg-white focus:ring-2 focus:ring-[var(--color-amber)]"
+                    >
+                      <option value="Hybrid">Hybrid</option>
+                      <option value="Grid Tied">Grid Tied</option>
                     </select>
                   </div>
                   <div className="space-y-1">
@@ -458,7 +497,7 @@ export function SolarSystemDialog({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold text-[var(--color-ink)]">Phase</Label>
                     <select
@@ -846,174 +885,177 @@ export function SolarSystemDialog({
 
             {/* Right Column: Battery & Grid Section */}
             <div className="space-y-5">
-              {/* 3. Battery Storage Section */}
-              <div className="space-y-3 bg-slate-50/60 p-4 rounded-xl border border-slate-200/80">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-graphite)]">3. Battery Storage</h4>
-                  {batteryImageUrls.some(Boolean) && (
-                    <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Photo Uploaded
-                    </span>
-                  )}
-                </div>
+              {/* 3. Battery Storage Section - Only for Hybrid / Non-Grid-Tied */}
+              {!isGridTied && (
+                <div className="space-y-3 bg-slate-50/60 p-4 rounded-xl border border-slate-200/80">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-graphite)]">3. Battery Storage</h4>
+                    {batteryImageUrls.some(Boolean) && (
+                      <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Photo Uploaded
+                      </span>
+                    )}
+                  </div>
 
-                <div className={cn("grid gap-3", batteryBrand === 'Other' ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-2")}>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-[var(--color-ink)]">Battery Brand</Label>
-                    <AutoSuggestInput
-                      value={batteryBrand}
-                      onChange={setBatteryBrand}
-                      options={BATTERY_BRANDS}
-                      placeholder="Type or select brand..."
-                      className="h-9 text-xs bg-white"
-                    />
-                  </div>
-                  {batteryBrand === 'Other' && (
-                    <div className="space-y-1 animate-in fade-in duration-200">
-                      <Label className="text-xs font-semibold text-sky-800">Specify Brand</Label>
-                      <Input
-                        value={customBatteryBrand}
-                        onChange={(e) => setCustomBatteryBrand(e.target.value)}
-                        placeholder="Enter brand name"
-                        className="h-9 text-xs bg-white border-sky-300 focus:border-sky-500"
-                        autoFocus
-                      />
-                    </div>
-                  )}
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-[var(--color-ink)]">Battery Chemistry</Label>
-                    <select
-                      value={batteryType}
-                      onChange={(e) => setBatteryType(e.target.value)}
-                      className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white"
-                    >
-                      <option value="">Select Chemistry...</option>
-                      <option value="Lithium">Lithium LiFePO4</option>
-                      <option value="Tubular">Tubular</option>
-                      <option value="Lead Acid">Lead Acid</option>
-                      <option value="Dry">Dry Cell</option>
-                      <option value="None">None</option>
-                    </select>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-[var(--color-ink)]">Category</Label>
-                    <select
-                      value={batteryCategory}
-                      onChange={(e) => setBatteryCategory(e.target.value)}
-                      className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white"
-                    >
-                      <option value="">Select Category...</option>
-                      <option value="Low Voltage">Low Voltage (48V)</option>
-                      <option value="High Voltage">High Voltage</option>
-                    </select>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-bold text-[#002868]">No. of Batteries</Label>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setNoOfBatteries(prev => Math.max(0, prev - 1))}
-                        className="h-9 w-9 text-base font-bold bg-slate-100 hover:bg-slate-200 border-slate-300 cursor-pointer"
-                      >
-                        -
-                      </Button>
-                      <Input
-                        type="number"
-                        min={0}
-                        max={20}
-                        placeholder="0"
-                        value={noOfBatteries}
-                        onChange={(e) => setNoOfBatteries(Math.max(0, Number(e.target.value) || 0))}
-                        className="h-9 text-xs border-[var(--color-line)] bg-white font-mono text-center font-bold"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setNoOfBatteries(prev => Math.min(20, prev + 1))}
-                        className="h-9 w-9 text-base font-bold bg-slate-100 hover:bg-slate-200 border-slate-300 cursor-pointer"
-                      >
-                        +
-                      </Button>
-                    </div>
-                  </div>
-                {Array.from({ length: noOfBatteries }).map((_, index) => (
-                  <div key={`battery-${index}`} className="mt-4 p-4 rounded-xl border border-slate-300 bg-slate-50/50 space-y-4 col-span-2">
-                    <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-                      <h4 className="text-sm font-bold text-[#002868] flex items-center gap-2">
-                        Battery Unit {index + 1}
-                      </h4>
-                    </div>
-
+                  <div className={cn("grid gap-3", batteryBrand === 'Other' ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-2")}>
                     <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-[var(--color-ink)]">Battery Serial Number</Label>
-                      <Input
-                        value={batterySerials[index] || ''}
-                        onChange={(e) => {
-                          const newSerials = [...batterySerials];
-                          newSerials[index] = e.target.value;
-                          setBatterySerials(newSerials);
-                        }}
-                        placeholder="e.g. BAT-01"
-                        className="h-9 text-xs border-[var(--color-line)] bg-white font-mono"
+                      <Label className="text-xs font-semibold text-[var(--color-ink)]">Battery Brand</Label>
+                      <AutoSuggestInput
+                        value={batteryBrand}
+                        onChange={setBatteryBrand}
+                        options={BATTERY_BRANDS}
+                        placeholder="Type or select brand..."
+                        className="h-9 text-xs bg-white"
                       />
                     </div>
-                    
-                    <div className="pt-2 border-t border-slate-200/80 space-y-3">
-                      <div className="space-y-1">
-                        <Label className="text-xs font-semibold text-amber-900">Warranty End Date</Label>
-                        <DateInput
-                          value={batteryWarrantyEnds[index] || ''}
-                          onChange={(e) => {
-                            const newWarranties = [...batteryWarrantyEnds];
-                            newWarranties[index] = e.target.value;
-                            setBatteryWarrantyEnds(newWarranties);
-                          }}
-                          className="h-9"
+                    {batteryBrand === 'Other' && (
+                      <div className="space-y-1 animate-in fade-in duration-200">
+                        <Label className="text-xs font-semibold text-sky-800">Specify Brand</Label>
+                        <Input
+                          value={customBatteryBrand}
+                          onChange={(e) => setCustomBatteryBrand(e.target.value)}
+                          placeholder="Enter brand name"
+                          className="h-9 text-xs bg-white border-sky-300 focus:border-sky-500"
+                          autoFocus
                         />
                       </div>
-
-                      <CameraPhotoCapture
-                        label={`Battery #${index + 1} Hardware Photo`}
-                        badge={`BATTERY #${index + 1}`}
-                        guideType="equipment"
-                        compact
-                        value={batteryImageUrls[index] || null}
-                        onValueChange={(url) => {
-                          const newUrls = [...batteryImageUrls]
-                          newUrls[index] = url || ''
-                          setBatteryImageUrls(newUrls)
-                        }}
-                        onUpload={async (file) => {
-                          setUploadingBatteryIndex(index)
-                          try {
-                            const url = await uploadToR2Cloud(file, 'equipment/batteries')
-                            if (url) {
-                              const newUrls = [...batteryImageUrls]
-                              newUrls[index] = url
-                              setBatteryImageUrls(newUrls)
-                              return url
-                            }
-                          } catch (err: any) {
-                            setError(`Battery Photo Upload Error: ${err.message}`)
-                          } finally {
-                            setUploadingBatteryIndex(null)
-                          }
-                        }}
-                        disabled={uploadingBatteryIndex === index}
-                        fileNamePrefix={`battery_${index + 1}`}
-                        subtext={`Take photo of Battery #${index + 1} or upload from gallery.`}
-                      />
+                    )}
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-[var(--color-ink)]">Battery Chemistry</Label>
+                      <select
+                        value={batteryType}
+                        onChange={(e) => setBatteryType(e.target.value)}
+                        className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white"
+                      >
+                        <option value="">Select Chemistry...</option>
+                        <option value="Lithium">Lithium LiFePO4</option>
+                        <option value="Tubular">Tubular</option>
+                        <option value="Lead Acid">Lead Acid</option>
+                        <option value="Dry">Dry Cell</option>
+                        <option value="None">None</option>
+                      </select>
                     </div>
-                  </div>
-                ))}
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-[var(--color-ink)]">Category</Label>
+                      <select
+                        value={batteryCategory}
+                        onChange={(e) => setBatteryCategory(e.target.value)}
+                        className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white"
+                      >
+                        <option value="">Select Category...</option>
+                        <option value="Low Voltage">Low Voltage (48V)</option>
+                        <option value="High Voltage">High Voltage</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-bold text-[#002868]">No. of Batteries</Label>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setNoOfBatteries(prev => Math.max(0, prev - 1))}
+                          className="h-9 w-9 text-base font-bold bg-slate-100 hover:bg-slate-200 border-slate-300 cursor-pointer"
+                        >
+                          -
+                        </Button>
+                        <Input
+                          type="number"
+                          min={0}
+                          max={20}
+                          placeholder="0"
+                          value={noOfBatteries}
+                          onChange={(e) => setNoOfBatteries(Math.max(0, Number(e.target.value) || 0))}
+                          className="h-9 text-xs border-[var(--color-line)] bg-white font-mono text-center font-bold"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setNoOfBatteries(prev => Math.min(20, prev + 1))}
+                          className="h-9 w-9 text-base font-bold bg-slate-100 hover:bg-slate-200 border-slate-300 cursor-pointer"
+                        >
+                          +
+                        </Button>
+                      </div>
+                    </div>
+                  {Array.from({ length: noOfBatteries }).map((_, index) => (
+                    <div key={`battery-${index}`} className="mt-4 p-4 rounded-xl border border-slate-300 bg-slate-50/50 space-y-4 col-span-2">
+                      <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                        <h4 className="text-sm font-bold text-[#002868] flex items-center gap-2">
+                          Battery Unit {index + 1}
+                        </h4>
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label className="text-xs font-semibold text-[var(--color-ink)]">Battery Serial Number</Label>
+                        <Input
+                          value={batterySerials[index] || ''}
+                          onChange={(e) => {
+                            const newSerials = [...batterySerials];
+                            newSerials[index] = e.target.value;
+                            setBatterySerials(newSerials);
+                          }}
+                          placeholder="e.g. BAT-01"
+                          className="h-9 text-xs border-[var(--color-line)] bg-white font-mono"
+                        />
+                      </div>
+                      
+                      <div className="pt-2 border-t border-slate-200/80 space-y-3">
+                        <div className="space-y-1">
+                          <Label className="text-xs font-semibold text-amber-900">Warranty End Date</Label>
+                          <DateInput
+                            value={batteryWarrantyEnds[index] || ''}
+                            onChange={(e) => {
+                              const newWarranties = [...batteryWarrantyEnds];
+                              newWarranties[index] = e.target.value;
+                              setBatteryWarrantyEnds(newWarranties);
+                            }}
+                            className="h-9"
+                          />
+                        </div>
+
+                        <CameraPhotoCapture
+                          label={`Battery #${index + 1} Hardware Photo`}
+                          badge={`BATTERY #${index + 1}`}
+                          guideType="equipment"
+                          compact
+                          value={batteryImageUrls[index] || null}
+                          onValueChange={(url) => {
+                            const newUrls = [...batteryImageUrls]
+                            newUrls[index] = url || ''
+                            setBatteryImageUrls(newUrls)
+                          }}
+                          onUpload={async (file) => {
+                            setUploadingBatteryIndex(index)
+                            try {
+                              const url = await uploadToR2Cloud(file, 'equipment/batteries')
+                              if (url) {
+                                const newUrls = [...batteryImageUrls]
+                                newUrls[index] = url
+                                setBatteryImageUrls(newUrls)
+                                return url
+                              }
+                            } catch (err: any) {
+                              setError(`Battery Photo Upload Error: ${err.message}`)
+                            } finally {
+                              setUploadingBatteryIndex(null)
+                            }
+                          }}
+                          disabled={uploadingBatteryIndex === index}
+                          fileNamePrefix={`battery_${index + 1}`}
+                          subtext={`Take photo of Battery #${index + 1} or upload from gallery.`}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
+            )}
 
               {/* 4. Net Metering & Utility Section */}
               <div className="space-y-3 bg-slate-50/60 p-4 rounded-xl border border-slate-200/80">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-graphite)]">4. DISCO Utility & Net Metering</h4>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-graphite)]">{isGridTied ? '3.' : '4.'} DISCO Utility &amp; Net Metering</h4>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold text-[var(--color-ink)]">DISCO Utility Company</Label>
@@ -1111,7 +1153,6 @@ export function SolarSystemDialog({
                 </div>
               </div>
             </div>
-          </div>
 
           <DialogFooter className="pt-3 flex justify-end gap-2 border-t border-[var(--color-line)]">
             <Button

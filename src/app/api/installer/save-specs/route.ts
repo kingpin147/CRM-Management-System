@@ -69,14 +69,16 @@ export async function POST(req: NextRequest) {
     const panelWarrantyEnd = parseDateSafe(formData.get('panelWarrantyEnd') as string)
 
     // Battery Energy Storage System (BESS)
-    const batteryBrand = (formData.get('batteryBrand') as string) || ''
-    const batteryType = (formData.get('batteryType') as string) || 'Lithium-ion'
-    const batteryCategory = (formData.get('batteryCategory') as string) || 'Low Voltage'
-    const batteryIngressProtection = (formData.get('batteryIngressProtection') as string) || 'IP65'
-    const noOfBatteries = Number(formData.get('noOfBatteries') || 0)
+    const monitoringTime = (formData.get('monitoringTime') as string) || ''
+    const isGridTied = monitoringTime.trim().toLowerCase() === 'grid tied' || monitoringTime.trim() === '24 hours'
+    const batteryBrand = isGridTied ? '' : ((formData.get('batteryBrand') as string) || '')
+    const batteryType = isGridTied ? 'None' : ((formData.get('batteryType') as string) || 'Lithium-ion')
+    const batteryCategory = isGridTied ? 'N/A' : ((formData.get('batteryCategory') as string) || 'Low Voltage')
+    const batteryIngressProtection = isGridTied ? '' : ((formData.get('batteryIngressProtection') as string) || 'IP65')
+    const noOfBatteries = isGridTied ? 0 : Number(formData.get('noOfBatteries') || 0)
     
-    const batterySerials = parseJsonArraySafe<string>(formData.get('batterySerials') as string, [])
-    const rawBatteryWarrantyEnds = parseJsonArraySafe<string>(formData.get('batteryWarrantyEnds') as string, [])
+    const batterySerials = isGridTied ? [] : parseJsonArraySafe<string>(formData.get('batterySerials') as string, [])
+    const rawBatteryWarrantyEnds = isGridTied ? [] : parseJsonArraySafe<string>(formData.get('batteryWarrantyEnds') as string, [])
     const batteryWarrantyEnds: Date[] = rawBatteryWarrantyEnds
       .map(d => parseDateSafe(d))
       .filter((d): d is Date => d !== null)
@@ -224,6 +226,13 @@ export async function POST(req: NextRequest) {
         inverterInvoiceUrl,
       }
     })
+
+    if (monitoringTime) {
+      await prisma.packagePlan.updateMany({
+        where: { customerId },
+        data: { monitoringTime }
+      })
+    }
 
     revalidatePath('/dashboard/installer/jobs')
     revalidatePath('/dashboard/sales/pending')

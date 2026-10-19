@@ -102,19 +102,21 @@ export async function POST(req: NextRequest) {
     }
 
     // Battery Energy Storage System (BESS)
-    const batteryBrand = (formData.get('batteryBrand') as string) || ''
-    const batteryType = (formData.get('batteryType') as string) || 'Lithium-ion'
-    const batteryCategory = (formData.get('batteryCategory') as string) || 'Low Voltage'
-    const batteryIngressProtection = (formData.get('batteryIngressProtection') as string) || 'IP65'
-    const noOfBatteries = Number(formData.get('noOfBatteries') || 0)
+    const monitoringTime = (formData.get('monitoringTime') as string) || ''
+    const isGridTied = monitoringTime.trim().toLowerCase() === 'grid tied' || monitoringTime.trim() === '24 hours'
+    const batteryBrand = isGridTied ? '' : ((formData.get('batteryBrand') as string) || '')
+    const batteryType = isGridTied ? 'None' : ((formData.get('batteryType') as string) || 'Lithium-ion')
+    const batteryCategory = isGridTied ? 'N/A' : ((formData.get('batteryCategory') as string) || 'Low Voltage')
+    const batteryIngressProtection = isGridTied ? '' : ((formData.get('batteryIngressProtection') as string) || 'IP65')
+    const noOfBatteries = isGridTied ? 0 : Number(formData.get('noOfBatteries') || 0)
     
-    const batterySerials = parseJsonArraySafe<string>(formData.get('batterySerials') as string, [])
-    const rawBatteryWarrantyEnds = parseJsonArraySafe<string>(formData.get('batteryWarrantyEnds') as string, [])
+    const batterySerials = isGridTied ? [] : parseJsonArraySafe<string>(formData.get('batterySerials') as string, [])
+    const rawBatteryWarrantyEnds = isGridTied ? [] : parseJsonArraySafe<string>(formData.get('batteryWarrantyEnds') as string, [])
     const batteryWarrantyEnds: Date[] = rawBatteryWarrantyEnds
       .map(d => parseDateSafe(d))
       .filter((d): d is Date => d !== null)
 
-    if (noOfBatteries > 0) {
+    if (!isGridTied && noOfBatteries > 0) {
       if (!batteryBrand.trim() || batteryBrand.trim().toUpperCase() === 'N/A') {
         return NextResponse.json({ error: 'Battery Brand is required in Section 4 when number of batteries is greater than 0.' }, { status: 400 })
       }
@@ -147,10 +149,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Valid System Installation Date is required in Section 5.' }, { status: 400 })
     }
 
-    // Part 3: 7-Point Audit Checklist Validations
     const inverterStatus = (formData.get('inverterStatus') as string) || 'Good'
     const panelStatus = (formData.get('panelStatus') as string) || 'Good'
-    const batteryStatus = (formData.get('batteryStatus') as string) || 'Good'
+    const batteryStatus = isGridTied ? 'N/A' : ((formData.get('batteryStatus') as string) || 'Good')
     const structureStatus = (formData.get('structureStatus') as string) || 'Good'
     const cableStatus = (formData.get('cableStatus') as string) || 'Good'
     const earthingStatus = (formData.get('earthingStatus') as string) || 'Good'
@@ -158,7 +159,7 @@ export async function POST(req: NextRequest) {
 
     if (!inverterStatus.trim()) return NextResponse.json({ error: 'Inverter Operating Condition is required in Part 3 Checklist.' }, { status: 400 })
     if (!panelStatus.trim()) return NextResponse.json({ error: 'Solar PV Panels Status is required in Part 3 Checklist.' }, { status: 400 })
-    if (!batteryStatus.trim()) return NextResponse.json({ error: 'Battery Storage Health Status is required in Part 3 Checklist.' }, { status: 400 })
+    if (!isGridTied && !batteryStatus.trim()) return NextResponse.json({ error: 'Battery Storage Health Status is required in Part 3 Checklist.' }, { status: 400 })
     if (!structureStatus.trim()) return NextResponse.json({ error: 'Mounting Structure Status is required in Part 3 Checklist.' }, { status: 400 })
     if (!cableStatus.trim()) return NextResponse.json({ error: 'Cabling & Conduits Status is required in Part 3 Checklist.' }, { status: 400 })
     if (!earthingStatus.trim()) return NextResponse.json({ error: 'Earthing & Protection Status is required in Part 3 Checklist.' }, { status: 400 })
@@ -345,6 +346,13 @@ export async function POST(req: NextRequest) {
         inverterInvoiceUrl,
       }
     })
+
+    if (monitoringTime) {
+      await prisma.packagePlan.updateMany({
+        where: { customerId },
+        data: { monitoringTime }
+      })
+    }
 
     // Record historical SystemAudit & SystemAuditDetail
     try {
