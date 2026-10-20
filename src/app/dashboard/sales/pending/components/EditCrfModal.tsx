@@ -41,7 +41,7 @@ import { CameraPhotoCapture } from '@/components/ui/CameraPhotoCapture'
 const PACKAGES = ['Basic', 'Moderate', 'Comprehensive']
 const BILLING_TYPES = ['Monthly', 'Quarterly', 'Half Yearly', 'Yearly']
 const MONITORING_TIMES = ['Hybrid', 'Grid Tied']
-const AUDIT_STATUSES = ['Excellent', 'Good', 'Fair', 'Service Required', 'Replacement Required']
+const AUDIT_STATUSES = ['Excellent', 'Good', 'Fair', 'Service Required', 'Replacement Required', 'None']
 
 interface EditCrfModalProps {
   customer: any | null
@@ -468,6 +468,7 @@ export function EditCrfModal({
       formData.append('earthingStatus', earthingStatus)
       formData.append('breakerStatus', breakerStatus)
 
+      formData.append('earthingAcOhms', earthingAcOhms)
       formData.append('earthingDcOhms', earthingDcOhms)
       formData.append('earthingLastCheck', earthingLastCheck)
       formData.append('installerCompany', installerCompany)
@@ -1404,6 +1405,29 @@ export function EditCrfModal({
                   </Select>
                 </div>
                 <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-slate-700">Earthing Protection *</Label>
+                  <Select value={earthingType} onValueChange={(v) => {
+                    const val = v || 'Both'
+                    setEarthingType(val)
+                    if (val === 'None') {
+                      setEarthingAcOhms('0')
+                      setEarthingDcOhms('0')
+                    } else if (val === 'AC') {
+                      setEarthingDcOhms('0')
+                    } else if (val === 'DC') {
+                      setEarthingAcOhms('0')
+                    }
+                  }}>
+                    <SelectTrigger className="h-9 text-xs font-semibold"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Both" className="text-xs font-medium">Both AC &amp; DC Earthing</SelectItem>
+                      <SelectItem value="AC" className="text-xs font-medium">AC Earthing Only</SelectItem>
+                      <SelectItem value="DC" className="text-xs font-medium">DC Earthing Only</SelectItem>
+                      <SelectItem value="None" className="text-xs font-medium text-slate-500">None / Not Installed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
                   <Label className="text-xs font-semibold text-slate-700">Earthing AC (Ohms)</Label>
                   <Input 
                     type="number" 
@@ -1412,6 +1436,7 @@ export function EditCrfModal({
                     onChange={(e) => setEarthingAcOhms(e.target.value)} 
                     className="h-9 text-xs font-mono" 
                     placeholder="e.g. 0.6"
+                    disabled={earthingType === 'DC' || earthingType === 'None'}
                   />
                 </div>
                 <div className="space-y-1">
@@ -1423,6 +1448,25 @@ export function EditCrfModal({
                     onChange={(e) => setEarthingDcOhms(e.target.value)} 
                     className="h-9 text-xs font-mono" 
                     placeholder="e.g. 0.8"
+                    disabled={earthingType === 'AC' || earthingType === 'None'}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-slate-700">Earthing Inspection Date</Label>
+                  <Input 
+                    type="date" 
+                    value={earthingLastCheck} 
+                    onChange={(e) => setEarthingLastCheck(e.target.value)} 
+                    className="h-9 text-xs"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-slate-700">System Installation Date</Label>
+                  <Input 
+                    type="date" 
+                    value={systemInstallationDate} 
+                    onChange={(e) => setSystemInstallationDate(e.target.value)} 
+                    className="h-9 text-xs"
                   />
                 </div>
               </div>

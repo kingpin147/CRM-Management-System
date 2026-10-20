@@ -548,7 +548,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
     'TESCO': 'e.g. 10-10987-1234567',
   }
 
-  const AUDIT_STATUSES = ['Excellent', 'Good', 'Fair', 'Service Required', 'Replacement Required']
+  const AUDIT_STATUSES = ['Excellent', 'Good', 'Fair', 'Service Required', 'Replacement Required', 'None']
 
   return (
     <div className="space-y-6 relative">

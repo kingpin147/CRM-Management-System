@@ -359,6 +359,7 @@ export function AuditDocument({
   const getStatusColor = (val: string) => {
     if (val === 'Excellent' || val === 'Good' || val === 'Verified Pass') return styles.pillGood
     if (val === 'Fair') return styles.pillWarning
+    if (val === 'None' || val === 'N/A') return { color: '#64748b' }
     return styles.pillAlert
   }
 

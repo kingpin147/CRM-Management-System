@@ -51,7 +51,7 @@ import {
 } from 'lucide-react'
 import { CameraPhotoCapture } from '@/components/ui/CameraPhotoCapture'
 
-const AUDIT_STATUSES = ['Excellent', 'Good', 'Fair', 'Service Required', 'Replacement Required']
+const AUDIT_STATUSES = ['Excellent', 'Good', 'Fair', 'Service Required', 'Replacement Required', 'None']
 
 interface InstallerAuditModalProps {
   customer: any
@@ -2198,6 +2198,7 @@ export function InstallerAuditModal({
                         <SelectItem value="Both">Both AC &amp; DC Earthing</SelectItem>
                         <SelectItem value="AC">AC Earthing Only</SelectItem>
                         <SelectItem value="DC">DC Earthing Only</SelectItem>
+                        <SelectItem value="None">None / Not Installed</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
