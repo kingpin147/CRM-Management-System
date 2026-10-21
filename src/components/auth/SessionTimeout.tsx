@@ -18,32 +18,32 @@ export function SessionTimeout({ timeoutMinutes = 60 }: SessionTimeoutProps) {
   const isLoggingOutRef = useRef(false)
 
   useEffect(() => {
-    // Check initial activity timestamp on mount
-    const now = Date.now()
-    let lastActive = now
+    // When SessionTimeout mounts in dashboard, user has just navigated/logged in.
+    // Reset activity timestamp to current time to prevent stale timestamps from previous sessions
+    // from triggering an immediate logout loop.
+    const mountTime = Date.now()
+    let lastRecorded = mountTime
 
     try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      if (stored) {
-        const parsed = parseInt(stored, 10)
-        if (parsed) {
-          if (now - parsed >= timeoutMs) {
-            // Already expired while away
-            isLoggingOutRef.current = true
-            supabase.auth.signOut().catch(() => {})
-            router.push('/login?reason=session_expired')
-            return
-          }
-          lastActive = parsed
-        }
-      } else {
-        localStorage.setItem(STORAGE_KEY, now.toString())
-      }
+      localStorage.setItem(STORAGE_KEY, mountTime.toString())
     } catch {
       // ignore
     }
 
-    let lastRecorded = lastActive
+    // Keep auth state in sync
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN') {
+        const now = Date.now()
+        lastRecorded = now
+        try {
+          localStorage.setItem(STORAGE_KEY, now.toString())
+        } catch {}
+      } else if (event === 'SIGNED_OUT') {
+        try {
+          localStorage.removeItem(STORAGE_KEY)
+        } catch {}
+      }
+    })
 
     const updateActivity = () => {
       const current = Date.now()
@@ -69,7 +69,10 @@ export function SessionTimeout({ timeoutMinutes = 60 }: SessionTimeoutProps) {
       try {
         const stored = localStorage.getItem(STORAGE_KEY)
         if (stored) {
-          activeTime = parseInt(stored, 10) || lastRecorded
+          const parsed = parseInt(stored, 10)
+          if (parsed && !isNaN(parsed)) {
+            activeTime = parsed
+          }
         }
       } catch {
         activeTime = lastRecorded
@@ -79,6 +82,9 @@ export function SessionTimeout({ timeoutMinutes = 60 }: SessionTimeoutProps) {
       if (elapsed >= timeoutMs) {
         isLoggingOutRef.current = true
         clearInterval(interval)
+        try {
+          localStorage.removeItem(STORAGE_KEY)
+        } catch {}
         try {
           await supabase.auth.signOut()
         } catch (e) {
@@ -91,6 +97,7 @@ export function SessionTimeout({ timeoutMinutes = 60 }: SessionTimeoutProps) {
     return () => {
       events.forEach(evt => window.removeEventListener(evt, updateActivity))
       clearInterval(interval)
+      subscription.unsubscribe()
     }
   }, [timeoutMs, router, supabase])
 

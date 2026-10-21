@@ -26,7 +26,17 @@ export function LoginForm({ initialError, initialSuccess, initialReason }: Login
   const [showPassword, setShowPassword] = useState(false)
 
   useEffect(() => {
+    // Clear any stale activity timestamp from past sessions when viewing login form
+    try {
+      localStorage.removeItem('crm_last_user_activity')
+    } catch {}
+  }, [])
+
+  useEffect(() => {
     if (state?.success) {
+      try {
+        localStorage.setItem('crm_last_user_activity', Date.now().toString())
+      } catch {}
       router.push('/dashboard/customers')
       router.refresh()
     }
