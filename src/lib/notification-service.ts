@@ -3,6 +3,7 @@ import { SMSTemplateService, SMSTemplateContext } from './sms-service';
 import { createSMSService } from './sms-api';
 
 export class NotificationService {
+  private static readonly SUPPORT_PHONE = process.env.SUPPORT_PHONE || '+923009433303';
   private smsService = createSMSService();
 
   /**
@@ -28,7 +29,7 @@ export class NotificationService {
           customer.fullName,
           customer.customerCode,
           customer.crfNumber || `CRF-${customer.customerCode}`,
-          '+92 326 4022002'
+          NotificationService.SUPPORT_PHONE
         ],
         headerDocument: {
           link: `${appUrl}/api/customers/${customer.id}/crf`,
@@ -115,7 +116,7 @@ export class NotificationService {
           invoice.invoiceNumber,
           formattedAmount,
           dueDateStr,
-          '+92 326 4022002'
+          NotificationService.SUPPORT_PHONE
         ],
         type: 'DUE_REMINDER',
         invoiceId: invoice.id
@@ -203,7 +204,7 @@ export class NotificationService {
           ticket.category || 'General Support',
           ticket.assignedTo || 'O&M Team',
           '24 Hours',
-          '+92 326 4022002'
+          NotificationService.SUPPORT_PHONE
         ],
         type: 'TICKET'
       });
@@ -329,7 +330,7 @@ export class NotificationService {
             invoice.invoiceNumber,
             formattedAmount,
             daysPastDue,
-            '+92 326 4022002'
+            NotificationService.SUPPORT_PHONE
           ],
           type: 'OVERDUE_REMINDER',
           invoiceId: invoice.id

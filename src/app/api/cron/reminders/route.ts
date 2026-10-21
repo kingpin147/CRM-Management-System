@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
             invoice.invoiceNumber,
             formattedAmount,
             formattedDueDate,
-            '+92 326 4022002',
+            process.env.SUPPORT_PHONE || '+923009433303',
           ],
           type: 'DUE_REMINDER',
           invoiceId: invoice.id,

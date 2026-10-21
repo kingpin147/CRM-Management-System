@@ -34,6 +34,11 @@ export function formatWhatsAppPhone(phone: string): string {
   // Remove all non-digits
   let clean = phone.replace(/\D/g, '')
 
+  // Handle accidental double country code (e.g., +92+92 321...)
+  while (clean.startsWith('9292')) {
+    clean = clean.slice(2)
+  }
+
   // If local Pakistani 03XXXXXXXXX (11 digits), convert to 923XXXXXXXXX
   if (clean.startsWith('0') && clean.length === 11) {
     clean = '92' + clean.slice(1)

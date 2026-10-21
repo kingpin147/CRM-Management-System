@@ -14,7 +14,7 @@ export async function GET() {
         headerType: 'DOCUMENT (CRF.pdf)',
         trigger: 'Automatic: Sent when customer will be activated in CRM',
         description: 'Account Onboarding: Confirms account registration and delivers the official CRF document.',
-        sample: 'Dear Nouman Attique, welcome to Energy Gurus! Your solar O&M service account has been successfully registered. Your Customer ID is 101 (CRF #CRF-2026-00101). Please find your official Customer Registration Form attached. For assistance, contact our helpline at +92 326 4022002 - Energy Gurus Team.'
+        sample: 'Dear Nouman Attique, welcome to Energy Gurus! Your solar O&M service account has been successfully registered. Your Customer ID is 101 (CRF #CRF-2026-00101). Please find your official Customer Registration Form attached. For assistance, contact our helpline at +923009433303 - Energy Gurus Team.'
       },
       MONTHLY_INVOICE_DISPATCH: {
         name: '2. Monthly Invoice Dispatch',
@@ -32,7 +32,7 @@ export async function GET() {
         headerType: 'TEXT',
         trigger: 'Automatic: As Due date is 10th of every month, reminder msg will be sent on 9th',
         description: 'Billing Alert: Reminder of an existing active bill.',
-        sample: 'Dear Nouman Attique, this is a friendly reminder that your solar O&M bill for invoice INV-2026-001 amounting to PKR 4,500 is due on 10-Oct-2026. Kindly settle your bill to ensure uninterrupted service. For inquiries, contact +92 326 4022002.'
+        sample: 'Dear Nouman Attique, this is a friendly reminder that your solar O&M bill for invoice INV-2026-001 amounting to PKR 4,500 is due on 10-Oct-2026. Kindly settle your bill to ensure uninterrupted service. For inquiries, contact +923009433303.'
       },
       PAYMENT_OVERDUE_NOTICE: {
         name: '4. Overdue Payment Notice',
@@ -41,7 +41,7 @@ export async function GET() {
         headerType: 'TEXT',
         trigger: 'Automatic: Sent on 12th of every month, and after that as required',
         description: 'Billing / Account Alert: Warning of past-due payment.',
-        sample: 'Dear Nouman Attique, invoice INV-2026-001 for PKR 4,500 is past due (due was 10-Oct-2026). Please clear this outstanding balance immediately to avoid disconnection. Contact +92 326 4022002 for payment guidance.'
+        sample: 'Dear Nouman Attique, invoice INV-2026-001 for PKR 4,500 is past due (due was 10-Oct-2026). Please clear this outstanding balance immediately to avoid disconnection. Contact +923009433303 for payment guidance.'
       },
       PAYMENT_RECEIPT_CONFIRMATION: {
         name: '5. Payment Receipt Confirmation',
@@ -59,7 +59,7 @@ export async function GET() {
         headerType: 'TEXT',
         trigger: 'Triggered when customer status moves to NON_PAYMENT_BLOCKED',
         description: 'Notifies customer that monitoring & O&M service is suspended due to unpaid dues.',
-        sample: 'Dear Nouman Attique, your solar monitoring and O&M service for Customer ID 101 has been temporarily suspended due to outstanding dues of PKR 9,000. Please clear your dues and share proof of payment with +92 326 4022002 for immediate restoration.'
+        sample: 'Dear Nouman Attique, your solar monitoring and O&M service for Customer ID 101 has been temporarily suspended due to outstanding dues of PKR 9,000. Please clear your dues and share proof of payment with +923009433303 for immediate restoration.'
       },
       SERVICE_RESTORED_CONFIRMATION: {
         name: '7. Service Restoration (After Payment)',
@@ -77,7 +77,7 @@ export async function GET() {
         headerType: 'TEXT',
         trigger: 'Triggered when customer status is set to TEMPORARY_BLOCKED',
         description: 'Confirms customer request to pause service temporarily.',
-        sample: `Dear Nouman Attique, as per your request, your solar O&M service (Customer ID: 101) has been placed on temporary hold effective ${today}. To reactivate your service anytime, contact +92 326 4022002.`
+        sample: `Dear Nouman Attique, as per your request, your solar O&M service (Customer ID: 101) has been placed on temporary hold effective ${today}. To reactivate your service anytime, contact +923009433303.`
       },
       TEMPORARY_HOLD_REACTIVATED: {
         name: '9. Temporary Hold Reactivated',
@@ -95,7 +95,7 @@ export async function GET() {
         headerType: 'TEXT',
         trigger: 'Triggered when a support ticket or complaint is opened in CRM',
         description: 'Acknowledges ticket registration with assigned team and SLA timeline.',
-        sample: 'Dear Nouman Attique, your support request has been registered under Ticket #TKT-2026-0042 (Category: Inverter Fault). Our O&M Technical team is reviewing your complaint with an expected resolution within 24 Hours. Contact +92 326 4022002 for urgent updates.'
+        sample: 'Dear Nouman Attique, your support request has been registered under Ticket #TKT-2026-0042 (Category: Inverter Fault). Our O&M Technical team is reviewing your complaint with an expected resolution within 24 Hours. Contact +923009433303 for urgent updates.'
       },
       TICKET_RESOLVED_CLOSURE: {
         name: '11. Support Ticket Resolved & Closed',
@@ -122,7 +122,7 @@ export async function GET() {
         headerType: 'IMAGE / TEXT',
         trigger: 'Triggered on-demand by Admins for sector-wide notices',
         description: 'Mass notification for scheduled grid maintenance or operational updates.',
-        sample: 'Dear Nouman Attique, [Notice: Scheduled Grid Maintenance]\nGrid maintenance scheduled in your area on Sunday from 10:00 AM to 2:00 PM. Inverters will stay in auto-standby.\nFor any assistance or questions, please contact our helpline at +92 326 4022002.'
+        sample: 'Dear Nouman Attique, [Notice: Scheduled Grid Maintenance]\nGrid maintenance scheduled in your area on Sunday from 10:00 AM to 2:00 PM. Inverters will stay in auto-standby.\nFor any assistance or questions, please contact our helpline at +923009433303.'
       },
       SOLAR_PROMOTIONAL_OFFER: {
         name: '14. Promotional Flyer / Pamphlet Campaign',
