@@ -61,9 +61,12 @@ export async function submitInstallerAudit(formData: FormData) {
   const dataloggerBrand = (formData.get('dataloggerBrand') as string) || null
   const monitoringEcosystem = (formData.get('monitoringEcosystem') as string) || null
 
-  const inverterUsername = (formData.get('inverterUsername') as string) || null
-  const inverterPassword = (formData.get('inverterPassword') as string) || null
-  const inverterInvoiceUrl = (formData.get('inverterInvoiceUrl') as string) || null
+  const rawInverterUsername = formData.get('inverterUsername')
+  const inverterUsername = rawInverterUsername !== null ? ((rawInverterUsername as string).trim() || null) : null
+  const rawInverterPassword = formData.get('inverterPassword')
+  const inverterPassword = rawInverterPassword !== null ? ((rawInverterPassword as string).trim() || null) : null
+  const rawInverterInvoiceUrl = formData.get('inverterInvoiceUrl')
+  const inverterInvoiceUrl = rawInverterInvoiceUrl !== null ? ((rawInverterInvoiceUrl as string).trim() || null) : null
 
   // Solar PV Panels Specifications
   const panelBrand = (formData.get('panelBrand') as string) || ''
@@ -340,9 +343,9 @@ export async function submitInstallerAudit(formData: FormData) {
       inverterImages: finalInverterImages,
       panelImages: finalPanelImages,
       batteryImages: finalBatteryImages,
-      inverterUsername,
-      inverterPassword,
-      inverterInvoiceUrl,
+      ...(rawInverterUsername !== null ? { inverterUsername } : {}),
+      ...(rawInverterPassword !== null ? { inverterPassword } : {}),
+      ...(rawInverterInvoiceUrl !== null ? { inverterInvoiceUrl } : {}),
     }
   })
 
@@ -543,9 +546,12 @@ export async function saveSolarSpecsOnly(formData: FormData) {
   const dataloggerBrand = (formData.get('dataloggerBrand') as string) || null
   const monitoringEcosystem = (formData.get('monitoringEcosystem') as string) || null
 
-  const inverterUsername = (formData.get('inverterUsername') as string) || null
-  const inverterPassword = (formData.get('inverterPassword') as string) || null
-  const inverterInvoiceUrl = (formData.get('inverterInvoiceUrl') as string) || null
+  const rawInverterUsername = formData.get('inverterUsername')
+  const inverterUsername = rawInverterUsername !== null ? ((rawInverterUsername as string).trim() || null) : null
+  const rawInverterPassword = formData.get('inverterPassword')
+  const inverterPassword = rawInverterPassword !== null ? ((rawInverterPassword as string).trim() || null) : null
+  const rawInverterInvoiceUrl = formData.get('inverterInvoiceUrl')
+  const inverterInvoiceUrl = rawInverterInvoiceUrl !== null ? ((rawInverterInvoiceUrl as string).trim() || null) : null
 
   // Solar PV Panels Specifications
   const panelBrand = (formData.get('panelBrand') as string) || ''
@@ -709,9 +715,9 @@ export async function saveSolarSpecsOnly(formData: FormData) {
       inverterImages: finalInverterImages,
       panelImages: finalPanelImages,
       batteryImages: finalBatteryImages,
-      inverterUsername,
-      inverterPassword,
-      inverterInvoiceUrl,
+      ...(rawInverterUsername !== null ? { inverterUsername } : {}),
+      ...(rawInverterPassword !== null ? { inverterPassword } : {}),
+      ...(rawInverterInvoiceUrl !== null ? { inverterInvoiceUrl } : {}),
     }
   })
 

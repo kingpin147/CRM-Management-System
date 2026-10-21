@@ -122,6 +122,7 @@ export function SolarSystemDialog({
   const [netMetering, setNetMetering] = React.useState(solarSystem?.netMetering || 'Yes')
   const [lightningArrestor, setLightningArrestor] = React.useState(solarSystem?.lightningArrestor || 'Not Installed')
   const [energyAnalyzer, setEnergyAnalyzer] = React.useState(solarSystem?.energyAnalyzer || 'Not Installed')
+  const [structureType, setStructureType] = React.useState(solarSystem?.structureType || '')
 
   // Auto-sync ecosystem when Inverter Brand changes
   const handleInverterBrandChange = (val: string) => {
@@ -191,6 +192,7 @@ export function SolarSystemDialog({
       setNetMetering(solarSystem.netMetering || 'Yes')
       setLightningArrestor(solarSystem.lightningArrestor || 'Not Installed')
       setEnergyAnalyzer(solarSystem.energyAnalyzer || 'Not Installed')
+      setStructureType(solarSystem.structureType || '')
 
       setInverterUsername(solarSystem.inverterUsername || '')
       setInverterPassword(solarSystem.inverterPassword || '')
@@ -375,6 +377,7 @@ export function SolarSystemDialog({
       formData.append('netMetering', netMetering)
       formData.append('lightningArrestor', lightningArrestor)
       formData.append('energyAnalyzer', energyAnalyzer)
+      if (structureType) formData.append('structureType', structureType)
 
       formData.append('inverterImageUrls', JSON.stringify(inverterImageUrls.slice(0, noOfInverters)))
       formData.append('batteryImageUrls', JSON.stringify(isGridTied ? [] : batteryImageUrls.slice(0, noOfBatteries)))
@@ -1149,6 +1152,15 @@ export function SolarSystemDialog({
                         <option key={b} value={b}>{b}</option>
                       ))}
                     </select>
+                  </div>
+                  <div className="space-y-1 col-span-2">
+                    <Label className="text-xs font-bold text-[#002868]">Structure Type</Label>
+                    <Input
+                      value={structureType}
+                      onChange={(e) => setStructureType(e.target.value)}
+                      placeholder="e.g. Elevated GI Structure, M.S. - Elevated Structure, etc."
+                      className="h-9 text-xs bg-white"
+                    />
                   </div>
                 </div>
               </div>

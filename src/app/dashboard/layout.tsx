@@ -47,7 +47,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex min-h-screen w-full bg-background">
-      <SessionTimeout timeoutMinutes={20} />
+      <SessionTimeout timeoutMinutes={60} />
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header className="min-h-[4rem] py-2 flex items-center justify-between px-2 sm:px-3 lg:px-4 border-b border-[var(--color-line)] bg-white/90 backdrop-blur-md sticky top-0 z-30 shadow-2xs shrink-0">

@@ -21,7 +21,7 @@ import { AutoSuggestInput } from '@/components/ui/auto-suggest-input'
 import { CITIES_LIST, getAreasForCity, getDefaultDiscoForCity, getSubAreasForArea } from '@/lib/pakistan-cities-areas'
 import { formatDiscoRefNo } from '@/lib/utils'
 import { SYSTEM_SIZES, INVERTER_SIZES, INVERTER_BRANDS, PANEL_BRANDS, BATTERY_BRANDS, IP_LIST, DISCO_LIST, STRUCTURE_TYPES, STRUCTURE_MATERIALS } from '@/lib/solar-constants'
-import { calculatePackageBreakdown, getEligibleFreeMonths, calculateBillingDurationMonths, calculateNextBillingDate } from '@/lib/pricing'
+import { calculatePackageBreakdown, getEligibleFreeMonths, calculateBillingDurationMonths, calculateNextBillingDate, isCustomCapacityTier } from '@/lib/pricing'
 import { SectionHeader } from '@/components/ui/section-header'
 import { CnicCameraCapture } from '@/components/ui/CnicCameraCapture'
 import { CameraPhotoCapture } from '@/components/ui/CameraPhotoCapture'
@@ -44,7 +44,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
     totalAmount: number
   } | null>(null)
 
-  const form = useForm<z.infer<typeof customerSchema>>({
+  const form = useForm<any>({
     resolver: zodResolver(customerSchema) as any,
     defaultValues: {
       fullName: '',
@@ -71,6 +71,8 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
       accountExecutiveName: '',
 
       systemSizeKw: '',
+      customSystemSize: '',
+      customPrice: '',
       packageTier: '',
       billingType: '',
       monitoringTime: '',
@@ -133,6 +135,9 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
 
   // Dynamic Pricing Calculation from Centralized Pricing Engine
   const systemSizeKw   = form.watch('systemSizeKw')
+  const customSystemSize = form.watch('customSystemSize')
+  const customPrice    = form.watch('customPrice')
+  const isCustomCapacity = isCustomCapacityTier(systemSizeKw)
   const packageTier    = form.watch('packageTier')
   const billingType    = form.watch('billingType')
   const monitoringTime = form.watch('monitoringTime')
@@ -171,13 +176,15 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
     }
   }, [isGridTied, form])
 
-  const breakdown = calculatePackageBreakdown(systemSizeKw, packageTier, billingType, monitoringTime)
+  const breakdown = calculatePackageBreakdown(systemSizeKw, packageTier, billingType, monitoringTime, customPrice)
   const {
     baseMonthlyRate,
     months,
     discountPct,
     discountAmount,
     priceAfterDiscount,
+    subscriptionSalesTax,
+    onboardingSalesTax,
     salesTax,
     onboardingFee,
     isOnboardingWaived,
@@ -307,7 +314,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
     form.setValue('salesTaxAmount',   Math.round(salesTax))
     form.setValue('onboardingFee',    Math.round(onboardingFee))
     form.setValue('totalAmount',      Math.round(grandTotal))
-  }, [systemSizeKw, packageTier, billingType, monitoringTime, form, priceAfterDiscount, salesTax, onboardingFee, grandTotal])
+  }, [systemSizeKw, customPrice, packageTier, billingType, monitoringTime, form, priceAfterDiscount, salesTax, onboardingFee, grandTotal])
 
   function onInvalid(errors: any) {
     const errorKeys = Object.keys(errors)
@@ -480,10 +487,22 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
         formData.append('panelImageUrls', JSON.stringify([panelUrl]))
       }
 
-      formData.append('appliedDiscount', Math.round(discountAmount).toString())
-      formData.append('salesTaxAmount',  Math.round(salesTax).toString())
-      formData.append('onboardingFee',   Math.round(onboardingFee).toString())
-      formData.append('totalAmount',     Math.round(grandTotal).toString())
+      const customSizeVal = values.customSystemSize?.trim()
+      let resolvedSystemSize = values.systemSizeKw
+      if (isCustomCapacity && customSizeVal) {
+        resolvedSystemSize = customSizeVal.toLowerCase().includes('kw') ? customSizeVal : `${customSizeVal} kW`
+        formData.set('systemSizeKw', resolvedSystemSize)
+        formData.set('customSystemSize', resolvedSystemSize)
+      }
+      if (values.customPrice !== undefined && values.customPrice !== null && !isNaN(Number(values.customPrice))) {
+        formData.set('customPrice', String(values.customPrice))
+      }
+
+      formData.set('monthlyBasePrice', Math.round(priceAfterDiscount).toString())
+      formData.set('appliedDiscount', Math.round(discountAmount).toString())
+      formData.set('salesTaxAmount',  Math.round(salesTax).toString())
+      formData.set('onboardingFee',   Math.round(onboardingFee).toString())
+      formData.set('totalAmount',     Math.round(grandTotal).toString())
       formData.set('freeMonths',         (values.freeMonths ?? 0).toString())
       if (cnicFrontUrl) {
         formData.append('cnicFrontUrl', cnicFrontUrl)
@@ -944,7 +963,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className={`grid grid-cols-1 ${isCustomCapacity ? 'sm:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-2'} gap-6`}>
                     {/* System Type (Capacity) */}
                     <FormField
                       control={form.control}
@@ -952,7 +971,16 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                       render={({ field, fieldState }) => (
                         <FormItem>
                           <FormLabel className="text-xs font-semibold">System Type (Capacity) *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value || ''}>
+                          <Select
+                            onValueChange={(val) => {
+                              field.onChange(val)
+                              if (!isCustomCapacityTier(val)) {
+                                form.setValue('customSystemSize', '')
+                                form.setValue('customPrice', '')
+                              }
+                            }}
+                            value={field.value || ''}
+                          >
                             <FormControl>
                               <SelectTrigger className={`h-10 text-xs ${fieldState.error ? 'border-red-500 ring-2 ring-red-200 bg-red-50/20' : ''}`}>
                                 <SelectValue placeholder="Select System Capacity..." />
@@ -968,6 +996,54 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                         </FormItem>
                       )}
                     />
+
+                    {/* System Size (Custom manual entry when 31 kW & Above selected) */}
+                    {isCustomCapacity && (
+                      <FormField
+                        control={form.control}
+                        name="customSystemSize"
+                        render={({ field, fieldState }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs font-semibold text-[#002868]">System Size *</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="e.g. 35 kW"
+                                {...field}
+                                value={field.value || ''}
+                                className={`h-10 text-xs border-amber-300 focus-visible:ring-amber-400 bg-amber-50/30 font-medium ${fieldState.error ? 'border-red-500 ring-2 ring-red-200 bg-red-50/20' : ''}`}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+
+                    {/* Price/ Amount (without Tax) (Custom manual entry when 31 kW & Above selected) */}
+                    {isCustomCapacity && (
+                      <FormField
+                        control={form.control}
+                        name="customPrice"
+                        render={({ field, fieldState }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs font-semibold text-[#002868]">Price/ Amount (without Tax) *</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min="0"
+                                step="any"
+                                placeholder="e.g. 15000"
+                                {...field}
+                                value={field.value === undefined || field.value === null ? '' : field.value}
+                                onChange={(e) => field.onChange(e.target.value === '' ? '' : Number(e.target.value))}
+                                className={`h-10 text-xs font-mono font-bold text-amber-900 border-amber-300 focus-visible:ring-amber-400 bg-amber-50/30 ${fieldState.error ? 'border-red-500 ring-2 ring-red-200 bg-red-50/20' : ''}`}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
 
                     {/* Package */}
                     <FormField
@@ -998,7 +1074,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                       control={form.control}
                       name="billingType"
                       render={({ field, fieldState }) => (
-                        <FormItem>
+                        <FormItem className={isCustomCapacity ? 'lg:col-span-2' : ''}>
                           <FormLabel className="text-xs font-semibold">Billing Type *</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value || ''}>
                             <FormControl>
@@ -1024,7 +1100,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                       control={form.control}
                       name="monitoringTime"
                       render={({ field, fieldState }) => (
-                        <FormItem>
+                        <FormItem className={isCustomCapacity ? 'lg:col-span-2' : ''}>
                           <FormLabel className="text-xs font-semibold">Monitoring Time *</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value || ''}>
                             <FormControl>
@@ -1099,7 +1175,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                   <div className="bg-amber-50/50 p-5 rounded-xl border border-amber-200/80 space-y-3">
                     <div className="flex items-center justify-between">
                       <h3 className="text-xs font-bold text-amber-950 uppercase tracking-wider">Package Calculation Breakdown</h3>
-                      <span className="text-[11px] font-medium text-amber-900">5% Sales Tax Included</span>
+                      <span className="text-[11px] font-medium text-amber-900">5% Sales Tax Included (Subscription &amp; On-Boarding)</span>
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 text-xs pt-1">
@@ -1114,6 +1190,11 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                       <div>
                         <span className="text-gray-500 block">Sales Tax (5%)</span>
                         <span className="font-mono font-bold text-gray-800">PKR {Math.round(salesTax).toLocaleString()}</span>
+                        {!isOnboardingWaived && onboardingFee > 0 && (
+                          <span className="text-[10px] text-amber-900/80 block">
+                            (Incl. PKR {Math.round(onboardingSalesTax).toLocaleString()} on On-Boarding)
+                          </span>
+                        )}
                       </div>
                       <div>
                         <span className="text-gray-500 block">On-Boarding Fee</span>
@@ -1139,7 +1220,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                     <div className="pt-2 border-t border-amber-200/60 flex items-center gap-2 text-[11px] text-amber-900">
                       <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                       <span>
-                        <strong>On-Boarding Policy:</strong> PKR 3,000/- on sign up (applicable to all packages, not waived on Yearly).
+                        <strong>On-Boarding Policy:</strong> PKR 3,000/- on sign up (applicable to all packages, not waived on Yearly) + 5% sales tax (PKR 150).
                       </span>
                     </div>
                   </div>

@@ -13,7 +13,11 @@ export function CustomerHistoryNotes({ notes }: CustomerHistoryNotesProps) {
 
   // If simple single-line note without diff arrows
   if (lines.length <= 1 && !notes.includes('→')) {
-    return <span className="text-slate-700 text-xs leading-relaxed">{notes}</span>
+    return (
+      <div className="text-slate-700 text-xs leading-relaxed whitespace-normal break-words">
+        {notes}
+      </div>
+    )
   }
 
   // Header line if first line is not a bullet
@@ -22,9 +26,9 @@ export function CustomerHistoryNotes({ notes }: CustomerHistoryNotesProps) {
   const changeLines = hasHeader ? lines.slice(1) : lines
 
   return (
-    <div className="space-y-1.5 py-1 min-w-[280px] max-w-[500px]">
+    <div className="space-y-1.5 py-1 w-full whitespace-normal break-words">
       {header && (
-        <div className="text-[11px] font-bold text-slate-800 flex items-center gap-1.5">
+        <div className="text-[11px] font-bold text-slate-800 flex items-center gap-1.5 whitespace-normal break-words">
           <span className="w-1.5 h-1.5 rounded-full bg-[#136d86] shrink-0" />
           <span>{header}</span>
         </div>
@@ -49,15 +53,15 @@ export function CustomerHistoryNotes({ notes }: CustomerHistoryNotesProps) {
             const newVal = (newPart || '').trim().replace(/^["']|["']$/g, '')
 
             return (
-              <div key={idx} className="text-xs flex items-center flex-wrap gap-1.5 leading-normal">
+              <div key={idx} className="text-xs flex items-center flex-wrap gap-1.5 leading-normal whitespace-normal break-words">
                 <span className="font-semibold text-[#002868] text-[11px] shrink-0">
                   {label}:
                 </span>
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] bg-rose-50 text-rose-700 border border-rose-200/80 font-mono line-through decoration-rose-400">
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] bg-rose-50 text-rose-700 border border-rose-200/80 font-mono line-through decoration-rose-400 break-all">
                   {oldVal}
                 </span>
-                <span className="text-slate-400 font-bold text-xs">&rarr;</span>
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] bg-emerald-50 text-emerald-800 border border-emerald-300 font-mono font-medium">
+                <span className="text-slate-400 font-bold text-xs shrink-0">&rarr;</span>
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] bg-emerald-50 text-emerald-800 border border-emerald-300 font-mono font-medium break-all">
                   {newVal}
                 </span>
               </div>
@@ -70,8 +74,8 @@ export function CustomerHistoryNotes({ notes }: CustomerHistoryNotesProps) {
             return (
               <div key={idx} className="space-y-1">
                 {subItems.map((sub, sIdx) => (
-                  <div key={sIdx} className="text-xs text-slate-700 flex items-start gap-1">
-                    <span className="text-slate-400 font-bold">•</span>
+                  <div key={sIdx} className="text-xs text-slate-700 flex items-start gap-1 whitespace-normal break-words">
+                    <span className="text-slate-400 font-bold shrink-0">•</span>
                     <span>{sub}</span>
                   </div>
                 ))}
@@ -81,8 +85,8 @@ export function CustomerHistoryNotes({ notes }: CustomerHistoryNotesProps) {
 
           // Plain text line
           return (
-            <div key={idx} className="text-xs text-slate-700 flex items-start gap-1.5">
-              {isBullet && <span className="text-slate-400 font-bold">•</span>}
+            <div key={idx} className="text-xs text-slate-700 flex items-start gap-1.5 whitespace-normal break-words">
+              {isBullet && <span className="text-slate-400 font-bold shrink-0">•</span>}
               <span>{cleanLine}</span>
             </div>
           )

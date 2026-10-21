@@ -34,7 +34,7 @@ import {
 import { CITIES_LIST, getAreasForCity, getSubAreasForArea } from '@/lib/pakistan-cities-areas'
 import { cn } from '@/lib/utils'
 import { CheckCircle2, Edit3, Loader2, Save, FileText, User, Zap, Wrench, ShieldCheck, Sun, Battery, HardHat, Gift } from 'lucide-react'
-import { calculatePackageBreakdown, getEligibleFreeMonths, calculateBillingDurationMonths } from '@/lib/pricing'
+import { calculatePackageBreakdown, getEligibleFreeMonths, calculateBillingDurationMonths, isCustomCapacityTier } from '@/lib/pricing'
 import { SectionHeader } from '@/components/ui/section-header'
 import { CameraPhotoCapture } from '@/components/ui/CameraPhotoCapture'
 
@@ -79,6 +79,8 @@ export function EditCrfModal({
 
   // Package State
   const [systemSizeKw, setSystemSizeKw] = React.useState('1 - 5 kW')
+  const [customSystemSize, setCustomSystemSize] = React.useState('')
+  const [customPrice, setCustomPrice] = React.useState('')
   const [packageTier, setPackageTier] = React.useState('Basic')
   const [billingType, setBillingType] = React.useState('Monthly')
   const [monitoringTime, setMonitoringTime] = React.useState('Hybrid')
@@ -182,9 +184,10 @@ export function EditCrfModal({
   const [batteryImageUrl, setBatteryImageUrl] = React.useState('')
 
   // Dynamic pricing breakdown
+  const isCustomCapacity = isCustomCapacityTier(systemSizeKw)
   const breakdown = React.useMemo(() => {
-    return calculatePackageBreakdown(systemSizeKw, packageTier, billingType, monitoringTime)
-  }, [systemSizeKw, packageTier, billingType, monitoringTime])
+    return calculatePackageBreakdown(systemSizeKw, packageTier, billingType, monitoringTime, customPrice)
+  }, [systemSizeKw, packageTier, billingType, monitoringTime, customPrice])
 
   // Sync payment amount with calculated total whenever breakdown changes
   React.useEffect(() => {
@@ -210,7 +213,17 @@ export function EditCrfModal({
       setAssignedInstallerId(customer.assignedInstallerId || '')
 
       if (customer.packagePlan) {
-        setSystemSizeKw(customer.packagePlan.systemSizeKw || '1 - 5 kW')
+        const rawSize = customer.packagePlan.systemSizeKw || '1 - 5 kW'
+        const isCustom = isCustomCapacityTier(rawSize)
+        if (isCustom) {
+          setSystemSizeKw('31 kW & Above')
+          setCustomSystemSize(rawSize)
+          setCustomPrice(customer.packagePlan.monthlyBasePrice ? String(customer.packagePlan.monthlyBasePrice) : '')
+        } else {
+          setSystemSizeKw(rawSize)
+          setCustomSystemSize('')
+          setCustomPrice('')
+        }
         setPackageTier(customer.packagePlan.packageTier || 'Basic')
         setBillingType(customer.packagePlan.billingType || 'Monthly')
         setMonitoringTime(customer.packagePlan.monitoringTime || 'Hybrid')
@@ -381,7 +394,11 @@ export function EditCrfModal({
       formData.append('assignedInstallerId', assignedInstallerId)
       formData.append('installerName', selectedInstallerName)
 
-      formData.append('systemSizeKw', systemSizeKw)
+      const finalSystemSize = (isCustomCapacity && customSystemSize.trim())
+        ? (customSystemSize.trim().toLowerCase().includes('kw') ? customSystemSize.trim() : `${customSystemSize.trim()} kW`)
+        : systemSizeKw
+      formData.append('systemSizeKw', finalSystemSize)
+      formData.append('customSystemSize', finalSystemSize)
       formData.append('packageTier', packageTier)
       formData.append('billingType', billingType)
       formData.append('monitoringTime', monitoringTime)
@@ -648,10 +665,16 @@ export function EditCrfModal({
             <SectionHeader leftAction={<Zap className="h-4 w-4 text-amber-600" />}>
               2. Package Selection &amp; Billing Calculation
             </SectionHeader>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+            <div className={`grid grid-cols-1 sm:grid-cols-2 ${isCustomCapacity ? 'md:grid-cols-3 lg:grid-cols-6' : 'md:grid-cols-4'} gap-3`}>
               <div className="space-y-1">
                 <Label className="text-xs font-semibold text-slate-700">System Capacity</Label>
-                <Select value={systemSizeKw} onValueChange={(val) => setSystemSizeKw(val || '1 - 5 kW')}>
+                <Select value={systemSizeKw} onValueChange={(val) => {
+                  setSystemSizeKw(val || '1 - 5 kW')
+                  if (!isCustomCapacityTier(val)) {
+                    setCustomSystemSize('')
+                    setCustomPrice('')
+                  }
+                }}>
                   <SelectTrigger className="h-9 text-xs">
                     <SelectValue />
                   </SelectTrigger>
@@ -662,6 +685,33 @@ export function EditCrfModal({
                   </SelectContent>
                 </Select>
               </div>
+
+              {isCustomCapacity && (
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-[#002868]">System Size *</Label>
+                  <Input
+                    placeholder="e.g. 35 kW"
+                    value={customSystemSize}
+                    onChange={(e) => setCustomSystemSize(e.target.value)}
+                    className="h-9 text-xs border-amber-300 font-medium bg-amber-50/30"
+                  />
+                </div>
+              )}
+
+              {isCustomCapacity && (
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-[#002868]">Price/ Amount (without Tax) *</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="any"
+                    placeholder="e.g. 15000"
+                    value={customPrice}
+                    onChange={(e) => setCustomPrice(e.target.value)}
+                    className="h-9 text-xs font-mono font-bold text-amber-900 border-amber-300 bg-amber-50/30"
+                  />
+                </div>
+              )}
 
               <div className="space-y-1">
                 <Label className="text-xs font-semibold text-slate-700">Package Tier</Label>

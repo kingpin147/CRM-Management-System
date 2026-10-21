@@ -3,6 +3,8 @@ import {
   getEligibleFreeMonths,
   calculateBillingDurationMonths,
   calculateNextBillingDate,
+  calculatePackageBreakdown,
+  isCustomCapacityTier,
 } from './pricing'
 
 describe('Promotional Free Months & Billing Calculation', () => {
@@ -96,6 +98,79 @@ describe('Promotional Free Months & Billing Calculation', () => {
       expect(promoDate.getFullYear()).toBe(2027)
       expect(promoDate.getMonth()).toBe(2) // March 2027 (+14)
       expect(promoDate.getDate()).toBe(15)
+    })
+  })
+
+  describe('isCustomCapacityTier', () => {
+    it('detects 31 kW & Above and custom sizes', () => {
+      expect(isCustomCapacityTier('31 kW & Above')).toBe(true)
+      expect(isCustomCapacityTier('30 kW & Above')).toBe(true)
+      expect(isCustomCapacityTier('35 kW')).toBe(true)
+      expect(isCustomCapacityTier('50kW')).toBe(true)
+    })
+
+    it('returns false for standard range options', () => {
+      expect(isCustomCapacityTier('1 - 5 kW')).toBe(false)
+      expect(isCustomCapacityTier('6 - 10 kW')).toBe(false)
+      expect(isCustomCapacityTier('11 - 15 kW')).toBe(false)
+      expect(isCustomCapacityTier('16 - 20 kW')).toBe(false)
+      expect(isCustomCapacityTier('21 - 25 kW')).toBe(false)
+      expect(isCustomCapacityTier('26 - 30 kW')).toBe(false)
+    })
+  })
+
+  describe('calculatePackageBreakdown with 5% Sales Tax on Onboarding and Custom Pricing', () => {
+    it('charges 5% sales tax on both base subscription and 3,000 onboarding charges', () => {
+      // 1 - 5 kW Basic Hybrid = 960/mo
+      const b = calculatePackageBreakdown('1 - 5 kW', 'Basic', 'Monthly', 'Hybrid')
+      expect(b.baseMonthlyRate).toBe(960)
+      expect(b.priceAfterDiscount).toBe(960)
+      expect(b.onboardingFee).toBe(3000)
+      // 5% of 960 = 48
+      expect(b.subscriptionSalesTax).toBe(48)
+      // 5% of 3000 = 150
+      expect(b.onboardingSalesTax).toBe(150)
+      // Total sales tax = 48 + 150 = 198
+      expect(b.salesTax).toBe(198)
+      // Grand total = 960 + 3000 + 198 = 4158
+      expect(b.grandTotal).toBe(4158)
+    })
+
+    it('calculates custom price for 31 kW & Above correctly', () => {
+      // User enters custom base price of 10,000 PKR
+      const b = calculatePackageBreakdown('31 kW & Above', 'Moderate', 'Monthly', 'Hybrid', 10000)
+      expect(b.baseMonthlyRate).toBe(10000)
+      expect(b.priceAfterDiscount).toBe(10000)
+      expect(b.onboardingFee).toBe(3000)
+      // 5% of 10000 = 500
+      expect(b.subscriptionSalesTax).toBe(500)
+      // 5% of 3000 = 150
+      expect(b.onboardingSalesTax).toBe(150)
+      // Total tax = 650
+      expect(b.salesTax).toBe(650)
+      // Grand total = 10000 + 3000 + 650 = 13650
+      expect(b.grandTotal).toBe(13650)
+    })
+
+    it('handles 0 custom price before entry with 150 tax on onboarding', () => {
+      const b = calculatePackageBreakdown('31 kW & Above', 'Moderate', 'Monthly', 'Hybrid', 0)
+      expect(b.baseMonthlyRate).toBe(0)
+      expect(b.priceAfterDiscount).toBe(0)
+      expect(b.onboardingFee).toBe(3000)
+      expect(b.subscriptionSalesTax).toBe(0)
+      expect(b.onboardingSalesTax).toBe(150)
+      expect(b.salesTax).toBe(150)
+      expect(b.grandTotal).toBe(3150)
+    })
+
+    it('waives onboarding fee and sales tax for FOC', () => {
+      const b = calculatePackageBreakdown('1 - 5 kW', 'Basic', 'FOC', 'Hybrid')
+      expect(b.onboardingFee).toBe(0)
+      expect(b.isOnboardingWaived).toBe(true)
+      expect(b.subscriptionSalesTax).toBe(0)
+      expect(b.onboardingSalesTax).toBe(0)
+      expect(b.salesTax).toBe(0)
+      expect(b.grandTotal).toBe(0)
     })
   })
 })

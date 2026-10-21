@@ -5,28 +5,45 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 
 interface SessionTimeoutProps {
-  /** Inactivity timeout in minutes. Defaults to 20 minutes. */
+  /** Inactivity timeout in minutes. Defaults to 60 minutes (1 hour). */
   timeoutMinutes?: number
 }
 
 const STORAGE_KEY = 'crm_last_user_activity'
 
-export function SessionTimeout({ timeoutMinutes = 20 }: SessionTimeoutProps) {
+export function SessionTimeout({ timeoutMinutes = 60 }: SessionTimeoutProps) {
   const router = useRouter()
   const supabase = createClient()
   const timeoutMs = timeoutMinutes * 60 * 1000
   const isLoggingOutRef = useRef(false)
 
   useEffect(() => {
-    // Initialize timestamp on mount
+    // Check initial activity timestamp on mount
     const now = Date.now()
+    let lastActive = now
+
     try {
-      localStorage.setItem(STORAGE_KEY, now.toString())
+      const stored = localStorage.getItem(STORAGE_KEY)
+      if (stored) {
+        const parsed = parseInt(stored, 10)
+        if (parsed) {
+          if (now - parsed >= timeoutMs) {
+            // Already expired while away
+            isLoggingOutRef.current = true
+            supabase.auth.signOut().catch(() => {})
+            router.push('/login?reason=session_expired')
+            return
+          }
+          lastActive = parsed
+        }
+      } else {
+        localStorage.setItem(STORAGE_KEY, now.toString())
+      }
     } catch {
       // ignore
     }
 
-    let lastRecorded = now
+    let lastRecorded = lastActive
 
     const updateActivity = () => {
       const current = Date.now()
@@ -48,17 +65,17 @@ export function SessionTimeout({ timeoutMinutes = 20 }: SessionTimeoutProps) {
     const interval = setInterval(async () => {
       if (isLoggingOutRef.current) return
 
-      let lastActive = now
+      let activeTime = lastRecorded
       try {
         const stored = localStorage.getItem(STORAGE_KEY)
         if (stored) {
-          lastActive = parseInt(stored, 10) || now
+          activeTime = parseInt(stored, 10) || lastRecorded
         }
       } catch {
-        lastActive = lastRecorded
+        activeTime = lastRecorded
       }
 
-      const elapsed = Date.now() - lastActive
+      const elapsed = Date.now() - activeTime
       if (elapsed >= timeoutMs) {
         isLoggingOutRef.current = true
         clearInterval(interval)
@@ -67,7 +84,7 @@ export function SessionTimeout({ timeoutMinutes = 20 }: SessionTimeoutProps) {
         } catch (e) {
           console.error('Session timeout sign out error:', e)
         }
-        router.push('/login')
+        router.push('/login?reason=session_expired')
       }
     }, 10000)
 

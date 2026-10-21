@@ -5,7 +5,7 @@ import { CustomerStatus, CustomerType, TicketStatus, TicketType } from '@prisma/
 import prisma from '@/lib/prisma'
 import { createClient } from '@/utils/supabase/server'
 import { sendInvoiceNotifications } from '@/utils/communication'
-import { calculateNextBillingDate } from '@/lib/pricing'
+import { calculateNextBillingDate, calculatePackageBreakdown, isCustomCapacityTier } from '@/lib/pricing'
 import { triggerRegistrationSMS } from '@/lib/integration-helpers'
 import { canUserEditCustomerProfile, canUserEditSolarSpecs } from '@/lib/permissions'
 
@@ -182,8 +182,8 @@ export async function updateCustomer(formData: FormData) {
       await prisma.solarSystem.update({
         where: { customerId },
         data: {
-          ...(inverterUsername !== null ? { inverterUsername } : {}),
-          ...(inverterPassword !== null ? { inverterPassword } : {}),
+          ...(inverterUsername !== null ? { inverterUsername: inverterUsername.trim() || null } : {}),
+          ...(inverterPassword !== null ? { inverterPassword: inverterPassword.trim() || null } : {}),
         }
       })
     }
@@ -204,7 +204,13 @@ export async function updateCustomer(formData: FormData) {
 
 export async function createPackagePlan(formData: FormData) {
   const customerId = formData.get('customerId') as string
-  const systemSizeKw = formData.get('systemSizeKw') as string
+  const rawSystemSizeKw = formData.get('systemSizeKw') as string
+  const customSystemSize = (formData.get('customSystemSize') as string)?.trim()
+  const isCustom = isCustomCapacityTier(rawSystemSizeKw) || Boolean(customSystemSize)
+  const systemSizeKw = (isCustom && customSystemSize)
+    ? (customSystemSize.toLowerCase().includes('kw') ? customSystemSize : `${customSystemSize} kW`)
+    : rawSystemSizeKw
+
   const packageTier = formData.get('packageTier') as string
   const billingType = formData.get('billingType') as string
   const monitoringTime = formData.get('monitoringTime') as string
@@ -212,8 +218,10 @@ export async function createPackagePlan(formData: FormData) {
   const monthlyBasePrice = Number(formData.get('monthlyBasePrice')) || 0
   const appliedDiscount = Number(formData.get('appliedDiscount')) || 0
   
-  const salesTaxAmount = 0
-  const totalAmount = monthlyBasePrice * (1 - appliedDiscount / 100)
+  const breakdown = calculatePackageBreakdown(systemSizeKw, packageTier, billingType, monitoringTime, monthlyBasePrice)
+  const salesTaxAmount = breakdown.salesTax
+  const onboardingFee = breakdown.onboardingFee
+  const totalAmount = breakdown.grandTotal
 
   try {
     await prisma.packagePlan.upsert({
@@ -227,6 +235,7 @@ export async function createPackagePlan(formData: FormData) {
         monthlyBasePrice,
         appliedDiscount,
         salesTaxAmount,
+        onboardingFee,
         totalAmount
       },
       create: {
@@ -239,6 +248,7 @@ export async function createPackagePlan(formData: FormData) {
         monthlyBasePrice,
         appliedDiscount,
         salesTaxAmount,
+        onboardingFee,
         totalAmount
       }
     })
@@ -271,117 +281,265 @@ export async function saveSolarSystem(formData: FormData) {
   if (!canUserEditSolarSpecs({ role: userRole, email: userEmail, fullName: dbUser?.fullName, designation: dbUser?.designation })) {
     return { error: 'Access denied: You do not have permission to edit solar system specifications.' }
   }
-  const disco = formData.get('disco') as string || null
-  const discoRefNo = formData.get('discoRefNo') as string || null
-  const meterType = formData.get('meterType') as string || 'Green Meter'
-  const meterPhase = formData.get('meterPhase') as string || 'Three Phase'
-  const zeroExportDevice = formData.get('zeroExportDevice') === 'true' || formData.get('zeroExportDevice') === 'Installed'
-  const netMetering = (formData.get('netMetering') as string) || 'Yes'
+
+  // Fetch current system first so any fields omitted from the editing modal are preserved
+  const currentSystem = await prisma.solarSystem.findUnique({ where: { customerId } })
+  const currentCustomer = await prisma.customer.findUnique({ where: { id: customerId } })
+
+  const disco = formData.has('disco')
+    ? ((formData.get('disco') as string)?.trim() || null)
+    : (currentSystem?.disco || null)
+
+  const discoRefNo = formData.has('discoRefNo')
+    ? ((formData.get('discoRefNo') as string)?.trim() || null)
+    : (currentSystem?.discoRefNo || null)
+
+  const meterType = formData.has('meterType')
+    ? ((formData.get('meterType') as string)?.trim() || 'Green Meter')
+    : (currentSystem?.meterType || 'Green Meter')
+
+  const meterPhase = formData.has('meterPhase')
+    ? ((formData.get('meterPhase') as string)?.trim() || 'Three Phase')
+    : (currentSystem?.meterPhase || 'Three Phase')
+
+  const zeroExportDevice = formData.has('zeroExportDevice')
+    ? (formData.get('zeroExportDevice') === 'true' || formData.get('zeroExportDevice') === 'Installed')
+    : (currentSystem?.zeroExportDevice ?? false)
+
+  const netMetering = formData.has('netMetering')
+    ? ((formData.get('netMetering') as string)?.trim() || 'Yes')
+    : (currentSystem?.netMetering || 'Yes')
   
   // Inverter
-  const inverterBrand = formData.get('inverterBrand') as string || 'Huawei'
-  const inverterType = formData.get('inverterType') as string || 'Hybrid'
-  const inverterPhase = formData.get('inverterPhase') as string || 'Three Phase'
-  const inverterCategory = formData.get('inverterCategory') as string || 'Low Voltage'
-  const inverterSize = formData.get('inverterSize') as string || '10 kW'
-  const noOfInverters = Number(formData.get('noOfInverters')) || 1
-  const pvDgController = (formData.get('pvDgController') as string) || 'Not Installed'
-  const pvDgControllerBrand = (formData.get('pvDgControllerBrand') as string) || null
-  const datalogger = (formData.get('datalogger') as string) || 'Not Installed'
-  const dataloggerBrand = (formData.get('dataloggerBrand') as string) || null
-  const monitoringEcosystem = (formData.get('monitoringEcosystem') as string) || null
+  const inverterBrand = formData.has('inverterBrand') && formData.get('inverterBrand')
+    ? (formData.get('inverterBrand') as string).trim()
+    : (currentSystem?.inverterBrand || 'Huawei')
+
+  const inverterType = formData.has('inverterType') && formData.get('inverterType')
+    ? (formData.get('inverterType') as string).trim()
+    : (currentSystem?.inverterType || 'Hybrid')
+
+  const inverterPhase = formData.has('inverterPhase') && formData.get('inverterPhase')
+    ? (formData.get('inverterPhase') as string).trim()
+    : (currentSystem?.inverterPhase || 'Three Phase')
+
+  const inverterCategory = formData.has('inverterCategory') && formData.get('inverterCategory')
+    ? (formData.get('inverterCategory') as string).trim()
+    : (currentSystem?.inverterCategory || 'Low Voltage')
+
+  const inverterSize = formData.has('inverterSize') && formData.get('inverterSize')
+    ? (formData.get('inverterSize') as string).trim()
+    : (currentSystem?.inverterSize || '10 kW')
+
+  const noOfInverters = formData.has('noOfInverters')
+    ? (Number(formData.get('noOfInverters')) || 1)
+    : (currentSystem?.noOfInverters ?? 1)
+
+  const pvDgController = formData.has('pvDgController')
+    ? ((formData.get('pvDgController') as string)?.trim() || 'Not Installed')
+    : (currentSystem?.pvDgController || 'Not Installed')
+
+  const pvDgControllerBrand = formData.has('pvDgControllerBrand')
+    ? ((formData.get('pvDgControllerBrand') as string)?.trim() || null)
+    : (currentSystem?.pvDgControllerBrand || null)
+
+  const datalogger = formData.has('datalogger')
+    ? ((formData.get('datalogger') as string)?.trim() || 'Not Installed')
+    : (currentSystem?.datalogger || 'Not Installed')
+
+  const dataloggerBrand = formData.has('dataloggerBrand')
+    ? ((formData.get('dataloggerBrand') as string)?.trim() || null)
+    : (currentSystem?.dataloggerBrand || null)
+
+  const monitoringEcosystem = formData.has('monitoringEcosystem')
+    ? ((formData.get('monitoringEcosystem') as string)?.trim() || null)
+    : (currentSystem?.monitoringEcosystem || null)
 
   const rawInverterUsername = formData.get('inverterUsername')
   const rawInverterPassword = formData.get('inverterPassword')
-  const inverterInvoiceUrl = formData.get('inverterInvoiceUrl') as string || null
+  const inverterInvoiceUrl = formData.has('inverterInvoiceUrl')
+    ? ((formData.get('inverterInvoiceUrl') as string)?.trim() || null)
+    : (currentSystem?.inverterInvoiceUrl || null)
   
-  let inverterSerial = formData.get('inverterSerial') as string || 'SN-INV-' + Date.now().toString().slice(-6)
-  let inverterWarrantyRaw = formData.get('inverterWarrantyEnd') as string
-  let inverterWarrantyEnd = inverterWarrantyRaw ? new Date(inverterWarrantyRaw) : undefined
+  let inverterSerial = currentSystem?.inverterSerial || ('SN-INV-' + Date.now().toString().slice(-6))
+  let inverterWarrantyEnd = currentSystem?.inverterWarrantyEnd || undefined
+  let inverterSerials: string[] = currentSystem?.inverterSerials || []
+  let inverterWarrantyEnds: Date[] = currentSystem?.inverterWarrantyEnds || []
 
-  let inverterSerials: string[] = []
-  let inverterWarrantyEnds: Date[] = []
-  
-  try {
+  if (formData.has('inverterSerials') || formData.has('inverterSerial')) {
     const rawSerials = formData.get('inverterSerials') as string
-    if (rawSerials) inverterSerials = JSON.parse(rawSerials)
-    
+    if (rawSerials) {
+      try {
+        inverterSerials = JSON.parse(rawSerials)
+      } catch (e) {
+        console.error('Failed to parse inverterSerials', e)
+      }
+    } else if (formData.get('inverterSerial')) {
+      inverterSerial = (formData.get('inverterSerial') as string).trim()
+    }
+    if (inverterSerials.length > 0) {
+      inverterSerial = inverterSerials[0]
+    }
+  }
+
+  if (formData.has('inverterWarrantyEnds') || formData.get('inverterWarrantyEnd')) {
     const rawWarranties = formData.get('inverterWarrantyEnds') as string
     if (rawWarranties) {
-      const parsed = JSON.parse(rawWarranties) as string[]
-      inverterWarrantyEnds = parsed.map(w => w ? new Date(w) : new Date())
+      try {
+        const parsed = JSON.parse(rawWarranties) as string[]
+        inverterWarrantyEnds = parsed.map(w => w ? new Date(w) : new Date())
+      } catch (e) {
+        console.error('Failed to parse inverterWarrantyEnds', e)
+      }
+    } else if (formData.get('inverterWarrantyEnd')) {
+      inverterWarrantyEnd = new Date(formData.get('inverterWarrantyEnd') as string)
     }
-  } catch (e) {
-    console.error('Failed to parse inverter arrays', e)
-  }
-
-  if (inverterSerials.length > 0) {
-    inverterSerial = inverterSerials[0]
-  }
-  if (inverterWarrantyEnds.length > 0) {
-    inverterWarrantyEnd = inverterWarrantyEnds[0]
+    if (inverterWarrantyEnds.length > 0) {
+      inverterWarrantyEnd = inverterWarrantyEnds[0]
+    }
   }
 
   // Panel
-  const panelBrand = formData.get('panelBrand') as string || 'Longi'
-  const panelType = formData.get('panelType') as string || 'Bifacial'
-  const panelTechnology = formData.get('panelTechnology') as string || 'Topcon'
-  const panelWattage = Number(formData.get('panelWattage')) || 585
-  const noOfPanels = Number(formData.get('noOfPanels')) || 18
+  const panelBrand = formData.has('panelBrand') && formData.get('panelBrand')
+    ? (formData.get('panelBrand') as string).trim()
+    : (currentSystem?.panelBrand || 'Longi')
+
+  const panelType = formData.has('panelType') && formData.get('panelType')
+    ? (formData.get('panelType') as string).trim()
+    : (currentSystem?.panelType || 'Bifacial')
+
+  const panelTechnology = formData.has('panelTechnology') && formData.get('panelTechnology')
+    ? (formData.get('panelTechnology') as string).trim()
+    : (currentSystem?.panelTechnology || 'Topcon')
+
+  const panelWattage = formData.has('panelWattage')
+    ? (Number(formData.get('panelWattage')) || 585)
+    : (currentSystem?.panelWattage ?? 585)
+
+  const noOfPanels = formData.has('noOfPanels')
+    ? (Number(formData.get('noOfPanels')) || 18)
+    : (currentSystem?.noOfPanels ?? 18)
+
   const totalWattage = panelWattage * noOfPanels
-  const panelWarrantyRaw = formData.get('panelWarrantyEnd') as string
-  const panelWarrantyEnd = panelWarrantyRaw ? new Date(panelWarrantyRaw) : undefined
+
+  let panelWarrantyEnd = currentSystem?.panelWarrantyEnd || undefined
+  if (formData.has('panelWarrantyEnd')) {
+    const panelWarrantyRaw = formData.get('panelWarrantyEnd') as string
+    panelWarrantyEnd = panelWarrantyRaw ? new Date(panelWarrantyRaw) : undefined
+  }
   
   // Monitoring Time & Grid-Tied Mode
-  const monitoringTime = ((formData.get('monitoringTime') as string) || '').trim()
-  const isGridTied = monitoringTime.toLowerCase() === 'grid tied' || monitoringTime === '24 hours' || inverterType === 'OnGrid'
+  const monitoringTime = formData.has('monitoringTime')
+    ? ((formData.get('monitoringTime') as string) || '').trim()
+    : ''
+  const isGridTied = monitoringTime
+    ? (monitoringTime.toLowerCase() === 'grid tied' || monitoringTime === '24 hours' || inverterType === 'OnGrid')
+    : (inverterType === 'OnGrid')
 
   // Battery
-  const batteryBrand = isGridTied ? '' : ((formData.get('batteryBrand') as string) || '')
-  const batteryType = isGridTied ? 'None' : ((formData.get('batteryType') as string) || 'Lithium')
-  const batteryCategory = isGridTied ? 'N/A' : ((formData.get('batteryCategory') as string) || 'Low Voltage')
-  const noOfBatteries = isGridTied ? 0 : (Number(formData.get('noOfBatteries')) || 0)
-  
-  let batterySerial = isGridTied ? '' : ((formData.get('batterySerial') as string) || '')
-  let batteryWarrantyRaw = isGridTied ? '' : (formData.get('batteryWarrantyEnd') as string)
-  let batteryWarrantyEnd = (!isGridTied && batteryWarrantyRaw) ? new Date(batteryWarrantyRaw) : undefined
+  const batteryBrand = isGridTied
+    ? ''
+    : (formData.has('batteryBrand')
+        ? ((formData.get('batteryBrand') as string) || '')
+        : (currentSystem?.batteryBrand || ''))
 
-  let batterySerials: string[] = []
-  let batteryWarrantyEnds: Date[] = []
+  const batteryType = isGridTied
+    ? 'None'
+    : (formData.has('batteryType')
+        ? ((formData.get('batteryType') as string) || 'Lithium')
+        : (currentSystem?.batteryType || 'Lithium'))
+
+  const batteryCategory = isGridTied
+    ? 'N/A'
+    : (formData.has('batteryCategory')
+        ? ((formData.get('batteryCategory') as string) || 'Low Voltage')
+        : (currentSystem?.batteryCategory || 'Low Voltage'))
+
+  const noOfBatteries = isGridTied
+    ? 0
+    : (formData.has('noOfBatteries')
+        ? (Number(formData.get('noOfBatteries')) || 0)
+        : (currentSystem?.noOfBatteries ?? 0))
+  
+  let batterySerial = isGridTied ? '' : (currentSystem?.batterySerial || '')
+  let batteryWarrantyEnd = (!isGridTied && currentSystem?.batteryWarrantyEnd) ? currentSystem.batteryWarrantyEnd : undefined
+  let batterySerials: string[] = isGridTied ? [] : (currentSystem?.batterySerials || [])
+  let batteryWarrantyEnds: Date[] = isGridTied ? [] : (currentSystem?.batteryWarrantyEnds || [])
   
   if (!isGridTied) {
-    try {
+    if (formData.has('batterySerials') || formData.has('batterySerial')) {
       const rawSerials = formData.get('batterySerials') as string
-      if (rawSerials) batterySerials = JSON.parse(rawSerials)
-      
-      const rawWarranties = formData.get('batteryWarrantyEnds') as string
-      if (rawWarranties) {
-        const parsed = JSON.parse(rawWarranties) as string[]
-        batteryWarrantyEnds = parsed.map(w => w ? new Date(w) : new Date())
+      if (rawSerials) {
+        try {
+          batterySerials = JSON.parse(rawSerials)
+        } catch (e) {
+          console.error('Failed to parse batterySerials', e)
+        }
+      } else if (formData.get('batterySerial')) {
+        batterySerial = (formData.get('batterySerial') as string).trim()
       }
-    } catch (e) {
-      console.error('Failed to parse battery arrays', e)
+      if (batterySerials.length > 0) batterySerial = batterySerials[0]
     }
 
-    if (batterySerials.length > 0) {
-      batterySerial = batterySerials[0]
-    }
-    if (batteryWarrantyEnds.length > 0) {
-      batteryWarrantyEnd = batteryWarrantyEnds[0]
+    if (formData.has('batteryWarrantyEnds') || formData.get('batteryWarrantyEnd')) {
+      const rawWarranties = formData.get('batteryWarrantyEnds') as string
+      if (rawWarranties) {
+        try {
+          const parsed = JSON.parse(rawWarranties) as string[]
+          batteryWarrantyEnds = parsed.map(w => w ? new Date(w) : new Date())
+        } catch (e) {
+          console.error('Failed to parse batteryWarrantyEnds', e)
+        }
+      } else if (formData.get('batteryWarrantyEnd')) {
+        batteryWarrantyEnd = new Date(formData.get('batteryWarrantyEnd') as string)
+      }
+      if (batteryWarrantyEnds.length > 0) batteryWarrantyEnd = batteryWarrantyEnds[0]
     }
   }
 
-  // Earthing & Specs
-  const earthing = formData.get('earthing') as string || 'AC & DC Grounding'
-  const earthingAcOhms = Number(formData.get('earthingAcOhms')) || 1.2
-  const earthingDcOhms = Number(formData.get('earthingDcOhms')) || 0.8
-  const lightningProtection = formData.get('lightningProtection') === 'true' || formData.get('lightningProtection') === 'Installed' || true
-  const lightningArrestor = (formData.get('lightningArrestor') as string) || 'Not Installed'
-  const energyAnalyzer = (formData.get('energyAnalyzer') as string) || 'Not Installed'
-  const inputBreakerName = (formData.get('breakerName') as string)?.trim()
-  const structureType = formData.get('structureType') as string || 'Elevated GI Structure'
-  const installerName = formData.get('installerName') as string || 'EnergyGurus Technical Team'
-  const installerCompany = formData.get('installerCompany') as string || 'EnergyGurus Private Limited'
+  // Earthing & Specs (CRITICAL: preserve existing values if not submitted in formData)
+  const earthing = (formData.has('earthing') && formData.get('earthing'))
+    ? (formData.get('earthing') as string).trim()
+    : (currentSystem?.earthing || 'AC & DC Grounding')
+
+  const earthingAcOhms = (formData.has('earthingAcOhms') && formData.get('earthingAcOhms') !== '' && formData.get('earthingAcOhms') !== null)
+    ? Number(formData.get('earthingAcOhms'))
+    : (currentSystem?.earthingAcOhms != null ? Number(currentSystem.earthingAcOhms) : 1.2)
+
+  const earthingDcOhms = (formData.has('earthingDcOhms') && formData.get('earthingDcOhms') !== '' && formData.get('earthingDcOhms') !== null)
+    ? Number(formData.get('earthingDcOhms'))
+    : (currentSystem?.earthingDcOhms != null ? Number(currentSystem.earthingDcOhms) : 0.8)
+
+  const lightningProtection = formData.has('lightningProtection')
+    ? (formData.get('lightningProtection') === 'true' || formData.get('lightningProtection') === 'Installed')
+    : (currentSystem?.lightningProtection ?? true)
+
+  const lightningArrestor = formData.has('lightningArrestor')
+    ? ((formData.get('lightningArrestor') as string) || 'Not Installed')
+    : (currentSystem?.lightningArrestor || 'Not Installed')
+
+  const energyAnalyzer = formData.has('energyAnalyzer')
+    ? ((formData.get('energyAnalyzer') as string) || 'Not Installed')
+    : (currentSystem?.energyAnalyzer || 'Not Installed')
+
+  const inputBreakerName = formData.has('breakerName') ? (formData.get('breakerName') as string)?.trim() : undefined
+  const breakerName = inputBreakerName || currentSystem?.breakerName || 'Schneider 32A MCB'
+
+  const structureType = (formData.has('structureType') && formData.get('structureType'))
+    ? (formData.get('structureType') as string).trim()
+    : (currentSystem?.structureType || null)
+
+  const structureMaterial = (formData.has('structureMaterial') && formData.get('structureMaterial'))
+    ? (formData.get('structureMaterial') as string).trim()
+    : (currentSystem?.structureMaterial || null)
+
+  const installerName = (formData.has('installerName') && formData.get('installerName'))
+    ? (formData.get('installerName') as string).trim()
+    : (currentSystem?.installerName || null)
+
+  const installerCompany = (formData.has('installerCompany') && formData.get('installerCompany'))
+    ? (formData.get('installerCompany') as string).trim()
+    : (currentSystem?.installerCompany || null)
 
   // Images (R2 / Storage text URLs)
   const inverterImagesRaw = formData.get('inverterImages') as string || formData.get('inverterImageUrls') as string || formData.get('inverterImageUrl') as string
@@ -418,12 +576,7 @@ export async function saveSolarSystem(formData: FormData) {
     }
   }
 
-  if (!customerId) return { error: 'Customer ID is required' }
-
   try {
-    const currentSystem = await prisma.solarSystem.findUnique({ where: { customerId } })
-    const currentCustomer = await prisma.customer.findUnique({ where: { id: customerId } })
-    const breakerName = inputBreakerName || currentSystem?.breakerName || 'Schneider 32A MCB'
     const inverterUsername = rawInverterUsername !== null
       ? ((rawInverterUsername as string).trim() || null)
       : (currentSystem?.inverterUsername || null)

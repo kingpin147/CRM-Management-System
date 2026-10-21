@@ -31,6 +31,11 @@ export function UserNav({
   const handleLogout = async () => {
     setIsLoggingOut(true)
     try {
+      try {
+        localStorage.removeItem('crm_last_user_activity')
+      } catch {
+        // ignore
+      }
       await supabase.auth.signOut()
       router.refresh()
       router.push('/login')

@@ -389,12 +389,18 @@ export default async function CustomerDetailPage({
                             </Badge>
                           </TableCell>
                         </TableRow>
-                        <TableRow className="hover:bg-transparent">
+                        <TableRow className="border-b hover:bg-transparent">
                           <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Monitoring Time</TableCell>
                           <TableCell className="text-xs">
                             <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs">
                               {customer.packagePlan?.monitoringTime || 'Hybrid'}
                             </Badge>
+                          </TableCell>
+                        </TableRow>
+                        <TableRow className="hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Base Subscription</TableCell>
+                          <TableCell className="text-xs font-mono font-bold text-slate-800">
+                            PKR {Number(customer.packagePlan?.monthlyBasePrice || 0).toLocaleString()}
                           </TableCell>
                         </TableRow>
                       </TableBody>
@@ -416,6 +422,12 @@ export default async function CustomerDetailPage({
                                 +{customer.packagePlan?.freeMonths} Month{Number(customer.packagePlan?.freeMonths) > 1 ? 's' : ''} Free Promo
                               </Badge>
                             )}
+                          </TableCell>
+                        </TableRow>
+                        <TableRow className="border-b hover:bg-transparent">
+                          <TableCell className="font-bold text-xs bg-slate-50 border-r border-slate-200 text-[#002868]">Total Package Amount</TableCell>
+                          <TableCell className="text-xs font-mono font-extrabold text-[#002868]">
+                            PKR {Number(customer.packagePlan?.totalAmount || 0).toLocaleString()}
                           </TableCell>
                         </TableRow>
                         <TableRow className="border-b hover:bg-transparent">
@@ -1843,110 +1855,112 @@ export default async function CustomerDetailPage({
             </div>
 
             <CardContent className="p-0">
-              <Table>
-                <TableHeader className="bg-slate-100/90 border-b border-slate-200">
-                  <TableRow>
-                    <TableHead className="font-bold text-xs text-[#002868] border-r w-44">Date & Time</TableHead>
-                    <TableHead className="font-bold text-xs text-[#002868] border-r w-36">Action Type</TableHead>
-                    <TableHead className="font-bold text-xs text-[#002868] border-r">Status Transition</TableHead>
-                    <TableHead className="font-bold text-xs text-[#002868] border-r">Package Details</TableHead>
-                    <TableHead className="font-bold text-xs text-[#002868] border-r">Remarks / Notes</TableHead>
-                    <TableHead className="text-right font-bold text-xs text-[#002868] w-36">Performed By</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(() => {
-                    const historyList = (customer.customerHistory && customer.customerHistory.length > 0)
-                      ? customer.customerHistory
-                      : [
-                          {
-                            id: 'h-auto-3',
-                            createdAt: customer.activationDate || customer.createdAt || new Date(),
-                            actionType: 'CONNECTION_ACTIVE',
-                            oldStatus: 'PENDING_ACTIVATION',
-                            newStatus: customer.status || 'CONNECTION_ACTIVE',
-                            oldPackage: null,
-                            newPackage: customer.packagePlan ? `${customer.packagePlan.packageTier} (${customer.packagePlan.systemSizeKw})` : null,
-                            notes: `Customer account activated with status ${customer.status?.replace(/_/g, ' ')}`,
-                            performedBy: customer.accountExecutive?.fullName || 'Sales & Activation Team'
-                          },
-                          ...(customer.signupDate ? [{
-                            id: 'h-auto-1',
-                            createdAt: customer.signupDate || customer.createdAt,
-                            actionType: 'SIGNUP_GENERATED',
-                            oldStatus: null,
-                            newStatus: 'SIGNUP_GENERATED',
-                            oldPackage: null,
-                            newPackage: null,
-                            notes: `Initial customer signup generated (CRF: ${customer.crfNumber || customer.customerCode})`,
-                            performedBy: customer.accountExecutive?.fullName || 'Customer Signup Portal'
-                          }] : [])
-                        ]
+              <div className="w-full overflow-x-auto">
+                <Table className="w-full min-w-[950px] table-auto">
+                  <TableHeader className="bg-slate-100/90 border-b border-slate-200">
+                    <TableRow>
+                      <TableHead className="font-bold text-xs text-[#002868] border-r w-40 min-w-[150px] whitespace-nowrap">Date & Time</TableHead>
+                      <TableHead className="font-bold text-xs text-[#002868] border-r w-32 min-w-[120px] whitespace-nowrap">Action Type</TableHead>
+                      <TableHead className="font-bold text-xs text-[#002868] border-r w-48 min-w-[170px] whitespace-nowrap">Status Transition</TableHead>
+                      <TableHead className="font-bold text-xs text-[#002868] border-r w-40 min-w-[140px] whitespace-nowrap">Package Details</TableHead>
+                      <TableHead className="font-bold text-xs text-[#002868] border-r min-w-[320px]">Remarks / Notes</TableHead>
+                      <TableHead className="font-bold text-xs text-[#002868] w-40 min-w-[140px] whitespace-nowrap text-left">Performed By</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(() => {
+                      const historyList = (customer.customerHistory && customer.customerHistory.length > 0)
+                        ? customer.customerHistory
+                        : [
+                            {
+                              id: 'h-auto-3',
+                              createdAt: customer.activationDate || customer.createdAt || new Date(),
+                              actionType: 'CONNECTION_ACTIVE',
+                              oldStatus: 'PENDING_ACTIVATION',
+                              newStatus: customer.status || 'CONNECTION_ACTIVE',
+                              oldPackage: null,
+                              newPackage: customer.packagePlan ? `${customer.packagePlan.packageTier} (${customer.packagePlan.systemSizeKw})` : null,
+                              notes: `Customer account activated with status ${customer.status?.replace(/_/g, ' ')}`,
+                              performedBy: customer.accountExecutive?.fullName || 'Sales & Activation Team'
+                            },
+                            ...(customer.signupDate ? [{
+                              id: 'h-auto-1',
+                              createdAt: customer.signupDate || customer.createdAt,
+                              actionType: 'SIGNUP_GENERATED',
+                              oldStatus: null,
+                              newStatus: 'SIGNUP_GENERATED',
+                              oldPackage: null,
+                              newPackage: null,
+                              notes: `Initial customer signup generated (CRF: ${customer.crfNumber || customer.customerCode})`,
+                              performedBy: customer.accountExecutive?.fullName || 'Customer Signup Portal'
+                            }] : [])
+                          ]
 
-                    return historyList.map((h: any) => (
-                      <TableRow key={h.id} className="hover:bg-slate-50 border-b text-xs">
-                        <TableCell className="font-mono text-slate-700 font-semibold border-r">
-                          {formatDateTime(h.createdAt)}
-                        </TableCell>
+                      return historyList.map((h: any) => (
+                        <TableRow key={h.id} className="hover:bg-slate-50 border-b text-xs">
+                          <TableCell className="font-mono text-slate-700 font-semibold border-r align-top py-3 whitespace-nowrap">
+                            {formatDateTime(h.createdAt)}
+                          </TableCell>
 
-                        <TableCell className="border-r">
-                          <Badge variant="outline" className="bg-slate-100 text-slate-800 border-slate-300 font-mono text-[10px]">
-                            {h.actionType?.replace(/_/g, ' ')}
-                          </Badge>
-                        </TableCell>
+                          <TableCell className="border-r align-top py-3">
+                            <Badge variant="outline" className="bg-slate-100 text-slate-800 border-slate-300 font-mono text-[10px] whitespace-nowrap">
+                              {h.actionType?.replace(/_/g, ' ')}
+                            </Badge>
+                          </TableCell>
 
-                        <TableCell className="border-r">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            {h.oldStatus && (
-                              <>
-                                <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200 text-[10px]">
-                                  {h.oldStatus.replace(/_/g, ' ')}
+                          <TableCell className="border-r align-top py-3 whitespace-normal">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {h.oldStatus && (
+                                <>
+                                  <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200 text-[10px] whitespace-nowrap">
+                                    {h.oldStatus.replace(/_/g, ' ')}
+                                  </Badge>
+                                  <span className="text-slate-400 font-bold">&rarr;</span>
+                                </>
+                              )}
+                              {h.newStatus ? (
+                                <Badge 
+                                  variant="outline"
+                                  className={`whitespace-nowrap ${
+                                    h.newStatus === 'CONNECTION_ACTIVE'
+                                      ? 'bg-emerald-100 text-emerald-900 border-emerald-300 font-bold text-[11px]'
+                                      : h.newStatus === 'PERMANENT_DISCONNECTION' || h.newStatus === 'TERMINATED'
+                                      ? 'bg-rose-100 text-rose-900 border-rose-300 font-bold text-[11px]'
+                                      : 'bg-amber-100 text-amber-900 border-amber-300 font-semibold text-[11px]'
+                                  }`}
+                                >
+                                  {h.newStatus.replace(/_/g, ' ')}
                                 </Badge>
-                                <span className="text-slate-400 font-bold">&rarr;</span>
-                              </>
-                            )}
-                            {h.newStatus ? (
-                              <Badge 
-                                variant="outline"
-                                className={
-                                  h.newStatus === 'CONNECTION_ACTIVE'
-                                    ? 'bg-emerald-100 text-emerald-900 border-emerald-300 font-bold text-[11px]'
-                                    : h.newStatus === 'PERMANENT_DISCONNECTION' || h.newStatus === 'TERMINATED'
-                                    ? 'bg-rose-100 text-rose-900 border-rose-300 font-bold text-[11px]'
-                                    : 'bg-amber-100 text-amber-900 border-amber-300 font-semibold text-[11px]'
-                                }
-                              >
-                                {h.newStatus.replace(/_/g, ' ')}
-                              </Badge>
+                              ) : (
+                                <span className="text-slate-400">—</span>
+                              )}
+                            </div>
+                          </TableCell>
+
+                          <TableCell className="border-r text-slate-800 align-top py-3 whitespace-normal">
+                            {h.oldPackage || h.newPackage ? (
+                              <div className="text-[11px] space-y-0.5">
+                                {h.oldPackage && <span className="text-slate-500 line-through block text-[10px]">{h.oldPackage}</span>}
+                                {h.newPackage && <span className="font-semibold text-[#002868] block">{h.newPackage}</span>}
+                              </div>
                             ) : (
                               <span className="text-slate-400">—</span>
                             )}
-                          </div>
-                        </TableCell>
+                          </TableCell>
 
-                        <TableCell className="border-r text-slate-800">
-                          {h.oldPackage || h.newPackage ? (
-                            <div className="text-[11px]">
-                              {h.oldPackage && <span className="text-slate-500 line-through mr-1">{h.oldPackage}</span>}
-                              {h.newPackage && <span className="font-semibold text-[#002868]">{h.newPackage}</span>}
-                            </div>
-                          ) : (
-                            <span className="text-slate-400">—</span>
-                          )}
-                        </TableCell>
+                          <TableCell className="border-r text-slate-700 min-w-[320px] max-w-[550px] whitespace-normal break-words align-top py-3">
+                            <CustomerHistoryNotes notes={h.notes} />
+                          </TableCell>
 
-                        <TableCell className="border-r text-slate-700 min-w-[240px] max-w-[500px]">
-                          <CustomerHistoryNotes notes={h.notes} />
-                        </TableCell>
-
-                        <TableCell className="text-right font-medium text-slate-600">
-                          {h.performedBy || 'System Executive'}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  })()}
-                </TableBody>
-              </Table>
+                          <TableCell className="text-left font-medium text-slate-700 align-top py-3 whitespace-normal break-words min-w-[140px]">
+                            {h.performedBy || 'System Executive'}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    })()}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -1963,75 +1977,77 @@ export default async function CustomerDetailPage({
             </SectionHeader>
 
             <CardContent className="p-0">
-              <Table>
-                <TableHeader className="bg-slate-100/90 border-b border-slate-200">
-                  <TableRow>
-                    <TableHead className="font-bold text-xs text-[#002868] border-r w-44">Date & Time</TableHead>
-                    <TableHead className="font-bold text-xs text-[#002868] border-r w-36">Message Type</TableHead>
-                    <TableHead className="font-bold text-xs text-[#002868] border-r w-36">Recipient #</TableHead>
-                    <TableHead className="font-bold text-xs text-[#002868] border-r">Message Content</TableHead>
-                    <TableHead className="font-bold text-xs text-[#002868] border-r w-28">Status</TableHead>
-                    <TableHead className="text-right font-bold text-xs text-[#002868] w-32">Message ID</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(!smsLogs || smsLogs.length === 0) ? (
+              <div className="w-full overflow-x-auto">
+                <Table className="w-full min-w-[850px] table-auto">
+                  <TableHeader className="bg-slate-100/90 border-b border-slate-200">
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-10 text-xs text-slate-500">
-                        No WhatsApp logs found for this customer. WhatsApp notifications will be logged here automatically upon invoice creation or reminders.
-                      </TableCell>
+                      <TableHead className="font-bold text-xs text-[#002868] border-r w-44 whitespace-nowrap">Date & Time</TableHead>
+                      <TableHead className="font-bold text-xs text-[#002868] border-r w-36 whitespace-nowrap">Message Type</TableHead>
+                      <TableHead className="font-bold text-xs text-[#002868] border-r w-36 whitespace-nowrap">Recipient #</TableHead>
+                      <TableHead className="font-bold text-xs text-[#002868] border-r min-w-[280px]">Message Content</TableHead>
+                      <TableHead className="font-bold text-xs text-[#002868] border-r w-28 whitespace-nowrap">Status</TableHead>
+                      <TableHead className="text-right font-bold text-xs text-[#002868] w-32 whitespace-nowrap">Message ID</TableHead>
                     </TableRow>
-                  ) : (
-                    smsLogs.map((log: any) => (
-                      <TableRow key={log.id} className="hover:bg-slate-50 border-b text-xs">
-                        <TableCell className="font-mono text-slate-700 font-semibold border-r">
-                          {formatDateTime(log.sentAt || log.createdAt)}
-                        </TableCell>
-                        <TableCell className="border-r">
-                          <Badge variant="outline" className="bg-slate-100 text-slate-800 border-slate-300 font-semibold text-[10px]">
-                            {log.type === 'INVOICE'
-                              ? 'Monthly Bill'
-                              : log.type === 'DUE_REMINDER'
-                              ? 'Due Alert'
-                              : log.type === 'OVERDUE_REMINDER'
-                              ? 'Overdue Notice'
-                              : log.type?.replace(/_/g, ' ')}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="font-mono text-slate-800 border-r font-medium">
-                          {log.recipient}
-                        </TableCell>
-                        <TableCell className="border-r text-slate-700 max-w-[340px] leading-relaxed">
-                          {log.messageBody}
-                          {log.errorDetails && (
-                            <div className="text-[11px] text-rose-600 font-medium mt-0.5">
-                              Error: {log.errorDetails}
-                            </div>
-                          )}
-                        </TableCell>
-                        <TableCell className="border-r">
-                          {log.status === 'DELIVERED' ? (
-                            <Badge variant="outline" className="bg-emerald-100 text-emerald-900 border-emerald-300 font-bold text-[11px]">
-                              Delivered
-                            </Badge>
-                          ) : log.status === 'SENT' ? (
-                            <Badge variant="outline" className="bg-sky-100 text-sky-900 border-sky-300 font-bold text-[11px]">
-                              Sent
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="bg-rose-100 text-rose-900 border-rose-300 font-bold text-[11px]">
-                              {log.status === 'UNDELIVERED' ? 'Undelivered' : 'Failed'}
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-slate-500 text-[11px]">
-                          {log.externalId || '—'}
+                  </TableHeader>
+                  <TableBody>
+                    {(!smsLogs || smsLogs.length === 0) ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-10 text-xs text-slate-500">
+                          No WhatsApp logs found for this customer. WhatsApp notifications will be logged here automatically upon invoice creation or reminders.
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ) : (
+                      smsLogs.map((log: any) => (
+                        <TableRow key={log.id} className="hover:bg-slate-50 border-b text-xs">
+                          <TableCell className="font-mono text-slate-700 font-semibold border-r align-top py-3 whitespace-nowrap">
+                            {formatDateTime(log.sentAt || log.createdAt)}
+                          </TableCell>
+                          <TableCell className="border-r align-top py-3">
+                            <Badge variant="outline" className="bg-slate-100 text-slate-800 border-slate-300 font-semibold text-[10px] whitespace-nowrap">
+                              {log.type === 'INVOICE'
+                                ? 'Monthly Bill'
+                                : log.type === 'DUE_REMINDER'
+                                ? 'Due Alert'
+                                : log.type === 'OVERDUE_REMINDER'
+                                ? 'Overdue Notice'
+                                : log.type?.replace(/_/g, ' ')}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="font-mono text-slate-800 border-r font-medium align-top py-3 whitespace-nowrap">
+                            {log.recipient}
+                          </TableCell>
+                          <TableCell className="border-r text-slate-700 max-w-[380px] min-w-[260px] leading-relaxed whitespace-normal break-words align-top py-3">
+                            {log.messageBody}
+                            {log.errorDetails && (
+                              <div className="text-[11px] text-rose-600 font-medium mt-1 whitespace-normal break-words">
+                                Error: {log.errorDetails}
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell className="border-r align-top py-3">
+                            {log.status === 'DELIVERED' ? (
+                              <Badge variant="outline" className="bg-emerald-100 text-emerald-900 border-emerald-300 font-bold text-[11px] whitespace-nowrap">
+                                Delivered
+                              </Badge>
+                            ) : log.status === 'SENT' ? (
+                              <Badge variant="outline" className="bg-sky-100 text-sky-900 border-sky-300 font-bold text-[11px] whitespace-nowrap">
+                                Sent
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="bg-rose-100 text-rose-900 border-rose-300 font-bold text-[11px] whitespace-nowrap">
+                                {log.status === 'UNDELIVERED' ? 'Undelivered' : 'Failed'}
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-slate-500 text-[11px] align-top py-3 whitespace-nowrap">
+                            {log.externalId || '—'}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -2049,18 +2065,19 @@ export default async function CustomerDetailPage({
             </SectionHeader>
 
             <CardContent className="p-0">
-              <Table>
-                <TableHeader className="bg-slate-100/90 border-b border-slate-200">
-                  <TableRow>
-                    <TableHead className="font-bold text-xs text-[#002868] border-r w-44">Date & Time</TableHead>
-                    <TableHead className="font-bold text-xs text-[#002868] border-r w-36">Email Type</TableHead>
-                    <TableHead className="font-bold text-xs text-[#002868] border-r w-48">Recipient Email</TableHead>
-                    <TableHead className="font-bold text-xs text-[#002868] border-r">Subject & Details</TableHead>
-                    <TableHead className="font-bold text-xs text-[#002868] border-r w-28">Status</TableHead>
-                    <TableHead className="text-right font-bold text-xs text-[#002868] w-36">Delivery Info</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <div className="w-full overflow-x-auto">
+                <Table className="w-full min-w-[850px] table-auto">
+                  <TableHeader className="bg-slate-100/90 border-b border-slate-200">
+                    <TableRow>
+                      <TableHead className="font-bold text-xs text-[#002868] border-r w-44 whitespace-nowrap">Date & Time</TableHead>
+                      <TableHead className="font-bold text-xs text-[#002868] border-r w-36 whitespace-nowrap">Email Type</TableHead>
+                      <TableHead className="font-bold text-xs text-[#002868] border-r w-48 whitespace-nowrap">Recipient Email</TableHead>
+                      <TableHead className="font-bold text-xs text-[#002868] border-r min-w-[280px]">Subject & Details</TableHead>
+                      <TableHead className="font-bold text-xs text-[#002868] border-r w-28 whitespace-nowrap">Status</TableHead>
+                      <TableHead className="text-right font-bold text-xs text-[#002868] w-36 whitespace-nowrap">Delivery Info</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                   {(!emailLogs || emailLogs.length === 0) ? (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-10 text-xs text-slate-500">
@@ -2070,11 +2087,11 @@ export default async function CustomerDetailPage({
                   ) : (
                     emailLogs.map((log: any) => (
                       <TableRow key={log.id} className="hover:bg-slate-50 border-b text-xs">
-                        <TableCell className="font-mono text-slate-700 font-semibold border-r">
+                        <TableCell className="font-mono text-slate-700 font-semibold border-r align-top py-3 whitespace-nowrap">
                           {formatDateTime(log.sentAt || log.createdAt)}
                         </TableCell>
-                        <TableCell className="border-r">
-                          <Badge variant="outline" className="bg-slate-100 text-slate-800 border-slate-300 font-semibold text-[10px]">
+                        <TableCell className="border-r align-top py-3">
+                          <Badge variant="outline" className="bg-slate-100 text-slate-800 border-slate-300 font-semibold text-[10px] whitespace-nowrap">
                             {log.type === 'INVOICE'
                               ? 'Invoice Dispatch'
                               : log.type === 'INVITATION'
@@ -2082,38 +2099,38 @@ export default async function CustomerDetailPage({
                               : log.type?.replace(/_/g, ' ')}
                           </Badge>
                         </TableCell>
-                        <TableCell className="font-mono text-slate-800 border-r">
+                        <TableCell className="font-mono text-slate-800 border-r align-top py-3 whitespace-nowrap">
                           {log.recipient}
                         </TableCell>
-                        <TableCell className="border-r text-slate-700 max-w-[340px]">
-                          <div className="font-semibold text-[#002868]">{log.subject || 'Solar O&M Notification'}</div>
-                          <div className="text-[11px] text-slate-500 mt-0.5">{log.messageBody}</div>
+                        <TableCell className="border-r text-slate-700 max-w-[380px] min-w-[260px] whitespace-normal break-words align-top py-3">
+                          <div className="font-semibold text-[#002868] whitespace-normal break-words">{log.subject || 'Solar O&M Notification'}</div>
+                          <div className="text-[11px] text-slate-500 mt-1 whitespace-normal break-words">{log.messageBody}</div>
                           {log.errorDetails && (
-                            <div className="text-[11px] text-rose-600 font-medium mt-0.5">
+                            <div className="text-[11px] text-rose-600 font-medium mt-1 whitespace-normal break-words">
                               Error: {log.errorDetails}
                             </div>
                           )}
                         </TableCell>
-                        <TableCell className="border-r">
+                        <TableCell className="border-r align-top py-3">
                           {log.status === 'OPENED' ? (
-                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold text-[11px]">
+                            <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold text-[11px] whitespace-nowrap">
                               Opened
                             </Badge>
                           ) : log.status === 'DELIVERED' ? (
-                            <Badge variant="outline" className="bg-emerald-100 text-emerald-900 border-emerald-300 font-bold text-[11px]">
+                            <Badge variant="outline" className="bg-emerald-100 text-emerald-900 border-emerald-300 font-bold text-[11px] whitespace-nowrap">
                               Delivered
                             </Badge>
                           ) : log.status === 'SENT' ? (
-                            <Badge variant="outline" className="bg-sky-100 text-sky-900 border-sky-300 font-bold text-[11px]">
+                            <Badge variant="outline" className="bg-sky-100 text-sky-900 border-sky-300 font-bold text-[11px] whitespace-nowrap">
                               Sent
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="bg-rose-100 text-rose-900 border-rose-300 font-bold text-[11px]">
+                            <Badge variant="outline" className="bg-rose-100 text-rose-900 border-rose-300 font-bold text-[11px] whitespace-nowrap">
                               {log.status === 'UNDELIVERED' ? 'Undelivered' : 'Failed'}
                             </Badge>
                           )}
                         </TableCell>
-                        <TableCell className="text-right font-mono text-[11px] text-slate-600">
+                        <TableCell className="text-right font-mono text-[11px] text-slate-600 align-top py-3 whitespace-nowrap">
                           {log.deliveredAt ? (
                             <span className="text-emerald-700">Delivered on {formatDate(log.deliveredAt)}</span>
                           ) : log.errorDetails ? (
@@ -2127,7 +2144,8 @@ export default async function CustomerDetailPage({
                   )}
                 </TableBody>
               </Table>
-            </CardContent>
+            </div>
+          </CardContent>
           </Card>
         )}
 

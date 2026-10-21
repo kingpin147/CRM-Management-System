@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SYSTEM_SIZES } from '@/lib/solar-constants'
-import { calculatePackageBreakdown, getEligibleFreeMonths } from '@/lib/pricing'
+import { calculatePackageBreakdown, getEligibleFreeMonths, isCustomCapacityTier } from '@/lib/pricing'
 import { createPackagePlan } from './actions'
 import { Gift } from 'lucide-react'
 
@@ -20,7 +20,9 @@ export function PackageFormDialog({ customerId, initialData, inline = false }: {
   const [success, setSuccess] = useState(false)
 
   // State for form fields - starting empty with placeholder text unless initialData is provided
-  const [systemSizeKw, setSystemSizeKw] = useState(initialData?.systemSizeKw || '')
+  const isInitCustom = isCustomCapacityTier(initialData?.systemSizeKw)
+  const [systemSizeKw, setSystemSizeKw] = useState(isInitCustom ? '31 kW & Above' : (initialData?.systemSizeKw || ''))
+  const [customSystemSize, setCustomSystemSize] = useState(isInitCustom ? (initialData?.systemSizeKw || '') : '')
   const [packageTier, setPackageTier] = useState(initialData?.packageTier || '')
   const [monitoringTime, setMonitoringTime] = useState(initialData?.monitoringTime || '')
   const [billingType, setBillingType] = useState(initialData?.billingType || '')
@@ -30,18 +32,23 @@ export function PackageFormDialog({ customerId, initialData, inline = false }: {
 
   useEffect(() => {
     if (systemSizeKw && packageTier && monitoringTime && billingType && !initialData) {
-      const b = calculatePackageBreakdown(systemSizeKw, packageTier, billingType, monitoringTime)
-      setBasePrice(b.baseMonthlyRate)
+      const b = calculatePackageBreakdown(systemSizeKw, packageTier, billingType, monitoringTime, basePrice)
+      if (basePrice === '') setBasePrice(b.baseMonthlyRate)
       setDiscount(b.discountPct)
     }
-  }, [systemSizeKw, packageTier, monitoringTime, billingType, initialData])
+  }, [systemSizeKw, packageTier, monitoringTime, billingType, initialData, basePrice])
 
   async function handleSubmit(formData: FormData) {
     setLoading(true)
     setError(null)
     setSuccess(false)
     formData.append('customerId', customerId)
-    if (systemSizeKw) formData.set('systemSizeKw', systemSizeKw)
+    const isCustom = isCustomCapacityTier(systemSizeKw)
+    const finalSystemSize = (isCustom && customSystemSize.trim())
+      ? (customSystemSize.trim().toLowerCase().includes('kw') ? customSystemSize.trim() : `${customSystemSize.trim()} kW`)
+      : systemSizeKw
+    if (finalSystemSize) formData.set('systemSizeKw', finalSystemSize)
+    if (customSystemSize) formData.set('customSystemSize', customSystemSize)
     if (packageTier) formData.set('packageTier', packageTier)
     if (monitoringTime) formData.set('monitoringTime', monitoringTime)
     if (billingType) formData.set('billingType', billingType)
@@ -87,7 +94,12 @@ export function PackageFormDialog({ customerId, initialData, inline = false }: {
 
           <div className="space-y-1.5">
             <Label htmlFor="systemSizeKw" className="text-xs font-semibold text-[var(--color-ink)]">System Size</Label>
-            <Select name="systemSizeKw" value={systemSizeKw} onValueChange={setSystemSizeKw}>
+            <Select name="systemSizeKw" value={systemSizeKw} onValueChange={(val) => {
+              setSystemSizeKw(val)
+              if (!isCustomCapacityTier(val)) {
+                setCustomSystemSize('')
+              }
+            }}>
               <SelectTrigger className="border-[var(--color-line)] bg-white w-full">
                 <SelectValue placeholder="Select System Size" />
               </SelectTrigger>
@@ -98,6 +110,19 @@ export function PackageFormDialog({ customerId, initialData, inline = false }: {
               </SelectContent>
             </Select>
           </div>
+
+          {isCustomCapacityTier(systemSizeKw) && (
+            <div className="space-y-1.5">
+              <Label htmlFor="customSystemSize" className="text-xs font-semibold text-[#002868]">Custom System Size *</Label>
+              <Input
+                id="customSystemSize"
+                placeholder="e.g. 35 kW"
+                value={customSystemSize}
+                onChange={(e) => setCustomSystemSize(e.target.value)}
+                className="border-amber-300 bg-amber-50/30 text-xs font-medium"
+              />
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <Label htmlFor="packageTier" className="text-xs font-semibold text-[var(--color-ink)]">Package Tier</Label>

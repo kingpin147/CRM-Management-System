@@ -949,8 +949,8 @@ export function InstallerAuditModal({
     formData.append('dataloggerBrand', datalogger === 'Installed' ? dataloggerBrand : '')
     formData.append('monitoringEcosystem', datalogger === 'Installed' ? monitoringEcosystem : '')
 
-    formData.append('inverterUsername', datalogger === 'Installed' ? inverterUsername : '')
-    formData.append('inverterPassword', datalogger === 'Installed' ? inverterPassword : '')
+    formData.append('inverterUsername', inverterUsername)
+    formData.append('inverterPassword', inverterPassword)
     formData.append('inverterInvoiceUrl', inverterInvoiceUrl)
 
     const activeBrands = panelBrands.slice(0, noOfPanelBrands).filter(Boolean)

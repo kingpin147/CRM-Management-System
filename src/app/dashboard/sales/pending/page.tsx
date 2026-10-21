@@ -127,9 +127,12 @@ export default async function PendingSalesPage() {
     const dataloggerBrand = (formData.get('dataloggerBrand') as string) || undefined
     const monitoringEcosystem = (formData.get('monitoringEcosystem') as string) || undefined
 
-    const inverterUsername = (formData.get('inverterUsername') as string) || undefined
-    const inverterPassword = (formData.get('inverterPassword') as string) || undefined
-    const inverterInvoiceUrl = (formData.get('inverterInvoiceUrl') as string) || undefined
+    const rawInverterUsername = formData.get('inverterUsername')
+    const inverterUsername = rawInverterUsername !== null ? ((rawInverterUsername as string).trim() || null) : undefined
+    const rawInverterPassword = formData.get('inverterPassword')
+    const inverterPassword = rawInverterPassword !== null ? ((rawInverterPassword as string).trim() || null) : undefined
+    const rawInverterInvoiceUrl = formData.get('inverterInvoiceUrl')
+    const inverterInvoiceUrl = rawInverterInvoiceUrl !== null ? ((rawInverterInvoiceUrl as string).trim() || null) : undefined
 
     const panelType = (formData.get('panelType') as string) || undefined
     const panelTechnology = (formData.get('panelTechnology') as string) || undefined

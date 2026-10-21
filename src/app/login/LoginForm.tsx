@@ -42,7 +42,7 @@ export function LoginForm({ initialError, initialSuccess, initialReason }: Login
         {isSessionExpired && !errorMessage && (
           <div className="p-3 text-xs bg-amber-50 border border-amber-200 text-amber-900 rounded-lg flex items-center gap-2 font-medium animate-in fade-in-50">
             <AlertCircle className="w-4 h-4 shrink-0 text-amber-600" />
-            <span>Your session expired due to 20 minutes of inactivity. Please log in again.</span>
+            <span>Your session expired due to 1 hour of inactivity. Please log in again.</span>
           </div>
         )}
 

@@ -5,6 +5,8 @@ export interface PricingBreakdown {
   discountPct: number
   discountAmount: number
   priceAfterDiscount: number
+  subscriptionSalesTax: number
+  onboardingSalesTax: number
   salesTax: number
   onboardingFee: number
   isOnboardingWaived: boolean
@@ -21,7 +23,7 @@ export interface PricingBreakdown {
  * - 16-20 kW: Basic = 2400 | Moderate = 2880 | Comprehensive = 3360
  * - 21-25 kW: Basic = 3000 | Moderate = 3600 | Comprehensive = 4200
  * - 26-30 kW: Basic = 3600 | Moderate = 4320 | Comprehensive = 5040
- * - 30+ kW: 0 / Custom Quote
+ * - 31 kW & Above (30+ kW): 0 / Custom Quote
  *
  * Grid Tied:
  * - 1-5 kW: Basic = 800 | Moderate = 960 | Comprehensive = 1120
@@ -30,7 +32,7 @@ export interface PricingBreakdown {
  * - 16-20 kW: Basic = 2000 | Moderate = 2400 | Comprehensive = 2800
  * - 21-25 kW: Basic = 2500 | Moderate = 3000 | Comprehensive = 3500
  * - 26-30 kW: Basic = 3000 | Moderate = 3600 | Comprehensive = 4200
- * - 30+ kW: 0 / Custom Quote
+ * - 31 kW & Above (30+ kW): 0 / Custom Quote
  */
 export const PRICING_MATRIX: Record<
   'Hybrid' | 'Grid Tied',
@@ -43,6 +45,7 @@ export const PRICING_MATRIX: Record<
     '16 - 20 kW': { Basic: 2400, Moderate: 2880, Comprehensive: 3360 },
     '21 - 25 kW': { Basic: 3000, Moderate: 3600, Comprehensive: 4200 },
     '26 - 30 kW': { Basic: 3600, Moderate: 4320, Comprehensive: 5040 },
+    '31 kW & Above': { Basic: 0, Moderate: 0, Comprehensive: 0 },
     '30 kW & Above': { Basic: 0, Moderate: 0, Comprehensive: 0 },
   },
   'Grid Tied': {
@@ -52,8 +55,24 @@ export const PRICING_MATRIX: Record<
     '16 - 20 kW': { Basic: 2000, Moderate: 2400, Comprehensive: 2800 },
     '21 - 25 kW': { Basic: 2500, Moderate: 3000, Comprehensive: 3500 },
     '26 - 30 kW': { Basic: 3000, Moderate: 3600, Comprehensive: 4200 },
+    '31 kW & Above': { Basic: 0, Moderate: 0, Comprehensive: 0 },
     '30 kW & Above': { Basic: 0, Moderate: 0, Comprehensive: 0 },
   },
+}
+
+export function isCustomCapacityTier(size?: string | null): boolean {
+  if (!size) return false
+  const s = size.trim().toLowerCase()
+  if (s.startsWith('30') || s.startsWith('31') || s.includes('above')) return true
+  const standardRanges = [
+    '1 - 5 kw',
+    '6 - 10 kw',
+    '11 - 15 kw',
+    '16 - 20 kw',
+    '21 - 25 kw',
+    '26 - 30 kw',
+  ]
+  return !standardRanges.includes(s)
 }
 
 export function getBaseMonthlyRate(
@@ -79,9 +98,20 @@ export function calculatePackageBreakdown(
   systemSizeKw?: string | null,
   packageTier?: string | null,
   billingType?: string | null,
-  monitoringTime?: string | null
+  monitoringTime?: string | null,
+  customBasePrice?: number | string | null
 ): PricingBreakdown {
-  const baseMonthlyRate = getBaseMonthlyRate(systemSizeKw, packageTier, monitoringTime)
+  const isCustom = isCustomCapacityTier(systemSizeKw)
+  const numCustomPrice = customBasePrice !== undefined && customBasePrice !== null && customBasePrice !== ''
+    ? Number(customBasePrice)
+    : NaN
+
+  let baseMonthlyRate = 0
+  if (isCustom && !isNaN(numCustomPrice) && numCustomPrice >= 0) {
+    baseMonthlyRate = numCustomPrice
+  } else {
+    baseMonthlyRate = getBaseMonthlyRate(systemSizeKw, packageTier, monitoringTime)
+  }
 
   // Billing Cycles & Discount Percentages:
   // - Quarterly: 7% (3 months)
@@ -108,7 +138,6 @@ export function calculatePackageBreakdown(
   const subtotalBeforeDiscount = baseMonthlyRate * months
   const discountAmount = subtotalBeforeDiscount * (discountPct / 100)
   const priceAfterDiscount = subtotalBeforeDiscount - discountAmount
-  const salesTax = Math.round(priceAfterDiscount * 0.05) // 5% PRA Sales Tax
 
   // On-Boarding Charges Rules:
   // - On-Boarding fee (PKR 3,000) is charged on all packages and billing cycles (not waived on Yearly)
@@ -121,6 +150,13 @@ export function calculatePackageBreakdown(
     isOnboardingWaived = true
   }
 
+  // 5% PRA Sales Tax: Charged on both subscription and onboarding charges
+  // - Subscription Sales Tax: 5% of priceAfterDiscount
+  // - Onboarding Sales Tax: 5% of onboardingFee (PKR 150 on PKR 3,000; 0 when FOC/waived)
+  const subscriptionSalesTax = Math.round(priceAfterDiscount * 0.05)
+  const onboardingSalesTax = isOnboardingWaived ? 0 : Math.round(onboardingFee * 0.05)
+  const salesTax = subscriptionSalesTax + onboardingSalesTax
+
   const grandTotal = billingType === 'FOC' ? 0 : Math.round(priceAfterDiscount + salesTax + onboardingFee)
 
   return {
@@ -130,6 +166,8 @@ export function calculatePackageBreakdown(
     discountPct,
     discountAmount,
     priceAfterDiscount,
+    subscriptionSalesTax,
+    onboardingSalesTax,
     salesTax,
     onboardingFee,
     isOnboardingWaived,

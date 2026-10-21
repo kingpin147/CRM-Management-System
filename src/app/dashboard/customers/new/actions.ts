@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { CustomerType, CustomerStatus } from '@prisma/client'
 import prisma from '@/lib/prisma'
-import { calculateNextBillingDate } from '@/lib/pricing'
+import { calculateNextBillingDate, isCustomCapacityTier } from '@/lib/pricing'
 
 async function generateCustomerCode(): Promise<string> {
   // Fetch existing customer IDs to determine the next sequential ID starting from 101
@@ -84,7 +84,12 @@ export async function createCustomer(formData: FormData) {
   }
 
   // Package fields
-  const systemSizeKw = (formData.get('systemSizeKw') as string) || '10-20 kW'
+  const rawSystemSizeKw = (formData.get('systemSizeKw') as string) || '10-20 kW'
+  const customSystemSize = (formData.get('customSystemSize') as string)?.trim()
+  const isCustomTier = isCustomCapacityTier(rawSystemSizeKw) || Boolean(customSystemSize)
+  const systemSizeKw = (isCustomTier && customSystemSize)
+    ? (customSystemSize.toLowerCase().includes('kw') ? customSystemSize : `${customSystemSize} kW`)
+    : rawSystemSizeKw
   const packageTier = (formData.get('packageTier') as string) || 'Comprehensive'
   const billingType = (formData.get('billingType') as string) || 'Yearly'
   const monitoringTime = (formData.get('monitoringTime') as string) || 'Grid Tied'
@@ -115,7 +120,7 @@ export async function createCustomer(formData: FormData) {
   const inverterType = (formData.get('inverterType') as string) || ''
   const inverterPhase = (formData.get('inverterPhase') as string) || ''
   const inverterCategory = (formData.get('inverterCategory') as string) || ''
-  const inverterSize = (formData.get('inverterSize') as string) || null
+  const inverterSize = (formData.get('inverterSize') as string) || (isCustomTier && customSystemSize ? systemSizeKw : null)
   const noOfInverters = Number(formData.get('noOfInverters') || 0)
   const inverterSerial = (formData.get('inverterSerial') as string) || ''
   const inverterWarrantyEnd = parseDate(formData.get('inverterWarrantyExpiry'))

@@ -28,6 +28,8 @@ export const customerSchema = z.object({
 
   // Package Details (Section 2 in Tab 1)
   systemSizeKw: z.string().min(1, 'Please select System Capacity'),
+  customSystemSize: z.string().optional(),
+  customPrice: z.coerce.number().optional(),
   packageTier: z.string().min(1, 'Please select Package Tier'),
   billingType: z.string().min(1, 'Please select Billing Type'),
   monitoringTime: z.string().min(1, 'Please select Monitoring Time'),
