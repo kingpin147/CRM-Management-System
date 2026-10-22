@@ -223,9 +223,14 @@ export async function updateCustomerPackageAndStatus(formData: FormData) {
       }
     })
 
-    // 3. Upsert Package Plan
-    const basePrice = newTotal * 0.84 // approx before 16% sales tax
-    const tax = newTotal * 0.16
+    const appliedDiscountRaw = formData.get('appliedDiscount')
+    const appliedDiscount = appliedDiscountRaw !== null && appliedDiscountRaw !== '' 
+      ? Number(appliedDiscountRaw) 
+      : (customer.packagePlan?.appliedDiscount ? Number(customer.packagePlan.appliedDiscount) : 0)
+
+    // 3. Upsert Package Plan (PRA 5% sales tax on subscription)
+    const basePrice = Math.round(newTotal / 1.05)
+    const tax = newTotal - basePrice
 
     await prisma.packagePlan.upsert({
       where: { customerId },
@@ -236,7 +241,7 @@ export async function updateCustomerPackageAndStatus(formData: FormData) {
         billingType: billingType || 'Monthly',
         monitoringTime: monitoringTime || 'Hybrid',
         monthlyBasePrice: basePrice,
-        appliedDiscount: 0,
+        appliedDiscount: appliedDiscount ?? 0,
         salesTaxAmount: tax,
         totalAmount: newTotal,
       },
@@ -246,6 +251,7 @@ export async function updateCustomerPackageAndStatus(formData: FormData) {
         billingType: billingType || undefined,
         monitoringTime: monitoringTime || undefined,
         monthlyBasePrice: basePrice,
+        appliedDiscount: appliedDiscount ?? 0,
         salesTaxAmount: tax,
         totalAmount: newTotal,
       }

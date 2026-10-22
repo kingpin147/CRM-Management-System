@@ -172,5 +172,32 @@ describe('Promotional Free Months & Billing Calculation', () => {
       expect(b.salesTax).toBe(0)
       expect(b.grandTotal).toBe(0)
     })
+
+    it('calculates 10%, 25%, and 50% VIP / Family & Friends discount on Monthly billing', () => {
+      // 1 - 5 kW Basic Hybrid = 960/mo base
+      // 10% discount: 960 * 0.10 = 96. Price after = 864. Sub tax (5%) = 43. Onboarding = 3000, tax = 150. Total = 864 + 43 + 3000 + 150 = 4057
+      const b10 = calculatePackageBreakdown('1 - 5 kW', 'Basic', 'Monthly', 'Hybrid', null, 10)
+      expect(b10.discountPct).toBe(10)
+      expect(b10.discountAmount).toBe(96)
+      expect(b10.priceAfterDiscount).toBe(864)
+      expect(b10.subscriptionSalesTax).toBe(43)
+      expect(b10.grandTotal).toBe(4057)
+
+      // 25% discount: 960 * 0.25 = 240. Price after = 720. Sub tax = 36. Onboarding = 3000, tax = 150. Total = 720 + 36 + 3000 + 150 = 3906
+      const b25 = calculatePackageBreakdown('1 - 5 kW', 'Basic', 'Monthly', 'Hybrid', null, 25)
+      expect(b25.discountPct).toBe(25)
+      expect(b25.discountAmount).toBe(240)
+      expect(b25.priceAfterDiscount).toBe(720)
+      expect(b25.subscriptionSalesTax).toBe(36)
+      expect(b25.grandTotal).toBe(3906)
+
+      // 50% discount: 960 * 0.50 = 480. Price after = 480. Sub tax = 24. Onboarding = 3000, tax = 150. Total = 480 + 24 + 3000 + 150 = 3654
+      const b50 = calculatePackageBreakdown('1 - 5 kW', 'Basic', 'Monthly', 'Hybrid', null, 50)
+      expect(b50.discountPct).toBe(50)
+      expect(b50.discountAmount).toBe(480)
+      expect(b50.priceAfterDiscount).toBe(480)
+      expect(b50.subscriptionSalesTax).toBe(24)
+      expect(b50.grandTotal).toBe(3654)
+    })
   })
 })

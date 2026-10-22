@@ -99,7 +99,8 @@ export function calculatePackageBreakdown(
   packageTier?: string | null,
   billingType?: string | null,
   monitoringTime?: string | null,
-  customBasePrice?: number | string | null
+  customBasePrice?: number | string | null,
+  specialDiscountPct?: number | string | null
 ): PricingBreakdown {
   const isCustom = isCustomCapacityTier(systemSizeKw)
   const numCustomPrice = customBasePrice !== undefined && customBasePrice !== null && customBasePrice !== ''
@@ -133,6 +134,16 @@ export function calculatePackageBreakdown(
   } else if (billingType === 'FOC') {
     months = 12
     discountPct = 100
+  }
+
+  // VIP / Family & Friends / Manager Discount (10%, 25%, 50% on Monthly billing or override)
+  if (specialDiscountPct !== undefined && specialDiscountPct !== null && specialDiscountPct !== '') {
+    const parsedSpecial = Number(specialDiscountPct)
+    if (!isNaN(parsedSpecial) && parsedSpecial >= 0) {
+      if (billingType === 'Monthly' || parsedSpecial > 0) {
+        discountPct = parsedSpecial
+      }
+    }
   }
 
   const subtotalBeforeDiscount = baseMonthlyRate * months

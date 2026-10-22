@@ -34,6 +34,7 @@ type CustomerRecord = {
     billingType?: string | null
     monitoringTime?: string | null
     totalAmount?: number | string | null
+    appliedDiscount?: number | string | null
   } | null
   solarSystem: any | null
   transactions?: any[]
@@ -280,7 +281,14 @@ export function ManagerApprovalView({
                       {/* System & Package Tier */}
                       <TableCell className="text-xs">
                         <span className="font-bold text-slate-800">{c.packagePlan?.packageTier || 'Comprehensive'}</span>
-                        <span className="block text-[11px] text-slate-500">{c.packagePlan?.systemSizeKw || '1-10 kW'}</span>
+                        <span className="block text-[11px] text-slate-500">
+                          {c.packagePlan?.systemSizeKw || '1-10 kW'} • {c.packagePlan?.billingType || 'Monthly'}
+                        </span>
+                        {Number(c.packagePlan?.appliedDiscount) > 0 && (
+                          <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 text-[10px] font-semibold mt-1">
+                            {Number(c.packagePlan?.appliedDiscount)}% Discount
+                          </Badge>
+                        )}
                       </TableCell>
 
                       {/* Contact & City */}

@@ -366,7 +366,19 @@ export default async function CustomerDetailPage({
 
             {/* Package Details Section - 2 Column Side by Side */}
             <Card className="shadow-sm border-slate-200 overflow-hidden bg-white">
-              <SectionHeader>Package Details</SectionHeader>
+              <SectionHeader
+                action={
+                  canViewLedger ? (
+                    <PackageFormDialog
+                      customerId={customer.id}
+                      initialData={customer.packagePlan}
+                      triggerLabel="Edit Package & Discount"
+                    />
+                  ) : undefined
+                }
+              >
+                Package Details
+              </SectionHeader>
               <CardContent className="p-0">
                 <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-slate-200">
                   {/* Left Column: System & Package Spec */}
@@ -417,6 +429,11 @@ export default async function CustomerDetailPage({
                             <Badge variant="outline" className="bg-[#002868] text-white border-[#002868] font-bold shadow-xs mr-2">
                               {customer.packagePlan?.billingType || 'Monthly'}
                             </Badge>
+                            {Number(customer.packagePlan?.appliedDiscount) > 0 && (
+                              <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-300 font-bold text-[10px] mr-2">
+                                {Number(customer.packagePlan?.appliedDiscount)}% Discount
+                              </Badge>
+                            )}
                             {Boolean(customer.packagePlan?.freeMonths) && (
                               <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 font-bold text-[10px]">
                                 +{customer.packagePlan?.freeMonths} Month{Number(customer.packagePlan?.freeMonths) > 1 ? 's' : ''} Free Promo

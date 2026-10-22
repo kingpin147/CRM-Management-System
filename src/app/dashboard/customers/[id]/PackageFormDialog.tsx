@@ -10,9 +10,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { SYSTEM_SIZES } from '@/lib/solar-constants'
 import { calculatePackageBreakdown, getEligibleFreeMonths, isCustomCapacityTier } from '@/lib/pricing'
 import { createPackagePlan } from './actions'
-import { Gift } from 'lucide-react'
+import { Gift, Zap } from 'lucide-react'
 
-export function PackageFormDialog({ customerId, initialData, inline = false }: { customerId: string; initialData?: any; inline?: boolean }) {
+export function PackageFormDialog({ 
+  customerId, 
+  initialData, 
+  inline = false,
+  triggerLabel,
+}: { 
+  customerId: string; 
+  initialData?: any; 
+  inline?: boolean;
+  triggerLabel?: string;
+}) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -223,10 +233,12 @@ export function PackageFormDialog({ customerId, initialData, inline = false }: {
                   <SelectValue placeholder="Select Discount (%)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="0">0%</SelectItem>
-                  <SelectItem value="10">10%</SelectItem>
+                  <SelectItem value="0">0% (None)</SelectItem>
+                  <SelectItem value="10">10% (VIP / Family &amp; Friends)</SelectItem>
                   <SelectItem value="20">20%</SelectItem>
+                  <SelectItem value="25">25% (VIP / Family &amp; Friends)</SelectItem>
                   <SelectItem value="40">40%</SelectItem>
+                  <SelectItem value="50">50% (VIP / Family &amp; Friends)</SelectItem>
                   <SelectItem value="100">100% (FOC)</SelectItem>
                 </SelectContent>
               </Select>
@@ -254,12 +266,29 @@ export function PackageFormDialog({ customerId, initialData, inline = false }: {
     return formContent
   }
 
+  const isEditingExisting = Boolean(initialData)
+  const buttonLabel = triggerLabel || (isEditingExisting ? 'Edit Package & Discount' : 'Create Quotation')
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button className="w-full shadow-md bg-[#135d86] hover:bg-[#f16232] text-white font-bold">Create Quotation</Button>} />
+      <DialogTrigger render={
+        <Button 
+          variant={isEditingExisting ? "outline" : "default"} 
+          size={isEditingExisting ? "sm" : "default"}
+          className={isEditingExisting 
+            ? "bg-white text-[#002868] border-slate-300 hover:bg-slate-50 text-xs font-semibold gap-1.5 shadow-2xs cursor-pointer h-8 px-2.5" 
+            : "w-full shadow-md bg-[#135d86] hover:bg-[#f16232] text-white font-bold"
+          }
+        >
+          <Zap className="h-3.5 w-3.5 text-amber-600" />
+          {buttonLabel}
+        </Button>
+      } />
       <DialogContent className="sm:max-w-2xl md:max-w-3xl lg:max-w-4xl border-line max-h-[90vh] overflow-y-auto bg-white p-6">
         <DialogHeader className="pb-2 border-b border-[var(--color-line)]">
-          <DialogTitle className="text-[var(--color-graphite)] font-display text-xl">Assign Service Package</DialogTitle>
+          <DialogTitle className="text-[var(--color-graphite)] font-display text-xl">
+            {isEditingExisting ? 'Update Package & Discount' : 'Assign Service Package'}
+          </DialogTitle>
           <DialogDescription className="text-[var(--color-slate-custom)]">
             Configure the O&M package and billing details.
           </DialogDescription>

@@ -218,10 +218,16 @@ export async function createPackagePlan(formData: FormData) {
   const monthlyBasePrice = Number(formData.get('monthlyBasePrice')) || 0
   const appliedDiscount = Number(formData.get('appliedDiscount')) || 0
   
-  const breakdown = calculatePackageBreakdown(systemSizeKw, packageTier, billingType, monitoringTime, monthlyBasePrice)
-  const salesTaxAmount = breakdown.salesTax
-  const onboardingFee = breakdown.onboardingFee
-  const totalAmount = breakdown.grandTotal
+  const existingPlan = await prisma.packagePlan.findUnique({ where: { customerId } })
+  const isExistingCustomer = Boolean(existingPlan)
+  const breakdown = calculatePackageBreakdown(systemSizeKw, packageTier, billingType, monitoringTime, monthlyBasePrice, appliedDiscount)
+  
+  const effectiveOnboardingFee = isExistingCustomer ? Number(existingPlan?.onboardingFee || 0) : breakdown.onboardingFee
+  const salesTaxAmount = isExistingCustomer ? breakdown.subscriptionSalesTax : breakdown.salesTax
+  const totalAmount = isExistingCustomer 
+    ? Math.round(breakdown.priceAfterDiscount + breakdown.subscriptionSalesTax)
+    : breakdown.grandTotal
+  const effectiveBasePrice = breakdown.priceAfterDiscount > 0 ? breakdown.priceAfterDiscount : monthlyBasePrice
 
   try {
     await prisma.packagePlan.upsert({
@@ -232,10 +238,10 @@ export async function createPackagePlan(formData: FormData) {
         billingType,
         monitoringTime,
         freeMonths,
-        monthlyBasePrice,
+        monthlyBasePrice: effectiveBasePrice,
         appliedDiscount,
         salesTaxAmount,
-        onboardingFee,
+        onboardingFee: effectiveOnboardingFee,
         totalAmount
       },
       create: {
@@ -245,11 +251,11 @@ export async function createPackagePlan(formData: FormData) {
         billingType,
         monitoringTime,
         freeMonths,
-        monthlyBasePrice,
+        monthlyBasePrice: effectiveBasePrice,
         appliedDiscount,
         salesTaxAmount,
-        onboardingFee,
-        totalAmount
+        onboardingFee: breakdown.onboardingFee,
+        totalAmount: breakdown.grandTotal
       }
     })
 

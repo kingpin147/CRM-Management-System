@@ -499,7 +499,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
       }
 
       formData.set('monthlyBasePrice', Math.round(priceAfterDiscount).toString())
-      formData.set('appliedDiscount', Math.round(discountAmount).toString())
+      formData.set('appliedDiscount', Math.round(discountPct).toString())
       formData.set('salesTaxAmount',  Math.round(salesTax).toString())
       formData.set('onboardingFee',   Math.round(onboardingFee).toString())
       formData.set('totalAmount',     Math.round(grandTotal).toString())

@@ -85,6 +85,7 @@ export function EditCrfModal({
   const [billingType, setBillingType] = React.useState('Monthly')
   const [monitoringTime, setMonitoringTime] = React.useState('Hybrid')
   const [freeMonths, setFreeMonths] = React.useState<number>(0)
+  const [specialDiscount, setSpecialDiscount] = React.useState<number>(0)
   
   // Payment State
   const [paymentMode, setPaymentMode] = React.useState('')
@@ -186,8 +187,8 @@ export function EditCrfModal({
   // Dynamic pricing breakdown
   const isCustomCapacity = isCustomCapacityTier(systemSizeKw)
   const breakdown = React.useMemo(() => {
-    return calculatePackageBreakdown(systemSizeKw, packageTier, billingType, monitoringTime, customPrice)
-  }, [systemSizeKw, packageTier, billingType, monitoringTime, customPrice])
+    return calculatePackageBreakdown(systemSizeKw, packageTier, billingType, monitoringTime, customPrice, specialDiscount)
+  }, [systemSizeKw, packageTier, billingType, monitoringTime, customPrice, specialDiscount])
 
   // Sync payment amount with calculated total whenever breakdown changes
   React.useEffect(() => {
@@ -228,6 +229,9 @@ export function EditCrfModal({
         setBillingType(customer.packagePlan.billingType || 'Monthly')
         setMonitoringTime(customer.packagePlan.monitoringTime || 'Hybrid')
         setFreeMonths((customer.packagePlan as any).freeMonths || 0)
+        setSpecialDiscount(Number((customer.packagePlan as any).appliedDiscount) || 0)
+      } else {
+        setSpecialDiscount(0)
       }
 
       if (customer.solarSystem) {
@@ -850,10 +854,35 @@ export function EditCrfModal({
               </div>
             </div>
 
-            {/* Payment Entry Tab */}
+            {/* Payment Verification & Record Section */}
             <div className="bg-white/90 p-4 rounded-xl border border-slate-200 shadow-2xs space-y-3">
-              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Payment Record Details</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Payment Verification &amp; Record Details</h3>
+                {specialDiscount > 0 && (
+                  <Badge className="bg-indigo-100 text-indigo-900 border-indigo-200 text-[11px] font-bold">
+                    {specialDiscount}% Discount Applied
+                  </Badge>
+                )}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-slate-700">Discount</Label>
+                  <Select 
+                    value={String(specialDiscount)} 
+                    onValueChange={(val) => setSpecialDiscount(Number(val) || 0)}
+                  >
+                    <SelectTrigger className="h-9 text-xs">
+                      <SelectValue placeholder="Select Discount..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0" className="text-xs">0% (None)</SelectItem>
+                      <SelectItem value="10" className="text-xs">10% (VIP / Family &amp; Friends)</SelectItem>
+                      <SelectItem value="25" className="text-xs">25% (VIP / Family &amp; Friends)</SelectItem>
+                      <SelectItem value="50" className="text-xs">50% (VIP / Family &amp; Friends)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="space-y-1">
                   <Label className="text-xs font-semibold text-slate-700">Amount (PKR)</Label>
                   <Input

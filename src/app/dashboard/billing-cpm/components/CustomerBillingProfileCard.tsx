@@ -33,6 +33,7 @@ type CustomerBillingData = {
     billingType?: string
     monitoringTime?: string
     totalAmount?: number
+    appliedDiscount?: number | null
   } | null
   recentLedger?: {
     id: string
@@ -154,8 +155,13 @@ export function CustomerBillingProfileCard({ customer }: { customer: CustomerBil
                     <TableCell className="font-bold text-xs bg-slate-50/70 border-r border-slate-200 text-[#002868]">Package Plan</TableCell>
                     <TableCell className="text-xs text-slate-800">
                       {customer.packagePlan ? (
-                        <span className="font-semibold text-[#002868]">
-                          {customer.packagePlan.packageTier} ({customer.packagePlan.systemSizeKw}) &bull; Rs. {(customer.packagePlan.totalAmount || 0).toLocaleString()} / {customer.packagePlan.billingType}
+                        <span className="font-semibold text-[#002868] inline-flex items-center flex-wrap gap-1">
+                          <span>{customer.packagePlan.packageTier} ({customer.packagePlan.systemSizeKw}) &bull; Rs. {(customer.packagePlan.totalAmount || 0).toLocaleString()} / {customer.packagePlan.billingType}</span>
+                          {Number(customer.packagePlan.appliedDiscount) > 0 && (
+                            <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 text-[10px] font-semibold">
+                              {Number(customer.packagePlan.appliedDiscount)}% Discount
+                            </Badge>
+                          )}
                         </span>
                       ) : (
                         <span className="text-slate-400 italic">No package assigned</span>

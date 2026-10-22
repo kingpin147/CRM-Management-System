@@ -20,9 +20,9 @@ const BILLING_TYPES = ['Monthly', 'Quarterly', 'Half Yearly', 'Yearly']
 const MONITORING_TIMES = ['Hybrid', 'Grid Tied']
 
 // Standard pricing matrix helper using official revised rates
-function estimatePlanPrice(size: string, tier: string, billing: string, window: string = 'Hybrid'): number {
-  const b = calculatePackageBreakdown(size, tier, billing, window)
-  return b.priceAfterDiscount + b.salesTax // Recurring recurring subscription amount (without one-time onboarding fee)
+function estimatePlanPrice(size: string, tier: string, billing: string, window: string = 'Hybrid', discountPct: number = 0): number {
+  const b = calculatePackageBreakdown(size, tier, billing, window, null, discountPct)
+  return b.priceAfterDiscount + b.subscriptionSalesTax // Recurring subscription amount (without one-time onboarding fee)
 }
 
 export function PackageStatusChangeTab() {
@@ -36,6 +36,7 @@ export function PackageStatusChangeTab() {
   const [packageTier, setPackageTier] = React.useState('Basic')
   const [billingType, setBillingType] = React.useState('Monthly')
   const [monitoringTime, setMonitoringTime] = React.useState('Hybrid')
+  const [discount, setDiscount] = React.useState<number>(0)
   const [status, setStatus] = React.useState('CONNECTION_ACTIVE')
   const [customAmount, setCustomAmount] = React.useState<number>(0)
   const [notes, setNotes] = React.useState('')
@@ -65,6 +66,7 @@ export function PackageStatusChangeTab() {
           setBillingType(res.customer.packagePlan.billingType)
           setMonitoringTime(res.customer.packagePlan.monitoringTime)
           setCustomAmount(Number(res.customer.packagePlan.totalAmount))
+          setDiscount(Number(res.customer.packagePlan.appliedDiscount) || 0)
         }
       }
     } finally {
@@ -99,21 +101,12 @@ export function PackageStatusChangeTab() {
 
   const baseComparisonRate = currentCustomerBaseRate > 0 
     ? currentCustomerBaseRate 
-    : estimatePlanPrice(systemSize, oldTier, billingType)
+    : estimatePlanPrice(systemSize, oldTier, billingType, monitoringTime, discount)
 
   // Smart Recalculation on dropdown change:
-  const handleDropdownChange = (size: string, tier: string, billing: string) => {
-    if (tier === oldTier && size === oldSize && billing === oldBilling) {
-      setCustomAmount(baseComparisonRate)
-    } else if (currentCustomerBaseRate > 0 && billing === oldBilling && size === oldSize) {
-      const oldMult = TIER_MULTIPLIERS[oldTier]
-      const newMult = TIER_MULTIPLIERS[tier]
-      const scaledAmount = Math.round(currentCustomerBaseRate * (newMult / oldMult))
-      setCustomAmount(scaledAmount)
-    } else {
-      const est = estimatePlanPrice(size, tier, billing)
-      setCustomAmount(est)
-    }
+  const handleDropdownChange = (size: string, tier: string, billing: string, dPct: number = discount) => {
+    const est = estimatePlanPrice(size, tier, billing, monitoringTime, dPct)
+    setCustomAmount(est)
   }
 
   let diff = isUnchanged ? 0 : (customAmount - baseComparisonRate)
@@ -165,6 +158,7 @@ export function PackageStatusChangeTab() {
       formData.append('packageTier', packageTier)
       formData.append('billingType', billingType)
       formData.append('monitoringTime', monitoringTime)
+      formData.append('appliedDiscount', discount.toString())
       formData.append('totalAmount', customAmount.toString())
       formData.append('calculatedDiff', diff.toString())
       formData.append('notes', notes)
@@ -243,7 +237,7 @@ export function PackageStatusChangeTab() {
               )}
 
               {/* Dropdowns Matrix */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 
                 {/* System Type */}
                 <div className="space-y-1.5">
@@ -253,7 +247,7 @@ export function PackageStatusChangeTab() {
                     onValueChange={(val) => {
                       if (val) {
                         setSystemSize(val)
-                        handleDropdownChange(val, packageTier, billingType)
+                        handleDropdownChange(val, packageTier, billingType, discount)
                       }
                     }}
                   >
@@ -276,7 +270,7 @@ export function PackageStatusChangeTab() {
                     onValueChange={(val) => {
                       if (val) {
                         setPackageTier(val)
-                        handleDropdownChange(systemSize, val, billingType)
+                        handleDropdownChange(systemSize, val, billingType, discount)
                       }
                     }}
                   >
@@ -299,7 +293,7 @@ export function PackageStatusChangeTab() {
                     onValueChange={(val) => {
                       if (val) {
                         setBillingType(val)
-                        handleDropdownChange(systemSize, packageTier, val)
+                        handleDropdownChange(systemSize, packageTier, val, discount)
                       }
                     }}
                   >
@@ -317,7 +311,13 @@ export function PackageStatusChangeTab() {
                 {/* Monitoring Time */}
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold text-slate-700">Monitoring Time</Label>
-                  <Select value={monitoringTime} onValueChange={(val) => val && setMonitoringTime(val)}>
+                  <Select value={monitoringTime} onValueChange={(val) => {
+                    if (val) {
+                      setMonitoringTime(val)
+                      const est = estimatePlanPrice(systemSize, packageTier, billingType, val, discount)
+                      setCustomAmount(est)
+                    }
+                  }}>
                     <SelectTrigger className="h-10 text-xs bg-slate-50/50">
                       <SelectValue placeholder="Monitoring Time" />
                     </SelectTrigger>
@@ -325,6 +325,29 @@ export function PackageStatusChangeTab() {
                       {MONITORING_TIMES.map(m => (
                         <SelectItem key={m} value={m} className="text-xs">{m}</SelectItem>
                       ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Discount */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-slate-700">Discount</Label>
+                  <Select 
+                    value={String(discount)} 
+                    onValueChange={(val) => {
+                      const d = Number(val) || 0
+                      setDiscount(d)
+                      handleDropdownChange(systemSize, packageTier, billingType, d)
+                    }}
+                  >
+                    <SelectTrigger className="h-10 text-xs bg-slate-50/50">
+                      <SelectValue placeholder="Discount" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0" className="text-xs">0% (None)</SelectItem>
+                      <SelectItem value="10" className="text-xs">10% (VIP / Family &amp; Friends)</SelectItem>
+                      <SelectItem value="25" className="text-xs">25% (VIP / Family &amp; Friends)</SelectItem>
+                      <SelectItem value="50" className="text-xs">50% (VIP / Family &amp; Friends)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
