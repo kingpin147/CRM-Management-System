@@ -149,8 +149,8 @@ export function UserFormDialog() {
                   </div>
                 </SelectTrigger>
                 <SelectContent className="rounded-xl shadow-lg border-line">
-                  <SelectItem value="SALES_MANAGER" className="text-xs font-medium py-2">Account Sales Manager (Sales & Billing Operations)</SelectItem>
-                  <SelectItem value="SALES" className="text-xs font-medium py-2">Executive Manager (Sales)</SelectItem>
+                  <SelectItem value="SALES_MANAGER" className="text-xs font-medium py-2">Account Manager (Sales & Billing Operations)</SelectItem>
+                  <SelectItem value="SALES" className="text-xs font-medium py-2">Account Executive</SelectItem>
                   <SelectItem value="OM_MANAGER" className="text-xs font-medium py-2">O & M Manager</SelectItem>
                   <SelectItem value="INSTALLATION" className="text-xs font-medium py-2">Installer (O&M Team)</SelectItem>
                   <SelectItem value="CUSTOMER_SUPPORT" className="text-xs font-medium py-2">Customer Support</SelectItem>

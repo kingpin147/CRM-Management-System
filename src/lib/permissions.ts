@@ -16,7 +16,7 @@ export interface PermissionUser {
  * Rules:
  * - SUPER_ADMIN: Allowed
  * - ADMIN: Allowed
- * - Muhammad Ajmal (m.ajmal@energygurus.online - Account Manager Sales): Allowed
+ * - Muhammad Ajmal (m.ajmal@energygurus.online - Account Manager): Allowed
  * - All other users: Denied (hidden from UI and blocked on server)
  * 
  * Future allocations (e.g. Customer Support, CPM representative) can be added here.
@@ -32,7 +32,7 @@ export function canUserEditCustomerProfile(user?: PermissionUser | null): boolea
     return true
   }
 
-  // 2. Muhammad Ajmal (Account Manager Sales)
+  // 2. Muhammad Ajmal (Account Manager)
   if (email === 'm.ajmal@energygurus.online') {
     return true
   }
@@ -52,7 +52,7 @@ export function canUserEditCustomerProfile(user?: PermissionUser | null): boolea
  * - SUPER_ADMIN: Allowed
  * - ADMIN: Allowed
  * - OM_MANAGER: Allowed
- * - Muhammad Ajmal (m.ajmal@energygurus.online - Account Manager Sales): Allowed
+ * - Muhammad Ajmal (m.ajmal@energygurus.online - Account Manager): Allowed
  * - All other users: Denied
  */
 export function canUserEditSolarSpecs(user?: PermissionUser | null): boolean {
@@ -66,7 +66,7 @@ export function canUserEditSolarSpecs(user?: PermissionUser | null): boolean {
     return true
   }
 
-  // 2. Muhammad Ajmal (Account Manager Sales)
+  // 2. Muhammad Ajmal (Account Manager)
   if (email === 'm.ajmal@energygurus.online') {
     return true
   }

@@ -218,8 +218,8 @@ export function UserRowActions({ user }: { user: UserProps }) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="SUPER_ADMIN">Super Admin (Full Access)</SelectItem>
-                  <SelectItem value="SALES_MANAGER">Account Sales Manager (Sales & Billing Operations)</SelectItem>
-                  <SelectItem value="SALES">Executive Manager (Sales)</SelectItem>
+                  <SelectItem value="SALES_MANAGER">Account Manager (Sales & Billing Operations)</SelectItem>
+                  <SelectItem value="SALES">Account Executive</SelectItem>
                   <SelectItem value="OM_MANAGER">O & M Manager</SelectItem>
                   <SelectItem value="INSTALLATION">Installer (O&M Team)</SelectItem>
                   <SelectItem value="CUSTOMER_SUPPORT">Customer Support</SelectItem>

@@ -1175,10 +1175,10 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                   <div className="bg-amber-50/50 p-5 rounded-xl border border-amber-200/80 space-y-3">
                     <div className="flex items-center justify-between">
                       <h3 className="text-xs font-bold text-amber-950 uppercase tracking-wider">Package Calculation Breakdown</h3>
-                      <span className="text-[11px] font-medium text-amber-900">5% Sales Tax Included (Subscription &amp; On-Boarding)</span>
+                      <span className="text-[11px] font-medium text-amber-900">5% Sales Tax Shown Separately (Subscription &amp; On-Boarding)</span>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 text-xs pt-1">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 text-xs pt-1">
                       <div>
                         <span className="text-gray-500 block">Base Subscription</span>
                         <span className="font-mono font-bold text-gray-800">PKR {Math.round(priceAfterDiscount).toLocaleString()}</span>
@@ -1188,13 +1188,9 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                         <span className="font-bold text-amber-800">{discountPct}%</span>
                       </div>
                       <div>
-                        <span className="text-gray-500 block">Sales Tax (5%)</span>
-                        <span className="font-mono font-bold text-gray-800">PKR {Math.round(salesTax).toLocaleString()}</span>
-                        {!isOnboardingWaived && onboardingFee > 0 && (
-                          <span className="text-[10px] text-amber-900/80 block">
-                            (Incl. PKR {Math.round(onboardingSalesTax).toLocaleString()} on On-Boarding)
-                          </span>
-                        )}
+                        <span className="text-gray-500 block">Sub. Sales Tax (5%)</span>
+                        <span className="font-mono font-bold text-gray-800">PKR {Math.round(subscriptionSalesTax).toLocaleString()}</span>
+                        <span className="text-[10px] text-gray-400 block">(on subscription)</span>
                       </div>
                       <div>
                         <span className="text-gray-500 block">On-Boarding Fee</span>
@@ -1207,12 +1203,27 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                             <span className="font-mono font-bold text-gray-900">PKR {onboardingFee.toLocaleString()}</span>
                           )}
                         </div>
+                        <span className="text-[10px] text-gray-400 block">(without tax)</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 block">On-Boarding Tax (5%)</span>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          {isOnboardingWaived ? (
+                            <span className="font-mono font-bold text-gray-500">PKR 0</span>
+                          ) : (
+                            <span className="font-mono font-bold text-amber-900">PKR {Math.round(onboardingSalesTax).toLocaleString()}</span>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-gray-400 block">
+                          {isOnboardingWaived ? '(waived)' : '(5% of PKR 3,000)'}
+                        </span>
                       </div>
                       <div>
                         <span className="text-gray-500 block font-semibold text-gray-700">Total Package Amount</span>
                         <span className="font-mono font-extrabold text-[var(--color-ink)] text-sm">
                           PKR {Math.round(grandTotal).toLocaleString()}
                         </span>
+                        <span className="text-[10px] text-emerald-700 font-medium block">All taxes included</span>
                       </div>
                     </div>
 
@@ -1220,7 +1231,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                     <div className="pt-2 border-t border-amber-200/60 flex items-center gap-2 text-[11px] text-amber-900">
                       <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                       <span>
-                        <strong>On-Boarding Policy:</strong> PKR 3,000/- on sign up (applicable to all packages, not waived on Yearly) + 5% sales tax (PKR 150).
+                        <strong>On-Boarding Policy:</strong> PKR 3,000/- on sign up (applicable to all packages, not waived on Yearly) + 5% sales tax (PKR 150) = <strong>Total On-Boarding: PKR 3,150</strong>.
                       </span>
                     </div>
                   </div>
@@ -1281,7 +1292,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Account Executive Sales */}
+                    {/* Account Executive */}
                     <FormField
                       control={form.control}
                       name="accountExecutiveId"
@@ -1289,7 +1300,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                         const selectedUser = users?.find(u => u.id === field.value)
                         return (
                           <FormItem>
-                            <FormLabel className="text-xs font-semibold">Account Executive Sales Name</FormLabel>
+                            <FormLabel className="text-xs font-semibold">Account Executive Name</FormLabel>
                             <Select
                               onValueChange={(val) => {
                                 field.onChange(val)
@@ -1300,7 +1311,7 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                             >
                               <FormControl>
                                 <SelectTrigger className="h-10 text-xs">
-                                  <SelectValue placeholder="Select Account Executive Sales">
+                                  <SelectValue placeholder="Select Account Executive">
                                     {field.value === 'none' || !field.value
                                       ? 'Unassigned / Direct'
                                       : (selectedUser

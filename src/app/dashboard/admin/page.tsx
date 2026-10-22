@@ -58,8 +58,8 @@ export default async function AdminPage() {
                       <TableCell>
                         <Badge variant="outline" className="bg-[var(--color-paper)] text-[var(--color-ink)] border-[var(--color-line)] font-semibold text-xs">
                           {user.role === 'SUPER_ADMIN' ? 'Super Admin' :
-                           user.role === 'SALES_MANAGER' ? 'Account Sales Manager' :
-                           user.role === 'SALES' ? 'Executive Manager (Sales)' :
+                           user.role === 'SALES_MANAGER' ? 'Account Manager' :
+                           user.role === 'SALES' ? 'Account Executive' :
                            user.role === 'OM_MANAGER' ? 'O & M Manager' :
                            user.role === 'INSTALLATION' ? 'Installer' :
                            user.role === 'IP_NOC_EXECUTIVE' ? 'NOC Executive' :

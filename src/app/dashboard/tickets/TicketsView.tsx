@@ -201,7 +201,7 @@ export function TicketsView({ tickets, userRole, initialStatusParam }: TicketsVi
       'Sub Area',
       'Area',
       'Complain Description',
-      'Account Executive Sales',
+      'Account Executive',
       'Status',
     ]
 

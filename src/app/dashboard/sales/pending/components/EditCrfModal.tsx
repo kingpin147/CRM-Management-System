@@ -812,7 +812,7 @@ export function EditCrfModal({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5 pt-0.5">
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 pt-0.5">
                 <div className="bg-white/90 p-2 rounded-lg border border-slate-200 shadow-2xs">
                   <span className="text-[10px] text-slate-500 font-medium block">Base Monthly</span>
                   <span className="text-xs font-bold text-slate-900">PKR {breakdown.baseMonthlyRate.toLocaleString()}</span>
@@ -828,13 +828,19 @@ export function EditCrfModal({
                   <span className="text-xs font-bold text-slate-900">PKR {breakdown.priceAfterDiscount.toLocaleString()}</span>
                 </div>
                 <div className="bg-white/90 p-2 rounded-lg border border-slate-200 shadow-2xs">
-                  <span className="text-[10px] text-slate-500 font-medium block">Sales Tax (5%)</span>
-                  <span className="text-xs font-bold text-slate-700">PKR {breakdown.salesTax.toLocaleString()}</span>
+                  <span className="text-[10px] text-slate-500 font-medium block">Sub. Tax (5%)</span>
+                  <span className="text-xs font-bold text-slate-700">PKR {breakdown.subscriptionSalesTax.toLocaleString()}</span>
                 </div>
                 <div className="bg-white/90 p-2 rounded-lg border border-slate-200 shadow-2xs">
                   <span className="text-[10px] text-slate-500 font-medium block">On-Boarding Fee</span>
                   <span className={`text-xs font-bold ${breakdown.isOnboardingWaived ? 'text-emerald-600' : 'text-amber-700'}`}>
                     {breakdown.isOnboardingWaived ? 'Waived (0)' : `PKR ${breakdown.onboardingFee.toLocaleString()}`}
+                  </span>
+                </div>
+                <div className="bg-white/90 p-2 rounded-lg border border-slate-200 shadow-2xs">
+                  <span className="text-[10px] text-slate-500 font-medium block">On-Boarding Tax (5%)</span>
+                  <span className="text-xs font-bold text-amber-700">
+                    {breakdown.isOnboardingWaived ? '0' : `PKR ${breakdown.onboardingSalesTax.toLocaleString()}`}
                   </span>
                 </div>
                 <div className="bg-[#002868] text-white p-2 rounded-lg border border-[#002868] shadow-xs">

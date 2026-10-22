@@ -354,7 +354,7 @@ export async function createCustomer(formData: FormData) {
         ledgerEntries: totalAmount > 0 ? {
           create: [
             {
-              narration: `Initial Package Subscription (${packageTier} ${systemSizeKw})${onboardingFee > 0 ? ' + On-Boarding Fee (PKR 3,000)' : ''}`,
+              narration: `Initial Package Subscription (${packageTier} ${systemSizeKw})${onboardingFee > 0 ? ' + On-Boarding Fee (PKR 3,000 + PKR 150 Tax)' : ''}`,
               refNumber: `INV-${customerCode.replace(/^[A-Za-z]+-/, '')}`,
               debit: totalAmount,
               credit: 0,

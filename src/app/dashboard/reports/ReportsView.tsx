@@ -1101,7 +1101,7 @@ export function ReportsView({
     let rows: string[][] = []
 
     if (['SALES_INCENTIVE', 'OM_INCENTIVE'].includes(activeCategory)) {
-      headers = ['Account Executive Sales', 'Number of Sales', 'Incentive Amount', '25% of 2nd Last month', '25% of Last month', '50% Incentive Of Selected Month', 'Total Incentive']
+      headers = ['Account Executive', 'Number of Sales', 'Incentive Amount', '25% of 2nd Last month', '25% of Last month', '50% Incentive Of Selected Month', 'Total Incentive']
       rows = incentiveRows.map((row) => [
         `"${row.name}"`, `"${row.numberOfSales}"`, `"${row.incentiveAmount}"`,
         `"${row.secondLastMonth}"`, `"${row.lastMonth}"`, `"${row.selectedMonth}"`, `"${row.totalIncentive}"`,
@@ -1121,7 +1121,7 @@ export function ReportsView({
       headers = [
         'Customer ID', 'Customer Name', 'Customer Type', 'Customer Address', 'Contact #', 'POC #',
         'House #', 'Block', 'Street #', 'Sub Area', 'Area', 'City',
-        'Account Executive Sales Name', 'Installer Name', 'System Type:', 'Monitoring Time',
+        'Account Executive Name', 'Installer Name', 'System Type:', 'Monitoring Time',
         'Customer Package', 'Activation', 'New Status', 'Status'
       ]
       rows = filteredCustomers.map((c) => [
@@ -1440,12 +1440,12 @@ export function ReportsView({
 
             {!isBrandReport && activeCategory !== 'REGISTER' && (activeCategory !== 'SALES' && activeCategory !== 'CONNECTIVITY') && activeCategory !== 'RECEIVABLE' && activeCategory !== 'ADJUSTMENT' && activeCategory !== 'PAYMENTS' && activeCategory !== 'BILLING' && (
               <div className="space-y-1">
-                <Label className="text-xs font-semibold text-[var(--color-ink)]">Account Executive Sales</Label>                <select
+                <Label className="text-xs font-semibold text-[var(--color-ink)]">Account Executive</Label>                <select
                   value={selectedAccountExecutive}
                   onChange={(e) => setSelectedAccountExecutive(e.target.value)}
                   className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-line)] text-xs font-medium text-[var(--color-ink)] bg-white"
                 >
-                  <option value="ALL">All Account Executive Sales</option>
+                  <option value="ALL">All Account Executives</option>
                   {aeOptions.map((ae) => (
                     <option key={ae} value={ae}>{ae}</option>
                   ))}
@@ -1737,7 +1737,7 @@ export function ReportsView({
                 <React.Fragment key={activeCategory}>
                   <TableHeader className="bg-[var(--color-paper)]">
                     <TableRow>
-                      <TableHead className="font-bold text-xs">{activeCategory === 'SALES_INCENTIVE' ? 'Account Executive Sales' : 'Installer / O & M Executive'}</TableHead>
+                      <TableHead className="font-bold text-xs">{activeCategory === 'SALES_INCENTIVE' ? 'Account Executive' : 'Installer / O & M Executive'}</TableHead>
                       <TableHead className="font-bold text-xs text-right">Number of {activeCategory === 'SALES_INCENTIVE' ? 'Sales' : 'Audits'}</TableHead>
                       <TableHead className="font-bold text-xs text-right">Incentive Amount</TableHead>
                       <TableHead className="font-bold text-xs text-right">25% of 2nd Last month</TableHead>
@@ -1776,7 +1776,7 @@ export function ReportsView({
 
                           const managerMultiplier = activeCategory === 'SALES_INCENTIVE' ? 0.25 : 0.50
                           const managerLabel = activeCategory === 'SALES_INCENTIVE'
-                            ? 'Account Manager Sales : 25% of total Team Incentive:'
+                            ? 'Account Manager : 25% of total Team Incentive:'
                             : 'O & M Manager 50% of Team Incentive:'
 
                           return (
@@ -1875,7 +1875,7 @@ export function ReportsView({
                       <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Sub Area</TableHead>
                       <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Area</TableHead>
                       <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">City</TableHead>
-                      <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Account Executive Sales Name</TableHead>
+                      <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Account Executive Name</TableHead>
                       <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Installer Name</TableHead>
                       <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">System Type:</TableHead>
                       <TableHead className="font-bold text-xs text-[var(--color-graphite)] whitespace-nowrap">Monitoring Time</TableHead>
@@ -2000,7 +2000,7 @@ export function ReportsView({
                     <TableCell className="font-extrabold text-right text-emerald-800">PKR {Math.round(aeTotals.paidAmount).toLocaleString()}</TableCell>
                   </TableRow>
                   <TableRow className="border-b border-[#001d4a] font-bold text-xs">
-                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Account Executive Sales</TableHead>
+                    <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Account Executive</TableHead>
                     <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Sales Target</TableHead>
                     <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">New Sale (Active)</TableHead>
                     <TableHead className="font-extrabold text-xs text-white whitespace-nowrap">Number Of Temp blocked</TableHead>

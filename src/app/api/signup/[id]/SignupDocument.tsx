@@ -405,7 +405,7 @@ export function SignupDocument({ customer, logoSrc }: { customer: any; logoSrc?:
                     {customer?.status === 'CONNECTION_ACTIVE' && customer?.activationDate 
                       ? formatDateStr(customer.activationDate) 
                       : customer?.status === 'SIGNUP_GENERATED'
-                        ? 'Pending for Account Manager Sales approval and Payment verification'
+                        ? 'Pending for Account Manager approval and Payment verification'
                         : 'Pending O&M Approval'}
                   </Text>
                 </View>
