@@ -19,7 +19,7 @@ const styles = StyleSheet.create({
   },
 
   bottomPinnedContainer: {
-    marginTop: 10,
+    marginTop: 6,
     marginBottom: 4,
     flexShrink: 0,
   },
@@ -100,12 +100,12 @@ const styles = StyleSheet.create({
   gridRow: {
     flexDirection: 'row',
     borderBottom: '1px solid #E5E7EB',
-    paddingVertical: 2.5,
+    paddingVertical: 2.2,
     alignItems: 'center',
   },
   gridRowLast: {
     flexDirection: 'row',
-    paddingVertical: 2.5,
+    paddingVertical: 2.2,
     alignItems: 'center',
   },
   gridColLeft: {
@@ -125,13 +125,13 @@ const styles = StyleSheet.create({
   label: {
     width: '42%',
     color: '#002868',
-    fontSize: 7.8,
+    fontSize: 7.6,
     fontWeight: 'bold',
   },
   value: {
     width: '58%',
     color: '#1F2937',
-    fontSize: 7.8,
+    fontSize: 7.6,
   },
   badgePill: {
     backgroundColor: '#002868',
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
     border: '1px solid #c2d0e0',
     borderRadius: 3,
     overflow: 'hidden',
-    marginBottom: 6,
+    marginBottom: 4,
   },
   notesHeader: {
     backgroundColor: '#002868',
@@ -198,10 +198,11 @@ const styles = StyleSheet.create({
     fontSize: 7.8,
   },
   notesBody: {
-    padding: 4.5,
-    fontSize: 7.2,
-    color: '#333333',
-    lineHeight: 1.3,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    fontSize: 6.8,
+    color: '#374151',
+    lineHeight: 1.25,
   },
 
   signRow: {
@@ -388,8 +389,11 @@ export function SignupDocument({ customer, logoSrc }: { customer: any; logoSrc?:
 
               <View style={styles.gridRow}>
                 <View style={styles.gridColLeft}>
-                  <Text style={styles.label}>CNIC #:</Text>
-                  <Text style={styles.value}>{customer?.cnic || '—'}</Text>
+                  <Text style={styles.label}>{customer?.cnic ? 'CNIC #:' : (customer?.ntnNumber ? 'NTN #:' : 'CNIC / NTN:')}</Text>
+                  <Text style={styles.value}>
+                    {customer?.cnic || customer?.ntnNumber || customer?.passportNumber || '—'}
+                    {customer?.cnic && customer?.ntnNumber ? ` / NTN: ${customer.ntnNumber}` : ''}
+                  </Text>
                 </View>
                 <View style={styles.divider} />
                 <View style={styles.gridColRight}>
@@ -496,7 +500,7 @@ export function SignupDocument({ customer, logoSrc }: { customer: any; logoSrc?:
                     </View>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>Meter Type:</Text>
-                      <Text style={styles.value}>{solar?.meterType || '—'}</Text>
+                      <Text style={styles.value}>{solar?.meterType ? `${solar.meterType}${solar?.meterPhase ? ` (${solar.meterPhase})` : ''}` : '—'}</Text>
                     </View>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>Zero Export Device:</Text>
@@ -543,16 +547,24 @@ export function SignupDocument({ customer, logoSrc }: { customer: any; logoSrc?:
                       <Text style={styles.value}>{solar?.inverterSerials?.filter(Boolean).join(', ') || solar?.inverterSerial || '—'}</Text>
                     </View>
                     <View style={styles.gridRow}>
-                      <Text style={styles.label}>PV DG Controller:</Text>
-                      <Text style={styles.value}>{solar?.pvDgController === 'Installed' ? `Installed (${solar?.pvDgControllerBrand || 'Standard'})` : 'Not Installed'}</Text>
+                      <Text style={styles.label}>Inverter User Name:</Text>
+                      <Text style={[styles.value, { fontWeight: 'bold', color: '#002868' }]}>{solar?.inverterUsername || '—'}</Text>
+                    </View>
+                    <View style={styles.gridRow}>
+                      <Text style={styles.label}>Inverter Password:</Text>
+                      <Text style={[styles.value, { fontWeight: 'bold', color: '#002868' }]}>{solar?.inverterPassword || '—'}</Text>
+                    </View>
+                    <View style={styles.gridRow}>
+                      <Text style={styles.label}>Inverter Warranty:</Text>
+                      <Text style={styles.value}>{formatDateStr(solar?.inverterWarrantyEnd)}</Text>
                     </View>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>Datalogger / NOC:</Text>
                       <Text style={styles.value}>{solar?.datalogger === 'Installed' ? `Installed (${solar?.monitoringEcosystem || solar?.dataloggerBrand || 'Active'})` : 'Not Installed'}</Text>
                     </View>
                     <View style={styles.gridRow}>
-                      <Text style={styles.label}>Inverter Warranty:</Text>
-                      <Text style={styles.value}>{formatDateStr(solar?.inverterWarrantyEnd)}</Text>
+                      <Text style={styles.label}>PV DG Controller:</Text>
+                      <Text style={styles.value}>{solar?.pvDgController === 'Installed' ? `Installed (${solar?.pvDgControllerBrand || 'Standard'})` : 'Not Installed'}</Text>
                     </View>
                     <View style={styles.gridRow}>
                       <Text style={styles.label}>Lightning Arrestor:</Text>
@@ -586,6 +598,10 @@ export function SignupDocument({ customer, logoSrc }: { customer: any; logoSrc?:
                       <Text style={[styles.value, { fontWeight: 'bold' }]}>{solar?.panelBrand || '—'}</Text>
                     </View>
                     <View style={styles.gridRow}>
+                      <Text style={styles.label}>Panel Type:</Text>
+                      <Text style={styles.value}>{solar?.panelType || 'Tier-1 Monofacial'}</Text>
+                    </View>
+                    <View style={styles.gridRow}>
                       <Text style={styles.label}>Panel Wattage:</Text>
                       <Text style={styles.value}>{solar?.panelWattage && Number(solar.panelWattage) > 0 ? `${solar.panelWattage} W` : '—'}</Text>
                     </View>
@@ -608,6 +624,10 @@ export function SignupDocument({ customer, logoSrc }: { customer: any; logoSrc?:
                       <Text style={styles.value}>{solar?.batteryCategory || '—'}</Text>
                     </View>
                     <View style={styles.gridRow}>
+                      <Text style={styles.label}>Battery Type:</Text>
+                      <Text style={styles.value}>{solar?.batteryType && solar.batteryType !== 'None' ? solar.batteryType : (solar?.batteryCategory === 'N/A' ? 'None' : (solar?.batteryType || '—'))}</Text>
+                    </View>
+                    <View style={styles.gridRow}>
                       <Text style={styles.label}>Battery Brand:</Text>
                       <Text style={[styles.value, { fontWeight: 'bold' }]}>{solar?.batteryBrand && solar.batteryBrand !== 'N/A' ? solar.batteryBrand : (solar?.batteryBrand === 'N/A' && Number(solar?.noOfBatteries) > 0 ? 'N/A' : '—')}</Text>
                     </View>
@@ -623,9 +643,17 @@ export function SignupDocument({ customer, logoSrc }: { customer: any; logoSrc?:
                       <Text style={styles.label}>Battery Serial #:</Text>
                       <Text style={styles.value}>{solar?.batterySerials?.filter(Boolean).join(', ') || solar?.batterySerial || '—'}</Text>
                     </View>
-                    <View style={styles.gridRowLast}>
+                    <View style={styles.gridRow}>
                       <Text style={styles.label}>Battery Warranty:</Text>
                       <Text style={styles.value}>{formatDateStr(solar?.batteryWarrantyEnd)}</Text>
+                    </View>
+                    <View style={styles.gridRow}>
+                      <Text style={styles.label}>Breaker / Protection:</Text>
+                      <Text style={styles.value}>{solar?.breakerName || 'Schneider / ABB'}</Text>
+                    </View>
+                    <View style={styles.gridRowLast}>
+                      <Text style={styles.label}>Installation Date:</Text>
+                      <Text style={styles.value}>{formatDateStr(solar?.systemInstallationDate)}</Text>
                     </View>
                   </View>
                 </View>

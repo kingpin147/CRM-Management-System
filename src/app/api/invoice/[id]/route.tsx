@@ -163,7 +163,16 @@ export async function GET(
     const logoPath = path.join(process.cwd(), 'public', 'invoice-logo.png')
     const solarBannerPath = path.join(process.cwd(), 'public', 'solar-house-banner.png')
     const paymentOptionsPath = path.join(process.cwd(), 'public', 'payment-options-block.png')
-    const rightGraphicPath = path.join(process.cwd(), 'public', 'invoice-right-graphic.png')
+    
+    // Support updated invoice right graphic (invoice-right-graphic 3.jpg / png / jpeg)
+    const rightGraphicFile = [
+      'invoice-right-graphic 3.jpg',
+      'invoice-right-graphic 3.png',
+      'invoice-right-graphic 3.jpeg',
+      'invoice-right-graphic.png',
+      'invoice-right-graphic.jpg'
+    ].find(f => fs.existsSync(path.join(process.cwd(), 'public', f))) || 'invoice-right-graphic 3.jpg'
+    const rightGraphicPath = path.join(process.cwd(), 'public', rightGraphicFile)
     
     let logoSrc = ''
     let solarHouseBannerSrc = ''
@@ -171,17 +180,25 @@ export async function GET(
     let rightGraphicSrc = ''
     try {
       if (fs.existsSync(logoPath)) {
-        logoSrc = `data:image/png;base64,${fs.readFileSync(logoPath).toString('base64')}`
+        const ext = path.extname(logoPath).toLowerCase()
+        const mime = ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : 'image/png'
+        logoSrc = `data:${mime};base64,${fs.readFileSync(logoPath).toString('base64')}`
       }
 
       if (fs.existsSync(solarBannerPath)) {
-        solarHouseBannerSrc = `data:image/png;base64,${fs.readFileSync(solarBannerPath).toString('base64')}`
+        const ext = path.extname(solarBannerPath).toLowerCase()
+        const mime = ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : 'image/png'
+        solarHouseBannerSrc = `data:${mime};base64,${fs.readFileSync(solarBannerPath).toString('base64')}`
       }
       if (fs.existsSync(paymentOptionsPath)) {
-        paymentOptionsBlockSrc = `data:image/png;base64,${fs.readFileSync(paymentOptionsPath).toString('base64')}`
+        const ext = path.extname(paymentOptionsPath).toLowerCase()
+        const mime = ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : 'image/png'
+        paymentOptionsBlockSrc = `data:${mime};base64,${fs.readFileSync(paymentOptionsPath).toString('base64')}`
       }
       if (fs.existsSync(rightGraphicPath)) {
-        rightGraphicSrc = `data:image/png;base64,${fs.readFileSync(rightGraphicPath).toString('base64')}`
+        const ext = path.extname(rightGraphicPath).toLowerCase()
+        const mime = ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : 'image/png'
+        rightGraphicSrc = `data:${mime};base64,${fs.readFileSync(rightGraphicPath).toString('base64')}`
       }
     } catch (e) {
       console.error('Failed to read image assets', e)

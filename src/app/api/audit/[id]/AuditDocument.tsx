@@ -486,6 +486,14 @@ export function AuditDocument({
                         : solar.inverterSerial || '—'}
                     </Text>
                   </View>
+                  {(solar.inverterUsername || solar.inverterPassword) && (
+                    <View style={styles.row}>
+                      <Text style={styles.label}>Inverter Portal:</Text>
+                      <Text style={styles.value}>
+                        {solar.inverterUsername || '—'} {solar.inverterPassword ? `(Pass: ${solar.inverterPassword})` : ''}
+                      </Text>
+                    </View>
+                  )}
                   <View style={styles.row}>
                     <Text style={styles.label}>PV DG Controller:</Text>
                     <Text style={styles.value}>{solar.pvDgController === 'Installed' ? `Installed (${solar.pvDgControllerBrand || 'Yes'})` : 'Not Installed'}</Text>

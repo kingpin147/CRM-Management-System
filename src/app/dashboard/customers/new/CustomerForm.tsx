@@ -95,6 +95,8 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
       inverterCategory: '',
       inverterSize: '',
       inverterWarrantyExpiry: '',
+      inverterUsername: '',
+      inverterPassword: '',
       meterPhase: '',
       panelTechnology: '',
       panelBrand: '',
@@ -1687,6 +1689,35 @@ export function CustomerForm({ users }: { users?: { id: string, fullName: string
                           </div>
                         </div>
                       ))}
+                    </div>
+                  </div>
+
+                  {/* Inverter Monitoring Portal Credentials */}
+                  <div className="space-y-3 p-4 bg-amber-50/40 rounded-xl border border-amber-200/60">
+                    <div className="flex items-center justify-between border-b border-amber-200/50 pb-2">
+                      <span className="text-xs font-bold text-[#002868]">Inverter Monitoring Portal Credentials</span>
+                      <span className="text-[10px] text-amber-800 font-medium">For IP/NOC remote monitoring</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <FormField control={form.control} name="inverterUsername" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs font-semibold">Inverter Portal Username</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter username or email..." {...field} value={field.value || ''} className="h-10 text-xs bg-white" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+
+                      <FormField control={form.control} name="inverterPassword" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs font-semibold">Inverter Portal Password</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter portal password..." {...field} value={field.value || ''} className="h-10 text-xs bg-white" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
                     </div>
                   </div>
                 </div>

@@ -646,12 +646,12 @@ export function InvoiceDocument({
                 </View>
               </View>
               
-              {/* Solar House Illustration */}
-              {solarHouseBannerSrc ? (
+              {/* Solar Banner / Right Graphic Illustration */}
+              {rightGraphicSrc ? (
+                <Image src={rightGraphicSrc} style={styles.rightGraphic} />
+              ) : solarHouseBannerSrc ? (
                 <Image src={solarHouseBannerSrc} style={styles.solarBannerImage} />
-              ) : (
-                rightGraphicSrc && <Image src={rightGraphicSrc} style={styles.rightGraphic} />
-              )}
+              ) : null}
               
               {/* Payment Options Block Graphic */}
               {paymentOptionsBlockSrc ? (
