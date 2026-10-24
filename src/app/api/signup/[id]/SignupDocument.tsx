@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
   footerBlueBar: {
     backgroundColor: '#002868',
     flexDirection: 'row',
-    justifyContent: 'center',
+    justifyContent: 'space-around',
     alignItems: 'center',
     paddingVertical: 2,
     marginTop: 2,
@@ -249,13 +249,13 @@ const styles = StyleSheet.create({
   },
   footerBarText: {
     color: '#FFFFFF',
-    fontSize: 7.5,
+    fontSize: 7.0,
     fontWeight: 'bold',
-    marginHorizontal: 8,
   },
   footerBarDivider: {
     color: '#FFFFFF',
-    fontSize: 7.5,
+    fontSize: 7.0,
+    opacity: 0.8,
   },
 })
 
@@ -664,6 +664,10 @@ export function SignupDocument({ customer, logoSrc }: { customer: any; logoSrc?:
 
           {/* Bottom Blue Bar */}
           <View style={styles.footerBlueBar}>
+            <Text style={styles.footerBarText}>WhatsApp +923009433303</Text>
+            <Text style={styles.footerBarDivider}>|</Text>
+            <Text style={styles.footerBarText}>info@energygurus.online</Text>
+            <Text style={styles.footerBarDivider}>|</Text>
             <Text style={styles.footerBarText}>www.energygurus.online</Text>
             <Text style={styles.footerBarDivider}>|</Text>
             <Text style={styles.footerBarText}>facebook.com/energygurus.online</Text>
