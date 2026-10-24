@@ -348,11 +348,11 @@ const styles = StyleSheet.create({
   },
   footerBarText: {
     color: '#FFFFFF',
-    fontSize: 8.4,
+    fontSize: 7.2,
   },
   footerBarDivider: {
     color: '#FFFFFF',
-    fontSize: 8.4,
+    fontSize: 7.2,
     opacity: 0.8,
   }
 })
@@ -767,6 +767,8 @@ export function InvoiceDocument({
           {/* Bottom Blue Bar */}
           <View style={styles.footerBlueBar}>
             <Text style={styles.footerBarText}>WhatsApp +923009433303</Text>
+            <Text style={styles.footerBarDivider}>|</Text>
+            <Text style={styles.footerBarText}>billing@energygurus.online</Text>
             <Text style={styles.footerBarDivider}>|</Text>
             <Text style={styles.footerBarText}>www.energygurus.online</Text>
             <Text style={styles.footerBarDivider}>|</Text>

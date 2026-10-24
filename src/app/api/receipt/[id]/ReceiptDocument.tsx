@@ -273,7 +273,12 @@ const styles = StyleSheet.create({
   },
   footerBarText: {
     color: '#FFFFFF',
-    fontSize: 7.2,
+    fontSize: 7.0,
+  },
+  footerBarDivider: {
+    color: '#FFFFFF',
+    fontSize: 7.0,
+    opacity: 0.8,
   },
 })
 
@@ -437,11 +442,13 @@ export function ReceiptDocument({
           {/* Bottom Blue Bar */}
           <View style={styles.footerBlueBar}>
             <Text style={styles.footerBarText}>WhatsApp +923009433303</Text>
-            <Text style={{ color: '#FFF', fontSize: 7.2 }}>|</Text>
+            <Text style={styles.footerBarDivider}>|</Text>
+            <Text style={styles.footerBarText}>billing@energygurus.online</Text>
+            <Text style={styles.footerBarDivider}>|</Text>
             <Text style={styles.footerBarText}>www.energygurus.online</Text>
-            <Text style={{ color: '#FFF', fontSize: 7.2 }}>|</Text>
+            <Text style={styles.footerBarDivider}>|</Text>
             <Text style={styles.footerBarText}>facebook.com/energygurus.online</Text>
-            <Text style={{ color: '#FFF', fontSize: 7.2 }}>|</Text>
+            <Text style={styles.footerBarDivider}>|</Text>
             <Text style={styles.footerBarText}>youtube.com/energygurus.online</Text>
           </View>
         </View>
