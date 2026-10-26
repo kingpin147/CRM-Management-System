@@ -334,7 +334,7 @@ export async function createCustomer(formData: FormData) {
             {
               invoiceNumber: `INV-${customerCode.replace(/^[A-Za-z]+-/, '')}`,
               billingPeriod: signUpDate || new Date(),
-              amount: totalAmount,
+              amount: Math.max(0, totalAmount - salesTaxAmount),
               salesTax: salesTaxAmount,
               totalAmount,
               status: paidAmount >= totalAmount ? 'PAID' : 'UNPAID',
@@ -354,6 +354,7 @@ export async function createCustomer(formData: FormData) {
         ledgerEntries: totalAmount > 0 ? {
           create: [
             {
+              date: signUpDate || new Date(),
               narration: `Initial Package Subscription (${packageTier} ${systemSizeKw})${onboardingFee > 0 ? ' + On-Boarding Fee (PKR 3,000 + PKR 150 Tax)' : ''}`,
               refNumber: `INV-${customerCode.replace(/^[A-Za-z]+-/, '')}`,
               debit: totalAmount,
@@ -361,6 +362,7 @@ export async function createCustomer(formData: FormData) {
               balance: totalAmount,
             },
             ...(paidAmount > 0 ? [{
+              date: signUpDate || new Date(),
               narration: paymentDescription ? `Advance Payment Received (${paymentMode}) - ${paymentDescription}` : `Advance Payment Received (${paymentMode || 'Cash'})`,
               refNumber: `PRV-${Math.floor(100000 + Math.random() * 900000)}`,
               debit: 0,

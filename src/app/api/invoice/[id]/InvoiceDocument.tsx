@@ -398,7 +398,7 @@ export function InvoiceDocument({
   paymentOptionsBlockSrc?: string;
   rightGraphicSrc?: string;
 }) {
-  const issueDate = invoice ? new Date(invoice.createdAt) : new Date()
+  const issueDate = invoice ? new Date(invoice.billingPeriod || invoice.createdAt) : new Date()
   const invoiceNumber = invoice?.invoiceNumber || (customer?.customerCode ? `INV-${customer.customerCode.replace(/^[A-Za-z]+-/, '')}` : 'INV-520722')
   
   const monthShorts = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -410,8 +410,41 @@ export function InvoiceDocument({
   const issueDateStr = `01 ${monthShorts[issueDate.getMonth()]} ${issueDate.getFullYear()}`
   const dueDateStr = `10 ${monthShorts[issueDate.getMonth()]} ${issueDate.getFullYear()}`
   
-  const basePrice = invoice ? Number(invoice.amount) : (customer?.packagePlan ? Number(customer.packagePlan.monthlyBasePrice) : 50000)
-  const salesTax = invoice ? Number(invoice.salesTax) : (customer?.packagePlan ? Number(customer.packagePlan.salesTaxAmount) : 0)
+  // Check if this invoice is the initial signup invoice (which includes the onboarding fee)
+  const plan = customer?.packagePlan
+  const planOnboardingFee = plan?.onboardingFee != null ? Number(plan.onboardingFee) : 3000
+  const planTotal = plan?.totalAmount != null ? Number(plan.totalAmount) : 0
+  const isInitialInvoice = Boolean(
+    planOnboardingFee > 0 &&
+    (
+      (invoice && planTotal > 0 && Math.abs(Number(invoice.totalAmount || invoice.amount) - planTotal) < 1) ||
+      (customer?.invoices && customer.invoices.length > 0 && customer.invoices[customer.invoices.length - 1]?.id === invoice?.id) ||
+      (!invoice && (customer?.invoices?.length || 0) <= 1)
+    )
+  )
+
+  let displaySubscriptionCharges = 0
+  let displayOnboardingFee = 0
+  let displaySalesTax = 0
+
+  if (isInitialInvoice) {
+    displaySubscriptionCharges = plan?.monthlyBasePrice != null ? Number(plan.monthlyBasePrice) : 1440
+    displayOnboardingFee = planOnboardingFee
+    displaySalesTax = plan?.salesTaxAmount != null ? Number(plan.salesTaxAmount) : (invoice ? Number(invoice.salesTax) : 0)
+  } else {
+    const invAmt = invoice ? Number(invoice.amount) : (plan ? Number(plan.monthlyBasePrice) : 0)
+    const invTotal = invoice ? Number(invoice.totalAmount) : 0
+    const invTax = invoice ? Number(invoice.salesTax) : (plan ? Number(plan.salesTaxAmount) : 0)
+
+    // Guard against legacy bug where invoice.amount was stored as totalAmount
+    if (invAmt > 0 && invTotal > 0 && Math.abs(invAmt - invTotal) < 1 && invTax > 0) {
+      displaySubscriptionCharges = Math.max(0, invTotal - invTax)
+    } else {
+      displaySubscriptionCharges = invAmt > 0 ? invAmt : (plan ? Number(plan.monthlyBasePrice) : 0)
+    }
+    displayOnboardingFee = 0
+    displaySalesTax = invTax
+  }
 
   // Calculate Arrears from unpaid previous invoices
   const dbInvoices = (customer?.invoices && customer.invoices.length > 0) ? customer.invoices : []
@@ -430,8 +463,9 @@ export function InvoiceDocument({
     }, 0)
   }
 
-  // Exact mathematically perfect total calculation: Base + Tax + Arrears
-  const totalAmount = basePrice + salesTax + arrears
+  // Exact mathematically perfect total calculation: Subscription + Onboarding + Tax + Arrears
+  const totalAmount = displaySubscriptionCharges + displayOnboardingFee + displaySalesTax + arrears
+  const appliedDiscount = Number(plan?.appliedDiscount || 0)
   
   const systemType = customer?.packagePlan?.systemSizeKw || customer?.solarSystem?.inverterSize || '1-10 kW'
   const packageTier = customer?.packagePlan?.packageTier || 'Moderate'
@@ -560,11 +594,17 @@ export function InvoiceDocument({
                   
                   <View style={styles.row}>
                     <Text style={styles.label}>Subscription Charges:</Text>
-                    <Text style={styles.value}>{basePrice.toLocaleString(undefined, {minimumFractionDigits: 2})}</Text>
+                    <Text style={styles.value}>{displaySubscriptionCharges.toLocaleString(undefined, {minimumFractionDigits: 2})}</Text>
                   </View>
+                  {displayOnboardingFee > 0 && (
+                    <View style={styles.row}>
+                      <Text style={styles.label}>On-Boarding Fee:</Text>
+                      <Text style={styles.value}>{displayOnboardingFee.toLocaleString(undefined, {minimumFractionDigits: 2})}</Text>
+                    </View>
+                  )}
                   <View style={styles.row}>
                     <Text style={styles.label}>Sales Tax:</Text>
-                    <Text style={styles.value}>{salesTax.toLocaleString(undefined, {minimumFractionDigits: 2})}</Text>
+                    <Text style={styles.value}>{displaySalesTax.toLocaleString(undefined, {minimumFractionDigits: 2})}</Text>
                   </View>
                   <View style={styles.row}>
                     <Text style={styles.label}>Arrears:</Text>
@@ -577,12 +617,14 @@ export function InvoiceDocument({
                     <Text style={styles.totalValue}>{totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</Text>
                   </View>
                   
-                  {/* Orange Rebate Box */}
-                  <View style={styles.rebateBox}>
-                    <Text style={styles.rebateText}>
-                      {' '}
-                    </Text>
-                  </View>
+                  {/* Orange Rebate Box - only rendered when there is an active discount */}
+                  {appliedDiscount > 0 ? (
+                    <View style={styles.rebateBox}>
+                      <Text style={styles.rebateText}>
+                        {`Special Discount Applied: ${appliedDiscount}%`}
+                      </Text>
+                    </View>
+                  ) : null}
                 </View>
               </View>
               

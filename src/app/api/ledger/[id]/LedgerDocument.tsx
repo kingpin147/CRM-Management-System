@@ -354,7 +354,21 @@ export function LedgerDocument({ customer, ledgerEntries, logoSrc }: LedgerDocum
               refDisplay = `PRV-${rawRef.replace(/^(INV|TX)-/, '')}`
             }
 
-            const dStr = le.createdAt ? formatDate(le.createdAt) : '—'
+            let displayDate = le.date || le.createdAt
+            const isInvoice = !isDebitNote && !isCreditNote && (le.invoiceId || Number(le.debit) > 0 || rawRef.startsWith('INV-') || rawRef.startsWith('LHR-') || rawNarr.toLowerCase().includes('invoice'))
+            if (isInvoice) {
+              const matchedInv = (customer.invoices || []).find((inv: any) => 
+                (le.invoiceId && inv.id === le.invoiceId) || 
+                (le.refNumber && inv.invoiceNumber === le.refNumber)
+              )
+              const invBaseDate = matchedInv?.billingPeriod || matchedInv?.createdAt || le.date || le.createdAt
+              if (invBaseDate) {
+                const d = new Date(invBaseDate)
+                displayDate = new Date(d.getFullYear(), d.getMonth(), 1)
+              }
+            }
+
+            const dStr = displayDate ? formatDate(displayDate) : '—'
 
             return (
               <View key={le.id || idx} style={styles.tableRow}>

@@ -28,6 +28,7 @@ export async function GET(
     include: {
       packagePlan: true,
       solarSystem: true,
+      invoices: true,
       ledgerEntries: {
         orderBy: { createdAt: 'asc' }
       }
@@ -48,6 +49,7 @@ export async function GET(
           include: {
             packagePlan: true,
             solarSystem: true,
+            invoices: true,
             ledgerEntries: {
               orderBy: { createdAt: 'asc' }
             }

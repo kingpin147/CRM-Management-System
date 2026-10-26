@@ -1641,7 +1641,7 @@ export default async function CustomerDetailPage({
                 <Table>
                   <TableHeader className="bg-slate-100/90 border-b border-slate-200">
                     <TableRow>
-                      <TableHead className="font-bold text-xs text-[#002868] border-r w-28">Payment Date</TableHead>
+                      <TableHead className="font-bold text-xs text-[#002868] border-r w-28">Date</TableHead>
                       <TableHead className="font-bold text-xs text-[#002868] border-r w-56">Ref # ( Receipt and Invoice#)</TableHead>
                       <TableHead className="font-bold text-xs text-[#002868] border-r min-w-[240px]">Description</TableHead>
                       <TableHead className="font-bold text-xs text-[#002868] border-r text-right w-24">Debit</TableHead>
@@ -1695,9 +1695,22 @@ export default async function CustomerDetailPage({
                           ? `PRV-${rawRef.replace(/^(INV|TX)-/, '')}`
                           : formattedRef
 
+                        let displayDate = le.date || le.createdAt
+                        if (isInvoice) {
+                          const matchedInv = (customer.invoices || []).find((inv: any) => 
+                            (le.invoiceId && inv.id === le.invoiceId) || 
+                            (le.refNumber && inv.invoiceNumber === le.refNumber)
+                          )
+                          const invBaseDate = matchedInv?.billingPeriod || matchedInv?.createdAt || le.date || le.createdAt
+                          if (invBaseDate) {
+                            const d = new Date(invBaseDate)
+                            displayDate = new Date(d.getFullYear(), d.getMonth(), 1)
+                          }
+                        }
+
                         return (
                           <TableRow key={le.id} className="border-b hover:bg-slate-50 text-xs">
-                            <TableCell className="font-medium border-r font-mono whitespace-nowrap">{formatDate(le.createdAt)}</TableCell>
+                            <TableCell className="font-medium border-r font-mono whitespace-nowrap">{formatDate(displayDate)}</TableCell>
                             <TableCell className="font-mono font-semibold border-r">
                               {isDebitNote ? (
                                 <a 

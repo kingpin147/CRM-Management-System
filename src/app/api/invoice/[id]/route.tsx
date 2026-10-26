@@ -96,7 +96,7 @@ export async function GET(
         id: le.id,
         invoiceNumber: le.refNumber || `INV-${customer.customerCode || '001'}`,
         customerId: customer.id,
-        amount: Number(le.debit) || customer.packagePlan?.monthlyBasePrice || 1000,
+        amount: Math.max(0, (Number(le.debit) || Number(customer.packagePlan?.totalAmount) || 1000) - Number(customer.packagePlan?.salesTaxAmount || 0)),
         salesTax: customer.packagePlan?.salesTaxAmount || 0,
         totalAmount: Number(le.debit) || customer.packagePlan?.totalAmount || 1000,
         status: 'PAID',
