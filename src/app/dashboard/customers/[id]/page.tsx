@@ -1703,8 +1703,7 @@ export default async function CustomerDetailPage({
                           )
                           const invBaseDate = matchedInv?.billingPeriod || matchedInv?.createdAt || le.date || le.createdAt
                           if (invBaseDate) {
-                            const d = new Date(invBaseDate)
-                            displayDate = new Date(d.getFullYear(), d.getMonth(), 1)
+                            displayDate = new Date(invBaseDate)
                           }
                         }
 

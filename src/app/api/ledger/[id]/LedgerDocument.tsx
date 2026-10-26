@@ -363,8 +363,7 @@ export function LedgerDocument({ customer, ledgerEntries, logoSrc }: LedgerDocum
               )
               const invBaseDate = matchedInv?.billingPeriod || matchedInv?.createdAt || le.date || le.createdAt
               if (invBaseDate) {
-                const d = new Date(invBaseDate)
-                displayDate = new Date(d.getFullYear(), d.getMonth(), 1)
+                displayDate = new Date(invBaseDate)
               }
             }
 

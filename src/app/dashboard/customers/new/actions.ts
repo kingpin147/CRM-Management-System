@@ -338,7 +338,7 @@ export async function createCustomer(formData: FormData) {
               salesTax: salesTaxAmount,
               totalAmount,
               status: paidAmount >= totalAmount ? 'PAID' : 'UNPAID',
-              dueDate: nextBillingDate,
+              dueDate: paidAmount >= totalAmount ? (signUpDate || new Date()) : nextBillingDate,
             }
           ]
         } : undefined,

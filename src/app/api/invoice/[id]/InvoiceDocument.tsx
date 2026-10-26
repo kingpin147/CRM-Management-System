@@ -361,6 +361,7 @@ function getBillingPeriod(baseDate: Date, billingTypeStr?: string): string {
   const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
   const year = baseDate.getFullYear()
   const monthIdx = baseDate.getMonth()
+  const day = baseDate.getDate()
   
   let numMonths = 1
   const bType = (billingTypeStr || '').toLowerCase()
@@ -372,14 +373,23 @@ function getBillingPeriod(baseDate: Date, billingTypeStr?: string): string {
     numMonths = 12
   }
 
-  const startDateStr = `1-${monthNames[monthIdx]}-${year}`
-  
-  const endTargetMonthIdx = monthIdx + numMonths - 1
-  const endYear = year + Math.floor(endTargetMonthIdx / 12)
-  const normalizedEndMonthIdx = ((endTargetMonthIdx % 12) + 12) % 12
-  const lastDay = new Date(endYear, normalizedEndMonthIdx + 1, 0).getDate()
-  const endDateStr = `${lastDay}-${monthNames[normalizedEndMonthIdx]}-${endYear}`
-  
+  // If invoice is generated on the 1st of the month (e.g. monthly recurring billing)
+  if (day === 1) {
+    const startDateStr = `1-${monthNames[monthIdx]}-${year}`
+    const endTargetMonthIdx = monthIdx + numMonths - 1
+    const endYear = year + Math.floor(endTargetMonthIdx / 12)
+    const normalizedEndMonthIdx = ((endTargetMonthIdx % 12) + 12) % 12
+    const lastDay = new Date(endYear, normalizedEndMonthIdx + 1, 0).getDate()
+    const endDateStr = `${lastDay}-${monthNames[normalizedEndMonthIdx]}-${endYear}`
+    return `${startDateStr} To ${endDateStr}`
+  }
+
+  // Mid-month signup / invoice (e.g. 14 Oct 2026):
+  const startDateStr = `${day}-${monthNames[monthIdx]}-${year}`
+  const endD = new Date(baseDate)
+  endD.setMonth(endD.getMonth() + numMonths)
+  endD.setDate(endD.getDate() - 1)
+  const endDateStr = `${endD.getDate()}-${monthNames[endD.getMonth()]}-${endD.getFullYear()}`
   return `${startDateStr} To ${endDateStr}`
 }
 
@@ -387,7 +397,7 @@ export function InvoiceDocument({
   customer, 
   invoice, 
   logoSrc, 
-  solarHouseBannerSrc,
+  solarHouseBannerSrc, 
   paymentOptionsBlockSrc,
   rightGraphicSrc,
 }: { 
@@ -398,7 +408,9 @@ export function InvoiceDocument({
   paymentOptionsBlockSrc?: string;
   rightGraphicSrc?: string;
 }) {
-  const issueDate = invoice ? new Date(invoice.billingPeriod || invoice.createdAt) : new Date()
+  const issueDate = invoice 
+    ? new Date(invoice.billingPeriod || invoice.createdAt) 
+    : (customer?.signupDate ? new Date(customer.signupDate) : (customer?.createdAt ? new Date(customer.createdAt) : new Date()))
   const invoiceNumber = invoice?.invoiceNumber || (customer?.customerCode ? `INV-${customer.customerCode.replace(/^[A-Za-z]+-/, '')}` : 'INV-520722')
   
   const monthShorts = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -406,9 +418,22 @@ export function InvoiceDocument({
   const billingType = customer?.packagePlan?.billingType || 'Monthly'
   const billingMonth = getBillingPeriod(issueDate, billingType)
   
-  // Issue Date is ALWAYS 1st of the month, Due Date is ALWAYS 10th of the month
-  const issueDateStr = `01 ${monthShorts[issueDate.getMonth()]} ${issueDate.getFullYear()}`
-  const dueDateStr = `10 ${monthShorts[issueDate.getMonth()]} ${issueDate.getFullYear()}`
+  // Format Issue Date from actual issueDate (e.g. "14 Oct 2026")
+  const issueDay = String(issueDate.getDate()).padStart(2, '0')
+  const issueDateStr = `${issueDay} ${monthShorts[issueDate.getMonth()]} ${issueDate.getFullYear()}`
+
+  // Determine Due Date:
+  // For signup invoice / advance payment entered at same time: due date is the issue date / signup date
+  // For monthly cron invoices generated on 1st of the month: due date is 10th of that month
+  let dueDateStr = issueDateStr
+  if (issueDate.getDate() === 1) {
+    dueDateStr = `10 ${monthShorts[issueDate.getMonth()]} ${issueDate.getFullYear()}`
+  } else if (invoice?.dueDate && invoice.status !== 'PAID') {
+    const dDate = new Date(invoice.dueDate)
+    if (!isNaN(dDate.getTime()) && dDate >= issueDate) {
+      dueDateStr = `${String(dDate.getDate()).padStart(2, '0')} ${monthShorts[dDate.getMonth()]} ${dDate.getFullYear()}`
+    }
+  }
   
   // Check if this invoice is the initial signup invoice (which includes the onboarding fee)
   const plan = customer?.packagePlan
