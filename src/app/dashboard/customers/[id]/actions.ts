@@ -1002,6 +1002,9 @@ export async function generateManualInvoice(formData: FormData) {
   const amount = Number(formData.get('amount')) || 0
   const description = formData.get('description') as string || 'Manual Charge'
   const dueDateStr = formData.get('dueDate') as string
+  const salesTax = Number(formData.get('salesTax')) || 0
+  const billingPeriodStr = formData.get('billingPeriod') as string
+  const newNextBillingDateStr = formData.get('newNextBillingDate') as string
 
   if (!customerId || amount <= 0) {
     return { error: 'Please enter a valid invoice amount.' }
@@ -1009,6 +1012,8 @@ export async function generateManualInvoice(formData: FormData) {
 
   try {
     const dueDate = dueDateStr ? new Date(dueDateStr) : new Date(new Date().setDate(new Date().getDate() + 7))
+    const billingPeriod = billingPeriodStr ? new Date(billingPeriodStr) : new Date()
+    const newNextBillingDate = newNextBillingDateStr ? new Date(newNextBillingDateStr) : null
     const invoiceNumber = `INV-${Date.now().toString().slice(-7)}`
 
     let generatedInvoice: any = null
@@ -1024,9 +1029,9 @@ export async function generateManualInvoice(formData: FormData) {
         data: {
           invoiceNumber,
           customerId,
-          billingPeriod: new Date(),
-          amount,
-          salesTax: 0,
+          billingPeriod,
+          amount: Math.max(0, amount - salesTax),
+          salesTax,
           totalAmount: amount,
           status: 'UNPAID',
           dueDate,
@@ -1056,6 +1061,14 @@ export async function generateManualInvoice(formData: FormData) {
           balance: newBalance,
         },
       })
+
+      // 4. If next billing date advancement is specified, update packagePlan
+      if (newNextBillingDate) {
+        await tx.packagePlan.update({
+          where: { customerId },
+          data: { nextBillingDate: newNextBillingDate }
+        })
+      }
     })
 
     if (customer && generatedInvoice) {

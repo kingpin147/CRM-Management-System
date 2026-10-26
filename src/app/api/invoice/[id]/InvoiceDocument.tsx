@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
   }
 })
 
-function getBillingPeriod(baseDate: Date, billingTypeStr?: string): string {
+function getBillingPeriod(baseDate: Date, billingTypeStr?: string, isProrated?: boolean): string {
   const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
   const year = baseDate.getFullYear()
   const monthIdx = baseDate.getMonth()
@@ -382,6 +382,13 @@ function getBillingPeriod(baseDate: Date, billingTypeStr?: string): string {
     const lastDay = new Date(endYear, normalizedEndMonthIdx + 1, 0).getDate()
     const endDateStr = `${lastDay}-${monthNames[normalizedEndMonthIdx]}-${endYear}`
     return `${startDateStr} To ${endDateStr}`
+  }
+
+  // Prorated invoice ending at the end of the month (e.g. 24 Dec 2026 to 31 Dec 2026):
+  if (isProrated) {
+    const lastDay = new Date(year, monthIdx + 1, 0).getDate()
+    const days = (lastDay - day) + 1
+    return `${day}-${monthNames[monthIdx]}-${year} To ${lastDay}-${monthNames[monthIdx]}-${year} (${days} Days Prorated)`
   }
 
   // Mid-month signup / invoice (e.g. 14 Oct 2026):
@@ -415,8 +422,14 @@ export function InvoiceDocument({
   
   const monthShorts = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
   
+  const isProratedInvoice = Boolean(
+    invoice?.narration?.toLowerCase().includes('prorated') || 
+    invoice?.description?.toLowerCase().includes('prorated') ||
+    invoice?.narration?.toLowerCase().includes('days:')
+  )
+
   const billingType = customer?.packagePlan?.billingType || 'Monthly'
-  const billingMonth = getBillingPeriod(issueDate, billingType)
+  const billingMonth = getBillingPeriod(issueDate, billingType, isProratedInvoice)
   
   // Format Issue Date from actual issueDate (e.g. "14 Oct 2026")
   const issueDay = String(issueDate.getDate()).padStart(2, '0')
@@ -618,7 +631,7 @@ export function InvoiceDocument({
                   <View style={styles.dottedLine} />
                   
                   <View style={styles.row}>
-                    <Text style={styles.label}>Subscription Charges:</Text>
+                    <Text style={styles.label}>{isProratedInvoice ? 'Subscription (Prorated):' : 'Subscription Charges:'}</Text>
                     <Text style={styles.value}>{displaySubscriptionCharges.toLocaleString(undefined, {minimumFractionDigits: 2})}</Text>
                   </View>
                   {displayOnboardingFee > 0 && (

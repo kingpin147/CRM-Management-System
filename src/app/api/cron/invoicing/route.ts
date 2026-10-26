@@ -41,37 +41,46 @@ export async function GET(request: NextRequest) {
         let salesTax = Number(plan.salesTaxAmount || 0)
         let isProrated = false
         let narration = `Automated Monthly O&M Invoice (${plan.packageTier} Plan)`
-
-        // Calculate initial cycle end date
-        const activationDate = customer.activationDate ? new Date(customer.activationDate) : new Date(customer.signupDate || new Date())
-        const initialCycleEnd = new Date(activationDate)
-        initialCycleEnd.setMonth(initialCycleEnd.getMonth() + 1)
-        initialCycleEnd.setDate(initialCycleEnd.getDate() - 1)
+        let invoiceBillingPeriod = currentMonthStart
 
         const nextMonthStart = new Date(currentMonthStart)
         nextMonthStart.setMonth(nextMonthStart.getMonth() + 1)
 
-        if (initialCycleEnd >= currentMonthStart && initialCycleEnd < nextMonthStart) {
-          // Prorated month
-          const proratedStartDate = new Date(initialCycleEnd)
-          proratedStartDate.setDate(proratedStartDate.getDate() + 1)
-          
-          const proratedEndDate = new Date(proratedStartDate.getFullYear(), proratedStartDate.getMonth() + 1, 0)
-          
-          const msPerDay = 1000 * 60 * 60 * 24
-          const daysToBill = Math.round((proratedEndDate.getTime() - proratedStartDate.getTime()) / msPerDay) + 1
-          const daysInMonth = proratedEndDate.getDate()
-          
-          // Apply proration
-          basePrice = Number(((basePrice / daysInMonth) * daysToBill).toFixed(2))
-          salesTax = Number(((salesTax / daysInMonth) * daysToBill).toFixed(2))
-          totalAmount = basePrice + salesTax
-          isProrated = true
-          
-          narration = `Prorated O&M Invoice (${daysToBill} days: ${proratedStartDate.toLocaleDateString()} to ${proratedEndDate.toLocaleDateString()})`
-        } else if (now < initialCycleEnd) {
-          // Still in the prepaid first month
-          continue
+        // Determine if customer has an active nextBillingDate
+        const nextBilling = plan.nextBillingDate ? new Date(plan.nextBillingDate) : null
+
+        if (nextBilling) {
+          // If next billing date is in a future month, customer is still in prepaid / promo coverage
+          if (nextBilling >= nextMonthStart) {
+            continue
+          }
+
+          // Mid-month cutoff (e.g. 24 Dec 2026): Bill the exact number of days from 24 Dec-26 to 31 Dec-26
+          if (nextBilling.getDate() !== 1 && nextBilling >= currentMonthStart && nextBilling < nextMonthStart) {
+            const proratedStartDate = new Date(nextBilling)
+            const proratedEndDate = new Date(proratedStartDate.getFullYear(), proratedStartDate.getMonth() + 1, 0)
+            
+            const daysToBill = (proratedEndDate.getDate() - proratedStartDate.getDate()) + 1
+            const daysInMonth = proratedEndDate.getDate()
+            
+            basePrice = Number(((Number(plan.monthlyBasePrice) / daysInMonth) * daysToBill).toFixed(2))
+            salesTax = Number(((Number(plan.salesTaxAmount || 0) / daysInMonth) * daysToBill).toFixed(2))
+            totalAmount = basePrice + salesTax
+            isProrated = true
+            invoiceBillingPeriod = proratedStartDate
+
+            const monthShorts = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+            narration = `Prorated O&M Invoice (${daysToBill} days: ${proratedStartDate.getDate()} ${monthShorts[proratedStartDate.getMonth()]} ${proratedStartDate.getFullYear()} to ${proratedEndDate.getDate()} ${monthShorts[proratedEndDate.getMonth()]} ${proratedEndDate.getFullYear()})`
+          }
+        } else {
+          // Legacy fallback when nextBillingDate is null
+          const activationDate = customer.activationDate ? new Date(customer.activationDate) : new Date(customer.signupDate || new Date())
+          const initialCycleEnd = new Date(activationDate)
+          initialCycleEnd.setMonth(initialCycleEnd.getMonth() + 1)
+          initialCycleEnd.setDate(initialCycleEnd.getDate() - 1)
+          if (now < initialCycleEnd) {
+            continue
+          }
         }
 
         const invoiceNumber = `INV-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}-${customer.customerCode}`
@@ -85,7 +94,7 @@ export async function GET(request: NextRequest) {
             data: {
               invoiceNumber,
               customerId: customer.id,
-              billingPeriod: currentMonthStart,
+              billingPeriod: invoiceBillingPeriod,
               amount: basePrice,
               salesTax: salesTax,
               totalAmount: totalAmount,
@@ -114,6 +123,13 @@ export async function GET(request: NextRequest) {
               credit: 0,
               balance: newBal
             }
+          })
+
+          // Advance nextBillingDate to the 1st of the following month (e.g. 01 Jan 2027)
+          const nextCycleDate = new Date(invoiceBillingPeriod.getFullYear(), invoiceBillingPeriod.getMonth() + 1, 1)
+          await tx.packagePlan.update({
+            where: { customerId: customer.id },
+            data: { nextBillingDate: nextCycleDate }
           })
         })
 

@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/dialog'
 import { generateManualInvoice } from './actions'
 
-export function GenerateInvoiceDialog({ customerId }: { customerId: string }) {
+export function GenerateInvoiceDialog({ customerId, packagePlan }: { customerId: string; packagePlan?: any }) {
   const router = useRouter()
   const [open, setOpen] = React.useState(false)
   const [loading, setLoading] = React.useState(false)
@@ -26,6 +26,52 @@ export function GenerateInvoiceDialog({ customerId }: { customerId: string }) {
   const [amount, setAmount] = React.useState<number | ''>('')
   const [description, setDescription] = React.useState('')
   const [dueDate, setDueDate] = React.useState('')
+  const [salesTax, setSalesTax] = React.useState<number>(0)
+  const [billingPeriod, setBillingPeriod] = React.useState<string>('')
+  const [newNextBillingDate, setNewNextBillingDate] = React.useState<string>('')
+  const [isProratedMode, setIsProratedMode] = React.useState(false)
+
+  // Calculate mid-month proration if nextBillingDate exists and does not start on the 1st
+  const nextBilling = packagePlan?.nextBillingDate ? new Date(packagePlan.nextBillingDate) : null
+  const isMidMonthNextBilling = Boolean(nextBilling && !isNaN(nextBilling.getTime()) && nextBilling.getDate() !== 1)
+
+  let proratedDays = 0
+  let proratedAmount = 0
+  let proratedTax = 0
+  let proratedTotal = 0
+  let proratedStartDateStr = ''
+  let proratedEndDateStr = ''
+  let nextCycleDateStr = ''
+
+  if (isMidMonthNextBilling && nextBilling) {
+    const endOfMonth = new Date(nextBilling.getFullYear(), nextBilling.getMonth() + 1, 0)
+    proratedDays = (endOfMonth.getDate() - nextBilling.getDate()) + 1
+    const daysInMonth = endOfMonth.getDate()
+    const monthlyBase = Number(packagePlan?.monthlyBasePrice) || 0
+    const monthlyTax = Number(packagePlan?.salesTaxAmount) || 0
+
+    proratedAmount = Math.round((monthlyBase / daysInMonth) * proratedDays)
+    proratedTax = Math.round((monthlyTax / daysInMonth) * proratedDays) || Math.round(proratedAmount * 0.05)
+    proratedTotal = proratedAmount + proratedTax
+
+    const monthShorts = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    proratedStartDateStr = `${nextBilling.getDate()} ${monthShorts[nextBilling.getMonth()]} ${nextBilling.getFullYear()}`
+    proratedEndDateStr = `${endOfMonth.getDate()} ${monthShorts[endOfMonth.getMonth()]} ${endOfMonth.getFullYear()}`
+
+    const nextCycle = new Date(endOfMonth.getFullYear(), endOfMonth.getMonth() + 1, 1)
+    nextCycleDateStr = nextCycle.toISOString().slice(0, 10)
+  }
+
+  function applyProratedFill() {
+    if (!nextBilling) return
+    setAmount(proratedTotal)
+    setSalesTax(proratedTax)
+    setDescription(`Prorated O&M Invoice (${proratedDays} days: ${proratedStartDateStr} to ${proratedEndDateStr})`)
+    setDueDate(nextBilling.toISOString().slice(0, 10))
+    setBillingPeriod(nextBilling.toISOString().slice(0, 10))
+    setNewNextBillingDate(nextCycleDateStr)
+    setIsProratedMode(true)
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -39,6 +85,15 @@ export function GenerateInvoiceDialog({ customerId }: { customerId: string }) {
     if (dueDate) {
       formData.append('dueDate', dueDate)
     }
+    if (salesTax > 0) {
+      formData.append('salesTax', String(salesTax))
+    }
+    if (billingPeriod) {
+      formData.append('billingPeriod', billingPeriod)
+    }
+    if (newNextBillingDate) {
+      formData.append('newNextBillingDate', newNextBillingDate)
+    }
 
     const res = await generateManualInvoice(formData)
     setLoading(false)
@@ -50,6 +105,10 @@ export function GenerateInvoiceDialog({ customerId }: { customerId: string }) {
       setAmount('')
       setDescription('')
       setDueDate('')
+      setSalesTax(0)
+      setBillingPeriod('')
+      setNewNextBillingDate('')
+      setIsProratedMode(false)
       router.refresh()
     }
   }
@@ -73,6 +132,30 @@ export function GenerateInvoiceDialog({ customerId }: { customerId: string }) {
           {error && (
             <div className="p-3 text-xs bg-destructive/10 border border-destructive/20 text-destructive rounded-lg font-medium">
               {error}
+            </div>
+          )}
+
+          {isMidMonthNextBilling && (
+            <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-xl flex items-center justify-between gap-3">
+              <div>
+                <div className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                  <span>⚡ Mid-Month Billing Proration</span>
+                  <span className="bg-amber-200/90 text-amber-900 text-[10px] px-2 py-0.5 rounded font-mono font-bold">
+                    {proratedDays} Days ({proratedStartDateStr} to {proratedEndDateStr})
+                  </span>
+                </div>
+                <div className="text-[11px] text-amber-800 mt-1">
+                  Charges {proratedDays} days (PKR {proratedTotal.toLocaleString()}) from Next Billing Date to align cycle to 1st of the month.
+                </div>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                onClick={applyProratedFill}
+                className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shrink-0 cursor-pointer shadow-2xs"
+              >
+                Auto-Fill ({proratedDays} Days)
+              </Button>
             </div>
           )}
 

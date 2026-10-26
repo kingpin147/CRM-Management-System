@@ -1622,7 +1622,13 @@ export default async function CustomerDetailPage({
             <Card className="shadow-sm border-slate-200 overflow-hidden bg-white">
               <SectionHeader
                 action={
-                  <div className="flex gap-2">
+                  <div className="flex items-center gap-2">
+                    {canRecordPayment && (
+                      <>
+                        <GenerateInvoiceDialog customerId={customer.id} packagePlan={customer.packagePlan} />
+                        <RecordPaymentDialog customerId={customer.id} />
+                      </>
+                    )}
                     <a 
                       href={`/api/ledger/${customer.id}`} 
                       target="_blank" 
