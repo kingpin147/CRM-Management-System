@@ -115,17 +115,9 @@ export async function GET() {
         description: 'Informational / Telemetry: Routine performance report for active monitoring subscribers (weekly and monthly only).',
         sample: `Dear Nouman Attique, your solar generation summary for ${today}:\n⚡ Today's Generation: 45.2 kWh (Units)\n📊 Month-to-Date: 520.4 kWh (Units)\n📈 Year-to-Date: 6,430 kWh (Units)\nEnergy Gurus Solar Monitoring`
       },
-      OPERATIONAL_BROADCAST_ALERT: {
-        name: '13. Operational Broadcast / Maintenance Alert',
-        metaTemplateName: 'operational_broadcast_alert',
-        category: 'MARKETING',
-        headerType: 'IMAGE / TEXT',
-        trigger: 'Triggered on-demand by Admins for sector-wide notices',
-        description: 'Mass notification for scheduled grid maintenance or operational updates.',
-        sample: 'Dear Nouman Attique, [Notice: Scheduled Grid Maintenance]\nGrid maintenance scheduled in your area on Sunday from 10:00 AM to 2:00 PM. Inverters will stay in auto-standby.\nFor any assistance or questions, please contact our helpline at +923009433303.'
-      },
+      
       SOLAR_PROMOTIONAL_OFFER: {
-        name: '14. Promotional Flyer / Pamphlet Campaign',
+        name: '13. Promotional Flyer / Pamphlet Campaign',
         metaTemplateName: 'solar_promotional_offer',
         category: 'MARKETING',
         headerType: 'IMAGE (Pamphlet / Flyer Snapshot)',

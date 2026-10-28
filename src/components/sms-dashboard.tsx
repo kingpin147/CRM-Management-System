@@ -655,9 +655,6 @@ www.energygurus.online`
                           <SelectItem value="solar_promotional_offer">
                             solar_promotional_offer (Image Flyer + Promo Offer)
                           </SelectItem>
-                          <SelectItem value="operational_broadcast_alert">
-                            operational_broadcast_alert (Operational Notice)
-                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
