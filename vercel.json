@@ -1,0 +1,21 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/invoicing",
+      "schedule": "0 0 1 * *"
+    },
+    {
+      "path": "/api/cron/reminders",
+      "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/overdue",
+      "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/solar-reports",
+      "schedule": "0 13 * * *"
+    }
+  ]
+}
+

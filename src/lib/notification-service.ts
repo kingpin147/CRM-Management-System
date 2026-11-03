@@ -32,7 +32,7 @@ export class NotificationService {
           NotificationService.SUPPORT_PHONE
         ],
         headerDocument: {
-          link: `${appUrl}/api/customers/${customer.id}/crf`,
+          link: `${appUrl}/api/signup/${customer.id}`,
           filename: `CRF_${customer.customerCode}.pdf`
         },
         type: 'WELCOME'
@@ -76,7 +76,7 @@ export class NotificationService {
           dueDateStr
         ],
         headerDocument: {
-          link: `${appUrl}/api/invoice/${invoice.id}/pdf`,
+          link: `${appUrl}/api/invoice/${invoice.id}`,
           filename: `Invoice_${invoice.invoiceNumber}.pdf`
         },
         type: 'INVOICE',

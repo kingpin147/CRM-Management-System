@@ -154,7 +154,7 @@ export async function sendInvoiceNotifications(params: {
         formattedDueDate,
       ],
       headerDocument: {
-        link: `${appUrl}/api/invoice/${invoice.id}/pdf`,
+        link: `${appUrl}/api/invoice/${invoice.id}`,
         filename: `Invoice_${invoice.invoiceNumber}.pdf`,
       },
       type: 'INVOICE',
