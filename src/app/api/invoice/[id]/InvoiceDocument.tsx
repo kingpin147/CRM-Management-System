@@ -85,59 +85,61 @@ const styles = StyleSheet.create({
     width: '48.8%',
   },
   
-  // Section Cards
-  card: {
-    border: '1px solid #c2d0e0',
+  // Section Cards & Structured Tables
+  tableCard: {
+    border: '1px solid #b0c4de',
     borderRadius: 3,
     marginBottom: 7,
     overflow: 'hidden',
-    backgroundColor: '#F4F6F8',
+    backgroundColor: '#FFFFFF',
   },
-  cardHeader: {
+  tableCardHeader: {
     backgroundColor: '#002868',
     color: '#FFFFFF',
-    paddingVertical: 4,
+    paddingVertical: 3.5,
     paddingHorizontal: 8,
     textAlign: 'left',
     fontWeight: 'bold',
-    fontSize: 9.8,
+    fontSize: 9.5,
     letterSpacing: 0.5,
   },
-  cardBody: {
-    backgroundColor: '#F4F6F8',
-    paddingHorizontal: 8,
-    paddingVertical: 5.5,
-  },
-  row: {
+  tableRow: {
     flexDirection: 'row',
-    paddingVertical: 3.2,
-    alignItems: 'flex-start',
+    borderBottom: '1px solid #dbe4ee',
+    alignItems: 'center',
+    minHeight: 18.5,
   },
-  label: {
+  tableRowLast: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 18.5,
+  },
+  tableLabelCell: {
     width: '42%',
-    color: '#000000',
-    fontSize: 9,
+    backgroundColor: '#F8FAFC',
+    color: '#002868',
+    fontSize: 8.8,
     fontWeight: 'bold',
+    paddingVertical: 2.8,
+    paddingHorizontal: 7,
+    borderRight: '1px solid #dbe4ee',
   },
-  value: {
+  tableValueCell: {
     width: '58%',
     color: '#000000',
-    fontSize: 9,
+    fontSize: 8.8,
+    paddingVertical: 2.8,
+    paddingHorizontal: 7,
   },
   
   // Invoice Summary Specific
-  dottedLine: {
-    borderBottom: '1px dashed #c2d0e0',
-    marginVertical: 4.5,
-  },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     backgroundColor: '#002868',
-    paddingVertical: 5.5,
+    paddingVertical: 5,
     paddingHorizontal: 9,
     alignItems: 'center',
-    marginTop: 4,
   },
   totalLabel: {
     color: '#FFFFFF',
@@ -152,9 +154,10 @@ const styles = StyleSheet.create({
   rebateBox: {
     border: '1px solid #F58220',
     backgroundColor: '#FFFFFF',
-    paddingVertical: 4,
+    paddingVertical: 3.5,
     paddingHorizontal: 5,
-    marginTop: 4,
+    marginVertical: 3,
+    marginHorizontal: 4,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -358,7 +361,7 @@ const styles = StyleSheet.create({
 })
 
 function getBillingPeriod(baseDate: Date, billingTypeStr?: string, isProrated?: boolean): string {
-  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+  const monthShorts = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
   const year = baseDate.getFullYear()
   const monthIdx = baseDate.getMonth()
   const day = baseDate.getDate()
@@ -373,31 +376,33 @@ function getBillingPeriod(baseDate: Date, billingTypeStr?: string, isProrated?: 
     numMonths = 12
   }
 
+  const startDay = String(day).padStart(2, '0')
+  const startDateStr = `${startDay} ${monthShorts[monthIdx]} ${year}`
+
   // If invoice is generated on the 1st of the month (e.g. monthly recurring billing)
   if (day === 1) {
-    const startDateStr = `1-${monthNames[monthIdx]}-${year}`
     const endTargetMonthIdx = monthIdx + numMonths - 1
     const endYear = year + Math.floor(endTargetMonthIdx / 12)
     const normalizedEndMonthIdx = ((endTargetMonthIdx % 12) + 12) % 12
     const lastDay = new Date(endYear, normalizedEndMonthIdx + 1, 0).getDate()
-    const endDateStr = `${lastDay}-${monthNames[normalizedEndMonthIdx]}-${endYear}`
-    return `${startDateStr} To ${endDateStr}`
+    const endDateStr = `${String(lastDay).padStart(2, '0')} ${monthShorts[normalizedEndMonthIdx]} ${endYear}`
+    return `${startDateStr} to ${endDateStr}`
   }
 
   // Prorated invoice ending at the end of the month (e.g. 24 Dec 2026 to 31 Dec 2026):
   if (isProrated) {
     const lastDay = new Date(year, monthIdx + 1, 0).getDate()
     const days = (lastDay - day) + 1
-    return `${day}-${monthNames[monthIdx]}-${year} To ${lastDay}-${monthNames[monthIdx]}-${year} (${days} Days Prorated)`
+    const endDateStr = `${String(lastDay).padStart(2, '0')} ${monthShorts[monthIdx]} ${year}`
+    return `${startDateStr} to ${endDateStr} (${days} Days)`
   }
 
   // Mid-month signup / invoice (e.g. 14 Oct 2026):
-  const startDateStr = `${day}-${monthNames[monthIdx]}-${year}`
   const endD = new Date(baseDate)
   endD.setMonth(endD.getMonth() + numMonths)
   endD.setDate(endD.getDate() - 1)
-  const endDateStr = `${endD.getDate()}-${monthNames[endD.getMonth()]}-${endD.getFullYear()}`
-  return `${startDateStr} To ${endDateStr}`
+  const endDateStr = `${String(endD.getDate()).padStart(2, '0')} ${monthShorts[endD.getMonth()]} ${endD.getFullYear()}`
+  return `${startDateStr} to ${endDateStr}`
 }
 
 export function InvoiceDocument({ 
@@ -447,6 +452,8 @@ export function InvoiceDocument({
       dueDateStr = `${String(dDate.getDate()).padStart(2, '0')} ${monthShorts[dDate.getMonth()]} ${dDate.getFullYear()}`
     }
   }
+
+  const companyNtn = process.env.NEXT_PUBLIC_COMPANY_NTN || 'J507547'
   
   // Check if this invoice is the initial signup invoice (which includes the onboarding fee)
   const plan = customer?.packagePlan
@@ -577,76 +584,74 @@ export function InvoiceDocument({
             {/* LEFT COLUMN */}
             <View style={styles.leftCol}>
               {/* Customer Details */}
-              <View style={styles.card}>
-                <Text style={styles.cardHeader}>CUSTOMER DETAILS</Text>
-                <View style={styles.cardBody}>
-                  <View style={styles.row}>
-                    <Text style={styles.label}>Customer ID:</Text>
-                    <Text style={styles.value}>{customerIdDigits}</Text>
+              <View style={styles.tableCard}>
+                <Text style={styles.tableCardHeader}>CUSTOMER DETAILS</Text>
+                <View>
+                  <View style={styles.tableRow}>
+                    <Text style={styles.tableLabelCell}>Customer ID:</Text>
+                    <Text style={styles.tableValueCell}>{customerIdDigits}</Text>
                   </View>
-                  <View style={styles.row}>
-                    <Text style={styles.label}>Customer Name:</Text>
-                    <Text style={styles.value}>{customer?.fullName || 'Customer'}</Text>
+                  <View style={styles.tableRow}>
+                    <Text style={styles.tableLabelCell}>Customer Name:</Text>
+                    <Text style={styles.tableValueCell}>{customer?.fullName || 'Customer'}</Text>
                   </View>
-                  <View style={styles.row}>
-                    <Text style={styles.label}>Contact #:</Text>
-                    <Text style={styles.value}>{customer?.contactNumber || '—'}</Text>
+                  <View style={styles.tableRow}>
+                    <Text style={styles.tableLabelCell}>Contact #:</Text>
+                    <Text style={styles.tableValueCell}>{customer?.contactNumber || '—'}</Text>
                   </View>
-                  <View style={styles.row}>
-                    <Text style={styles.label}>Email:</Text>
-                    <Text style={styles.value}>{customer?.email || '—'}</Text>
+                  <View style={styles.tableRow}>
+                    <Text style={styles.tableLabelCell}>Email:</Text>
+                    <Text style={styles.tableValueCell}>{customer?.email || '—'}</Text>
                   </View>
-                  <View style={styles.row}>
-                    <Text style={styles.label}>CNIC #:</Text>
-                    <Text style={styles.value}>{customer?.cnic || '—'}</Text>
+                  <View style={styles.tableRow}>
+                    <Text style={styles.tableLabelCell}>CNIC #:</Text>
+                    <Text style={styles.tableValueCell}>{customer?.cnic || '—'}</Text>
                   </View>
-                  <View style={styles.row}>
-                    <Text style={styles.label}>Address:</Text>
-                    <Text style={styles.value}>{customer?.address || '—'}</Text>
+                  <View style={styles.tableRowLast}>
+                    <Text style={styles.tableLabelCell}>Address:</Text>
+                    <Text style={styles.tableValueCell}>{customer?.address || '—'}</Text>
                   </View>
                 </View>
               </View>
               
               {/* Invoice Summary */}
-              <View style={styles.card}>
-                <Text style={styles.cardHeader}>INVOICE SUMMARY</Text>
-                <View style={styles.cardBody}>
-                  <View style={styles.row}>
-                    <Text style={styles.label}>System Type:</Text>
-                    <Text style={styles.value}>{systemType}</Text>
+              <View style={styles.tableCard}>
+                <Text style={styles.tableCardHeader}>INVOICE SUMMARY</Text>
+                <View>
+                  <View style={styles.tableRow}>
+                    <Text style={styles.tableLabelCell}>System Type:</Text>
+                    <Text style={styles.tableValueCell}>{systemType}</Text>
                   </View>
-                  <View style={styles.row}>
-                    <Text style={styles.label}>Package:</Text>
-                    <Text style={styles.value}>{packageTier}</Text>
+                  <View style={styles.tableRow}>
+                    <Text style={styles.tableLabelCell}>Package:</Text>
+                    <Text style={styles.tableValueCell}>{packageTier}</Text>
                   </View>
-                  <View style={styles.row}>
-                    <Text style={styles.label}>Monitoring Time:</Text>
-                    <Text style={styles.value}>{monitoringTime}</Text>
+                  <View style={styles.tableRow}>
+                    <Text style={styles.tableLabelCell}>Monitoring Time:</Text>
+                    <Text style={styles.tableValueCell}>{monitoringTime}</Text>
                   </View>
-                  <View style={styles.row}>
-                    <Text style={styles.label}>Billing Type:</Text>
-                    <Text style={styles.value}>{billingType}</Text>
+                  <View style={styles.tableRow}>
+                    <Text style={styles.tableLabelCell}>Billing Type:</Text>
+                    <Text style={styles.tableValueCell}>{billingType}</Text>
                   </View>
                   
-                  <View style={styles.dottedLine} />
-                  
-                  <View style={styles.row}>
-                    <Text style={styles.label}>{isProratedInvoice ? 'Subscription (Prorated):' : 'Subscription Charges:'}</Text>
-                    <Text style={styles.value}>{displaySubscriptionCharges.toLocaleString(undefined, {minimumFractionDigits: 2})}</Text>
+                  <View style={styles.tableRow}>
+                    <Text style={styles.tableLabelCell}>{isProratedInvoice ? 'Subscription (Prorated):' : 'Subscription Charges:'}</Text>
+                    <Text style={styles.tableValueCell}>{displaySubscriptionCharges.toLocaleString(undefined, {minimumFractionDigits: 2})}</Text>
                   </View>
                   {displayOnboardingFee > 0 && (
-                    <View style={styles.row}>
-                      <Text style={styles.label}>On-Boarding Fee:</Text>
-                      <Text style={styles.value}>{displayOnboardingFee.toLocaleString(undefined, {minimumFractionDigits: 2})}</Text>
+                    <View style={styles.tableRow}>
+                      <Text style={styles.tableLabelCell}>On-Boarding Fee:</Text>
+                      <Text style={styles.tableValueCell}>{displayOnboardingFee.toLocaleString(undefined, {minimumFractionDigits: 2})}</Text>
                     </View>
                   )}
-                  <View style={styles.row}>
-                    <Text style={styles.label}>Sales Tax:</Text>
-                    <Text style={styles.value}>{displaySalesTax.toLocaleString(undefined, {minimumFractionDigits: 2})}</Text>
+                  <View style={styles.tableRow}>
+                    <Text style={styles.tableLabelCell}>Sales Tax:</Text>
+                    <Text style={styles.tableValueCell}>{displaySalesTax.toLocaleString(undefined, {minimumFractionDigits: 2})}</Text>
                   </View>
-                  <View style={styles.row}>
-                    <Text style={styles.label}>Arrears:</Text>
-                    <Text style={styles.value}>{arrears.toLocaleString(undefined, {minimumFractionDigits: 2})}</Text>
+                  <View style={styles.tableRowLast}>
+                    <Text style={styles.tableLabelCell}>Arrears:</Text>
+                    <Text style={styles.tableValueCell}>{arrears.toLocaleString(undefined, {minimumFractionDigits: 2})}</Text>
                   </View>
                   
                   {/* Total Row with High-Contrast White Text */}
@@ -667,9 +672,9 @@ export function InvoiceDocument({
               </View>
               
               {/* Billing History */}
-              <View style={styles.card}>
-                <Text style={styles.cardHeader}>BILLING HISTORY</Text>
-                <View style={styles.cardBody}>
+              <View style={styles.tableCard}>
+                <Text style={styles.tableCardHeader}>BILLING HISTORY</Text>
+                <View style={{ padding: 4 }}>
                   <View style={styles.tableContainer}>
                     <View style={styles.tableHeaderRow}>
                       <Text style={styles.thCell}>Invoice #</Text>
@@ -704,24 +709,28 @@ export function InvoiceDocument({
             {/* RIGHT COLUMN */}
             <View style={styles.rightCol}>
               {/* Invoice Details */}
-              <View style={styles.card}>
-                <Text style={styles.cardHeader}>INVOICE DETAILS</Text>
-                <View style={styles.cardBody}>
-                  <View style={styles.row}>
-                    <Text style={styles.label}>Invoice #:</Text>
-                    <Text style={styles.value}>{invoiceNumber}</Text>
+              <View style={styles.tableCard}>
+                <Text style={styles.tableCardHeader}>INVOICE DETAILS</Text>
+                <View>
+                  <View style={styles.tableRow}>
+                    <Text style={styles.tableLabelCell}>Invoice #:</Text>
+                    <Text style={styles.tableValueCell}>{invoiceNumber}</Text>
                   </View>
-                  <View style={styles.row}>
-                    <Text style={styles.label}>Billing Month:</Text>
-                    <Text style={styles.value}>{billingMonth}</Text>
+                  <View style={styles.tableRow}>
+                    <Text style={styles.tableLabelCell}>Billing Month:</Text>
+                    <Text style={[styles.tableValueCell, { fontWeight: 'bold', color: '#002868' }]}>{billingMonth}</Text>
                   </View>
-                  <View style={styles.row}>
-                    <Text style={styles.label}>Issue Date:</Text>
-                    <Text style={styles.value}>{issueDateStr}</Text>
+                  <View style={styles.tableRow}>
+                    <Text style={styles.tableLabelCell}>Issue Date:</Text>
+                    <Text style={styles.tableValueCell}>{issueDateStr}</Text>
                   </View>
-                  <View style={styles.row}>
-                    <Text style={styles.label}>Due Date:</Text>
-                    <Text style={styles.value}>{dueDateStr}</Text>
+                  <View style={styles.tableRow}>
+                    <Text style={styles.tableLabelCell}>Due Date:</Text>
+                    <Text style={styles.tableValueCell}>{dueDateStr}</Text>
+                  </View>
+                  <View style={styles.tableRowLast}>
+                    <Text style={[styles.tableLabelCell, { fontSize: 9.2 }]}>NTN #:</Text>
+                    <Text style={[styles.tableValueCell, { fontWeight: 'bold', fontSize: 9.5, color: '#002868' }]}>{companyNtn}</Text>
                   </View>
                 </View>
               </View>
